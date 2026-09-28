@@ -1,0 +1,68 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;background:#fbfaf7;font-family:Inter,"DejaVu Sans",Arial,sans-serif}
+svg text{font-family:inherit}
+.t{font-size:15px;font-weight:700;fill:#1d1d1b}.s{font-size:12px;fill:#4a4a46}.h{font-size:22px;font-weight:800;fill:#1d1d1b}
+.lab{font-size:11px;font-weight:700;letter-spacing:.06em;fill:#6b6b66}
+.box{fill:#fff;stroke:#c9c6bd;stroke-width:1.5;rx:10}
+.built{fill:#eef6ef;stroke:#3f8f55}.planned{fill:#f4f3ef;stroke:#9b988f;stroke-dasharray:6 4}
+.chain{fill:#eef2fb;stroke:#4a6bb5}.warn{fill:#fdf1ec;stroke:#c0532b}
+.ar{stroke:#55534d;stroke-width:1.6;fill:none;marker-end:url(#a)}.dash{stroke-dasharray:5 4}
+</style></head><body>
+<svg id="d" width="1200" height="820" viewBox="0 0 1200 820" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#55534d"/></marker></defs>
+<text x="40" y="48" class="h">Project QF: how the pieces fit</text>
+<text x="40" y="72" class="s">Solid green = built and tested offline today. Dashed grey = planned, not built. Blue = Solana programs we talk to (not yet verified live).</text>
+
+<!-- column labels -->
+<text x="40" y="112" class="lab">WHO USES IT</text><text x="330" y="112" class="lab">PROJECT QF (OUR CODE)</text><text x="920" y="112" class="lab">SOLANA (METEORA'S PROGRAMS)</text>
+
+<!-- users -->
+<rect x="40" y="130" width="240" height="90" class="box"/><text x="58" y="160" class="t">Token creator</text><text x="58" y="182" class="s">Picks the quote asset, reviews</text><text x="58" y="198" class="s">economics, gives consent</text>
+<rect x="40" y="415" width="240" height="90" class="box"/><text x="58" y="445" class="t">Creator's own wallet</text><text x="58" y="467" class="s">Signs every transaction.</text><text x="58" y="483" class="s">QF never holds keys or signs.</text>
+<rect x="40" y="275" width="240" height="90" class="box"/><text x="58" y="305" class="t">Token holders</text><text x="58" y="327" class="s">Claim rewards each epoch</text><text x="58" y="343" class="s">with Merkle proofs</text>
+
+<!-- web app -->
+<rect x="330" y="130" width="540" height="110" class="box built"/><text x="348" y="160" class="t">Web app: launch lifecycle UI  (apps/web)</text>
+<text x="348" y="182" class="s">Runs in the browser. Today it shows MOCK data only.</text><text x="348" y="200" class="s">Never loads web3.js or Meteora code (checked by the boundary gate).</text><text x="348" y="220" class="s">Reward Merkle root computed in a Web Worker.</text>
+
+<!-- core packages -->
+<rect x="330" y="270" width="170" height="120" class="box built"/><text x="345" y="298" class="t">Validator</text><text x="345" y="318" class="s">Quote-asset liquidity</text><text x="345" y="334" class="s">&lt;$25K FAIL, $25K–250K</text><text x="345" y="350" class="s">WARN, ≥$250K PASS;</text><text x="345" y="366" class="s">exit depth</text>
+<rect x="515" y="270" width="170" height="120" class="box built"/><text x="530" y="298" class="t">Policy</text><text x="530" y="318" class="s">Economics, curve</text><text x="530" y="334" class="s">template (flat fees),</text><text x="530" y="350" class="s">migration threshold</text><text x="530" y="366" class="s">(≤ $100K ceiling)</text>
+<rect x="700" y="270" width="170" height="120" class="box built"/><text x="715" y="298" class="t">Rewards</text><text x="715" y="318" class="s">Time-weighted balances,</text><text x="715" y="334" class="s">allocation, Merkle tree</text><text x="715" y="350" class="s">(mainnet payout gated</text><text x="715" y="366" class="s">on an audit)</text>
+
+<rect x="330" y="410" width="260" height="100" class="box built"/><text x="345" y="438" class="t">Transaction checker  (tx)</text><text x="345" y="458" class="s">Decodes every transaction and binds</text><text x="345" y="474" class="s">it to the terms the creator approved</text><text x="345" y="490" class="s">before it reaches the wallet</text>
+<rect x="610" y="410" width="260" height="100" class="box built"/><text x="625" y="438" class="t">Meteora adapter</text><text x="625" y="458" class="s">Server only; the one place the Meteora</text><text x="625" y="474" class="s">SDKs run. Builds unsigned transactions,</text><text x="625" y="490" class="s">with response size and time limits.</text>
+
+<rect x="330" y="530" width="540" height="64" class="box built"/><text x="345" y="556" class="t">Core: readiness stages, integer money math, MOCK labels</text><text x="345" y="578" class="s">Every result records which policy version produced it.</text>
+
+<rect x="330" y="612" width="260" height="72" class="box planned"/><text x="345" y="640" class="t">Intelligence (planned)</text><text x="345" y="660" class="s">Launch scoring, asset graph</text>
+<rect x="610" y="612" width="260" height="72" class="box planned"/><text x="625" y="640" class="t">Infra (planned)</text><text x="625" y="660" class="s">Hosting, monitoring, RPC failover</text>
+
+<!-- chain -->
+<rect x="920" y="200" width="240" height="100" class="box chain"/><text x="938" y="230" class="t">Dynamic Bonding Curve</text><text x="938" y="252" class="s">Token trades on a curve until</text><text x="938" y="268" class="s">the quote threshold is hit</text>
+<rect x="920" y="360" width="240" height="100" class="box chain"/><text x="938" y="390" class="t">DAMM v2 pool</text><text x="938" y="412" class="s">After migration: a normal</text><text x="938" y="428" class="s">liquidity pool, fee claims</text>
+<rect x="920" y="520" width="240" height="120" class="box warn"/><text x="938" y="550" class="t">Read-only verifier</text><text x="938" y="572" class="s">Checks program IDs, authorities,</text><text x="938" y="588" class="s">config type and hashes on-chain.</text><text x="938" y="608" class="s" style="fill:#a8401c;font-weight:700">Built, never run live: the cloud</text><text x="938" y="624" class="s" style="fill:#a8401c;font-weight:700">blocks the Solana hosts (403)</text>
+
+<!-- arrows -->
+<path class="ar" d="M280 175 H326"/>
+<path class="ar" d="M600 240 V266"/>
+<path class="ar" d="M870 440 C900 440 895 250 916 250"/>
+<path class="ar" d="M1040 300 V356"/><text x="1048" y="334" class="s">migrates</text>
+<path class="ar" d="M606 460 H590"/>
+<path class="ar" d="M330 460 H284"/><text x="186" y="236" class="s" transform="translate(0,0)"></text>
+<path class="ar dash" d="M916 440 C895 440 895 485 874 485"/>
+<path class="ar dash" d="M1040 520 V464"/>
+<path class="ar" d="M870 330 C890 330 890 400 284 400" style="display:none"/>
+<path class="ar" d="M785 270 V255 H306 V320 H284"/>
+
+
+<!-- readiness bar -->
+<text x="40" y="742" class="lab">WHERE WE ARE</text>
+<g font-size="12" font-weight="700">
+<rect x="40" y="756" width="200" height="40" rx="8" fill="#3f8f55"/><text x="56" y="781" fill="#fff">OFFLINE V0 · ACTIVE</text>
+<rect x="252" y="756" width="250" height="40" rx="8" fill="#fdf1ec" stroke="#c0532b"/><text x="266" y="781" fill="#a8401c">READ-ONLY CHECK · BLOCKED</text>
+<rect x="514" y="756" width="200" height="40" rx="8" fill="#f4f3ef" stroke="#9b988f"/><text x="530" y="781" fill="#4a4a46">LOCALNET · BLOCKED</text>
+<rect x="726" y="756" width="200" height="40" rx="8" fill="#f4f3ef" stroke="#9b988f"/><text x="746" y="781" fill="#4a4a46">DEVNET · BLOCKED</text>
+<rect x="938" y="756" width="200" height="40" rx="8" fill="#f4f3ef" stroke="#9b988f"/><text x="956" y="781" fill="#4a4a46">MAINNET · BLOCKED</text>
+</g>
+</svg></body></html>
