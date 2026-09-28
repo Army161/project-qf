@@ -1,0 +1,57 @@
+# cmd: node --test packages/adapter-meteora-dbc/test/body-limit.test.ts (repaired adapter)
+# at: 2026-09-27T16:05:46Z
+TAP version 13
+# (node:908) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+# (Use `node --trace-deprecation ...` to show where the warning was created)
+# Subtest: BODY-LIMIT: the reviewer diagnostic (1,024-byte cap, 32,768-byte body) stops early and cancels
+ok 1 - BODY-LIMIT: the reviewer diagnostic (1,024-byte cap, 32,768-byte body) stops early and cancels
+  ---
+  duration_ms: 4.909291
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: absent or false Content-Length cannot bypass the streaming cap
+ok 2 - BODY-LIMIT: absent or false Content-Length cannot bypass the streaming cap
+  ---
+  duration_ms: 0.903289
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: a declared oversize is refused before any body byte is read, and the body is cancelled
+ok 3 - BODY-LIMIT: a declared oversize is refused before any body byte is read, and the body is cancelled
+  ---
+  duration_ms: 0.546564
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: exactly maxBytes is accepted and returned intact; maxBytes + 1 is refused
+ok 4 - BODY-LIMIT: exactly maxBytes is accepted and returned intact; maxBytes + 1 is refused
+  ---
+  duration_ms: 2.075435
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: a stalled body hits the whole-body deadline and is cancelled
+ok 5 - BODY-LIMIT: a stalled body hits the whole-body deadline and is cancelled
+  ---
+  duration_ms: 101.939338
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: the deadline signal reaches the underlying fetch, and a caller abort is honoured
+ok 6 - BODY-LIMIT: the deadline signal reaches the underlying fetch, and a caller abort is honoured
+  ---
+  duration_ms: 52.617789
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: an oversized error body is bounded as well
+ok 7 - BODY-LIMIT: an oversized error body is bounded as well
+  ---
+  duration_ms: 0.917421
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 714.213345
+# exit: 0

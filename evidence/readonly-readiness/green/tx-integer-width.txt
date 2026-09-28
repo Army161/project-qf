@@ -1,0 +1,19 @@
+# cmd: node --test --test-name-pattern='exact IDL width' packages/tx/test/binding.test.ts (after)
+# at: 2026-09-27T16:08:43Z
+TAP version 13
+# Subtest: SEC-A condition (bigint-buffer): approved integers are range-checked to their exact IDL width, not assumed u64
+ok 1 - SEC-A condition (bigint-buffer): approved integers are range-checked to their exact IDL width, not assumed u64
+  ---
+  duration_ms: 2.508554
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 281.615243
+# exit: 0

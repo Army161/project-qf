@@ -1,0 +1,136 @@
+# spec/tools/program-verify, fresh copy, env -i, scripts off
+$ pnpm install --frozen-lockfile --ignore-scripts
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +9
++++++++++
+Progress: resolved 9, reused 9, downloaded 0, added 9, done
+
+dependencies:
++ @solana/addresses 8.3.0
+
+Done in 438ms using pnpm v10.33.0
+exit 0
+$ pnpm test
+
+> @project-qf/program-verify@0.2.0 test /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier-check
+> node --test test/*.test.mjs
+
+TAP version 13
+# Subtest: CLI contract: only the original flags are accepted
+ok 1 - CLI contract: only the original flags are accepted
+  ---
+  duration_ms: 2.576584
+  type: 'test'
+  ...
+# Subtest: happy path on a consistent fake cluster: required checks pass, status fields are separate
+ok 2 - happy path on a consistent fake cluster: required checks pass, status fields are separate
+  ---
+  duration_ms: 26.337307
+  type: 'test'
+  ...
+# Subtest: executable hash trims trailing zero bytes after the 45-byte header (OtterSec convention)
+ok 3 - executable hash trims trailing zero bytes after the 45-byte header (OtterSec convention)
+  ---
+  duration_ms: 11.941681
+  type: 'test'
+  ...
+# Subtest: wrong genesis: CLUSTER_IDENTITY FAIL and no program data is trusted
+ok 4 - wrong genesis: CLUSTER_IDENTITY FAIL and no program data is trusted
+  ---
+  duration_ms: 7.992966
+  type: 'test'
+  ...
+# Subtest: localnet genesis cannot be validated and is reported, not passed
+ok 5 - localnet genesis cannot be validated and is reported, not passed
+  ---
+  duration_ms: 15.306066
+  type: 'test'
+  ...
+# Subtest: missing program: PROGRAM_PRESENCE FAIL, dependent checks UNKNOWN
+ok 6 - missing program: PROGRAM_PRESENCE FAIL, dependent checks UNKNOWN
+  ---
+  duration_ms: 12.406422
+  type: 'test'
+  ...
+# Subtest: not executable / wrong owner: LOADER_STATE FAIL
+ok 7 - not executable / wrong owner: LOADER_STATE FAIL
+  ---
+  duration_ms: 22.647378
+  type: 'test'
+  ...
+# Subtest: missing or malformed ProgramData: PROGRAMDATA FAIL, authority UNKNOWN
+ok 8 - missing or malformed ProgramData: PROGRAMDATA FAIL, authority UNKNOWN
+  ---
+  duration_ms: 28.202459
+  type: 'test'
+  ...
+# Subtest: immutable program (no authority) is recorded as null, not a failure
+ok 9 - immutable program (no authority) is recorded as null, not a failure
+  ---
+  duration_ms: 15.558149
+  type: 'test'
+  ...
+# Subtest: config with wrong owner or discriminator: CONFIG FAIL
+ok 10 - config with wrong owner or discriminator: CONFIG FAIL
+  ---
+  duration_ms: 21.61065
+  type: 'test'
+  ...
+# Subtest: OtterSec is_verified=false is recorded as not verified, never as a mismatch
+ok 11 - OtterSec is_verified=false is recorded as not verified, never as a mismatch
+  ---
+  duration_ms: 14.154555
+  type: 'test'
+  ...
+# Subtest: RPC failure: CONNECTIVITY FAIL with a sanitized error, exit code 2
+ok 12 - RPC failure: CONNECTIVITY FAIL with a sanitized error, exit code 2
+  ---
+  duration_ms: 8.210744
+  type: 'test'
+  ...
+# Subtest: sanitizers remove credentials from URLs and errors
+ok 13 - sanitizers remove credentials from URLs and errors
+  ---
+  duration_ms: 0.247854
+  type: 'test'
+  ...
+# Subtest: JSON-RPC client refuses every method outside the read-only allowlist
+ok 14 - JSON-RPC client refuses every method outside the read-only allowlist
+  ---
+  duration_ms: 21.957198
+  type: 'test'
+  ...
+# Subtest: static scan: verifier source contains no signing, sending or airdrop capability
+ok 15 - static scan: verifier source contains no signing, sending or airdrop capability
+  ---
+  duration_ms: 0.78592
+  type: 'test'
+  ...
+# Subtest: markdown output labels the diagnostic and never claims live PASS when RPC failed
+ok 16 - markdown output labels the diagnostic and never claims live PASS when RPC failed
+  ---
+  duration_ms: 9.61617
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 302.785224
+exit 0
+$ pnpm audit --prod
+No known vulnerabilities found
+exit 0
+$ node --use-env-proxy verify-programs.mjs --out <scratch>  (live attempt, see docs/verification/PROGRAM-VERIFICATION-2026-09-27.*)
+(node:5652) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+wrote /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verify-out2/PROGRAM-VERIFICATION-2026-09-27.md and .json (exit 2)
+exit 2
+$ node verify-programs.mjs --rpc x  (unknown flag)
+usage error: unknown flag --rpc (accepted: --mainnet, --mainnet2, --devnet, --out)
+exit 64

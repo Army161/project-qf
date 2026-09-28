@@ -1,0 +1,17 @@
+# cmd: pnpm install --frozen-lockfile --ignore-scripts
+# at: 2026-09-27T16:09:27Z
+Scope: all 9 workspace projects
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +136
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 136, reused 136, downloaded 0, added 136, done
+
+devDependencies:
++ @types/node 22.20.4
++ esbuild 0.28.2
++ playwright-core 1.56.1
++ typescript 5.9.3
+
+Done in 1s using pnpm v10.33.0
+# exit: 0

@@ -1,0 +1,9 @@
+{
+  "name": "@project-qf/core",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "description": "Browser-safe domain types, exact decimal money math, capability flags, readiness stages, MOCK labelling.",
+  "exports": { ".": "./src/index.ts" }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "@project-qf/policy",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "description": "Policy Engine: EconomicsPolicy, CurveTemplate, MigrationPolicy (Decision 3), capability gates.",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "@project-qf/core": "workspace:*", "@project-qf/validator": "workspace:*", "@noble/hashes": "1.8.0" }
+}

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.cache/
+coverage/
+.env
+.env.*
+*.keypair.json
+.devnet-keys/

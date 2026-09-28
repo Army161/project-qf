@@ -1,0 +1,1221 @@
+{
+ "configurations": {
+  "decay": {
+   "feeSchedulerParam": {
+    "endingFeeBps": 100,
+    "numberOfPeriod": 12,
+    "startingFeeBps": 2500,
+    "totalDuration": 120
+   },
+   "usage": "SIMULATION_ONLY",
+   "version": "STANDARD_V1@0-sim-linear-decay-2500-100-12x10s"
+  },
+  "flat": {
+   "feeSchedulerParam": {
+    "endingFeeBps": 100,
+    "numberOfPeriod": 0,
+    "startingFeeBps": 100,
+    "totalDuration": 0
+   },
+   "usage": "V0_TEST_BASELINE",
+   "version": "STANDARD_V1@0-v0test-flat"
+  }
+ },
+ "decision": "Decision 5",
+ "disclaimers": [
+  "Not sniper-proof: neither configuration prevents sniping, and this simulation does not show otherwise.",
+  "No demand elasticity: every trace replays the same order intents under both fees, so traders do not react to a 25% fee by waiting, shrinking or skipping. Real bots would adapt (see patient_sniper).",
+  "Synthetic volume says nothing about real demand, graduation likelihood or revenue.",
+  "Marked values use the final spot price and are not executable exit values.",
+  "Results come from @meteora-ag/dynamic-bonding-curve-sdk@1.5.13 client-side quote math, not the on-chain program; on-chain behaviour was not exercised.",
+  "Production fee templates remain gated (P0-M3); nothing here selects one."
+ ],
+ "label": "SIMULATION ONLY: synthetic traces, SDK quote math, no RPC, no transactions. Not live results.",
+ "productionTemplateSelected": false,
+ "resultsHash": "3f8bd4e725db35b500e9c1f61949063f7fd9c94060574ac812f43d25366415a9",
+ "sdk": "@meteora-ag/dynamic-bonding-curve-sdk@1.5.13 (swapQuotePartialFill, swapQuoteExactIn, getQuoteReserveFromNextSqrtPrice)",
+ "summary": {
+  "failed": 7,
+  "hypotheses": 30,
+  "notApplicable": 4,
+  "passed": 19
+ },
+ "traces": [
+  {
+   "decay": {
+    "bots": {
+     "acquiredShareOfAllBuysBps": 3699,
+     "heldAtEndBps": 0,
+     "netMarkedPnl": "304797703",
+     "present": true
+    },
+    "byClass": {
+     "organic": {
+      "baseHeld": "799999953434085",
+      "feeBpsOfVolume": 145,
+      "feesPaid": "112830188",
+      "markedValueAtSpot": "19999998835",
+      "netMarkedPnl": "13999053634",
+      "quotePaid": "6862002877",
+      "quoteReceived": "861057676",
+      "rejected": 71,
+      "shareOfCurveSoldBps": 10000,
+      "volume": "7731758112"
+     },
+     "sniper": {
+      "baseHeld": "0",
+      "feeBpsOfVolume": 1217,
+      "feesPaid": "583317302",
+      "markedValueAtSpot": "0",
+      "netMarkedPnl": "304797703",
+      "quotePaid": "2230820000",
+      "quoteReceived": "2535617703",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 0,
+      "volume": "4792050005"
+     }
+    },
+    "concentration": {
+     "botShareBps": 0,
+     "curveSoldBase": "799999953434085",
+     "earlyHolderShareBps": 0,
+     "entities": 63,
+     "hhiBps": 254,
+     "top5EntityShareBps": 2187
+    },
+    "conservation": {
+     "baseExact": true,
+     "feeSplitExact": true,
+     "finalQuoteReserve": "5000000008",
+     "quoteExact": true,
+     "reserveCoversCurve": true,
+     "reserveMinusCurveRaw": "8",
+     "thresholdRaw": "5000000000",
+     "tradersQuoteIn": "9092822877",
+     "tradersQuoteOut": "3396675379"
+    },
+    "feeRealization": {
+     "totalFeeBpsOfVolume": 555
+    },
+    "fees": {
+     "creator": "278459000",
+     "partner": "278459000",
+     "partnerRevenue": "139229500",
+     "partnerRewards": "139229500",
+     "protocol": "139229490",
+     "referral": "0",
+     "total": "696147490",
+     "trading": "556918000"
+    },
+    "graduation": {
+     "completed": true,
+     "completedAtT": 2132,
+     "rejectedAfterCompletion": 71
+    },
+    "priceDislocation": {
+     "finalPrice18": "24999999999999",
+     "maxSingleTradeMoveBps": 4260,
+     "peakPrice18": "24999999999999",
+     "peakToFinalDrawdownBps": 0,
+     "startPrice18": "1562500181897"
+    },
+    "template": "STANDARD_V1@0-sim-linear-decay-2500-100-12x10s",
+    "traceHash": "d0ef4173c1235c72d0bbf444c1df17af1c6b8a364577ca34cdfeb308172c2181"
+   },
+   "description": "5 sniper wallets buy $300-600 each in the first 2 s, 220 organic events follow, snipers try to exit fully at 300-600 s.",
+   "events": 230,
+   "flat": {
+    "bots": {
+     "acquiredShareOfAllBuysBps": 4013,
+     "heldAtEndBps": 0,
+     "netMarkedPnl": "935619670",
+     "present": true
+    },
+    "byClass": {
+     "organic": {
+      "baseHeld": "799999953434090",
+      "feeBpsOfVolume": 100,
+      "feesPaid": "77662334",
+      "markedValueAtSpot": "19999998835",
+      "netMarkedPnl": "13932424381",
+      "quotePaid": "6912635796",
+      "quoteReceived": "845061342",
+      "rejected": 70,
+      "shareOfCurveSoldBps": 10000,
+      "volume": "7766233114"
+     },
+     "sniper": {
+      "baseHeld": "0",
+      "feeBpsOfVolume": 100,
+      "feesPaid": "54292441",
+      "markedValueAtSpot": "0",
+      "netMarkedPnl": "935619670",
+      "quotePaid": "2230820000",
+      "quoteReceived": "3166439670",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 0,
+      "volume": "5429243911"
+     }
+    },
+    "concentration": {
+     "botShareBps": 0,
+     "curveSoldBase": "799999953434090",
+     "earlyHolderShareBps": 0,
+     "entities": 63,
+     "hhiBps": 256,
+     "top5EntityShareBps": 2195
+    },
+    "conservation": {
+     "baseExact": true,
+     "feeSplitExact": true,
+     "finalQuoteReserve": "5000000009",
+     "quoteExact": true,
+     "reserveCoversCurve": true,
+     "reserveMinusCurveRaw": "9",
+     "thresholdRaw": "5000000000",
+     "tradersQuoteIn": "9143455796",
+     "tradersQuoteOut": "4011501012"
+    },
+    "feeRealization": {
+     "totalFeeBpsOfVolume": 100
+    },
+    "fees": {
+     "creator": "52781913",
+     "partner": "52781914",
+     "partnerRevenue": "26390957",
+     "partnerRewards": "26390957",
+     "protocol": "26390948",
+     "referral": "0",
+     "total": "131954775",
+     "trading": "105563827"
+    },
+    "graduation": {
+     "completed": true,
+     "completedAtT": 2174,
+     "rejectedAfterCompletion": 70
+    },
+    "priceDislocation": {
+     "finalPrice18": "24999999999999",
+     "maxSingleTradeMoveBps": 5397,
+     "peakPrice18": "24999999999999",
+     "peakToFinalDrawdownBps": 0,
+     "startPrice18": "1562500181897"
+    },
+    "template": "STANDARD_V1@0-v0test-flat",
+    "traceHash": "d0ef4173c1235c72d0bbf444c1df17af1c6b8a364577ca34cdfeb308172c2181"
+   },
+   "hypotheses": [
+    {
+     "decay": "3699 bps (7.8% relative drop)",
+     "flat": "4013 bps",
+     "id": "H1_BOT_ACQUISITION",
+     "outcome": "FAIL",
+     "statement": "Decay cuts the bot share of all base bought on the curve by at least 20% relative to flat."
+    },
+    {
+     "decay": "304797703 raw qUSD",
+     "flat": "935619670 raw qUSD",
+     "id": "H5_BOT_PNL",
+     "outcome": "PASS",
+     "statement": "Decay lowers bot net PnL (realized plus marked at final spot) versus flat."
+    },
+    {
+     "decay": "145 bps",
+     "flat": "100 bps",
+     "id": "H2_ORGANIC_COST",
+     "outcome": "PASS",
+     "statement": "Decay raises the organic fee rate by no more than 50 bps of organic volume."
+    },
+    {
+     "decay": "true @ 2132",
+     "flat": "true @ 2174",
+     "id": "H3_GRADUATION_UNCHANGED",
+     "outcome": "PASS",
+     "statement": "Graduation outcome is the same under both fees."
+    },
+    {
+     "decay": "reserve-curve=8",
+     "flat": "reserve-curve=9",
+     "id": "H4_CONSERVATION",
+     "outcome": "PASS",
+     "statement": "Quote, base and fee-split bookkeeping is exact and the tracked reserve covers the curve-implied reserve."
+    }
+   ],
+   "id": "sniper_burst_t0",
+   "seed": 1001,
+   "traceHash": "d0ef4173c1235c72d0bbf444c1df17af1c6b8a364577ca34cdfeb308172c2181"
+  },
+  {
+   "decay": {
+    "bots": {
+     "acquiredShareOfAllBuysBps": 3268,
+     "heldAtEndBps": 0,
+     "netMarkedPnl": "473508794",
+     "present": true
+    },
+    "byClass": {
+     "organic": {
+      "baseHeld": "770966520992555",
+      "feeBpsOfVolume": 134,
+      "feesPaid": "156530866",
+      "markedValueAtSpot": "15675090396",
+      "netMarkedPnl": "10647354729",
+      "quotePaid": "8320570000",
+      "quoteReceived": "3292834333",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 10000,
+      "volume": "11646665299"
+     },
+     "sniper": {
+      "baseHeld": "0",
+      "feeBpsOfVolume": 100,
+      "feesPaid": "52265325",
+      "markedValueAtSpot": "0",
+      "netMarkedPnl": "473508794",
+      "quotePaid": "2362190000",
+      "quoteReceived": "2835698794",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 0,
+      "volume": "5226532219"
+     }
+    },
+    "concentration": {
+     "botShareBps": 0,
+     "curveSoldBase": "770966520992555",
+     "earlyHolderShareBps": 0,
+     "entities": 63,
+     "hhiBps": 267,
+     "top5EntityShareBps": 2504
+    },
+    "conservation": {
+     "baseExact": true,
+     "feeSplitExact": true,
+     "finalQuoteReserve": "4345430682",
+     "quoteExact": true,
+     "reserveCoversCurve": true,
+     "reserveMinusCurveRaw": "15",
+     "thresholdRaw": "5000000000",
+     "tradersQuoteIn": "10682760000",
+     "tradersQuoteOut": "6128533127"
+    },
+    "feeRealization": {
+     "totalFeeBpsOfVolume": 123
+    },
+    "fees": {
+     "creator": "83518483",
+     "partner": "83518484",
+     "partnerRevenue": "41759242",
+     "partnerRewards": "41759242",
+     "protocol": "41759224",
+     "referral": "0",
+     "total": "208796191",
+     "trading": "167036967"
+    },
+    "graduation": {
+     "completed": false,
+     "completedAtT": null,
+     "rejectedAfterCompletion": 0
+    },
+    "priceDislocation": {
+     "finalPrice18": "20331739407387",
+     "maxSingleTradeMoveBps": 6394,
+     "peakPrice18": "21748695038413",
+     "peakToFinalDrawdownBps": 651,
+     "startPrice18": "1562500181897"
+    },
+    "template": "STANDARD_V1@0-sim-linear-decay-2500-100-12x10s",
+    "traceHash": "9ec0de18c66ef2a0c832727d2d6284167de37ed461ea6a07dcea97ab2494b63f"
+   },
+   "description": "Same sniper size, but snipers buy at 121-123 s, just after the decay window ends, and try to exit at 400-700 s.",
+   "events": 230,
+   "flat": {
+    "bots": {
+     "acquiredShareOfAllBuysBps": 3191,
+     "heldAtEndBps": 0,
+     "netMarkedPnl": "438795765",
+     "present": true
+    },
+    "byClass": {
+     "organic": {
+      "baseHeld": "770195168475698",
+      "feeBpsOfVolume": 100,
+      "feesPaid": "117374367",
+      "markedValueAtSpot": "15578028898",
+      "netMarkedPnl": "10640155531",
+      "quotePaid": "8320570000",
+      "quoteReceived": "3382696633",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 10000,
+      "volume": "11737435300"
+     },
+     "sniper": {
+      "baseHeld": "0",
+      "feeBpsOfVolume": 100,
+      "feesPaid": "51914688",
+      "markedValueAtSpot": "0",
+      "netMarkedPnl": "438795765",
+      "quotePaid": "2362190000",
+      "quoteReceived": "2800985765",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 0,
+      "volume": "5191468553"
+     }
+    },
+    "concentration": {
+     "botShareBps": 0,
+     "curveSoldBase": "770195168475698",
+     "earlyHolderShareBps": 0,
+     "entities": 63,
+     "hhiBps": 271,
+     "top5EntityShareBps": 2537
+    },
+    "conservation": {
+     "baseExact": true,
+     "feeSplitExact": true,
+     "finalQuoteReserve": "4329788547",
+     "quoteExact": true,
+     "reserveCoversCurve": true,
+     "reserveMinusCurveRaw": "14",
+     "thresholdRaw": "5000000000",
+     "tradersQuoteIn": "10682760000",
+     "tradersQuoteOut": "6183682398"
+    },
+    "feeRealization": {
+     "totalFeeBpsOfVolume": 100
+    },
+    "fees": {
+     "creator": "67715628",
+     "partner": "67715629",
+     "partnerRevenue": "33857814",
+     "partnerRewards": "33857815",
+     "protocol": "33857798",
+     "referral": "0",
+     "total": "169289055",
+     "trading": "135431257"
+    },
+    "graduation": {
+     "completed": false,
+     "completedAtT": null,
+     "rejectedAfterCompletion": 0
+    },
+    "priceDislocation": {
+     "finalPrice18": "20226079747725",
+     "maxSingleTradeMoveBps": 6249,
+     "peakPrice18": "21648866717085",
+     "peakToFinalDrawdownBps": 657,
+     "startPrice18": "1562500181897"
+    },
+    "template": "STANDARD_V1@0-v0test-flat",
+    "traceHash": "9ec0de18c66ef2a0c832727d2d6284167de37ed461ea6a07dcea97ab2494b63f"
+   },
+   "hypotheses": [
+    {
+     "decay": "3268 bps (-2.4% relative drop)",
+     "flat": "3191 bps",
+     "id": "H1_BOT_ACQUISITION",
+     "outcome": "FAIL",
+     "statement": "Decay cuts the bot share of all base bought on the curve by at least 20% relative to flat."
+    },
+    {
+     "decay": "473508794 raw qUSD",
+     "flat": "438795765 raw qUSD",
+     "id": "H5_BOT_PNL",
+     "outcome": "FAIL",
+     "statement": "Decay lowers bot net PnL (realized plus marked at final spot) versus flat."
+    },
+    {
+     "decay": "134 bps",
+     "flat": "100 bps",
+     "id": "H2_ORGANIC_COST",
+     "outcome": "PASS",
+     "statement": "Decay raises the organic fee rate by no more than 50 bps of organic volume."
+    },
+    {
+     "decay": "false @ null",
+     "flat": "false @ null",
+     "id": "H3_GRADUATION_UNCHANGED",
+     "outcome": "PASS",
+     "statement": "Graduation outcome is the same under both fees."
+    },
+    {
+     "decay": "reserve-curve=15",
+     "flat": "reserve-curve=14",
+     "id": "H4_CONSERVATION",
+     "outcome": "PASS",
+     "statement": "Quote, base and fee-split bookkeeping is exact and the tracked reserve covers the curve-implied reserve."
+    }
+   ],
+   "id": "patient_sniper",
+   "seed": 1002,
+   "traceHash": "9ec0de18c66ef2a0c832727d2d6284167de37ed461ea6a07dcea97ab2494b63f"
+  },
+  {
+   "decay": {
+    "bots": {
+     "acquiredShareOfAllBuysBps": 0,
+     "heldAtEndBps": 0,
+     "netMarkedPnl": "0",
+     "present": false
+    },
+    "byClass": {
+     "organic": {
+      "baseHeld": "799999953434098",
+      "feeBpsOfVolume": 199,
+      "feesPaid": "166348845",
+      "markedValueAtSpot": "19999998835",
+      "netMarkedPnl": "14833649980",
+      "quotePaid": "6738525919",
+      "quoteReceived": "1572177064",
+      "rejected": 103,
+      "shareOfCurveSoldBps": 10000,
+      "volume": "8326583568"
+     }
+    },
+    "concentration": {
+     "botShareBps": 0,
+     "curveSoldBase": "799999953434098",
+     "earlyHolderShareBps": 859,
+     "entities": 51,
+     "hhiBps": 374,
+     "top5EntityShareBps": 3013
+    },
+    "conservation": {
+     "baseExact": true,
+     "feeSplitExact": true,
+     "finalQuoteReserve": "5000000010",
+     "quoteExact": true,
+     "reserveCoversCurve": true,
+     "reserveMinusCurveRaw": "10",
+     "thresholdRaw": "5000000000",
+     "tradersQuoteIn": "6738525919",
+     "tradersQuoteOut": "1572177064"
+    },
+    "feeRealization": {
+     "totalFeeBpsOfVolume": 199
+    },
+    "fees": {
+     "creator": "66539541",
+     "partner": "66539542",
+     "partnerRevenue": "33269771",
+     "partnerRewards": "33269771",
+     "protocol": "33269762",
+     "referral": "0",
+     "total": "166348845",
+     "trading": "133079083"
+    },
+    "graduation": {
+     "completed": true,
+     "completedAtT": 2121,
+     "rejectedAfterCompletion": 103
+    },
+    "priceDislocation": {
+     "finalPrice18": "24999999999999",
+     "maxSingleTradeMoveBps": 1472,
+     "peakPrice18": "24999999999999",
+     "peakToFinalDrawdownBps": 0,
+     "startPrice18": "1562500181897"
+    },
+    "template": "STANDARD_V1@0-sim-linear-decay-2500-100-12x10s",
+    "traceHash": "e7f74528ec7ed2f12c162cc95540dd47f442080ff274fe63652cf32a2b07125f"
+   },
+   "description": "240 organic events ($5-100 buys, about 12% are 50% sells), no bots.",
+   "events": 240,
+   "flat": {
+    "bots": {
+     "acquiredShareOfAllBuysBps": 0,
+     "heldAtEndBps": 0,
+     "netMarkedPnl": "0",
+     "present": false
+    },
+    "byClass": {
+     "organic": {
+      "baseHeld": "799999953434099",
+      "feeBpsOfVolume": 100,
+      "feesPaid": "83516994",
+      "markedValueAtSpot": "19999998835",
+      "netMarkedPnl": "14916481832",
+      "quotePaid": "6709396314",
+      "quoteReceived": "1625879311",
+      "rejected": 104,
+      "shareOfCurveSoldBps": 10000,
+      "volume": "8351698655"
+     }
+    },
+    "concentration": {
+     "botShareBps": 0,
+     "curveSoldBase": "799999953434099",
+     "earlyHolderShareBps": 1004,
+     "entities": 50,
+     "hhiBps": 396,
+     "top5EntityShareBps": 3170
+    },
+    "conservation": {
+     "baseExact": true,
+     "feeSplitExact": true,
+     "finalQuoteReserve": "5000000009",
+     "quoteExact": true,
+     "reserveCoversCurve": true,
+     "reserveMinusCurveRaw": "9",
+     "thresholdRaw": "5000000000",
+     "tradersQuoteIn": "6709396314",
+     "tradersQuoteOut": "1625879311"
+    },
+    "feeRealization": {
+     "totalFeeBpsOfVolume": 100
+    },
+    "fees": {
+     "creator": "33406801",
+     "partner": "33406802",
+     "partnerRevenue": "16703401",
+     "partnerRewards": "16703401",
+     "protocol": "16703391",
+     "referral": "0",
+     "total": "83516994",
+     "trading": "66813603"
+    },
+    "graduation": {
+     "completed": true,
+     "completedAtT": 2093,
+     "rejectedAfterCompletion": 104
+    },
+    "priceDislocation": {
+     "finalPrice18": "24999999999999",
+     "maxSingleTradeMoveBps": 1537,
+     "peakPrice18": "24999999999999",
+     "peakToFinalDrawdownBps": 0,
+     "startPrice18": "1562500181897"
+    },
+    "template": "STANDARD_V1@0-v0test-flat",
+    "traceHash": "e7f74528ec7ed2f12c162cc95540dd47f442080ff274fe63652cf32a2b07125f"
+   },
+   "hypotheses": [
+    {
+     "decay": "0 bps (0.0% relative drop)",
+     "flat": "0 bps",
+     "id": "H1_BOT_ACQUISITION",
+     "outcome": "NOT_APPLICABLE",
+     "statement": "Decay cuts the bot share of all base bought on the curve by at least 20% relative to flat."
+    },
+    {
+     "decay": "0 raw qUSD",
+     "flat": "0 raw qUSD",
+     "id": "H5_BOT_PNL",
+     "outcome": "NOT_APPLICABLE",
+     "statement": "Decay lowers bot net PnL (realized plus marked at final spot) versus flat."
+    },
+    {
+     "decay": "199 bps",
+     "flat": "100 bps",
+     "id": "H2_ORGANIC_COST",
+     "outcome": "FAIL",
+     "statement": "Decay raises the organic fee rate by no more than 50 bps of organic volume."
+    },
+    {
+     "decay": "true @ 2121",
+     "flat": "true @ 2093",
+     "id": "H3_GRADUATION_UNCHANGED",
+     "outcome": "PASS",
+     "statement": "Graduation outcome is the same under both fees."
+    },
+    {
+     "decay": "reserve-curve=10",
+     "flat": "reserve-curve=9",
+     "id": "H4_CONSERVATION",
+     "outcome": "PASS",
+     "statement": "Quote, base and fee-split bookkeeping is exact and the tracked reserve covers the curve-implied reserve."
+    }
+   ],
+   "id": "organic_only",
+   "seed": 1003,
+   "traceHash": "e7f74528ec7ed2f12c162cc95540dd47f442080ff274fe63652cf32a2b07125f"
+  },
+  {
+   "decay": {
+    "bots": {
+     "acquiredShareOfAllBuysBps": 4535,
+     "heldAtEndBps": 0,
+     "netMarkedPnl": "-702157337",
+     "present": true
+    },
+    "byClass": {
+     "dumper": {
+      "baseHeld": "0",
+      "feeBpsOfVolume": 1914,
+      "feesPaid": "750362884",
+      "markedValueAtSpot": "0",
+      "netMarkedPnl": "-702157337",
+      "quotePaid": "2201420000",
+      "quoteReceived": "1499262663",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 0,
+      "volume": "3918465347"
+     },
+     "organic": {
+      "baseHeld": "542293363961170",
+      "feeBpsOfVolume": 153,
+      "feesPaid": "39162167",
+      "markedValueAtSpot": "3506151708",
+      "netMarkedPnl": "1695159976",
+      "quotePaid": "2176100000",
+      "quoteReceived": "365108268",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 10000,
+      "volume": "2544896235"
+     }
+    },
+    "concentration": {
+     "botShareBps": 0,
+     "curveSoldBase": "542293363961170",
+     "earlyHolderShareBps": 0,
+     "entities": 46,
+     "hhiBps": 373,
+     "top5EntityShareBps": 2976
+    },
+    "conservation": {
+     "baseExact": true,
+     "feeSplitExact": true,
+     "finalQuoteReserve": "1723624018",
+     "quoteExact": true,
+     "reserveCoversCurve": true,
+     "reserveMinusCurveRaw": "7",
+     "thresholdRaw": "5000000000",
+     "tradersQuoteIn": "4377520000",
+     "tradersQuoteOut": "1864370931"
+    },
+    "feeRealization": {
+     "totalFeeBpsOfVolume": 1221
+    },
+    "fees": {
+     "creator": "315810024",
+     "partner": "315810025",
+     "partnerRevenue": "157905012",
+     "partnerRewards": "157905013",
+     "protocol": "157905002",
+     "referral": "0",
+     "total": "789525051",
+     "trading": "631620049"
+    },
+    "graduation": {
+     "completed": false,
+     "completedAtT": null,
+     "rejectedAfterCompletion": 0
+    },
+    "priceDislocation": {
+     "finalPrice18": "6465415108211",
+     "maxSingleTradeMoveBps": 2541,
+     "peakPrice18": "6500778596408",
+     "peakToFinalDrawdownBps": 54,
+     "startPrice18": "1562500181897"
+    },
+    "template": "STANDARD_V1@0-sim-linear-decay-2500-100-12x10s",
+    "traceHash": "b3d7b20b8a091f8c896a4825049c6da826f82accc4e0d8cb20b5877205efde14"
+   },
+   "description": "A coordinated group of 8 wallets buys $200-400 each in 0-20 s and dumps everything at 60-75 s (inside the decay window); 90 organic events.",
+   "events": 106,
+   "flat": {
+    "bots": {
+     "acquiredShareOfAllBuysBps": 4845,
+     "heldAtEndBps": 0,
+     "netMarkedPnl": "18365202",
+     "present": true
+    },
+    "byClass": {
+     "dumper": {
+      "baseHeld": "0",
+      "feeBpsOfVolume": 100,
+      "feesPaid": "44436277",
+      "markedValueAtSpot": "0",
+      "netMarkedPnl": "18365202",
+      "quotePaid": "2201420000",
+      "quoteReceived": "2219785202",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 0,
+      "volume": "4443627279"
+     },
+     "organic": {
+      "baseHeld": "542022064777013",
+      "feeBpsOfVolume": 100,
+      "feesPaid": "25457672",
+      "markedValueAtSpot": "3500774262",
+      "netMarkedPnl": "1690644245",
+      "quotePaid": "2176100000",
+      "quoteReceived": "365969983",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 10000,
+      "volume": "2545766655"
+     }
+    },
+    "concentration": {
+     "botShareBps": 0,
+     "curveSoldBase": "542022064777013",
+     "earlyHolderShareBps": 0,
+     "entities": 46,
+     "hhiBps": 373,
+     "top5EntityShareBps": 2983
+    },
+    "conservation": {
+     "baseExact": true,
+     "feeSplitExact": true,
+     "finalQuoteReserve": "1721870866",
+     "quoteExact": true,
+     "reserveCoversCurve": true,
+     "reserveMinusCurveRaw": "10",
+     "thresholdRaw": "5000000000",
+     "tradersQuoteIn": "4377520000",
+     "tradersQuoteOut": "2585755185"
+    },
+    "feeRealization": {
+     "totalFeeBpsOfVolume": 100
+    },
+    "fees": {
+     "creator": "27957583",
+     "partner": "27957583",
+     "partnerRevenue": "13978791",
+     "partnerRewards": "13978792",
+     "protocol": "13978783",
+     "referral": "0",
+     "total": "69893949",
+     "trading": "55915166"
+    },
+    "graduation": {
+     "completed": false,
+     "completedAtT": null,
+     "rejectedAfterCompletion": 0
+    },
+    "priceDislocation": {
+     "finalPrice18": "6458730169667",
+     "maxSingleTradeMoveBps": 3415,
+     "peakPrice18": "8657689159439",
+     "peakToFinalDrawdownBps": 2539,
+     "startPrice18": "1562500181897"
+    },
+    "template": "STANDARD_V1@0-v0test-flat",
+    "traceHash": "b3d7b20b8a091f8c896a4825049c6da826f82accc4e0d8cb20b5877205efde14"
+   },
+   "hypotheses": [
+    {
+     "decay": "4535 bps (6.4% relative drop)",
+     "flat": "4845 bps",
+     "id": "H1_BOT_ACQUISITION",
+     "outcome": "FAIL",
+     "statement": "Decay cuts the bot share of all base bought on the curve by at least 20% relative to flat."
+    },
+    {
+     "decay": "-702157337 raw qUSD",
+     "flat": "18365202 raw qUSD",
+     "id": "H5_BOT_PNL",
+     "outcome": "PASS",
+     "statement": "Decay lowers bot net PnL (realized plus marked at final spot) versus flat."
+    },
+    {
+     "decay": "153 bps",
+     "flat": "100 bps",
+     "id": "H2_ORGANIC_COST",
+     "outcome": "FAIL",
+     "statement": "Decay raises the organic fee rate by no more than 50 bps of organic volume."
+    },
+    {
+     "decay": "false @ null",
+     "flat": "false @ null",
+     "id": "H3_GRADUATION_UNCHANGED",
+     "outcome": "PASS",
+     "statement": "Graduation outcome is the same under both fees."
+    },
+    {
+     "decay": "reserve-curve=7",
+     "flat": "reserve-curve=10",
+     "id": "H4_CONSERVATION",
+     "outcome": "PASS",
+     "statement": "Quote, base and fee-split bookkeeping is exact and the tracked reserve covers the curve-implied reserve."
+    }
+   ],
+   "id": "pump_dump",
+   "seed": 1004,
+   "traceHash": "b3d7b20b8a091f8c896a4825049c6da826f82accc4e0d8cb20b5877205efde14"
+  },
+  {
+   "decay": {
+    "bots": {
+     "acquiredShareOfAllBuysBps": 0,
+     "heldAtEndBps": 0,
+     "netMarkedPnl": "0",
+     "present": false
+    },
+    "byClass": {
+     "organic": {
+      "baseHeld": "314739791605562",
+      "feeBpsOfVolume": 137,
+      "feesPaid": "12512789",
+      "markedValueAtSpot": "989641675",
+      "netMarkedPnl": "279499358",
+      "quotePaid": "811220000",
+      "quoteReceived": "101077683",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 10000,
+      "volume": "913318672"
+     }
+    },
+    "concentration": {
+     "botShareBps": 0,
+     "curveSoldBase": "314739791605562",
+     "earlyHolderShareBps": 0,
+     "entities": 28,
+     "hhiBps": 544,
+     "top5EntityShareBps": 4114
+    },
+    "conservation": {
+     "baseExact": true,
+     "feeSplitExact": true,
+     "finalQuoteReserve": "697629528",
+     "quoteExact": true,
+     "reserveCoversCurve": true,
+     "reserveMinusCurveRaw": "2",
+     "thresholdRaw": "5000000000",
+     "tradersQuoteIn": "811220000",
+     "tradersQuoteOut": "101077683"
+    },
+    "feeRealization": {
+     "totalFeeBpsOfVolume": 137
+    },
+    "fees": {
+     "creator": "5005117",
+     "partner": "5005117",
+     "partnerRevenue": "2502558",
+     "partnerRewards": "2502559",
+     "protocol": "2502555",
+     "referral": "0",
+     "total": "12512789",
+     "trading": "10010234"
+    },
+    "graduation": {
+     "completed": false,
+     "completedAtT": null,
+     "rejectedAfterCompletion": 0
+    },
+    "priceDislocation": {
+     "finalPrice18": "3144316993991",
+     "maxSingleTradeMoveBps": 431,
+     "peakPrice18": "3144316993991",
+     "peakToFinalDrawdownBps": 0,
+     "startPrice18": "1562500181897"
+    },
+    "template": "STANDARD_V1@0-sim-linear-decay-2500-100-12x10s",
+    "traceHash": "aec0b047c34dca28aab54b7ed0210470f36e3f36c510aadb8e59ff2c9978cb40"
+   },
+   "description": "40 small organic buys ($5-40) spread over about an hour; should not graduate.",
+   "events": 40,
+   "flat": {
+    "bots": {
+     "acquiredShareOfAllBuysBps": 0,
+     "heldAtEndBps": 0,
+     "netMarkedPnl": "0",
+     "present": false
+    },
+    "byClass": {
+     "organic": {
+      "baseHeld": "315828393942563",
+      "feeBpsOfVolume": 100,
+      "feesPaid": "9132707",
+      "markedValueAtSpot": "995946261",
+      "netMarkedPnl": "285756152",
+      "quotePaid": "811220000",
+      "quoteReceived": "101029891",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 10000,
+      "volume": "913270398"
+     }
+    },
+    "concentration": {
+     "botShareBps": 0,
+     "curveSoldBase": "315828393942563",
+     "earlyHolderShareBps": 0,
+     "entities": 28,
+     "hhiBps": 547,
+     "top5EntityShareBps": 4155
+    },
+    "conservation": {
+     "baseExact": true,
+     "feeSplitExact": true,
+     "finalQuoteReserve": "701057402",
+     "quoteExact": true,
+     "reserveCoversCurve": true,
+     "reserveMinusCurveRaw": "3",
+     "thresholdRaw": "5000000000",
+     "tradersQuoteIn": "811220000",
+     "tradersQuoteOut": "101029891"
+    },
+    "feeRealization": {
+     "totalFeeBpsOfVolume": 100
+    },
+    "fees": {
+     "creator": "3653084",
+     "partner": "3653084",
+     "partnerRevenue": "1826542",
+     "partnerRewards": "1826542",
+     "protocol": "1826539",
+     "referral": "0",
+     "total": "9132707",
+     "trading": "7306168"
+    },
+    "graduation": {
+     "completed": false,
+     "completedAtT": null,
+     "rejectedAfterCompletion": 0
+    },
+    "priceDislocation": {
+     "finalPrice18": "3153441175572",
+     "maxSingleTradeMoveBps": 430,
+     "peakPrice18": "3153441175572",
+     "peakToFinalDrawdownBps": 0,
+     "startPrice18": "1562500181897"
+    },
+    "template": "STANDARD_V1@0-v0test-flat",
+    "traceHash": "aec0b047c34dca28aab54b7ed0210470f36e3f36c510aadb8e59ff2c9978cb40"
+   },
+   "hypotheses": [
+    {
+     "decay": "0 bps (0.0% relative drop)",
+     "flat": "0 bps",
+     "id": "H1_BOT_ACQUISITION",
+     "outcome": "NOT_APPLICABLE",
+     "statement": "Decay cuts the bot share of all base bought on the curve by at least 20% relative to flat."
+    },
+    {
+     "decay": "0 raw qUSD",
+     "flat": "0 raw qUSD",
+     "id": "H5_BOT_PNL",
+     "outcome": "NOT_APPLICABLE",
+     "statement": "Decay lowers bot net PnL (realized plus marked at final spot) versus flat."
+    },
+    {
+     "decay": "137 bps",
+     "flat": "100 bps",
+     "id": "H2_ORGANIC_COST",
+     "outcome": "PASS",
+     "statement": "Decay raises the organic fee rate by no more than 50 bps of organic volume."
+    },
+    {
+     "decay": "false @ null",
+     "flat": "false @ null",
+     "id": "H3_GRADUATION_UNCHANGED",
+     "outcome": "PASS",
+     "statement": "Graduation outcome is the same under both fees."
+    },
+    {
+     "decay": "reserve-curve=2",
+     "flat": "reserve-curve=3",
+     "id": "H4_CONSERVATION",
+     "outcome": "PASS",
+     "statement": "Quote, base and fee-split bookkeeping is exact and the tracked reserve covers the curve-implied reserve."
+    }
+   ],
+   "id": "low_demand",
+   "seed": 1005,
+   "traceHash": "aec0b047c34dca28aab54b7ed0210470f36e3f36c510aadb8e59ff2c9978cb40"
+  },
+  {
+   "decay": {
+    "bots": {
+     "acquiredShareOfAllBuysBps": 3885,
+     "heldAtEndBps": 0,
+     "netMarkedPnl": "281470116",
+     "present": true
+    },
+    "byClass": {
+     "organic": {
+      "baseHeld": "799999953434047",
+      "feeBpsOfVolume": 126,
+      "feesPaid": "135171668",
+      "markedValueAtSpot": "19999998835",
+      "netMarkedPnl": "13800210851",
+      "quotePaid": "8413839111",
+      "quoteReceived": "2214051127",
+      "rejected": 15,
+      "shareOfCurveSoldBps": 10000,
+      "volume": "10653313714"
+     },
+     "sybil": {
+      "baseHeld": "0",
+      "feeBpsOfVolume": 1240,
+      "feesPaid": "783146177",
+      "markedValueAtSpot": "0",
+      "netMarkedPnl": "281470116",
+      "quotePaid": "3000000000",
+      "quoteReceived": "3281470116",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 0,
+      "volume": "6314616293"
+     }
+    },
+    "concentration": {
+     "botShareBps": 0,
+     "curveSoldBase": "799999953434047",
+     "earlyHolderShareBps": 0,
+     "entities": 56,
+     "hhiBps": 264,
+     "top5EntityShareBps": 2300
+    },
+    "conservation": {
+     "baseExact": true,
+     "feeSplitExact": true,
+     "finalQuoteReserve": "5000000023",
+     "quoteExact": true,
+     "reserveCoversCurve": true,
+     "reserveMinusCurveRaw": "23",
+     "thresholdRaw": "5000000000",
+     "tradersQuoteIn": "11413839111",
+     "tradersQuoteOut": "5495521243"
+    },
+    "feeRealization": {
+     "totalFeeBpsOfVolume": 541
+    },
+    "fees": {
+     "creator": "367327148",
+     "partner": "367327149",
+     "partnerRevenue": "183663574",
+     "partnerRewards": "183663575",
+     "protocol": "183663548",
+     "referral": "0",
+     "total": "918317845",
+     "trading": "734654297"
+    },
+    "graduation": {
+     "completed": true,
+     "completedAtT": 3117,
+     "rejectedAfterCompletion": 15
+    },
+    "priceDislocation": {
+     "finalPrice18": "24999999999999",
+     "maxSingleTradeMoveBps": 1703,
+     "peakPrice18": "24999999999999",
+     "peakToFinalDrawdownBps": 0,
+     "startPrice18": "1562500181897"
+    },
+    "template": "STANDARD_V1@0-sim-linear-decay-2500-100-12x10s",
+    "traceHash": "fbf1b67a54546e9d25e79c5ea30c8e69bba467468d0a76e3065669fc2de3689c"
+   },
+   "description": "One entity splits $3,000 across 30 wallets at 0-3 s, 220 organic events follow, it tries to exit at 400-700 s.",
+   "events": 280,
+   "flat": {
+    "bots": {
+     "acquiredShareOfAllBuysBps": 4146,
+     "heldAtEndBps": 0,
+     "netMarkedPnl": "1070874809",
+     "present": true
+    },
+    "byClass": {
+     "organic": {
+      "baseHeld": "799999953434049",
+      "feeBpsOfVolume": 100,
+      "feesPaid": "106455097",
+      "markedValueAtSpot": "19999998835",
+      "netMarkedPnl": "13751548940",
+      "quotePaid": "8435931304",
+      "quoteReceived": "2187481409",
+      "rejected": 15,
+      "shareOfCurveSoldBps": 10000,
+      "volume": "10645508496"
+     },
+     "sybil": {
+      "baseHeld": "0",
+      "feeBpsOfVolume": 100,
+      "feesPaid": "71119963",
+      "markedValueAtSpot": "0",
+      "netMarkedPnl": "1070874809",
+      "quotePaid": "3000000000",
+      "quoteReceived": "4070874809",
+      "rejected": 0,
+      "shareOfCurveSoldBps": 0,
+      "volume": "7111994772"
+     }
+    },
+    "concentration": {
+     "botShareBps": 0,
+     "curveSoldBase": "799999953434049",
+     "earlyHolderShareBps": 0,
+     "entities": 56,
+     "hhiBps": 267,
+     "top5EntityShareBps": 2353
+    },
+    "conservation": {
+     "baseExact": true,
+     "feeSplitExact": true,
+     "finalQuoteReserve": "5000000026",
+     "quoteExact": true,
+     "reserveCoversCurve": true,
+     "reserveMinusCurveRaw": "26",
+     "thresholdRaw": "5000000000",
+     "tradersQuoteIn": "11435931304",
+     "tradersQuoteOut": "6258356218"
+    },
+    "feeRealization": {
+     "totalFeeBpsOfVolume": 100
+    },
+    "fees": {
+     "creator": "71030033",
+     "partner": "71030034",
+     "partnerRevenue": "35515017",
+     "partnerRewards": "35515017",
+     "protocol": "35514993",
+     "referral": "0",
+     "total": "177575060",
+     "trading": "142060067"
+    },
+    "graduation": {
+     "completed": true,
+     "completedAtT": 3117,
+     "rejectedAfterCompletion": 15
+    },
+    "priceDislocation": {
+     "finalPrice18": "24999999999999",
+     "maxSingleTradeMoveBps": 2261,
+     "peakPrice18": "24999999999999",
+     "peakToFinalDrawdownBps": 0,
+     "startPrice18": "1562500181897"
+    },
+    "template": "STANDARD_V1@0-v0test-flat",
+    "traceHash": "fbf1b67a54546e9d25e79c5ea30c8e69bba467468d0a76e3065669fc2de3689c"
+   },
+   "hypotheses": [
+    {
+     "decay": "3885 bps (6.3% relative drop)",
+     "flat": "4146 bps",
+     "id": "H1_BOT_ACQUISITION",
+     "outcome": "FAIL",
+     "statement": "Decay cuts the bot share of all base bought on the curve by at least 20% relative to flat."
+    },
+    {
+     "decay": "281470116 raw qUSD",
+     "flat": "1070874809 raw qUSD",
+     "id": "H5_BOT_PNL",
+     "outcome": "PASS",
+     "statement": "Decay lowers bot net PnL (realized plus marked at final spot) versus flat."
+    },
+    {
+     "decay": "126 bps",
+     "flat": "100 bps",
+     "id": "H2_ORGANIC_COST",
+     "outcome": "PASS",
+     "statement": "Decay raises the organic fee rate by no more than 50 bps of organic volume."
+    },
+    {
+     "decay": "true @ 3117",
+     "flat": "true @ 3117",
+     "id": "H3_GRADUATION_UNCHANGED",
+     "outcome": "PASS",
+     "statement": "Graduation outcome is the same under both fees."
+    },
+    {
+     "decay": "reserve-curve=23",
+     "flat": "reserve-curve=26",
+     "id": "H4_CONSERVATION",
+     "outcome": "PASS",
+     "statement": "Quote, base and fee-split bookkeeping is exact and the tracked reserve covers the curve-implied reserve."
+    }
+   ],
+   "id": "sybil_split",
+   "seed": 1006,
+   "traceHash": "fbf1b67a54546e9d25e79c5ea30c8e69bba467468d0a76e3065669fc2de3689c"
+  }
+ ]
+}

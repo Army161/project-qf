@@ -1,0 +1,68 @@
+{
+  "tool": "tools/deps/prove-chain-absent.ts",
+  "generatedAt": "2026-09-27T16:13:07.398Z",
+  "result": "PASS",
+  "override": "\"@meteora-ag/cp-amm-sdk@1.4.10>chain\": \"-\"",
+  "checks": [
+    {
+      "id": "override-declared",
+      "status": "PASS",
+      "detail": "pnpm-workspace.yaml contains \"@meteora-ag/cp-amm-sdk@1.4.10>chain\": \"-\""
+    },
+    {
+      "id": "lockfile-override-recorded",
+      "status": "PASS",
+      "detail": "pnpm-lock.yaml overrides section records the removal"
+    },
+    {
+      "id": "lockfile-no-chain-package",
+      "status": "PASS",
+      "detail": "no chain@* key in packages/snapshots"
+    },
+    {
+      "id": "lockfile-no-chain-edge",
+      "status": "PASS",
+      "detail": "no dependency edge named chain"
+    },
+    {
+      "id": "resolved-graph",
+      "status": "PASS",
+      "detail": "0 of 492 graph occurrences are named chain"
+    },
+    {
+      "id": "node_modules",
+      "status": "PASS",
+      "detail": "no chain directory in the virtual store or any node_modules"
+    },
+    {
+      "id": "runtime-module-cache",
+      "status": "PASS",
+      "detail": "CJS load of both SDKs: 306 modules, chain modules 0, resolvable=false"
+    },
+    {
+      "id": "published-artifact-imports",
+      "status": "PASS",
+      "detail": "no chain import/require/dynamic import in index.d.mts, index.d.ts, index.js, index.js.map, index.mjs, index.mjs.map"
+    },
+    {
+      "id": "published-artifact-unmodified",
+      "status": "PASS",
+      "detail": "installed cp-amm-sdk package.json still declares chain ^0.4.0 (artifact not patched)"
+    },
+    {
+      "id": "published-artifact-integrity",
+      "status": "PASS",
+      "detail": "lockfile integrity sha512-Y3UPjP91VWrj86hOr4kDmU1UXiESspy8YP6Z/4XtWD1eCVwUN0xMEzCvKXM2IRz5ECSj8alO2od1czhMhvcD8g== matches the inspected npm pack tarball"
+    },
+    {
+      "id": "sbom:sbom/project-qf.cdx.json",
+      "status": "PASS",
+      "detail": "133 components, none named chain"
+    },
+    {
+      "id": "sbom:sbom/apps-web.cdx.json",
+      "status": "PASS",
+      "detail": "53 components, none named chain"
+    }
+  ]
+}

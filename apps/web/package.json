@@ -1,0 +1,22 @@
+{
+  "name": "@project-qf/web",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "description": "MOCK lifecycle UI (offline V0). Browser bundle: must never contain @solana/web3.js v1, rpc-websockets or @meteora-ag/*.",
+  "scripts": {
+    "build": "node build.ts"
+  },
+  "dependencies": {
+    "@project-qf/core": "workspace:*",
+    "@project-qf/validator": "workspace:*",
+    "@project-qf/policy": "workspace:*",
+    "@project-qf/rewards": "workspace:*",
+    "@project-qf/tx": "workspace:*"
+  },
+  "devDependencies": {
+    "playwright-core": "1.56.1",
+    "esbuild": "0.28.2"
+  }
+}

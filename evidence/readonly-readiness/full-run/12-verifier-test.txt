@@ -1,0 +1,347 @@
+# cmd (spec/tools/program-verify): pnpm test
+# at: 2026-09-27T16:09:52Z
+
+> @project-qf/program-verify@0.4.0 test /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier
+> node --test test/*.test.mjs
+
+TAP version 13
+# Subtest: CFG-TYPE: the Customizable route with a Dynamic (1) config and the DBC pool authority passes compatibility
+ok 1 - CFG-TYPE: the Customizable route with a Dynamic (1) config and the DBC pool authority passes compatibility
+  ---
+  duration_ms: 35.764247
+  type: 'test'
+  ...
+# Subtest: CFG-TYPE: a full 328-byte Customizable config with config_type 0 (Static on a dynamic route) fails
+ok 2 - CFG-TYPE: a full 328-byte Customizable config with config_type 0 (Static on a dynamic route) fails
+  ---
+  duration_ms: 21.55338
+  type: 'test'
+  ...
+# Subtest: CFG-TYPE: a full 328-byte Customizable config with config_type 255 (unknown enum) fails
+ok 3 - CFG-TYPE: a full 328-byte Customizable config with config_type 255 (unknown enum) fails
+  ---
+  duration_ms: 12.475243
+  type: 'test'
+  ...
+# Subtest: CFG-TYPE: the right type with the wrong creator authority still fails
+ok 4 - CFG-TYPE: the right type with the wrong creator authority still fails
+  ---
+  duration_ms: 14.727896
+  type: 'test'
+  ...
+# Subtest: CFG-TYPE: correct bytes under the wrong owner fail CONFIG and never reach compatibility PASS
+ok 5 - CFG-TYPE: correct bytes under the wrong owner fail CONFIG and never reach compatibility PASS
+  ---
+  duration_ms: 33.786086
+  type: 'test'
+  ...
+# Subtest: CFG-TYPE: fixed-fee routes are explicitly NOT_ASSESSED in V0, not silently accepted
+ok 6 - CFG-TYPE: fixed-fee routes are explicitly NOT_ASSESSED in V0, not silently accepted
+  ---
+  duration_ms: 18.315832
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: an oversized RPC body is refused while streaming, cancelled, and never fully read
+ok 7 - BODY-LIMIT: an oversized RPC body is refused while streaming, cancelled, and never fully read
+  ---
+  duration_ms: 26.713862
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: a false small Content-Length header cannot bypass the cap
+ok 8 - BODY-LIMIT: a false small Content-Length header cannot bypass the cap
+  ---
+  duration_ms: 1.71192
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: a declared oversize Content-Length is refused before reading and the body is cancelled
+ok 9 - BODY-LIMIT: a declared oversize Content-Length is refused before reading and the body is cancelled
+  ---
+  duration_ms: 0.812735
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: exactly at the cap is accepted; one byte over is refused (chunk boundaries)
+ok 10 - BODY-LIMIT: exactly at the cap is accepted; one byte over is refused (chunk boundaries)
+  ---
+  duration_ms: 1.996903
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: the deadline covers body consumption, not just headers; the stalled body is cancelled
+ok 11 - BODY-LIMIT: the deadline covers body consumption, not just headers; the stalled body is cancelled
+  ---
+  duration_ms: 102.567209
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: an oversized error body is bounded too
+ok 12 - BODY-LIMIT: an oversized error body is bounded too
+  ---
+  duration_ms: 1.071316
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: per-operation limits let a legitimate large ProgramData read through while small reads stay small
+ok 13 - BODY-LIMIT: per-operation limits let a legitimate large ProgramData read through while small reads stay small
+  ---
+  duration_ms: 0.234456
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: account reads declare which size class they need; a small read of a large account is refused
+ok 14 - BODY-LIMIT: account reads declare which size class they need; a small read of a large account is refused
+  ---
+  duration_ms: 5.251367
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: decoded account bytes are bounded separately from the encoded body
+ok 15 - BODY-LIMIT: decoded account bytes are bounded separately from the encoded body
+  ---
+  duration_ms: 1.016148
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: the compressed IDL is inflated with a separate decompressed-output cap
+ok 16 - BODY-LIMIT: the compressed IDL is inflated with a separate decompressed-output cap
+  ---
+  duration_ms: 225.372194
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: the OtterSec status body is bounded and an oversize body becomes an error value, not a throw
+ok 17 - BODY-LIMIT: the OtterSec status body is bounded and an oversize body becomes an error value, not a throw
+  ---
+  duration_ms: 6.716557
+  type: 'test'
+  ...
+# Subtest: QF-SEC-02: an owner plus 8-byte discriminator only is not a valid Config
+ok 18 - QF-SEC-02: an owner plus 8-byte discriminator only is not a valid Config
+  ---
+  duration_ms: 36.934262
+  type: 'test'
+  ...
+# Subtest: QF-SEC-02: a truncated Config (disc + 100 bytes) fails
+ok 19 - QF-SEC-02: a truncated Config (disc + 100 bytes) fails
+  ---
+  duration_ms: 19.529108
+  type: 'test'
+  ...
+# Subtest: QF-SEC-02: an over-long Config with trailing bytes fails
+ok 20 - QF-SEC-02: an over-long Config with trailing bytes fails
+  ---
+  duration_ms: 16.091211
+  type: 'test'
+  ...
+# Subtest: QF-SEC-02: a full-length Config that is incompatible with DBC migration fails
+ok 21 - QF-SEC-02: a full-length Config that is incompatible with DBC migration fails
+  ---
+  duration_ms: 19.111438
+  type: 'test'
+  ...
+# Subtest: QF-SEC-03: credentials in the URL path, userinfo, query and fragment are redacted
+ok 22 - QF-SEC-03: credentials in the URL path, userinfo, query and fragment are redacted
+  ---
+  duration_ms: 0.654823
+  type: 'test'
+  ...
+# Subtest: QF-SEC-03: nested causes and AggregateError members are redacted
+ok 23 - QF-SEC-03: nested causes and AggregateError members are redacted
+  ---
+  duration_ms: 1.496605
+  type: 'test'
+  ...
+# Subtest: QF-SEC-03: the report endpoint never carries the path token
+ok 24 - QF-SEC-03: the report endpoint never carries the path token
+  ---
+  duration_ms: 21.326717
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04a: a report with only CONNECTIVITY and CLUSTER_IDENTITY PASS does not exit 0
+ok 25 - QF-SEC-04a: a report with only CONNECTIVITY and CLUSTER_IDENTITY PASS does not exit 0
+  ---
+  duration_ms: 0.347408
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04a: dropping one required check from a satisfied report does not exit 0
+ok 26 - QF-SEC-04a: dropping one required check from a satisfied report does not exit 0
+  ---
+  duration_ms: 14.219918
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04a: a duplicated required check does not exit 0
+ok 27 - QF-SEC-04a: a duplicated required check does not exit 0
+  ---
+  duration_ms: 33.549669
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04b: an explicit second-provider disagreement does not exit 0
+ok 28 - QF-SEC-04b: an explicit second-provider disagreement does not exit 0
+  ---
+  duration_ms: 35.483656
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04b: an unreachable second provider is UNAVAILABLE (exit 2), not agreement or disagreement
+ok 29 - QF-SEC-04b: an unreachable second provider is UNAVAILABLE (exit 2), not agreement or disagreement
+  ---
+  duration_ms: 23.2458
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04: an invalid upgrade-authority option tag is FAIL, never immutable
+ok 30 - QF-SEC-04: an invalid upgrade-authority option tag is FAIL, never immutable
+  ---
+  duration_ms: 15.87679
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04: a Program account with trailing bytes is not accepted
+ok 31 - QF-SEC-04: a Program account with trailing bytes is not accepted
+  ---
+  duration_ms: 14.512512
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04: a recoverable RPC error on one account is a per-check ERROR, not a thrown run
+ok 32 - QF-SEC-04: a recoverable RPC error on one account is a per-check ERROR, not a thrown run
+  ---
+  duration_ms: 19.370986
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04: RPC context slots and commitment are retained on account-derived checks
+ok 33 - QF-SEC-04: RPC context slots and commitment are retained on account-derived checks
+  ---
+  duration_ms: 15.2379
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04: the report carries a schema version
+ok 34 - QF-SEC-04: the report carries a schema version
+  ---
+  duration_ms: 14.008541
+  type: 'test'
+  ...
+# Subtest: CLI contract: only the original flags are accepted
+ok 35 - CLI contract: only the original flags are accepted
+  ---
+  duration_ms: 2.793627
+  type: 'test'
+  ...
+# Subtest: happy path on a consistent fake cluster: required checks pass, status fields are separate
+ok 36 - happy path on a consistent fake cluster: required checks pass, status fields are separate
+  ---
+  duration_ms: 37.032352
+  type: 'test'
+  ...
+# Subtest: executable hash trims trailing zero bytes after the 45-byte header (OtterSec convention)
+ok 37 - executable hash trims trailing zero bytes after the 45-byte header (OtterSec convention)
+  ---
+  duration_ms: 12.613271
+  type: 'test'
+  ...
+# Subtest: wrong genesis: CLUSTER_IDENTITY FAIL and no program data is trusted
+ok 38 - wrong genesis: CLUSTER_IDENTITY FAIL and no program data is trusted
+  ---
+  duration_ms: 13.029797
+  type: 'test'
+  ...
+# Subtest: localnet genesis cannot be validated and is reported, not passed
+ok 39 - localnet genesis cannot be validated and is reported, not passed
+  ---
+  duration_ms: 16.834594
+  type: 'test'
+  ...
+# Subtest: missing program: PROGRAM_PRESENCE FAIL, dependent checks UNKNOWN
+ok 40 - missing program: PROGRAM_PRESENCE FAIL, dependent checks UNKNOWN
+  ---
+  duration_ms: 29.051507
+  type: 'test'
+  ...
+# Subtest: not executable / wrong owner: LOADER_STATE FAIL
+ok 41 - not executable / wrong owner: LOADER_STATE FAIL
+  ---
+  duration_ms: 48.597542
+  type: 'test'
+  ...
+# Subtest: missing or malformed ProgramData: PROGRAMDATA FAIL, authority UNKNOWN
+ok 42 - missing or malformed ProgramData: PROGRAMDATA FAIL, authority UNKNOWN
+  ---
+  duration_ms: 40.192806
+  type: 'test'
+  ...
+# Subtest: immutable program (no authority) is recorded as null, not a failure
+ok 43 - immutable program (no authority) is recorded as null, not a failure
+  ---
+  duration_ms: 15.730109
+  type: 'test'
+  ...
+# Subtest: config with wrong owner or discriminator: CONFIG FAIL
+ok 44 - config with wrong owner or discriminator: CONFIG FAIL
+  ---
+  duration_ms: 28.650352
+  type: 'test'
+  ...
+# Subtest: OtterSec is_verified=false is recorded as not verified, never as a mismatch
+ok 45 - OtterSec is_verified=false is recorded as not verified, never as a mismatch
+  ---
+  duration_ms: 15.687729
+  type: 'test'
+  ...
+# Subtest: RPC failure: CONNECTIVITY FAIL with a sanitized error, exit code 2
+ok 46 - RPC failure: CONNECTIVITY FAIL with a sanitized error, exit code 2
+  ---
+  duration_ms: 23.931312
+  type: 'test'
+  ...
+# Subtest: sanitizers remove credentials from URLs and errors
+ok 47 - sanitizers remove credentials from URLs and errors
+  ---
+  duration_ms: 0.396172
+  type: 'test'
+  ...
+# Subtest: JSON-RPC client refuses every method outside the read-only allowlist
+ok 48 - JSON-RPC client refuses every method outside the read-only allowlist
+  ---
+  duration_ms: 26.50983
+  type: 'test'
+  ...
+# Subtest: static scan: verifier source contains no signing, sending or airdrop capability
+ok 49 - static scan: verifier source contains no signing, sending or airdrop capability
+  ---
+  duration_ms: 1.031278
+  type: 'test'
+  ...
+# Subtest: markdown output labels the diagnostic and never claims live PASS when RPC failed
+ok 50 - markdown output labels the diagnostic and never claims live PASS when RPC failed
+  ---
+  duration_ms: 17.059235
+  type: 'test'
+  ...
+# Subtest: JSON-RPC client keeps the context slot and pins minContextSlot on a consistent re-read
+ok 51 - JSON-RPC client keeps the context slot and pins minContextSlot on a consistent re-read
+  ---
+  duration_ms: 1.290718
+  type: 'test'
+  ...
+# Subtest: pinned DAMM v2 Config layout: provenance, file hash and 320-byte body
+ok 52 - pinned DAMM v2 Config layout: provenance, file hash and 320-byte body
+  ---
+  duration_ms: 0.889719
+  type: 'test'
+  ...
+# Subtest: explicit plan: a missing cluster report or a missing cross-check is not success
+ok 53 - explicit plan: a missing cluster report or a missing cross-check is not success
+  ---
+  duration_ms: 21.450132
+  type: 'test'
+  ...
+# Subtest: cross-check: an initial difference that resolves on a consistent re-read passes, with the slot recorded
+ok 54 - cross-check: an initial difference that resolves on a consistent re-read passes, with the slot recorded
+  ---
+  duration_ms: 31.03144
+  type: 'test'
+  ...
+# Subtest: CLI end to end (offline, localhost only): unreachable endpoints exit 2 and never print path tokens
+ok 55 - CLI end to end (offline, localhost only): unreachable endpoints exit 2 and never print path tokens
+  ---
+  duration_ms: 156.027943
+  type: 'test'
+  ...
+1..55
+# tests 55
+# suites 0
+# pass 55
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 662.855154
+# exit: 0

@@ -1,0 +1,57 @@
+# cmd: node --test packages/adapter-meteora-dbc/test/sec-a.test.ts
+# at: 2026-09-27T12:12:50Z node v22.22.2
+TAP version 13
+# (node:3649) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+# (Use `node --trace-deprecation ...` to show where the warning was created)
+# Subtest: GHSA-3gc7-fjrx-p6mg bigint-buffer: installed 1.1.5 is the QF-patched build with no native load and no addon
+ok 1 - GHSA-3gc7-fjrx-p6mg bigint-buffer: installed 1.1.5 is the QF-patched build with no native load and no addon
+  ---
+  duration_ms: 2.353445
+  type: 'test'
+  ...
+# Subtest: bigint-buffer pure-JS bounds: reads never exceed the buffer; widths are fixed by QF u64 validation
+ok 2 - bigint-buffer pure-JS bounds: reads never exceed the buffer; widths are fixed by QF u64 validation
+  ---
+  duration_ms: 1.758617
+  type: 'test'
+  ...
+# Subtest: GHSA-82x6-q7mm-w9cf / GHSA-v5mp-jgw5-2x6j toml: anchor resolves the scoped 4.2.0 override; API parity and fixes hold
+ok 3 - GHSA-82x6-q7mm-w9cf / GHSA-v5mp-jgw5-2x6j toml: anchor resolves the scoped 4.2.0 override; API parity and fixes hold
+  ---
+  duration_ms: 7.313262
+  type: 'test'
+  ...
+# Subtest: GHSA-w5hq-g745-h8pq uuid 8.3.2: only jayson depends on it and every call site is v4() without a buffer
+ok 4 - GHSA-w5hq-g745-h8pq uuid 8.3.2: only jayson depends on it and every call site is v4() without a buffer
+  ---
+  duration_ms: 2.244084
+  type: 'test'
+  ...
+# Subtest: GHSA-528h-pc64-c93x stream-json 1.9.1: jayson uses StreamValues/Verifier only, not the affected filters, and QF never loads it
+ok 5 - GHSA-528h-pc64-c93x stream-json 1.9.1: jayson uses StreamValues/Verifier only, not the affected filters, and QF never loads it
+  ---
+  duration_ms: 3.999756
+  type: 'test'
+  ...
+# Subtest: input bounds regardless of disposition: live RPC responses are size- and depth-limited before parsing
+ok 6 - input bounds regardless of disposition: live RPC responses are size- and depth-limited before parsing
+  ---
+  duration_ms: 4.66928
+  type: 'test'
+  ...
+# Subtest: observation (not one of the five advisories): other native code present in the runtime is recorded, not hidden
+ok 7 - observation (not one of the five advisories): other native code present in the runtime is recorded, not hidden
+  ---
+  duration_ms: 0.295982
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1644.763636
+# exit: 0

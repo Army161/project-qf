@@ -1,0 +1,27 @@
+# Sanitized RPC reachability probe, 2026-09-27T09:15:03Z
+# curl through the environment's configured HTTPS proxy; no credentials involved
+== https://api.mainnet-beta.solana.com/ (POST getGenesisHash)
+curl: (56) CONNECT tunnel failed, response 403
+http=000
+exit=56
+== https://api.mainnet.solana.com/ (POST getGenesisHash)
+curl: (56) CONNECT tunnel failed, response 403
+http=000
+exit=56
+== https://api.devnet.solana.com/ (POST getGenesisHash)
+curl: (56) CONNECT tunnel failed, response 403
+http=000
+exit=56
+== https://verify.osec.io/ (POST getGenesisHash)
+curl: (56) CONNECT tunnel failed, response 403
+http=000
+exit=56
+== proxy relay failures (host, kind, detail)
+2026-09-27T09:14:47.704Z verify.osec.io:443 connect_rejected - gateway answered 403 to CONNECT (policy denial or upstream failure)
+2026-09-27T09:14:47.907Z verify.osec.io:443 connect_rejected - gateway answered 403 to CONNECT (policy denial or upstream failure)
+2026-09-27T09:15:02.765Z api.mainnet-beta.solana.com:443 connect_rejected - gateway answered 403 to CONNECT (policy denial or upstream failure)
+2026-09-27T09:15:02.984Z api.devnet.solana.com:443 connect_rejected - gateway answered 403 to CONNECT (policy denial or upstream failure)
+2026-09-27T09:15:03.210Z api.mainnet-beta.solana.com:443 connect_rejected - gateway answered 403 to CONNECT (policy denial or upstream failure)
+2026-09-27T09:15:03.393Z api.mainnet.solana.com:443 connect_rejected - gateway answered 403 to CONNECT (policy denial or upstream failure)
+2026-09-27T09:15:03.607Z api.devnet.solana.com:443 connect_rejected - gateway answered 403 to CONNECT (policy denial or upstream failure)
+2026-09-27T09:15:03.813Z verify.osec.io:443 connect_rejected - gateway answered 403 to CONNECT (policy denial or upstream failure)

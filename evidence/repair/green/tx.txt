@@ -1,0 +1,25 @@
+# cmd: node --test packages/tx/test/review-findings.test.ts
+# at: 2026-09-27T12:12:46Z node v22.22.2
+TAP version 13
+# Subtest: QF-SEC-01a: CREATE_POOL with arbitrary DBC bytes plus an extra System transfer is rejected
+ok 1 - QF-SEC-01a: CREATE_POOL with arbitrary DBC bytes plus an extra System transfer is rejected
+  ---
+  duration_ms: 24.181606
+  type: 'test'
+  ...
+# Subtest: QF-SEC-01b: SWAP with arbitrary DBC bytes is rejected
+ok 2 - QF-SEC-01b: SWAP with arbitrary DBC bytes is rejected
+  ---
+  duration_ms: 7.988313
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 249.279248
+# exit: 0

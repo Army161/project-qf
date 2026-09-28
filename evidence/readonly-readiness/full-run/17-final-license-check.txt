@@ -1,0 +1,17 @@
+# cmd: pnpm license:check (final run after the readiness.ts blocker text and doc edits)
+# at: 2026-09-27T16:13:03Z
+
+> project-qf@ license:check /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf
+> node tools/license-check/check-licenses.ts
+
+{
+  "packages": 161,
+  "tally": {
+    "ALLOW": 134,
+    "NOT_INSTALLED": 25,
+    "ALLOW_EXCEPTION": 2
+  },
+  "failures": [],
+  "reviewRequired": []
+}
+# exit: 0

@@ -1,0 +1,115 @@
+# cmd: node --test test/review-findings.test.mjs
+# at: 2026-09-27T12:12:51Z node v22.22.2
+TAP version 13
+# Subtest: QF-SEC-02: an owner plus 8-byte discriminator only is not a valid Config
+ok 1 - QF-SEC-02: an owner plus 8-byte discriminator only is not a valid Config
+  ---
+  duration_ms: 27.493125
+  type: 'test'
+  ...
+# Subtest: QF-SEC-02: a truncated Config (disc + 100 bytes) fails
+ok 2 - QF-SEC-02: a truncated Config (disc + 100 bytes) fails
+  ---
+  duration_ms: 13.623923
+  type: 'test'
+  ...
+# Subtest: QF-SEC-02: an over-long Config with trailing bytes fails
+ok 3 - QF-SEC-02: an over-long Config with trailing bytes fails
+  ---
+  duration_ms: 12.533634
+  type: 'test'
+  ...
+# Subtest: QF-SEC-02: a full-length Config that is incompatible with DBC migration fails
+ok 4 - QF-SEC-02: a full-length Config that is incompatible with DBC migration fails
+  ---
+  duration_ms: 11.527917
+  type: 'test'
+  ...
+# Subtest: QF-SEC-03: credentials in the URL path, userinfo, query and fragment are redacted
+ok 5 - QF-SEC-03: credentials in the URL path, userinfo, query and fragment are redacted
+  ---
+  duration_ms: 0.407789
+  type: 'test'
+  ...
+# Subtest: QF-SEC-03: nested causes and AggregateError members are redacted
+ok 6 - QF-SEC-03: nested causes and AggregateError members are redacted
+  ---
+  duration_ms: 1.632695
+  type: 'test'
+  ...
+# Subtest: QF-SEC-03: the report endpoint never carries the path token
+ok 7 - QF-SEC-03: the report endpoint never carries the path token
+  ---
+  duration_ms: 13.943062
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04a: a report with only CONNECTIVITY and CLUSTER_IDENTITY PASS does not exit 0
+ok 8 - QF-SEC-04a: a report with only CONNECTIVITY and CLUSTER_IDENTITY PASS does not exit 0
+  ---
+  duration_ms: 0.270712
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04a: dropping one required check from a satisfied report does not exit 0
+ok 9 - QF-SEC-04a: dropping one required check from a satisfied report does not exit 0
+  ---
+  duration_ms: 9.950647
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04a: a duplicated required check does not exit 0
+ok 10 - QF-SEC-04a: a duplicated required check does not exit 0
+  ---
+  duration_ms: 15.537486
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04b: an explicit second-provider disagreement does not exit 0
+ok 11 - QF-SEC-04b: an explicit second-provider disagreement does not exit 0
+  ---
+  duration_ms: 17.74168
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04b: an unreachable second provider is UNAVAILABLE (exit 2), not agreement or disagreement
+ok 12 - QF-SEC-04b: an unreachable second provider is UNAVAILABLE (exit 2), not agreement or disagreement
+  ---
+  duration_ms: 13.639879
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04: an invalid upgrade-authority option tag is FAIL, never immutable
+ok 13 - QF-SEC-04: an invalid upgrade-authority option tag is FAIL, never immutable
+  ---
+  duration_ms: 10.363178
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04: a Program account with trailing bytes is not accepted
+ok 14 - QF-SEC-04: a Program account with trailing bytes is not accepted
+  ---
+  duration_ms: 9.772452
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04: a recoverable RPC error on one account is a per-check ERROR, not a thrown run
+ok 15 - QF-SEC-04: a recoverable RPC error on one account is a per-check ERROR, not a thrown run
+  ---
+  duration_ms: 9.632336
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04: RPC context slots and commitment are retained on account-derived checks
+ok 16 - QF-SEC-04: RPC context slots and commitment are retained on account-derived checks
+  ---
+  duration_ms: 9.462247
+  type: 'test'
+  ...
+# Subtest: QF-SEC-04: the report carries a schema version
+ok 17 - QF-SEC-04: the report carries a schema version
+  ---
+  duration_ms: 8.294986
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 260.817854
+# exit: 0

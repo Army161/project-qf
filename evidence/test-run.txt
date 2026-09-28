@@ -1,0 +1,385 @@
+# Project QF V0 offline run. Environment: env -i (PATH, throwaway HOME, proxy CA only; no tokens/keys), npm_config_ignore_scripts=true. node v22.22.2, pnpm 10.33.0
+===== $ pnpm install --frozen-lockfile --offline --ignore-scripts (2026-09-27T09:20:36Z)
+Scope: all 9 workspace projects
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+Done in 809ms using pnpm v10.33.0
+===== exit 0
+===== $ pnpm sbom (2026-09-27T09:20:37Z)
+
+> project-qf@ sbom /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf
+> node tools/deps/sbom.ts
+
+{"out":"/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/sbom/project-qf.cdx.json","components":136,"filter":null,"lockSha256":"c1943e1c7074848dd879670c1a88844237f6c3551bb97817bac7c0df16f3d73b"}
+===== exit 0
+===== $ pnpm deps:chain (2026-09-27T09:20:38Z)
+
+> project-qf@ deps:chain /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf
+> node tools/deps/prove-chain-absent.ts
+
+PASS  override-declared: pnpm-workspace.yaml contains "@meteora-ag/cp-amm-sdk@1.4.10>chain": "-"
+PASS  lockfile-override-recorded: pnpm-lock.yaml overrides section records the removal
+PASS  lockfile-no-chain-package: no chain@* key in packages/snapshots
+PASS  lockfile-no-chain-edge: no dependency edge named chain
+PASS  resolved-graph: 0 of 500 graph occurrences are named chain
+PASS  node_modules: no chain directory in the virtual store or any node_modules
+PASS  runtime-module-cache: CJS load of both SDKs: 313 modules, chain modules 0, resolvable=false
+PASS  published-artifact-imports: no chain import/require/dynamic import in index.d.mts, index.d.ts, index.js, index.js.map, index.mjs, index.mjs.map
+PASS  published-artifact-unmodified: installed cp-amm-sdk package.json still declares chain ^0.4.0 (artifact not patched)
+PASS  published-artifact-integrity: lockfile integrity sha512-Y3UPjP91VWrj86hOr4kDmU1UXiESspy8YP6Z/4XtWD1eCVwUN0xMEzCvKXM2IRz5ECSj8alO2od1czhMhvcD8g== matches the inspected npm pack tarball
+PASS  sbom:sbom/project-qf.cdx.json: 136 components, none named chain
+PASS  sbom:sbom/apps-web.cdx.json: 53 components, none named chain
+RESULT PASS
+===== exit 0
+===== $ pnpm license:check (2026-09-27T09:20:39Z)
+
+> project-qf@ license:check /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf
+> node tools/license-check/check-licenses.ts
+
+{
+  "packages": 164,
+  "tally": {
+    "ALLOW": 137,
+    "NOT_INSTALLED": 25,
+    "REVIEW": 1,
+    "ALLOW_EXCEPTION": 1
+  },
+  "failures": [],
+  "reviewRequired": [
+    "pako@2.2.0 (MIT AND Zlib)"
+  ]
+}
+===== exit 0
+===== $ pnpm build:web (2026-09-27T09:20:40Z)
+
+> project-qf@ build:web /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf
+> pnpm --filter @project-qf/web build
+
+
+> @project-qf/web@0.0.0 build /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/apps/web
+> node build.ts
+
+{"outputs":["dist/main.js.LEGAL.txt","dist/main.js.map","dist/main.js","dist/merkle.worker.js.LEGAL.txt","dist/merkle.worker.js.map","dist/merkle.worker.js"],"inputs":75}
+===== exit 0
+===== $ pnpm boundary (2026-09-27T09:20:41Z)
+
+> project-qf@ boundary /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf
+> node tools/boundary/check-browser-boundary.ts
+
+{
+  "result": "PASS",
+  "failures": [],
+  "graphPackages": 58,
+  "bundledPackages": [
+    "@noble/hashes",
+    "@solana/accounts",
+    "@solana/addresses",
+    "@solana/assertions",
+    "@solana/codecs",
+    "@solana/codecs-core",
+    "@solana/codecs-data-structures",
+    "@solana/codecs-numbers",
+    "@solana/codecs-strings",
+    "@solana/errors",
+    "@solana/fast-stable-stringify",
+    "@solana/fixed-points",
+    "@solana/functional",
+    "@solana/instruction-plans",
+    "@solana/instructions",
+    "@solana/keys",
+    "@solana/kit",
+    "@solana/offchain-messages",
+    "@solana/options",
+    "@solana/plugin-core",
+    "@solana/programs",
+    "@solana/promises",
+    "@solana/rpc",
+    "@solana/rpc-api",
+    "@solana/rpc-parsed-types",
+    "@solana/rpc-spec",
+    "@solana/rpc-spec-types",
+    "@solana/rpc-subscriptions",
+    "@solana/rpc-subscriptions-api",
+    "@solana/rpc-subscriptions-channel-websocket",
+    "@solana/rpc-subscriptions-spec",
+    "@solana/rpc-transformers",
+    "@solana/rpc-transport-http",
+    "@solana/rpc-types",
+    "@solana/signers",
+    "@solana/subscribable",
+    "@solana/transaction-confirmation",
+    "@solana/transaction-introspection",
+    "@solana/transaction-messages",
+    "@solana/transactions"
+  ],
+  "artifacts": [
+    "index.html",
+    "main.js",
+    "main.js.LEGAL.txt",
+    "main.js.map",
+    "merkle.worker.js",
+    "merkle.worker.js.LEGAL.txt",
+    "merkle.worker.js.map",
+    "meta.json",
+    "styles.css"
+  ],
+  "canaryA": true,
+  "canaryB": true
+}
+===== exit 0
+===== $ pnpm typecheck (2026-09-27T09:20:42Z)
+
+> project-qf@ typecheck /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf
+> tsc -p tsconfig.json --noEmit
+
+===== exit 0
+===== $ pnpm test (2026-09-27T09:20:45Z)
+
+> project-qf@ test /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf
+> node --test --test-reporter=spec "packages/*/test/**/*.test.ts" "tools/*/test/**/*.test.ts" "apps/*/test/**/*.test.ts"
+
+✔ MOCK lifecycle UI renders, labels every step MOCK, and computes the reward root in a worker (632.374414ms)
+bigint: Failed to load bindings, pure JS will be used (try npm run rebuild?)
+(node:5288) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ pins: installed SDK versions are exactly the pinned ones (2.449644ms)
+✔ CJS require of both SDKs works and loads no module named chain (430.553705ms)
+✔ ESM import of both SDKs works (634.682651ms)
+✔ chain is not resolvable from the cp-amm-sdk package and is not needed at runtime (1.141768ms)
+✔ buildCurve: flat V0_TEST config is valid per SDK and stores the approved raw threshold exactly (21.834042ms)
+✔ buildCurve: the bounded decay config is valid per SDK (simulation only) (2.787741ms)
+✔ fail closed: a threshold the SDK cannot store exactly is refused (0.500706ms)
+✔ quote math (pure SDK, no RPC): flat 1% fee, protocol takes 20% of it (153.129976ms)
+✔ tx construction [MOCK_RPC_FIXTURE: synthetic accounts, not live results]: createConfig (partner) -> DBC createConfig (138.006695ms)
+✔ tx construction [MOCK_RPC_FIXTURE: synthetic accounts, not live results]: createPool (creator) -> initializeVirtualPoolWithSplToken (125.711328ms)
+✔ tx construction [MOCK_RPC_FIXTURE: synthetic accounts, not live results]: swap (user) -> DBC swap (103.611942ms)
+✔ tx construction [MOCK_RPC_FIXTURE: synthetic accounts, not live results]: migrateToDammV2 (crank) -> migrationDammV2 with Customizable config (152.919701ms)
+✔ tx construction [MOCK_RPC_FIXTURE: synthetic accounts, not live results]: claimPartnerTradingFee -> claimTradingFee (93.548059ms)
+✔ tx construction [MOCK_RPC_FIXTURE: synthetic accounts, not live results]: claimCreatorTradingFee -> claimCreatorTradingFee (91.160842ms)
+✔ the pinned SDK IDL has no DBC 0.2.2 create_config2 instruction (transfer-fee stays disabled) (16.311151ms)
+✔ mock RPC refuses anything that could submit (1.239355ms)
+✔ parses decimal strings exactly (no float) (1.354391ms)
+✔ rejects malformed or over-precise input instead of silently rounding (0.73142ms)
+✔ comparison is exact at boundaries (0.24688ms)
+✔ raw-unit conversion records rounding direction (0.261671ms)
+✔ mul/div with explicit rounding (0.311738ms)
+✔ min / max / median / ratioBps (0.28261ms)
+✔ capability flags default to the decided V1 values (1.437628ms)
+✔ readiness is tracked as four separate stages (0.851387ms)
+✔ mock values are conspicuously labelled and cannot pass as live (0.402348ms)
+✔ V0_TEST economics are valid and labelled test-only (1.596735ms)
+✔ engine bounds and decisions are enforced (0.512215ms)
+✔ flat fee is the V0_TEST baseline: FeeSchedulerLinear with start == end and no periods (0.335901ms)
+✔ the decay comparison is one bounded, simulation-only configuration (0.313798ms)
+✔ simulation-only templates cannot be used for a transaction intent (0.496652ms)
+✔ invalid templates are caught (0.355767ms)
+✔ economics digest is canonical (key order independent) and changes with any field (1.476704ms)
+✔ policy: ceiling is $100,000 as a configurable V0 experiment ceiling, not the default target (2.897062ms)
+✔ USD to raw quote units: exact, rounded DOWN, with price/time/slot/decimals recorded (1.083324ms)
+✔ the threshold record never carries or implies a market capitalisation (0.331153ms)
+✔ outside [floor, ceiling] is rejected, never silently clamped (0.314996ms)
+✔ $100,000 is not appropriate for a market with only $25,000 eligible liquidity (0.26083ms)
+✔ exit depth must be evaluated at (at least) the threshold notional (0.297827ms)
+✔ untrustworthy, stale or missing price rejects the proposal (0.24208ms)
+✔ stale proposals are repriced before signing and material change needs new consent (2.960333ms)
+✔ after config creation the stored raw amount governs; USD is informational (0.430779ms)
+✔ TWAB: balance x time, exact, using the balance in force at window start (2.515444ms)
+✔ TWAB rejects unsorted, duplicate-time, negative or inverted inputs (0.607441ms)
+✔ allocation: exclusions, proportional floor division, dust roll-forward, conservation (15.267695ms)
+✔ allocation: rounding remainder rolls forward, never lost or over-paid (7.430761ms)
+✔ below-minimum payouts roll forward to the holder, and carry-in is honoured (3.660416ms)
+✔ minimum eligible TWAB excludes dust holders from the weight set (1.510902ms)
+✔ no eligible holders: everything rolls forward (0.569615ms)
+✔ deterministic epoch artifact: identical inputs (any order) -> identical file hash and Merkle root (1.853253ms)
+✔ Merkle leaf format matches SF Rewards @ df7517d: keccak(0x00 || keccak(claimant || u64le(amount) || schedule)) (0.732103ms)
+✔ Merkle: sorted-pair hashing, proofs verify, tampering fails (1.847395ms)
+✔ Merkle rejects amounts outside u64 and duplicate claimants (0.441776ms)
+✔ decodes v0 and legacy transactions offline into programs, signers and fee payer (18.722149ms)
+✔ preview verification: allowlisted programs, fee payer and signer must match the intent (2.494394ms)
+✔ an injected instruction to an unexpected program is flagged (1.546392ms)
+✔ a DBC intent without a DBC instruction is flagged (3.262809ms)
+✔ garbage bytes are rejected, not partially decoded (0.937249ms)
+✔ a well-formed MOCK intent validates only on the mock-offline cluster (2.543955ms)
+✔ real clusters are blocked by readiness stages and MAINNET_WRITES=false (0.956013ms)
+✔ transfer-fee and transfer-hook config intents are refused (DBC_BASE_TRANSFER_FEE disabled) (0.518547ms)
+✔ the server never signs for a user; roles must match the intent kind (0.443738ms)
+✔ simulation-only templates, consent mismatch and stale or expired intents are refused (0.619616ms)
+✔ amounts must be positive raw u64 integer strings; addresses must be valid (0.604329ms)
+✔ aggregate: any FAIL -> FAIL, else any WARN -> WARN, else PASS (1.056778ms)
+✔ LIVE: a required check that is missing or SKIP makes the result FAIL (0.338449ms)
+✔ TEST_ONLY aggregate is never PASS (0.131984ms)
+✔ TEST_ONLY assets live in their own namespace and cannot be promoted to production (0.542947ms)
+✔ S3.1 PASS when both exits fill the full notional within the impact bound (1.359015ms)
+✔ impact above maxRouteImpactBps (300) -> WARN; exactly 300 is within bound (0.296242ms)
+✔ a route that cannot fill the notional is not an exit: FAIL (0.448275ms)
+✔ route quoted for a smaller notional does not count for a larger one (0.228585ms)
+✔ missing exit to one required asset: FAIL (insufficient evidence is never PASS) (0.336215ms)
+✔ stale route quotes are ignored (0.232108ms)
+✔ when the quote asset is itself an exit asset that leg is trivially satisfied (0.207134ms)
+✔ exit depth is independent of TVL: high liquidity does not imply an executable exit (0.101456ms)
+✔ TEST_ONLY mode caps S3.1 at WARN (0.36402ms)
+✔ policy object carries the adopted Decision 2 values as exact decimal strings (1.166291ms)
+✔ S3.2 boundary below fail floor: $24,999.99 -> FAIL (1.317845ms)
+✔ S3.2 boundary at fail floor: $25,000 -> WARN (0.387941ms)
+✔ S3.2 boundary just below warn line: $249,999.99 -> WARN (0.191653ms)
+✔ S3.2 boundary at warn line: $250,000 -> PASS (0.262114ms)
+✔ the same pool reported by two providers is corroboration, not additive liquidity (0.531138ms)
+✔ duplicate reports that disagree use the lower reserves (conservative) (0.390616ms)
+✔ dedupe key is chain + venue + pool address: same address on another venue counts separately (0.313401ms)
+✔ pools that do not contain the quote asset, or that contain a QF-launched base token, are not eligible (0.631678ms)
+✔ missing quote price is insufficient evidence and never PASS (0.527084ms)
+✔ a single price source is insufficient (two independent sources required) (0.354302ms)
+✔ stale prices are excluded -> insufficient evidence -> FAIL (0.29723ms)
+✔ stale pool observations are excluded (0.15714ms)
+✔ future-dated observations are rejected as manipulated evidence (0.136343ms)
+✔ manipulated (inflated) price: disagreement values at the lowest price and caps the check at WARN (0.191285ms)
+✔ manipulated price cannot lift a sub-floor market over $25,000 (0.17396ms)
+✔ non-positive or malformed prices are dropped, not coerced (0.239438ms)
+✔ LIVE mode ignores TEST_ONLY providers entirely (0.130792ms)
+✔ TEST_ONLY mode (synthetic devnet qUSD) is capped at WARN and never asserts real liquidity (0.140421ms)
+✔ deterministic: same inputs give identical results (1.780729ms)
+bigint: Failed to load bindings, pure JS will be used (try npm run rebuild?)
+(node:5488) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ prng is deterministic and seed-sensitive (1.600254ms)
+✔ six documented traces; each is deterministic and labelled synthetic (25.860756ms)
+✔ the threshold used by the simulation comes from the Decision-3 policy path (0.960715ms)
+✔ both configurations run on byte-identical traces and conserve quote exactly (188.676625ms)
+✔ decay charges more than flat inside the window and the same after it (149.809061ms)
+✔ trades after graduation are rejected and recorded, never dropped (68.294306ms)
+✔ low_demand never graduates under either configuration (127.435499ms)
+✔ comparison is deterministic, labelled, and retains failed hypotheses (1713.482531ms)
+✔ SPDX classification against LICENSE-MANIFEST policy (1.427858ms)
+✔ the code-repo manifest copy is identical to the spec manifest when both are present (0.264733ms)
+✔ LGPL exception is exact and narrow; chain is recorded as removed (0.441033ms)
+ℹ tests 108
+ℹ suites 0
+ℹ pass 108
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4343.585937
+===== exit 0
+===== $ pnpm sim (2026-09-27T09:20:50Z)
+
+> project-qf@ sim /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf
+> node tools/econ-sim/src/run.ts
+
+bigint: Failed to load bindings, pure JS will be used (try npm run rebuild?)
+{"resultsHash":"3f8bd4e725db35b500e9c1f61949063f7fd9c94060574ac812f43d25366415a9","summary":{"hypotheses":30,"passed":19,"failed":7,"notApplicable":4}}
+sniper_burst_t0  H1_BOT_ACQUISITION       FAIL           flat=4013 bps | decay=3699 bps (7.8% relative drop)
+sniper_burst_t0  H5_BOT_PNL               PASS           flat=935619670 raw qUSD | decay=304797703 raw qUSD
+sniper_burst_t0  H2_ORGANIC_COST          PASS           flat=100 bps | decay=145 bps
+sniper_burst_t0  H3_GRADUATION_UNCHANGED  PASS           flat=true @ 2174 | decay=true @ 2132
+sniper_burst_t0  H4_CONSERVATION          PASS           flat=reserve-curve=9 | decay=reserve-curve=8
+patient_sniper   H1_BOT_ACQUISITION       FAIL           flat=3191 bps | decay=3268 bps (-2.4% relative drop)
+patient_sniper   H5_BOT_PNL               FAIL           flat=438795765 raw qUSD | decay=473508794 raw qUSD
+patient_sniper   H2_ORGANIC_COST          PASS           flat=100 bps | decay=134 bps
+patient_sniper   H3_GRADUATION_UNCHANGED  PASS           flat=false @ null | decay=false @ null
+patient_sniper   H4_CONSERVATION          PASS           flat=reserve-curve=14 | decay=reserve-curve=15
+organic_only     H1_BOT_ACQUISITION       NOT_APPLICABLE flat=0 bps | decay=0 bps (0.0% relative drop)
+organic_only     H5_BOT_PNL               NOT_APPLICABLE flat=0 raw qUSD | decay=0 raw qUSD
+organic_only     H2_ORGANIC_COST          FAIL           flat=100 bps | decay=199 bps
+organic_only     H3_GRADUATION_UNCHANGED  PASS           flat=true @ 2093 | decay=true @ 2121
+organic_only     H4_CONSERVATION          PASS           flat=reserve-curve=9 | decay=reserve-curve=10
+pump_dump        H1_BOT_ACQUISITION       FAIL           flat=4845 bps | decay=4535 bps (6.4% relative drop)
+pump_dump        H5_BOT_PNL               PASS           flat=18365202 raw qUSD | decay=-702157337 raw qUSD
+pump_dump        H2_ORGANIC_COST          FAIL           flat=100 bps | decay=153 bps
+pump_dump        H3_GRADUATION_UNCHANGED  PASS           flat=false @ null | decay=false @ null
+pump_dump        H4_CONSERVATION          PASS           flat=reserve-curve=10 | decay=reserve-curve=7
+low_demand       H1_BOT_ACQUISITION       NOT_APPLICABLE flat=0 bps | decay=0 bps (0.0% relative drop)
+low_demand       H5_BOT_PNL               NOT_APPLICABLE flat=0 raw qUSD | decay=0 raw qUSD
+low_demand       H2_ORGANIC_COST          PASS           flat=100 bps | decay=137 bps
+low_demand       H3_GRADUATION_UNCHANGED  PASS           flat=false @ null | decay=false @ null
+low_demand       H4_CONSERVATION          PASS           flat=reserve-curve=3 | decay=reserve-curve=2
+sybil_split      H1_BOT_ACQUISITION       FAIL           flat=4146 bps | decay=3885 bps (6.3% relative drop)
+sybil_split      H5_BOT_PNL               PASS           flat=1070874809 raw qUSD | decay=281470116 raw qUSD
+sybil_split      H2_ORGANIC_COST          PASS           flat=100 bps | decay=126 bps
+sybil_split      H3_GRADUATION_UNCHANGED  PASS           flat=true @ 3117 | decay=true @ 3117
+sybil_split      H4_CONSERVATION          PASS           flat=reserve-curve=26 | decay=reserve-curve=23
+(node:5519) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+===== exit 0
+===== $ pnpm audit --prod (2026-09-27T09:20:52Z)
+┌─────────────────────┬────────────────────────────────────────────────────────┐
+│ high                │ bigint-buffer Vulnerable to Buffer Overflow via        │
+│                     │ toBigIntLE() Function                                  │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Package             │ bigint-buffer                                          │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Vulnerable versions │ <=1.1.5                                                │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Patched versions    │ <0.0.0                                                 │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Paths               │ packages__adapter-meteora-dbc>@meteora-ag/cp-amm-      │
+│                     │ sdk>@solana/spl-token>@solana/buffer-layout-           │
+│                     │ utils>bigint-buffer                                    │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ More info           │ https://github.com/advisories/GHSA-3gc7-fjrx-p6mg      │
+└─────────────────────┴────────────────────────────────────────────────────────┘
+┌─────────────────────┬────────────────────────────────────────────────────────┐
+│ high                │ toml-node: Uncontrolled Recursion                      │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Package             │ toml                                                   │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Vulnerable versions │ <4.2.0                                                 │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Patched versions    │ >=4.2.0                                                │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Paths               │ packages__adapter-meteora-dbc>@meteora-ag/cp-amm-      │
+│                     │ sdk>@coral-xyz/anchor>toml                             │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ More info           │ https://github.com/advisories/GHSA-82x6-q7mm-w9cf      │
+└─────────────────────┴────────────────────────────────────────────────────────┘
+┌─────────────────────┬────────────────────────────────────────────────────────┐
+│ high                │ toml-node: Prototype Pollution Leads to                │
+│                     │ `Object.prototype` Corruption via `__proto__` Key-Path │
+│                     │ Desynchronization                                      │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Package             │ toml                                                   │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Vulnerable versions │ <4.1.2                                                 │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Patched versions    │ >=4.1.2                                                │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Paths               │ packages__adapter-meteora-dbc>@meteora-ag/cp-amm-      │
+│                     │ sdk>@coral-xyz/anchor>toml                             │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ More info           │ https://github.com/advisories/GHSA-v5mp-jgw5-2x6j      │
+└─────────────────────┴────────────────────────────────────────────────────────┘
+┌─────────────────────┬────────────────────────────────────────────────────────┐
+│ moderate            │ uuid: Missing buffer bounds check in v3/v5/v6 when buf │
+│                     │ is provided                                            │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Package             │ uuid                                                   │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Vulnerable versions │ <11.1.1                                                │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Patched versions    │ >=11.1.1                                               │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Paths               │ packages__adapter-meteora-dbc>@solana/web3.            │
+│                     │ js>jayson>uuid                                         │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ More info           │ https://github.com/advisories/GHSA-w5hq-g745-h8pq      │
+└─────────────────────┴────────────────────────────────────────────────────────┘
+┌─────────────────────┬────────────────────────────────────────────────────────┐
+│ moderate            │ stream-json: pick/ignore/filter/replace filters are    │
+│                     │ O(depth²) on nested input — small crafted JSON blocks  │
+│                     │ the event loop for seconds→minutes (DoS)               │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Package             │ stream-json                                            │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Vulnerable versions │ <=3.4.0                                                │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Patched versions    │ >=3.5.0                                                │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Paths               │ packages__adapter-meteora-dbc>@solana/web3.            │
+│                     │ js>jayson>stream-json                                  │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ More info           │ https://github.com/advisories/GHSA-528h-pc64-c93x      │
+└─────────────────────┴────────────────────────────────────────────────────────┘
+5 vulnerabilities found
+Severity: 2 moderate | 3 high
+===== exit 1

@@ -1,0 +1,12 @@
+# cmd: pnpm build:web (final run after the readiness.ts blocker text and doc edits)
+# at: 2026-09-27T16:12:47Z
+
+> project-qf@ build:web /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf
+> pnpm --filter @project-qf/web build
+
+
+> @project-qf/web@0.0.0 build /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/apps/web
+> node build.ts
+
+{"outputs":["dist/main.js.LEGAL.txt","dist/main.js.map","dist/main.js","dist/merkle.worker.js.LEGAL.txt","dist/merkle.worker.js.map","dist/merkle.worker.js"],"inputs":81}
+# exit: 0

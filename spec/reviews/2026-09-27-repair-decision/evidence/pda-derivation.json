@@ -1,0 +1,9 @@
+{
+  "method": "Independent offline SHA-256 and Ed25519 compressed-point field arithmetic; not SDK execution or blockchain read",
+  "program": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+  "seed": "pool_authority",
+  "bump": 255,
+  "derived": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+  "expected": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+  "matches": true
+}

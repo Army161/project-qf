@@ -1,0 +1,275 @@
+{
+  "manifestVersion": "2",
+  "generated": "2026-09-26",
+  "project": {
+    "name": "project-qf",
+    "license": "UNLICENSED (proprietary, see PROPRIETARY-NOTICE.md)"
+  },
+  "policy": {
+    "allow": [
+      "MIT",
+      "ISC",
+      "BSD-2-Clause",
+      "BSD-3-Clause",
+      "Apache-2.0",
+      "0BSD",
+      "CC0-1.0",
+      "(MIT OR Apache-2.0)",
+      "Unlicense"
+    ],
+    "review": [
+      "MPL-2.0",
+      "CC-BY-4.0",
+      "Python-2.0",
+      "BlueOak-1.0.0",
+      "Zlib"
+    ],
+    "deny": [
+      "GPL-2.0",
+      "GPL-2.0-or-later",
+      "GPL-3.0",
+      "GPL-3.0-or-later",
+      "LGPL-2.1",
+      "LGPL-3.0",
+      "AGPL-3.0",
+      "BUSL-1.1",
+      "SSPL-1.0",
+      "Elastic-2.0",
+      "LicenseRef-Meteora-Noncommercial",
+      "UNKNOWN",
+      "NONE"
+    ],
+    "denyPackages": [
+      "@raydium-io/raydium-sdk-v2",
+      "@uniswap/v4-core",
+      "@uniswap/v3-core",
+      "@uniswap/v2-core"
+    ],
+    "scope": "applies to all packages shipped in apps/* and packages/*; tools/* follow the same policy",
+    "scanSuppression": "NONE: no broad license-scan overrides. Exceptions are exact name@version@integrity records below.",
+    "reviewMeaning": "REVIEW licenses are reported and need owner confirmation; they are never auto-approved"
+  },
+  "pinned": [
+    {
+      "name": "@meteora-ag/dynamic-bonding-curve-sdk",
+      "version": "1.5.13",
+      "license": "MIT",
+      "scope": "packages/adapter-meteora-dbc"
+    },
+    {
+      "name": "@meteora-ag/cp-amm-sdk",
+      "version": "1.4.10",
+      "license": "MIT",
+      "scope": "packages/adapter-meteora-dbc"
+    },
+    {
+      "name": "@solana/web3.js",
+      "version": "1.99.0",
+      "license": "MIT",
+      "scope": "packages/adapter-meteora-dbc only (server-side). tools/program-verify no longer uses it (2026-09-27)"
+    },
+    {
+      "name": "@solana/kit",
+      "version": "8.3.0",
+      "license": "MIT",
+      "scope": "packages/tx, packages/rewards, tools/program-verify (browser-safe)"
+    },
+    {
+      "name": "@solana-program/token-2022",
+      "version": "0.19.0",
+      "license": "Apache-2.0",
+      "scope": "packages/validator"
+    },
+    {
+      "name": "@solana-program/token",
+      "version": "0.17.0",
+      "license": "Apache-2.0",
+      "scope": "packages/validator"
+    },
+    {
+      "name": "@pythnetwork/hermes-client",
+      "version": "3.1.0",
+      "license": "Apache-2.0",
+      "scope": "packages/providers"
+    },
+    {
+      "name": "@noble/hashes",
+      "version": "1.8.0",
+      "license": "MIT",
+      "scope": "packages/policy, packages/rewards (sha256, keccak256; browser-safe)"
+    },
+    {
+      "name": "typescript",
+      "version": "5.9.3",
+      "license": "Apache-2.0",
+      "scope": "dev only"
+    },
+    {
+      "name": "esbuild",
+      "version": "0.28.2",
+      "license": "MIT",
+      "scope": "dev only (apps/web build, boundary check)"
+    },
+    {
+      "name": "playwright-core",
+      "version": "1.56.1",
+      "license": "Apache-2.0",
+      "scope": "dev only (mock UI smoke test; uses preinstalled Chromium)"
+    },
+    {
+      "name": "@types/node",
+      "version": "22.20.4",
+      "license": "MIT",
+      "scope": "dev only"
+    },
+    {
+      "name": "@types/bn.js",
+      "version": "5.2.0",
+      "license": "MIT",
+      "scope": "dev only"
+    }
+  ],
+  "gated": [
+    {
+      "name": "@jup-ag/api",
+      "version": "6.0.48",
+      "license": "MIT",
+      "note": "client MIT; API usage governed by Jupiter SDK & API License Agreement; OPTIONAL_LEGAL_GATED (ADR-005); not installed by default"
+    }
+  ],
+  "referenceOnly": [
+    {
+      "name": "MeteoraAg/dynamic-bonding-curve",
+      "commit": "f552f20",
+      "license": "LicenseRef-Meteora-Noncommercial"
+    },
+    {
+      "name": "MeteoraAg/damm-v2",
+      "commit": "a85c926",
+      "license": "LicenseRef-Meteora-Noncommercial"
+    },
+    {
+      "name": "raydium-io/raydium-sdk-V2",
+      "commit": "cc33ec2",
+      "license": "GPL-3.0"
+    },
+    {
+      "name": "ponsdotdev/pons-labs",
+      "commit": "162310f",
+      "license": "NONE (README claims MIT; vendored BUSL-1.1 and GPL-2.0 files)"
+    },
+    {
+      "name": "Uniswap/v4-core",
+      "commit": "46c6834",
+      "license": "BUSL-1.1"
+    },
+    {
+      "name": "ondoprotocol/global-markets-solana",
+      "commit": "d1d011e",
+      "license": "BUSL-1.1"
+    }
+  ],
+  "exceptions": [
+    {
+      "exceptionId": "QF-LIC-EX-001",
+      "name": "rpc-websockets",
+      "version": "9.3.9",
+      "license": "LGPL-3.0-only",
+      "resolvedIntegrity": "sha512-2iQDaTB4g5fDB2ihrTFSJSibCEuxaRi1q7qTW7ZO9/M5/TC+ToHA4D9/ffNLEbAoHNNrcdeP05oATNk44SKZXA==",
+      "dependencyPath": "@project-qf/adapter-meteora-dbc > (@meteora-ag/dynamic-bonding-curve-sdk@1.5.13 | @meteora-ag/cp-amm-sdk@1.4.10 | @coral-xyz/anchor@0.31.1 | @solana/spl-token@0.4.15) > @solana/web3.js@1.99.0 > rpc-websockets@9.3.9",
+      "status": "APPROVED_NARROW",
+      "decision": "Decision 1, adopted by the product owner 2026-09-27 (relayed ChatGPT review of summary documents; not a legal opinion)",
+      "permittedTargets": [
+        "internal, server-side Project QF processes that reach it only through @project-qf/adapter-meteora-dbc: the adapter, tools/econ-sim, and future apps/api, apps/workers, apps/indexer running on QF-operated infrastructure"
+      ],
+      "prohibitedTargets": [
+        "browser bundles, including web workers and public source maps (apps/web)",
+        "downloadable SDKs or CLIs",
+        "mobile or desktop applications",
+        "customer Docker images",
+        "on-prem installations",
+        "redistributable development bundles"
+      ],
+      "conditions": [
+        "unmodified: no patches, forks, vendoring or relabelling",
+        "preserve upstream LICENSE text, copyright and original-source identification (THIRD_PARTY_NOTICES.md)",
+        "lockfile integrity must equal resolvedIntegrity (tools/license-check enforces)",
+        "every dependency path must pass through @project-qf/adapter-meteora-dbc (tools/license-check enforces)",
+        "tools/boundary browser dependency-graph and build-artifact check must pass on every web build",
+        "third-party hosting or contractor arrangements are assessed on their actual terms, not presumed covered"
+      ],
+      "owner": "Project QF product owner",
+      "reviewer": "Engineering review recorded in RETURN-REPORT-V0.md; counsel review not performed",
+      "reviewTriggers": [
+        "version or integrity change",
+        "any distribution of software copies (container, SDK, CLI, on-prem, desktop, mobile)",
+        "any modification",
+        "a dependency path not via the adapter",
+        "new hosting or contractor arrangement",
+        "2027-09-27 (12 months)"
+      ],
+      "otherLgpl": "Any other LGPL package remains DENIED pending its own review",
+      "evidence": "project-qf/evidence/license-check.json, project-qf/evidence/browser-boundary.json"
+    },
+    {
+      "exceptionId": "QF-LIC-EX-002",
+      "name": "pako",
+      "version": "2.2.0",
+      "license": "(MIT AND Zlib)",
+      "resolvedIntegrity": "sha512-zJq6RP/5q+TO2OpFV3FHzlPnFjmkb7Nc99a5SNjJE+uu/PkpChs+NIZSSzbBoD+6kjiISXjfYdwj1ZRQ81dz/w==",
+      "dependencyPath": "@project-qf/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > pako@2.2.0",
+      "status": "APPROVED_EXACT",
+      "decision": "LIC-R1, adopted by the product owner 2026-09-27 (repair-pass directive; not a legal opinion)",
+      "obligations": [
+        "MIT (JavaScript port, Copyright (C) 2014-2017 Vitaly Puzrin and Andrei Tuputcyn): include the copyright and permission notice in all copies or substantial portions",
+        "Zlib (zlib-derived code, (C) 1995-2013 Jean-loup Gailly and Mark Adler): do not misrepresent the origin; mark altered source plainly; do not remove or alter the notice in any source distribution",
+        "use unmodified: no pnpm patch, fork or vendoring (a modification would also trigger Zlib clause 2 and needs re-review)"
+      ],
+      "notices": [
+        {
+          "upstreamPath": "LICENSE",
+          "preservedAt": "licenses/pako@2.2.0/LICENSE"
+        },
+        {
+          "upstreamPath": "lib/zlib/README",
+          "preservedAt": "licenses/pako@2.2.0/lib-zlib-README"
+        }
+      ],
+      "scope": "exact name@version and integrity only. MIT stays allowed and Zlib stays REVIEW in policy for every other package; no broad licence-scan exemption",
+      "enforcement": "tools/license-check (APPROVED_EXACT): licence expression, lockfile integrity, not patched, both notices byte-identical to the installed package",
+      "reviewTriggers": [
+        "version or integrity change",
+        "any modification",
+        "any distribution of software copies (notices must ship with it)",
+        "2027-09-27 (12 months)"
+      ],
+      "evidence": "project-qf/evidence/license-check.json"
+    },
+    {
+      "exceptionId": "QF-DEP-RM-001",
+      "name": "chain",
+      "version": "0.4.2 was the previously resolved version (latest 0.4.x); 1.0.0 exists outside the declared range",
+      "license": "NONE (no license field or file in the published package)",
+      "via": "@meteora-ag/cp-amm-sdk@1.4.10 declares \"chain\": \"^0.4.0\" as a runtime dependency",
+      "status": "REMOVED",
+      "decision": "Decision 4, 2026-09-27: targeted removal, not a pin and not a stub",
+      "mechanism": "pnpm-workspace.yaml overrides: \"@meteora-ag/cp-amm-sdk@1.4.10>chain\": \"-\"",
+      "verification": [
+        "published tarball sha512-Y3UPjP91VWrj86hOr4kDmU1UXiESspy8YP6Z/4XtWD1eCVwUN0xMEzCvKXM2IRz5ECSj8alO2od1czhMhvcD8g== inspected: CJS, ESM, types and source maps contain no chain import, no dynamic import, no eval",
+        "install in a disposable secret-free environment with lifecycle scripts disabled",
+        "absent from pnpm-lock.yaml packages/snapshots, pnpm list graph, node_modules and generated SBOM",
+        "adapter compatibility tests pass: CJS/ESM import, curve build, quote, createConfig/createPool/swap/migration/fee-claim construction"
+      ],
+      "note": "Installation gate, not an accusation of malware. Report the stray dependency to Meteora. If a future SDK version needs it, fail closed and re-review.",
+      "evidence": "project-qf/evidence/chain-removal/"
+    },
+    {
+      "name": "text-encoding-utf-8",
+      "version": "1.0.2",
+      "license": "Unlicense (LICENSE.md; no package.json license field)",
+      "via": "borsh@0.7.0 via @solana/web3.js",
+      "status": "ALLOWED"
+    }
+  ],
+  "amended": "2026-09-27 (V0 decisions 1 and 4; see docs/DECISIONS/ADR-011 and ADR-012); 2026-09-27 repair pass: QF-LIC-EX-002 pako@2.2.0 exact (LIC-R1, ADR-012)"
+}

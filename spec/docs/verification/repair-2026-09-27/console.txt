@@ -1,0 +1,4 @@
+(node:4849) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+wrote /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verify-out/PROGRAM-VERIFICATION-2026-09-27.md and .json (exit 2)
+exit 2

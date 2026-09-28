@@ -1,0 +1,18 @@
+{
+  "name": "@project-qf/econ-sim",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "description": "SIMULATION ONLY (Decision 5): flat-fee baseline vs one bounded fee-scheduler decay, identical synthetic traces, SDK 1.5.13 quote math. Server-side.",
+  "dependencies": {
+    "@noble/hashes": "1.8.0",
+    "@project-qf/adapter-meteora-dbc": "workspace:*",
+    "@project-qf/core": "workspace:*",
+    "@project-qf/policy": "workspace:*",
+    "@project-qf/validator": "workspace:*"
+  },
+  "scripts": {
+    "sim": "node src/run.ts"
+  }
+}

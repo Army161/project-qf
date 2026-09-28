@@ -1,0 +1,912 @@
+{
+  "tool": "project-qf/program-verify",
+  "version": "0.3.0",
+  "schemaVersion": "qf-program-verify-report/2",
+  "generatedAt": "2026-09-27T12:14:25.643Z",
+  "readOnly": true,
+  "plan": [
+    {
+      "cluster": "mainnet-beta",
+      "crossCheck": false
+    },
+    {
+      "cluster": "devnet",
+      "crossCheck": false
+    }
+  ],
+  "clusters": [
+    {
+      "schemaVersion": "qf-program-verify-report/2",
+      "cluster": "mainnet-beta",
+      "endpoint": "https://api.mainnet-beta.solana.com",
+      "rpcLabel": "LIVE_RPC",
+      "commitment": "finalized",
+      "crossCheckRequested": false,
+      "startedAt": "2026-09-27T12:14:25.128Z",
+      "checks": [
+        {
+          "id": "CONNECTIVITY",
+          "subject": "mainnet-beta",
+          "status": "FAIL",
+          "required": true,
+          "error": "TypeError: fetch failed <- Request was cancelled. <- AbortError: UND_ERR_ABORTED Proxy response (403) !== 200 when HTTP Tunneling"
+        },
+        {
+          "id": "CLUSTER_IDENTITY",
+          "subject": "mainnet-beta",
+          "status": "UNKNOWN",
+          "required": true,
+          "note": "not reached"
+        },
+        {
+          "id": "PROGRAM_PRESENCE",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "LOADER_STATE",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "PROGRAMDATA",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "UPGRADE_AUTHORITY",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "DEPLOY_SLOT",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "EXECUTABLE_HASH",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "INTERFACE",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "SOURCE_BUILD",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "AUDIT_COVERAGE",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "PROGRAM_PRESENCE",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "LOADER_STATE",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "PROGRAMDATA",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "UPGRADE_AUTHORITY",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "DEPLOY_SLOT",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "EXECUTABLE_HASH",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "INTERFACE",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "SOURCE_BUILD",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "AUDIT_COVERAGE",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "PROGRAM_PRESENCE",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "LOADER_STATE",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "PROGRAMDATA",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "UPGRADE_AUTHORITY",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "DEPLOY_SLOT",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "EXECUTABLE_HASH",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "INTERFACE",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "SOURCE_BUILD",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "AUDIT_COVERAGE",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps25",
+          "address": "7F6dnUcRuyM2TwR8myT1dYypFXpPSxqwKNSFNkxyNESd",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps25",
+          "address": "7F6dnUcRuyM2TwR8myT1dYypFXpPSxqwKNSFNkxyNESd",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps30",
+          "address": "2nHK1kju6XjphBLbNxpM5XRGFj7p9U8vvNzyZiha1z6k",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps30",
+          "address": "2nHK1kju6XjphBLbNxpM5XRGFj7p9U8vvNzyZiha1z6k",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps100",
+          "address": "Hv8Lmzmnju6m7kcokVKvwqz7QPmdX9XfKjJsXz8RXcjp",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps100",
+          "address": "Hv8Lmzmnju6m7kcokVKvwqz7QPmdX9XfKjJsXz8RXcjp",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps200",
+          "address": "2c4cYd4reUYVRAB9kUUkrq55VPyy2FNQ3FDL4o12JXmq",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps200",
+          "address": "2c4cYd4reUYVRAB9kUUkrq55VPyy2FNQ3FDL4o12JXmq",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps400",
+          "address": "AkmQWebAwFvWk55wBoCr5D62C6VVDTzi84NJuD9H7cFD",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps400",
+          "address": "AkmQWebAwFvWk55wBoCr5D62C6VVDTzi84NJuD9H7cFD",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps600",
+          "address": "DbCRBj8McvPYHJG1ukj8RE15h2dCNUdTAESG49XpQ44u",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps600",
+          "address": "DbCRBj8McvPYHJG1ukj8RE15h2dCNUdTAESG49XpQ44u",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "Customizable",
+          "address": "A8gMrEPJkacWkcb3DGwtJwTe16HktSEfvwtuDh2MCtck",
+          "required": true,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "Customizable",
+          "address": "A8gMrEPJkacWkcb3DGwtJwTe16HktSEfvwtuDh2MCtck",
+          "required": true,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        }
+      ],
+      "finishedAt": "2026-09-27T12:14:25.386Z"
+    },
+    {
+      "schemaVersion": "qf-program-verify-report/2",
+      "cluster": "devnet",
+      "endpoint": "https://api.devnet.solana.com",
+      "rpcLabel": "LIVE_RPC",
+      "commitment": "finalized",
+      "crossCheckRequested": false,
+      "startedAt": "2026-09-27T12:14:25.387Z",
+      "checks": [
+        {
+          "id": "CONNECTIVITY",
+          "subject": "devnet",
+          "status": "FAIL",
+          "required": true,
+          "error": "TypeError: fetch failed <- Request was cancelled. <- AbortError: UND_ERR_ABORTED Proxy response (403) !== 200 when HTTP Tunneling"
+        },
+        {
+          "id": "CLUSTER_IDENTITY",
+          "subject": "devnet",
+          "status": "UNKNOWN",
+          "required": true,
+          "note": "not reached"
+        },
+        {
+          "id": "PROGRAM_PRESENCE",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "LOADER_STATE",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "PROGRAMDATA",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "UPGRADE_AUTHORITY",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "DEPLOY_SLOT",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "EXECUTABLE_HASH",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "INTERFACE",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "SOURCE_BUILD",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "AUDIT_COVERAGE",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DBC",
+          "required": true
+        },
+        {
+          "id": "PROGRAM_PRESENCE",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "LOADER_STATE",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "PROGRAMDATA",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "UPGRADE_AUTHORITY",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "DEPLOY_SLOT",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "EXECUTABLE_HASH",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "INTERFACE",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "SOURCE_BUILD",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "AUDIT_COVERAGE",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "Meteora DAMM v2",
+          "required": true
+        },
+        {
+          "id": "PROGRAM_PRESENCE",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "LOADER_STATE",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "PROGRAMDATA",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "UPGRADE_AUTHORITY",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "DEPLOY_SLOT",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "EXECUTABLE_HASH",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "INTERFACE",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "SOURCE_BUILD",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "AUDIT_COVERAGE",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi",
+          "status": "UNKNOWN",
+          "note": "RPC not reachable",
+          "program": "SF Rewards (candidate)",
+          "required": false
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps25",
+          "address": "7F6dnUcRuyM2TwR8myT1dYypFXpPSxqwKNSFNkxyNESd",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps25",
+          "address": "7F6dnUcRuyM2TwR8myT1dYypFXpPSxqwKNSFNkxyNESd",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps30",
+          "address": "2nHK1kju6XjphBLbNxpM5XRGFj7p9U8vvNzyZiha1z6k",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps30",
+          "address": "2nHK1kju6XjphBLbNxpM5XRGFj7p9U8vvNzyZiha1z6k",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps100",
+          "address": "Hv8Lmzmnju6m7kcokVKvwqz7QPmdX9XfKjJsXz8RXcjp",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps100",
+          "address": "Hv8Lmzmnju6m7kcokVKvwqz7QPmdX9XfKjJsXz8RXcjp",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps200",
+          "address": "2c4cYd4reUYVRAB9kUUkrq55VPyy2FNQ3FDL4o12JXmq",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps200",
+          "address": "2c4cYd4reUYVRAB9kUUkrq55VPyy2FNQ3FDL4o12JXmq",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps400",
+          "address": "AkmQWebAwFvWk55wBoCr5D62C6VVDTzi84NJuD9H7cFD",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps400",
+          "address": "AkmQWebAwFvWk55wBoCr5D62C6VVDTzi84NJuD9H7cFD",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps600",
+          "address": "DbCRBj8McvPYHJG1ukj8RE15h2dCNUdTAESG49XpQ44u",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps600",
+          "address": "DbCRBj8McvPYHJG1ukj8RE15h2dCNUdTAESG49XpQ44u",
+          "required": false,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "Customizable",
+          "address": "A8gMrEPJkacWkcb3DGwtJwTe16HktSEfvwtuDh2MCtck",
+          "required": true,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "Customizable",
+          "address": "A8gMrEPJkacWkcb3DGwtJwTe16HktSEfvwtuDh2MCtck",
+          "required": true,
+          "status": "UNKNOWN",
+          "note": "RPC not reachable"
+        }
+      ],
+      "finishedAt": "2026-09-27T12:14:25.643Z"
+    }
+  ],
+  "summary": {
+    "requiredFailures": [
+      {
+        "cluster": "mainnet-beta",
+        "id": "CONNECTIVITY",
+        "subject": "mainnet-beta",
+        "status": "FAIL"
+      },
+      {
+        "cluster": "mainnet-beta",
+        "id": "CLUSTER_IDENTITY",
+        "subject": "mainnet-beta",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "mainnet-beta",
+        "id": "PROGRAM_PRESENCE",
+        "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "mainnet-beta",
+        "id": "LOADER_STATE",
+        "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "mainnet-beta",
+        "id": "PROGRAMDATA",
+        "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "mainnet-beta",
+        "id": "UPGRADE_AUTHORITY",
+        "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "mainnet-beta",
+        "id": "EXECUTABLE_HASH",
+        "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "mainnet-beta",
+        "id": "PROGRAM_PRESENCE",
+        "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "mainnet-beta",
+        "id": "LOADER_STATE",
+        "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "mainnet-beta",
+        "id": "PROGRAMDATA",
+        "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "mainnet-beta",
+        "id": "UPGRADE_AUTHORITY",
+        "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "mainnet-beta",
+        "id": "EXECUTABLE_HASH",
+        "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "mainnet-beta",
+        "id": "CONFIG",
+        "subject": "Customizable",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "mainnet-beta",
+        "id": "CONFIG_COMPATIBILITY",
+        "subject": "Customizable",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "devnet",
+        "id": "CONNECTIVITY",
+        "subject": "devnet",
+        "status": "FAIL"
+      },
+      {
+        "cluster": "devnet",
+        "id": "CLUSTER_IDENTITY",
+        "subject": "devnet",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "devnet",
+        "id": "PROGRAM_PRESENCE",
+        "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "devnet",
+        "id": "LOADER_STATE",
+        "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "devnet",
+        "id": "PROGRAMDATA",
+        "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "devnet",
+        "id": "UPGRADE_AUTHORITY",
+        "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "devnet",
+        "id": "EXECUTABLE_HASH",
+        "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "devnet",
+        "id": "PROGRAM_PRESENCE",
+        "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "devnet",
+        "id": "LOADER_STATE",
+        "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "devnet",
+        "id": "PROGRAMDATA",
+        "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "devnet",
+        "id": "UPGRADE_AUTHORITY",
+        "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "devnet",
+        "id": "EXECUTABLE_HASH",
+        "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "devnet",
+        "id": "CONFIG",
+        "subject": "Customizable",
+        "status": "UNKNOWN"
+      },
+      {
+        "cluster": "devnet",
+        "id": "CONFIG_COMPATIBILITY",
+        "subject": "Customizable",
+        "status": "UNKNOWN"
+      }
+    ],
+    "overall": "REQUIRED_CHECKS_NOT_SATISFIED",
+    "inventory": {
+      "expected": 86,
+      "required": 28,
+      "missing": 0,
+      "duplicate": 0,
+      "unexpected": 0
+    },
+    "notes": [
+      "SOURCE_BUILD is NOT_ATTEMPTED and AUDIT_COVERAGE is NOT_EVALUATED in every run; neither is implied by any PASS.",
+      "Exit 0 means only that the expected read-only inventory was complete and satisfied; it is not a readiness decision for any stage."
+    ]
+  },
+  "exitCode": 2
+}

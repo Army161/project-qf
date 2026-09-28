@@ -1,0 +1,56 @@
+{
+  "schema": "qf-review-technical-decision/1",
+  "review_date": "2026-09-27",
+  "technical_recommendation": "ACCEPT_SCOPED_V0",
+  "owner_approval": null,
+  "target": "internal Node V0 Meteora adapter only; no production authorisation",
+  "latest_review_by": "2026-12-27",
+  "earlier_recheck": [
+    "lockfile",
+    "patch",
+    "runtime",
+    "call path",
+    "advisory",
+    "deployment target",
+    "boundary control"
+  ],
+  "independent_installed_sec_a_tests_rerun": false,
+  "basis": [
+    "uploaded patch/source/lockfile/test evidence inspected",
+    "primary advisory scopes researched"
+  ],
+  "required_followup": [
+    "owner adoption",
+    "refresh after optional-native removal",
+    "separate streaming response cap repair"
+  ],
+  "input_dispositions_sha256": "dfdfec67c8b5c399f6752e26641b5a88ffd12ec57035a8b5957430f821c5c650",
+  "reviewed_lockfile_sha256": "307d35bee826b2f7d455967160795d3b77e4635c814b87be9a09f784ae6e7f7d",
+  "advisories": [
+    {
+      "id": "GHSA-3gc7-fjrx-p6mg",
+      "package": "bigint-buffer@1.1.5",
+      "disposition": "MITIGATED_PATCHED"
+    },
+    {
+      "id": "GHSA-82x6-q7mm-w9cf",
+      "package": "toml@4.2.0",
+      "disposition": "FIXED_BY_SCOPED_OVERRIDE"
+    },
+    {
+      "id": "GHSA-v5mp-jgw5-2x6j",
+      "package": "toml@4.2.0",
+      "disposition": "FIXED_BY_SCOPED_OVERRIDE"
+    },
+    {
+      "id": "GHSA-w5hq-g745-h8pq",
+      "package": "uuid@8.3.2",
+      "disposition": "NOT_AFFECTED_PATH_SPECIFIC"
+    },
+    {
+      "id": "GHSA-528h-pc64-c93x",
+      "package": "stream-json@1.9.1",
+      "disposition": "NOT_AFFECTED_PATH_SPECIFIC"
+    }
+  ]
+}

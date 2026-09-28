@@ -1,0 +1,115 @@
+# cmd: node --test test/readonly-readiness.test.mjs (repaired verifier)
+# at: 2026-09-27T16:05:45Z
+TAP version 13
+# Subtest: CFG-TYPE: the Customizable route with a Dynamic (1) config and the DBC pool authority passes compatibility
+ok 1 - CFG-TYPE: the Customizable route with a Dynamic (1) config and the DBC pool authority passes compatibility
+  ---
+  duration_ms: 39.276793
+  type: 'test'
+  ...
+# Subtest: CFG-TYPE: a full 328-byte Customizable config with config_type 0 (Static on a dynamic route) fails
+ok 2 - CFG-TYPE: a full 328-byte Customizable config with config_type 0 (Static on a dynamic route) fails
+  ---
+  duration_ms: 21.676138
+  type: 'test'
+  ...
+# Subtest: CFG-TYPE: a full 328-byte Customizable config with config_type 255 (unknown enum) fails
+ok 3 - CFG-TYPE: a full 328-byte Customizable config with config_type 255 (unknown enum) fails
+  ---
+  duration_ms: 17.707037
+  type: 'test'
+  ...
+# Subtest: CFG-TYPE: the right type with the wrong creator authority still fails
+ok 4 - CFG-TYPE: the right type with the wrong creator authority still fails
+  ---
+  duration_ms: 17.009965
+  type: 'test'
+  ...
+# Subtest: CFG-TYPE: correct bytes under the wrong owner fail CONFIG and never reach compatibility PASS
+ok 5 - CFG-TYPE: correct bytes under the wrong owner fail CONFIG and never reach compatibility PASS
+  ---
+  duration_ms: 13.36491
+  type: 'test'
+  ...
+# Subtest: CFG-TYPE: fixed-fee routes are explicitly NOT_ASSESSED in V0, not silently accepted
+ok 6 - CFG-TYPE: fixed-fee routes are explicitly NOT_ASSESSED in V0, not silently accepted
+  ---
+  duration_ms: 10.696776
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: an oversized RPC body is refused while streaming, cancelled, and never fully read
+ok 7 - BODY-LIMIT: an oversized RPC body is refused while streaming, cancelled, and never fully read
+  ---
+  duration_ms: 22.888565
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: a false small Content-Length header cannot bypass the cap
+ok 8 - BODY-LIMIT: a false small Content-Length header cannot bypass the cap
+  ---
+  duration_ms: 1.272151
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: a declared oversize Content-Length is refused before reading and the body is cancelled
+ok 9 - BODY-LIMIT: a declared oversize Content-Length is refused before reading and the body is cancelled
+  ---
+  duration_ms: 0.975266
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: exactly at the cap is accepted; one byte over is refused (chunk boundaries)
+ok 10 - BODY-LIMIT: exactly at the cap is accepted; one byte over is refused (chunk boundaries)
+  ---
+  duration_ms: 1.888043
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: the deadline covers body consumption, not just headers; the stalled body is cancelled
+ok 11 - BODY-LIMIT: the deadline covers body consumption, not just headers; the stalled body is cancelled
+  ---
+  duration_ms: 101.242602
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: an oversized error body is bounded too
+ok 12 - BODY-LIMIT: an oversized error body is bounded too
+  ---
+  duration_ms: 0.868189
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: per-operation limits let a legitimate large ProgramData read through while small reads stay small
+ok 13 - BODY-LIMIT: per-operation limits let a legitimate large ProgramData read through while small reads stay small
+  ---
+  duration_ms: 0.108448
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: account reads declare which size class they need; a small read of a large account is refused
+ok 14 - BODY-LIMIT: account reads declare which size class they need; a small read of a large account is refused
+  ---
+  duration_ms: 4.78859
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: decoded account bytes are bounded separately from the encoded body
+ok 15 - BODY-LIMIT: decoded account bytes are bounded separately from the encoded body
+  ---
+  duration_ms: 0.81411
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: the compressed IDL is inflated with a separate decompressed-output cap
+ok 16 - BODY-LIMIT: the compressed IDL is inflated with a separate decompressed-output cap
+  ---
+  duration_ms: 206.023609
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: the OtterSec status body is bounded and an oversize body becomes an error value, not a throw
+ok 17 - BODY-LIMIT: the OtterSec status body is bounded and an oversize body becomes an error value, not a throw
+  ---
+  duration_ms: 3.947137
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 564.089885
+# exit: 0

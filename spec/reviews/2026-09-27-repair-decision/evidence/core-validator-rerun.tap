@@ -1,0 +1,346 @@
+TAP version 13
+# Subtest: parses decimal strings exactly (no float)
+ok 1 - parses decimal strings exactly (no float)
+  ---
+  duration_ms: 0.964411
+  type: 'test'
+  ...
+# Subtest: rejects malformed or over-precise input instead of silently rounding
+ok 2 - rejects malformed or over-precise input instead of silently rounding
+  ---
+  duration_ms: 0.521485
+  type: 'test'
+  ...
+# Subtest: comparison is exact at boundaries
+ok 3 - comparison is exact at boundaries
+  ---
+  duration_ms: 4.268143
+  type: 'test'
+  ...
+# Subtest: raw-unit conversion records rounding direction
+ok 4 - raw-unit conversion records rounding direction
+  ---
+  duration_ms: 0.287944
+  type: 'test'
+  ...
+# Subtest: mul/div with explicit rounding
+ok 5 - mul/div with explicit rounding
+  ---
+  duration_ms: 0.244017
+  type: 'test'
+  ...
+# Subtest: min / max / median / ratioBps
+ok 6 - min / max / median / ratioBps
+  ---
+  duration_ms: 0.235735
+  type: 'test'
+  ...
+# Subtest: capability flags default to the decided V1 values
+ok 7 - capability flags default to the decided V1 values
+  ---
+  duration_ms: 1.151774
+  type: 'test'
+  ...
+# Subtest: readiness is tracked as four separate stages
+ok 8 - readiness is tracked as four separate stages
+  ---
+  duration_ms: 1.191372
+  type: 'test'
+  ...
+# Subtest: mock values are conspicuously labelled and cannot pass as live
+ok 9 - mock values are conspicuously labelled and cannot pass as live
+  ---
+  duration_ms: 0.317308
+  type: 'test'
+  ...
+# Subtest: aggregate: any FAIL -> FAIL, else any WARN -> WARN, else PASS
+ok 10 - aggregate: any FAIL -> FAIL, else any WARN -> WARN, else PASS
+  ---
+  duration_ms: 1.2293
+  type: 'test'
+  ...
+# Subtest: LIVE: a required check that is missing or SKIP makes the result FAIL
+ok 11 - LIVE: a required check that is missing or SKIP makes the result FAIL
+  ---
+  duration_ms: 0.349145
+  type: 'test'
+  ...
+# Subtest: TEST_ONLY aggregate is never PASS
+ok 12 - TEST_ONLY aggregate is never PASS
+  ---
+  duration_ms: 0.1462
+  type: 'test'
+  ...
+# Subtest: TEST_ONLY guard: synthetic assets are refused; passing the guard admits nothing
+ok 13 - TEST_ONLY guard: synthetic assets are refused; passing the guard admits nothing
+  ---
+  duration_ms: 0.569948
+  type: 'test'
+  ...
+# Subtest: S3.1 PASS when both exits fill the full notional within the impact bound
+ok 14 - S3.1 PASS when both exits fill the full notional within the impact bound
+  ---
+  duration_ms: 1.407278
+  type: 'test'
+  ...
+# Subtest: impact above maxRouteImpactBps (300) -> WARN; exactly 300 is within bound
+ok 15 - impact above maxRouteImpactBps (300) -> WARN; exactly 300 is within bound
+  ---
+  duration_ms: 0.384889
+  type: 'test'
+  ...
+# Subtest: a route that cannot fill the notional is not an exit: FAIL
+ok 16 - a route that cannot fill the notional is not an exit: FAIL
+  ---
+  duration_ms: 0.310247
+  type: 'test'
+  ...
+# Subtest: route quoted for a smaller notional does not count for a larger one
+ok 17 - route quoted for a smaller notional does not count for a larger one
+  ---
+  duration_ms: 0.274813
+  type: 'test'
+  ...
+# Subtest: missing exit to one required asset: FAIL (insufficient evidence is never PASS)
+ok 18 - missing exit to one required asset: FAIL (insufficient evidence is never PASS)
+  ---
+  duration_ms: 0.952674
+  type: 'test'
+  ...
+# Subtest: stale route quotes are ignored
+ok 19 - stale route quotes are ignored
+  ---
+  duration_ms: 0.268554
+  type: 'test'
+  ...
+# Subtest: when the quote asset is itself an exit asset that leg is trivially satisfied
+ok 20 - when the quote asset is itself an exit asset that leg is trivially satisfied
+  ---
+  duration_ms: 0.203626
+  type: 'test'
+  ...
+# Subtest: exit depth is independent of TVL: high liquidity does not imply an executable exit
+ok 21 - exit depth is independent of TVL: high liquidity does not imply an executable exit
+  ---
+  duration_ms: 0.109575
+  type: 'test'
+  ...
+# Subtest: TEST_ONLY mode caps S3.1 at WARN
+ok 22 - TEST_ONLY mode caps S3.1 at WARN
+  ---
+  duration_ms: 1.098042
+  type: 'test'
+  ...
+# Subtest: policy object carries the adopted Decision 2 values as exact decimal strings
+ok 23 - policy object carries the adopted Decision 2 values as exact decimal strings
+  ---
+  duration_ms: 0.884271
+  type: 'test'
+  ...
+# Subtest: S3.2 boundary below fail floor: $24,999.99 -> FAIL
+ok 24 - S3.2 boundary below fail floor: $24,999.99 -> FAIL
+  ---
+  duration_ms: 1.201228
+  type: 'test'
+  ...
+# Subtest: S3.2 boundary at fail floor: $25,000 -> WARN
+ok 25 - S3.2 boundary at fail floor: $25,000 -> WARN
+  ---
+  duration_ms: 8.530006
+  type: 'test'
+  ...
+# Subtest: S3.2 boundary just below warn line: $249,999.99 -> WARN
+ok 26 - S3.2 boundary just below warn line: $249,999.99 -> WARN
+  ---
+  duration_ms: 0.194182
+  type: 'test'
+  ...
+# Subtest: S3.2 boundary at warn line: $250,000 -> PASS
+ok 27 - S3.2 boundary at warn line: $250,000 -> PASS
+  ---
+  duration_ms: 0.165689
+  type: 'test'
+  ...
+# Subtest: the same pool reported by two providers is corroboration, not additive liquidity
+ok 28 - the same pool reported by two providers is corroboration, not additive liquidity
+  ---
+  duration_ms: 0.43885
+  type: 'test'
+  ...
+# Subtest: duplicate reports that disagree use the lower reserves (conservative)
+ok 29 - duplicate reports that disagree use the lower reserves (conservative)
+  ---
+  duration_ms: 0.232921
+  type: 'test'
+  ...
+# Subtest: dedupe key is chain + venue + pool address: same address on another venue counts separately
+ok 30 - dedupe key is chain + venue + pool address: same address on another venue counts separately
+  ---
+  duration_ms: 0.20612
+  type: 'test'
+  ...
+# Subtest: pools that do not contain the quote asset, or that contain a QF-launched base token, are not eligible
+ok 31 - pools that do not contain the quote asset, or that contain a QF-launched base token, are not eligible
+  ---
+  duration_ms: 0.432901
+  type: 'test'
+  ...
+# Subtest: missing quote price is insufficient evidence and never PASS
+ok 32 - missing quote price is insufficient evidence and never PASS
+  ---
+  duration_ms: 5.079094
+  type: 'test'
+  ...
+# Subtest: a single price source is insufficient (two independent sources required)
+ok 33 - a single price source is insufficient (two independent sources required)
+  ---
+  duration_ms: 0.366592
+  type: 'test'
+  ...
+# Subtest: stale prices are excluded -> insufficient evidence -> FAIL
+ok 34 - stale prices are excluded -> insufficient evidence -> FAIL
+  ---
+  duration_ms: 0.167422
+  type: 'test'
+  ...
+# Subtest: stale pool observations are excluded
+ok 35 - stale pool observations are excluded
+  ---
+  duration_ms: 0.427513
+  type: 'test'
+  ...
+# Subtest: future-dated observations are rejected as manipulated evidence
+ok 36 - future-dated observations are rejected as manipulated evidence
+  ---
+  duration_ms: 0.355274
+  type: 'test'
+  ...
+# Subtest: manipulated (inflated) price: disagreement values at the lowest price and caps the check at WARN
+ok 37 - manipulated (inflated) price: disagreement values at the lowest price and caps the check at WARN
+  ---
+  duration_ms: 1.564224
+  type: 'test'
+  ...
+# Subtest: manipulated price cannot lift a sub-floor market over $25,000
+ok 38 - manipulated price cannot lift a sub-floor market over $25,000
+  ---
+  duration_ms: 0.188113
+  type: 'test'
+  ...
+# Subtest: non-positive or malformed prices are dropped, not coerced
+ok 39 - non-positive or malformed prices are dropped, not coerced
+  ---
+  duration_ms: 0.302386
+  type: 'test'
+  ...
+# Subtest: LIVE mode ignores TEST_ONLY providers entirely
+ok 40 - LIVE mode ignores TEST_ONLY providers entirely
+  ---
+  duration_ms: 0.231358
+  type: 'test'
+  ...
+# Subtest: TEST_ONLY mode (synthetic devnet qUSD) is capped at WARN and never asserts real liquidity
+ok 41 - TEST_ONLY mode (synthetic devnet qUSD) is capped at WARN and never asserts real liquidity
+  ---
+  duration_ms: 0.237938
+  type: 'test'
+  ...
+# Subtest: deterministic: same inputs give identical results
+ok 42 - deterministic: same inputs give identical results
+  ---
+  duration_ms: 0.8108
+  type: 'test'
+  ...
+# Subtest: QF-VAL-01: an empty required-exit list never passes S3.1
+ok 43 - QF-VAL-01: an empty required-exit list never passes S3.1
+  ---
+  duration_ms: 1.050521
+  type: 'test'
+  ...
+# Subtest: QF-VAL-02: an asserted issuer class with an invalid mint and no evidence is not admitted to production
+ok 44 - QF-VAL-02: an asserted issuer class with an invalid mint and no evidence is not admitted to production
+  ---
+  duration_ms: 0.357288
+  type: 'test'
+  ...
+# Subtest: QF-VAL-03: an unknown runtime validation mode cannot bypass the required LIVE checks
+ok 45 - QF-VAL-03: an unknown runtime validation mode cannot bypass the required LIVE checks
+  ---
+  duration_ms: 0.209976
+  type: 'test'
+  ...
+# Subtest: S3.1 schema: duplicate, malformed, non-policy exits, nonpositive notional and unknown mode FAIL
+ok 46 - S3.1 schema: duplicate, malformed, non-policy exits, nonpositive notional and unknown mode FAIL
+  ---
+  duration_ms: 1.777946
+  type: 'test'
+  ...
+# Subtest: S3.1: an identity exit is recorded but not counted as an independent market
+ok 47 - S3.1: an identity exit is recorded but not counted as an independent market
+  ---
+  duration_ms: 0.270637
+  type: 'test'
+  ...
+# Subtest: S3.1: malformed routes are excluded, never counted
+ok 48 - S3.1: malformed routes are excluded, never counted
+  ---
+  duration_ms: 1.103721
+  type: 'test'
+  ...
+# Subtest: aggregate: duplicate or malformed checks and an empty set FAIL
+ok 49 - aggregate: duplicate or malformed checks and an empty set FAIL
+  ---
+  duration_ms: 0.747555
+  type: 'test'
+  ...
+# Subtest: EV-1 lineage: two labels relaying one upstream are one source (INSUFFICIENT at minimum 2)
+ok 50 - EV-1 lineage: two labels relaying one upstream are one source (INSUFFICIENT at minimum 2)
+  ---
+  duration_ms: 0.678241
+  type: 'test'
+  ...
+# Subtest: EV-1 timestamps: malformed and future-beyond-skew evidence is excluded
+ok 51 - EV-1 timestamps: malformed and future-beyond-skew evidence is excluded
+  ---
+  duration_ms: 0.202144
+  type: 'test'
+  ...
+# Subtest: S3.2: an unknown mode FAILs
+ok 52 - S3.2: an unknown mode FAILs
+  ---
+  duration_ms: 0.37208
+  type: 'test'
+  ...
+# Subtest: evidence-v0.1 is labelled V0_TEST analytical only (owner decision EV-1)
+ok 53 - evidence-v0.1 is labelled V0_TEST analytical only (owner decision EV-1)
+  ---
+  duration_ms: 0.559271
+  type: 'test'
+  ...
+# Subtest: admission: V0 has no configured authoritative sources, so even a complete request is refused
+ok 54 - admission: V0 has no configured authoritative sources, so even a complete request is refused
+  ---
+  duration_ms: 0.677549
+  type: 'test'
+  ...
+# Subtest: admission: class is derived from provenance; an asserted class is ignored
+ok 55 - admission: class is derived from provenance; an asserted class is ignored
+  ---
+  duration_ms: 0.462926
+  type: 'test'
+  ...
+# Subtest: admission: each missing or contradictory element is refused
+ok 56 - admission: each missing or contradictory element is refused
+  ---
+  duration_ms: 0.599232
+  type: 'test'
+  ...
+1..56
+# tests 56
+# suites 0
+# pass 56
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 439.294706

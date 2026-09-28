@@ -1,0 +1,7 @@
+# cmd: pnpm typecheck (re-run after fixing the TS2345 in borsh.ts width check; first run kept)
+# at: 2026-09-27T16:10:02Z
+
+> project-qf@ typecheck /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf
+> tsc -p tsconfig.json --noEmit
+
+# exit: 0

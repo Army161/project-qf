@@ -1,0 +1,43 @@
+{
+  "scope": "Original-function extraction; synthetic offline inputs; NOT full SDK/verifier tests and NOT on-chain results",
+  "sourceHashes": {
+    "adapter": "b14072af3765680d44dad56146352e6b607df560081ec1cfcec75f395dbcccd6",
+    "verifier": "c959bc0a26f0cd2de7b5e14f46876e58851aa88c0b1bdc2ee4b4a0f2e9689cb4"
+  },
+  "observations": [
+    {
+      "id": "BODY-LIMIT",
+      "capBytes": 1024,
+      "syntheticBytesProduced": 1280,
+      "allChunksConsumed": false,
+      "chunksConsumed": 5,
+      "cancelled": true,
+      "returnedError": "RPC_RESPONSE_TOO_LARGE 1280+ > 1024 (stopped while streaming)",
+      "interpretation": "Oversize is detected only after complete materialization; not a streaming memory cap."
+    },
+    {
+      "id": "CONFIG-TYPE",
+      "syntheticConfigType": 0,
+      "fullAccountBytes": 328,
+      "decodedConfigType": 0,
+      "compatibilityStatus": "FAIL",
+      "interpretation": "Original compatibility predicate does not validate required dynamic type."
+    },
+    {
+      "id": "CONFIG-TYPE",
+      "syntheticConfigType": 1,
+      "fullAccountBytes": 328,
+      "decodedConfigType": 1,
+      "compatibilityStatus": "PASS",
+      "interpretation": "Expected positive control for type only; not a complete real config."
+    },
+    {
+      "id": "CONFIG-TYPE",
+      "syntheticConfigType": 255,
+      "fullAccountBytes": 328,
+      "decodedConfigType": 255,
+      "compatibilityStatus": "FAIL",
+      "interpretation": "Original compatibility predicate does not validate required dynamic type."
+    }
+  ]
+}

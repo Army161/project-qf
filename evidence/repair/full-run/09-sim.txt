@@ -1,0 +1,40 @@
+# cmd: pnpm sim
+# at: 2026-09-27T12:13:28Z
+
+> project-qf@ sim /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf
+> node tools/econ-sim/src/run.ts
+
+{"resultsHash":"3f8bd4e725db35b500e9c1f61949063f7fd9c94060574ac812f43d25366415a9","summary":{"hypotheses":30,"passed":19,"failed":7,"notApplicable":4}}
+sniper_burst_t0  H1_BOT_ACQUISITION       FAIL           flat=4013 bps | decay=3699 bps (7.8% relative drop)
+sniper_burst_t0  H5_BOT_PNL               PASS           flat=935619670 raw qUSD | decay=304797703 raw qUSD
+sniper_burst_t0  H2_ORGANIC_COST          PASS           flat=100 bps | decay=145 bps
+sniper_burst_t0  H3_GRADUATION_UNCHANGED  PASS           flat=true @ 2174 | decay=true @ 2132
+sniper_burst_t0  H4_CONSERVATION          PASS           flat=reserve-curve=9 | decay=reserve-curve=8
+patient_sniper   H1_BOT_ACQUISITION       FAIL           flat=3191 bps | decay=3268 bps (-2.4% relative drop)
+patient_sniper   H5_BOT_PNL               FAIL           flat=438795765 raw qUSD | decay=473508794 raw qUSD
+patient_sniper   H2_ORGANIC_COST          PASS           flat=100 bps | decay=134 bps
+patient_sniper   H3_GRADUATION_UNCHANGED  PASS           flat=false @ null | decay=false @ null
+patient_sniper   H4_CONSERVATION          PASS           flat=reserve-curve=14 | decay=reserve-curve=15
+organic_only     H1_BOT_ACQUISITION       NOT_APPLICABLE flat=0 bps | decay=0 bps (0.0% relative drop)
+organic_only     H5_BOT_PNL               NOT_APPLICABLE flat=0 raw qUSD | decay=0 raw qUSD
+organic_only     H2_ORGANIC_COST          FAIL           flat=100 bps | decay=199 bps
+organic_only     H3_GRADUATION_UNCHANGED  PASS           flat=true @ 2093 | decay=true @ 2121
+organic_only     H4_CONSERVATION          PASS           flat=reserve-curve=9 | decay=reserve-curve=10
+pump_dump        H1_BOT_ACQUISITION       FAIL           flat=4845 bps | decay=4535 bps (6.4% relative drop)
+pump_dump        H5_BOT_PNL               PASS           flat=18365202 raw qUSD | decay=-702157337 raw qUSD
+pump_dump        H2_ORGANIC_COST          FAIL           flat=100 bps | decay=153 bps
+pump_dump        H3_GRADUATION_UNCHANGED  PASS           flat=false @ null | decay=false @ null
+pump_dump        H4_CONSERVATION          PASS           flat=reserve-curve=10 | decay=reserve-curve=7
+low_demand       H1_BOT_ACQUISITION       NOT_APPLICABLE flat=0 bps | decay=0 bps (0.0% relative drop)
+low_demand       H5_BOT_PNL               NOT_APPLICABLE flat=0 raw qUSD | decay=0 raw qUSD
+low_demand       H2_ORGANIC_COST          PASS           flat=100 bps | decay=137 bps
+low_demand       H3_GRADUATION_UNCHANGED  PASS           flat=false @ null | decay=false @ null
+low_demand       H4_CONSERVATION          PASS           flat=reserve-curve=3 | decay=reserve-curve=2
+sybil_split      H1_BOT_ACQUISITION       FAIL           flat=4146 bps | decay=3885 bps (6.3% relative drop)
+sybil_split      H5_BOT_PNL               PASS           flat=1070874809 raw qUSD | decay=281470116 raw qUSD
+sybil_split      H2_ORGANIC_COST          PASS           flat=100 bps | decay=126 bps
+sybil_split      H3_GRADUATION_UNCHANGED  PASS           flat=true @ 3117 | decay=true @ 3117
+sybil_split      H4_CONSERVATION          PASS           flat=reserve-curve=26 | decay=reserve-curve=23
+(node:4314) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+# exit: 0

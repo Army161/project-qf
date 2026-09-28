@@ -1,0 +1,10 @@
+{
+  "name": "@project-qf/validator",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "description": "Quote Asset Validator validator-v0.1 (deterministic, browser-safe, pure functions over evidence snapshots).",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "@project-qf/core": "workspace:*" }
+}

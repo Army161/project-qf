@@ -1,0 +1,59 @@
+TAP version 13
+# Subtest: QF-POL-01: a liquidity WARN with exit-depth PASS requires acknowledgement
+not ok 1 - QF-POL-01: a liquidity WARN with exit-depth PASS requires acknowledgement
+  ---
+  duration_ms: 2.814167
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/policy/test/review-findings.test.ts:15:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'OK'
+    - 'REQUIRES_ACKNOWLEDGEMENT'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'REQUIRES_ACKNOWLEDGEMENT'
+  actual: 'OK'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/policy/test/review-findings.test.ts:17:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: QF-POL-02: newer adverse price evidence invalidates a record still inside its TTL
+not ok 2 - QF-POL-02: newer adverse price evidence invalidates a record still inside its TTL
+  ---
+  duration_ms: 2.266764
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/policy/test/review-findings.test.ts:20:1'
+  failureType: 'testCodeFailure'
+  error: `Expected "actual" to be strictly unequal to: 'OK'`
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'OK'
+  actual: 'OK'
+  operator: 'notStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/policy/test/review-findings.test.ts:26:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 148.463496
+exit 1

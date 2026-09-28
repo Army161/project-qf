@@ -1,0 +1,44 @@
+(node:816) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{
+  "scope": "Original-function extraction; synthetic offline inputs; NOT full SDK/verifier tests and NOT on-chain results",
+  "sourceHashes": {
+    "adapter": "c2fb99566b6abbdb5899e4282dbcd064b7d9ba5d61a66a3dea77eb31dc2a63f2",
+    "verifier": "513b96b25a8b50e046a3a79c108251d2097b074c1d741af336e9c8767bf3ffb7"
+  },
+  "observations": [
+    {
+      "id": "BODY-LIMIT",
+      "capBytes": 1024,
+      "syntheticBytesProduced": 32768,
+      "allChunksConsumed": true,
+      "cancelled": false,
+      "returnedError": "RPC_RESPONSE_TOO_LARGE 32768 > 1024",
+      "interpretation": "Oversize is detected only after complete materialization; not a streaming memory cap."
+    },
+    {
+      "id": "CONFIG-TYPE",
+      "syntheticConfigType": 0,
+      "fullAccountBytes": 328,
+      "decodedConfigType": 0,
+      "compatibilityStatus": "PASS",
+      "interpretation": "Original compatibility predicate does not validate required dynamic type."
+    },
+    {
+      "id": "CONFIG-TYPE",
+      "syntheticConfigType": 1,
+      "fullAccountBytes": 328,
+      "decodedConfigType": 1,
+      "compatibilityStatus": "PASS",
+      "interpretation": "Expected positive control for type only; not a complete real config."
+    },
+    {
+      "id": "CONFIG-TYPE",
+      "syntheticConfigType": 255,
+      "fullAccountBytes": 328,
+      "decodedConfigType": 255,
+      "compatibilityStatus": "PASS",
+      "interpretation": "Original compatibility predicate does not validate required dynamic type."
+    }
+  ]
+}

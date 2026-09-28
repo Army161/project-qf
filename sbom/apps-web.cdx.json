@@ -1,0 +1,1895 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-27T08:57:23.255Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "project-qf tools/deps/sbom.ts",
+          "version": "0.1.0"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "bom-ref": "workspace:@project-qf/web",
+      "name": "@project-qf/web",
+      "version": "0.0.0"
+    },
+    "properties": [
+      {
+        "name": "qf:source",
+        "value": "pnpm list -r --prod --depth Infinity --json + pnpm-lock.yaml integrity"
+      },
+      {
+        "name": "qf:pnpm-lock.sha256",
+        "value": "644c894c5ba34dd33bf97562f5fe9e7e180cdb7d4bc36fb030ae11fe0461e4fe"
+      },
+      {
+        "name": "qf:overrides",
+        "value": "\"@meteora-ag/cp-amm-sdk@1.4.10>chain\": \"-\" (Decision 4; chain removed, not masked)"
+      },
+      {
+        "name": "qf:scope",
+        "value": "production dependencies only; dev tooling excluded"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40noble/hashes@1.8.0",
+      "name": "@noble/hashes",
+      "version": "1.8.0",
+      "purl": "pkg:npm/%40noble/hashes@1.8.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8c2b3d95d77b370ce98170c87fa3f7f8dac787dfec0fa0907711f28d023e87feab0cda3cf32a41c71cf8e540ee647cfdaf7b4dcfb37f5489d256855db57108e0"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/accounts@8.3.0",
+      "name": "@solana/accounts",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/accounts@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1cd542b38cb2139913447543dc0a6e2ae072b8ef3918713a36cec8ff2301f6f5e11606631b31613868bf6028e55a9224dd1a93c97ef01a7887c846f8f51dc42d"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/addresses@8.3.0",
+      "name": "@solana/addresses",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/addresses@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1d200f6eee53a47619a94a3d48100bbc378ec9f53509db64f4f0a6c6ff988dc94db8355b87ec8c9deb19eb5e338e1289f1c96fca27564a09884a3945089bfaa8"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/assertions@8.3.0",
+      "name": "@solana/assertions",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/assertions@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e8d23bf57e9500da6ad5bd4102741ebc2b3addd5b89775ca49b8a455de64f26948b1446509315db6b6d77d0227aac51664958495fed92d0bbb4646c13a3eb0bb"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/codecs-core@8.3.0",
+      "name": "@solana/codecs-core",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/codecs-core@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ae9b74d423de1781614d3247cabd13af89fc535b2160f85eeeada67264d8c8a3c04d8024c9be422c79d82a737a2ceef5119485ab76365a6dbbaf059c06f009ce"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/codecs-data-structures@8.3.0",
+      "name": "@solana/codecs-data-structures",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/codecs-data-structures@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a23c070670e26ba56d9280b3a692465c9d49664438b5e613a1346ed1ee0de5d124665154e449a9797fb5c6cc3b82ee1b47d70d5d73166d6c38b8581533c35de9"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/codecs-numbers@8.3.0",
+      "name": "@solana/codecs-numbers",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/codecs-numbers@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d76bbe63d11113e82aada57583404fff94316da9ae905b9bd399328f7777b3a57fdba6446f2e9178727ccae2ad3e5f5f2149dfa10d8ce3eb61ffbbb9fb9bf5e3"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/codecs-strings@8.3.0",
+      "name": "@solana/codecs-strings",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/codecs-strings@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4bbad9adcd41f74012d10551968ebee9c5f6b7ed131adb1a76c3d675f03bb5771a0ca41f427e02ffa389c49eff9fcba0c3c2cc8060be5dcb3cd628b89c8a7a69"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/codecs@8.3.0",
+      "name": "@solana/codecs",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/codecs@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "06d887765ee90f0ead69d4009f7562d6cd30829d01190de775341106dc6ec26c82ce519fcaebcc06afb29e4b865b0927bcea54d9e4cd10ef3853f6fbc2a2c1ef"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/errors@8.3.0",
+      "name": "@solana/errors",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/errors@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "5eca10e538413b07cccf5292ec8db366876e2f151815ef8d1ee4409bf82dfae938e279d7ab0ccd247a3ff4610ca89ab169f562aaf7d1677e461757c39305b7d9"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/fast-stable-stringify@8.3.0",
+      "name": "@solana/fast-stable-stringify",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/fast-stable-stringify@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4155521503cb25a15e5057a45877b4e1352be6b2f641b80f0842b41dc9a538b802593bddbb08f50fd7bbde38d8ccbe47535411c947f3930f869d2c3de67be32e"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/fixed-points@8.3.0",
+      "name": "@solana/fixed-points",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/fixed-points@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "71a87e3ae4d25ea48c4654d0763dec4267fb44ad66d911b9d11cd280b156780025f960aca11e29c863c5c6140cc3d25d6a78aa39490a281de9a714cc81fa0712"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/functional@8.3.0",
+      "name": "@solana/functional",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/functional@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1c1b42f2d03cabbdc94181c568d44e1a204b7303dc6d01e574dedfd4da8281863dc7f888b7fcef58f7a8c624649dc60213d3300cbc9632adcb9deb63a8e89f38"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/instruction-plans@8.3.0",
+      "name": "@solana/instruction-plans",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/instruction-plans@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "96db92f9f4d6b0d428905c4af12b50ce7fd90e4ad1fcfe0f6a8e44a50c581cf410f99f3783ad6458512747e6c1f56043519c2ed82269b4d5c8b4a4a018e5b09a"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/instructions@8.3.0",
+      "name": "@solana/instructions",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/instructions@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a62000aaa0b9344bcdd8c7f614fe8f5a8825f2a09583fd9c12df8b2b2abcf4fd2c35b69e30f2b5d7019c651e9edcb1013014a78c0c380db0deac35a0e860b47a"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/keys@8.3.0",
+      "name": "@solana/keys",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/keys@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "16cf2bb66c6588f943bbfea2267894e057ef51f0fadce4b12006ccbf60b236f2bd7e0edd990f5f50406e2b75a9c009692b08441c2cda15258d51a0764a67af89"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/kit@8.3.0",
+      "name": "@solana/kit",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/kit@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d93d9068efb4fc27999cf32c8effdb1a1052122042318e95fd08b4c61145ffef32087f2d93333f92013b7d7e4996b477819a65f41bbe0bad8a4ea9ef93f6dc8f"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/nominal-types@8.3.0",
+      "name": "@solana/nominal-types",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/nominal-types@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c7668270cc1ee82dad40dab8a40871e1b11ddb386b9b78bb0e391d00900f542b4f29de9e70eea2695fb9dff46f13622667413d695078d653d5f1933474c8518b"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/offchain-messages@8.3.0",
+      "name": "@solana/offchain-messages",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/offchain-messages@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ce9c304114d7f9a045f7b7e0656f93fa0ad95aa29b08c6ba9a80e7607b0291083aee709e6fd3ab3ed67131b093e5b3fe90380c4ead94450c12d4d7193b0badf9"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/options@8.3.0",
+      "name": "@solana/options",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/options@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "fa68be12fc5d8e53b1b7776fef04dfcc6c55170d23f1f959f201925c2c7debd26b30bf4465ddfec20b0ab8c35bdf085bbc66bf3797b13d95dfcec1bec0d94af0"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/plugin-core@8.3.0",
+      "name": "@solana/plugin-core",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/plugin-core@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "714e52f5047b0b55ec9fd0c34522cded5abcfa45b2e85c3a8369706bef7266a752a8006199d1f91c1246fd997c1d42f3d80772d32f2a1dcbbc7c466c7a1b94d2"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/plugin-interfaces@8.3.0",
+      "name": "@solana/plugin-interfaces",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/plugin-interfaces@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "11ac2e090896e40d77a9d02b44e0d86c0b00be2f5f46439193586ad7891b44047403fed7c102e78805ab80a638599d545ee10207f2f129cf2e4307c7e6ed493b"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/program-client-core@8.3.0",
+      "name": "@solana/program-client-core",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/program-client-core@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "194155005684815bf39c8ea6adf6baf48d125673b9983e51a5829d4841ef1a720cceea608d9853726852c4c214d3a84503664b17e35b2ac38a31015589c3828f"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/programs@8.3.0",
+      "name": "@solana/programs",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/programs@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "5e8b0387d18d683502bf3a451367b733b890eada2e9f0ae1475ebe2889e360d72f4032e0039c9e09b35f0726a2ece4b3f62a848b99e55e340521009c90b00d57"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/promises@8.3.0",
+      "name": "@solana/promises",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/promises@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "45e913875533bf20f512d1788637a7243ae7a466a42704c213b72ae9ab902ad071414209acac03c66a728894c9d34c2f41874c7ccbb22443d036ec609ba9b1ae"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/rpc-api@8.3.0",
+      "name": "@solana/rpc-api",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/rpc-api@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "f30bd56d02dba7c32377455c836219aa436b7921a480e3dee08842aced86a894324cd008f08afaa3f42ddf3223d362104bd2c32fdad93efca72fed4f14f4a538"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/rpc-parsed-types@8.3.0",
+      "name": "@solana/rpc-parsed-types",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/rpc-parsed-types@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "70ad18bbb23c1c00ca610765c88b8215ddacab5b02ac89bbab41fd9ea792edbe482cb6281fd4f7027099e37ecded9e236417a42f60c6769744d8cf381747e985"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/rpc-spec-types@8.3.0",
+      "name": "@solana/rpc-spec-types",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/rpc-spec-types@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "0fbe7bdb8d5718ac26051950d7148692706a45a5eaf193b404397952ea46d14c87b1f764ea2283ac915c71a371d66d8b284c7396ef225994c4767aee7830cbec"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/rpc-spec@8.3.0",
+      "name": "@solana/rpc-spec",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/rpc-spec@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1d6310b0052c5bc2ce9288c5a2992491348814015e60303a0783625ed5d9f2ae6a29128307ea825530b5ba7f11a2b2ab9dac8b33b805ef73a2e603c3d8034bff"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/rpc-subscriptions-api@8.3.0",
+      "name": "@solana/rpc-subscriptions-api",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/rpc-subscriptions-api@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "3478cfbb295ac991ee04d5cf90c4f4b0c1c650a01e9dc93e3fd21ea756737c7d29cbd48970a394f0b1de71274697b1a31e4d120acfa20817b0fbcf4962b71368"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/rpc-subscriptions-channel-websocket@8.3.0",
+      "name": "@solana/rpc-subscriptions-channel-websocket",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/rpc-subscriptions-channel-websocket@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e08c79da276a453dead13cb9b2bf65523fd2f0595ffbff2aecd32e03160d1fcdbb0bbd403babd5a64a40635629539dcc2a72b2d13a31d262cb49ca1c7ed80425"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/rpc-subscriptions-spec@8.3.0",
+      "name": "@solana/rpc-subscriptions-spec",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/rpc-subscriptions-spec@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8afe9fe0decfbdadca1a58e44f890406c3038d65474a1b72b2e3ce928f1da0b0522ae7a53a3f9bfbbf626297b37aeea1a5b67463106f9662643ad53278885124"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/rpc-subscriptions@8.3.0",
+      "name": "@solana/rpc-subscriptions",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/rpc-subscriptions@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "fe823d69728e4c59c8a19fb09af65e35f4aee61f1597dd1ae16e94fcaf0e644d802a32b575b288e1b47593b3ffdd239163d67400dd92f54b28850e99ea7f6328"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/rpc-transformers@8.3.0",
+      "name": "@solana/rpc-transformers",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/rpc-transformers@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7839f53f04be31b30024de19496ccc606b748c4c2fc9a649c0379074e75660492a2892a52ec3b5000c4b9b3dcb5b747f88ac966b82b08eb27921af6802e812ea"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/rpc-transport-http@8.3.0",
+      "name": "@solana/rpc-transport-http",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/rpc-transport-http@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "5c3dc1a392997a4421ad17a817a533156eba35462a6b8460d7006314422c0bfb000612c9fb4eb63b518f4b71d8f407316415b8f2b0267cd7b542a91eaf16a3cf"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/rpc-types@8.3.0",
+      "name": "@solana/rpc-types",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/rpc-types@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4fc0e50d4e61bbfa6ca4a356ae2c242475eacdbec1e84415542eac81c899a7bf1507d478d77f8ae90842ee365cf7a98d7286804ca451836b430f289ecca65522"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/rpc@8.3.0",
+      "name": "@solana/rpc",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/rpc@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8224bfbf4f5d6f2fd50fbeee0df36b86be5f2e2e4ae4d20ea778c815f2a97409df3c780a2efd39d317662fd665b6b5ae72b1ae78f8a7cd44cb5a47647f8b3f73"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/signers@8.3.0",
+      "name": "@solana/signers",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/signers@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "b8d889655ea7a4b050d2362c2b97e6b5e999d22810e075bd411f6de6a4b16f145ae76c998f35fbce44a9161409b31bc1080511da9a559a16a70deba93d77f833"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/subscribable@8.3.0",
+      "name": "@solana/subscribable",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/subscribable@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "b4ba0634eb75f68513c48a0e681c5044dc4a2444ff217071d4d664183d658785fc88d73a574958dcc3085a336f462bc5229cde5ad598c57fed01bdbbc6999c5e"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/sysvars@8.3.0",
+      "name": "@solana/sysvars",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/sysvars@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4979caaa9578a63def2ef732067f3e8de568baee016e4d0f4e61cc927b2283a79d59ca66bc05e4b9f711771815cb9b79f297527f5f869491841213f9351ff4c4"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/transaction-confirmation@8.3.0",
+      "name": "@solana/transaction-confirmation",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/transaction-confirmation@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c71e2c3b8fb49cff384afc4f3e61c52a4532044403142d959fc7aa57ca841b7ca8d2bb87959e3983421e621cfd592db458f8245ef181e5b554f18df2bffe2f3f"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/transaction-introspection@8.3.0",
+      "name": "@solana/transaction-introspection",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/transaction-introspection@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "bae3cd60b860b9e306d59c561fe4aa3c78b2cfb28cd2f1540cf0954505154d3585af25837aee861317f2fa614c3d1476e5ca7e85662662175db9bf01536b0f5d"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/transaction-messages@8.3.0",
+      "name": "@solana/transaction-messages",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/transaction-messages@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "02480744f3a7c289c1ee7f35ad3c2767d58595a8278730f35ca1a111375f7f30be0351a27d70b6b3fa2ed3fa8da33baa9603d50da051d364bf03756dd6d62bfe"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/transactions@8.3.0",
+      "name": "@solana/transactions",
+      "version": "8.3.0",
+      "purl": "pkg:npm/%40solana/transactions@8.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ccd087bb65b7b7aaf85b7aec080e6f67dddb1aa7193cd81f8188d36a6442eb14d93cfdaa9f9251f9b491f7f5813298bc1b02f3598b8393a62d369dfea5818ab9"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/bufferutil@4.1.0",
+      "name": "bufferutil",
+      "version": "4.1.0",
+      "purl": "pkg:npm/bufferutil@4.1.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "64c00d567022c44e805969cfce55b62a952bc619bdc28c9c62f3cea3aee3587c85a300124c477db3e40dd4420cb120edc21231378b161358e8b69b8350883223"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/chalk@5.6.2",
+      "name": "chalk",
+      "version": "5.6.2",
+      "purl": "pkg:npm/chalk@5.6.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ecdcc12f4acde9f3145be7fb03a228e21e34a90946fb11a6b4cc5f6e71ff2bb4c0b6df094165502beea0d145ca31e549a3257912490db04ad0f29543ddb2c76c"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/commander@15.0.0",
+      "name": "commander",
+      "version": "15.0.0",
+      "purl": "pkg:npm/commander@15.0.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "cfaeeee1987308bfd3c9dbb5949011b4465859b59a37ba182c76ecbb3a1cafacb837a59901a806dd1438156eb5575ff4fa3226a63dbddd77eb7189ddd6ac6d3e"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/fastestsmallesttextencoderdecoder@1.0.22",
+      "name": "fastestsmallesttextencoderdecoder",
+      "version": "1.0.22",
+      "purl": "pkg:npm/fastestsmallesttextencoderdecoder@1.0.22",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "CC0-1.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "3dbf1de3c7bea08b98e0c68ceb809dece5b582de27c421eceff75d3cf67f21cdec83cc9518cecef700ef67bbace9271a52ea7333ea5f068970b5884dd48c4123"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/node-gyp-build@4.8.4",
+      "name": "node-gyp-build",
+      "version": "4.8.4",
+      "purl": "pkg:npm/node-gyp-build@4.8.4",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2c0e198f096751b947560ab4a01177265ffa87f36fb397f304bc1d105e27bb19c576c7da8dd7b859fc6d26bdc26a21fe17a7b070807fab88d0e14ccfca277e09"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/typescript@5.9.3",
+      "name": "typescript",
+      "version": "5.9.3",
+      "purl": "pkg:npm/typescript@5.9.3",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8e5d6f6733c38a72ebf5e52ddc9feded5e8580d130f508ef04f772b33f4a7d00c3e357d0ac2d98e2f290762694a454f86d795bd511e12e9a7cc2d9ba3394e04b"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/undici-types@8.11.2",
+      "name": "undici-types",
+      "version": "8.11.2",
+      "purl": "pkg:npm/undici-types@8.11.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "88c54d99667495e2bf8284ba797322cd2ce69bd0835adca98706da0a6b370cd2ea4710cbfa6328355719313cb25605cfd0df99f277803330e850e5092fcbde2a"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/utf-8-validate@6.0.6",
+      "name": "utf-8-validate",
+      "version": "6.0.6",
+      "purl": "pkg:npm/utf-8-validate@6.0.6",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ab79773fd52d1048801dcb20b2a4e07fd3cf8dcb6b0d6a085d6dcda4e1c57510db2efbb80cb21cc476a7809e112eb5a405c2a399cb3fe8d91eac8f13feb1382c"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/ws@8.22.0",
+      "name": "ws",
+      "version": "8.22.0",
+      "purl": "pkg:npm/ws@8.22.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "61d82073df3bf913b40275ad67fed6abd16d36f72b2f56ff44ed2e77d9968d43e00ebb00030412179d6c9b6866d57a1f6d4ff88e4a4612c2c5b1967153ed433a"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/web"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/%40project-qf/policy@link:../../packages/policy",
+      "dependsOn": [
+        "pkg:npm/%40noble/hashes@1.8.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40project-qf/rewards@link:../../packages/rewards",
+      "dependsOn": [
+        "pkg:npm/%40noble/hashes@1.8.0",
+        "pkg:npm/%40solana/kit@8.3.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40project-qf/tx@link:../../packages/tx",
+      "dependsOn": [
+        "pkg:npm/%40solana/kit@8.3.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/accounts@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-strings@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/rpc-spec@8.3.0",
+        "pkg:npm/%40solana/rpc-types@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/addresses@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/assertions@8.3.0",
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-strings@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/nominal-types@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/assertions@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/codecs-core@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/codecs-data-structures@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-numbers@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/codecs-numbers@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/codecs-strings@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-numbers@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/fastestsmallesttextencoderdecoder@1.0.22",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/codecs@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-data-structures@8.3.0",
+        "pkg:npm/%40solana/codecs-numbers@8.3.0",
+        "pkg:npm/%40solana/codecs-strings@8.3.0",
+        "pkg:npm/%40solana/fixed-points@8.3.0",
+        "pkg:npm/%40solana/options@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/errors@8.3.0",
+      "dependsOn": [
+        "pkg:npm/chalk@5.6.2",
+        "pkg:npm/commander@15.0.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/fast-stable-stringify@8.3.0",
+      "dependsOn": [
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/fixed-points@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/functional@8.3.0",
+      "dependsOn": [
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/instruction-plans@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/instructions@8.3.0",
+        "pkg:npm/%40solana/keys@8.3.0",
+        "pkg:npm/%40solana/promises@8.3.0",
+        "pkg:npm/%40solana/transaction-messages@8.3.0",
+        "pkg:npm/%40solana/transactions@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/instructions@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/keys@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/assertions@8.3.0",
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-strings@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/nominal-types@8.3.0",
+        "pkg:npm/%40solana/promises@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/kit@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/accounts@8.3.0",
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/codecs@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/functional@8.3.0",
+        "pkg:npm/%40solana/instruction-plans@8.3.0",
+        "pkg:npm/%40solana/instructions@8.3.0",
+        "pkg:npm/%40solana/keys@8.3.0",
+        "pkg:npm/%40solana/offchain-messages@8.3.0",
+        "pkg:npm/%40solana/plugin-core@8.3.0",
+        "pkg:npm/%40solana/plugin-interfaces@8.3.0",
+        "pkg:npm/%40solana/program-client-core@8.3.0",
+        "pkg:npm/%40solana/programs@8.3.0",
+        "pkg:npm/%40solana/promises@8.3.0",
+        "pkg:npm/%40solana/rpc-api@8.3.0",
+        "pkg:npm/%40solana/rpc-parsed-types@8.3.0",
+        "pkg:npm/%40solana/rpc-spec-types@8.3.0",
+        "pkg:npm/%40solana/rpc-subscriptions@8.3.0",
+        "pkg:npm/%40solana/rpc-types@8.3.0",
+        "pkg:npm/%40solana/rpc@8.3.0",
+        "pkg:npm/%40solana/signers@8.3.0",
+        "pkg:npm/%40solana/subscribable@8.3.0",
+        "pkg:npm/%40solana/sysvars@8.3.0",
+        "pkg:npm/%40solana/transaction-confirmation@8.3.0",
+        "pkg:npm/%40solana/transaction-introspection@8.3.0",
+        "pkg:npm/%40solana/transaction-messages@8.3.0",
+        "pkg:npm/%40solana/transactions@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/nominal-types@8.3.0",
+      "dependsOn": [
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/offchain-messages@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-data-structures@8.3.0",
+        "pkg:npm/%40solana/codecs-numbers@8.3.0",
+        "pkg:npm/%40solana/codecs-strings@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/keys@8.3.0",
+        "pkg:npm/%40solana/nominal-types@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/options@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-data-structures@8.3.0",
+        "pkg:npm/%40solana/codecs-numbers@8.3.0",
+        "pkg:npm/%40solana/codecs-strings@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/plugin-core@8.3.0",
+      "dependsOn": [
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/plugin-interfaces@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/accounts@8.3.0",
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/instruction-plans@8.3.0",
+        "pkg:npm/%40solana/keys@8.3.0",
+        "pkg:npm/%40solana/rpc-spec@8.3.0",
+        "pkg:npm/%40solana/rpc-subscriptions-spec@8.3.0",
+        "pkg:npm/%40solana/rpc-types@8.3.0",
+        "pkg:npm/%40solana/signers@8.3.0",
+        "pkg:npm/%40solana/transactions@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/program-client-core@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/accounts@8.3.0",
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/instruction-plans@8.3.0",
+        "pkg:npm/%40solana/instructions@8.3.0",
+        "pkg:npm/%40solana/plugin-interfaces@8.3.0",
+        "pkg:npm/%40solana/rpc-api@8.3.0",
+        "pkg:npm/%40solana/signers@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/programs@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/promises@8.3.0",
+      "dependsOn": [
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/rpc-api@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-strings@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/keys@8.3.0",
+        "pkg:npm/%40solana/rpc-parsed-types@8.3.0",
+        "pkg:npm/%40solana/rpc-spec@8.3.0",
+        "pkg:npm/%40solana/rpc-transformers@8.3.0",
+        "pkg:npm/%40solana/rpc-types@8.3.0",
+        "pkg:npm/%40solana/transaction-messages@8.3.0",
+        "pkg:npm/%40solana/transactions@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/rpc-parsed-types@8.3.0",
+      "dependsOn": [
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/rpc-spec-types@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/rpc-spec@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/rpc-spec-types@8.3.0",
+        "pkg:npm/%40solana/subscribable@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/rpc-subscriptions-api@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/keys@8.3.0",
+        "pkg:npm/%40solana/rpc-subscriptions-spec@8.3.0",
+        "pkg:npm/%40solana/rpc-transformers@8.3.0",
+        "pkg:npm/%40solana/rpc-types@8.3.0",
+        "pkg:npm/%40solana/transaction-messages@8.3.0",
+        "pkg:npm/%40solana/transactions@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/rpc-subscriptions-channel-websocket@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/functional@8.3.0",
+        "pkg:npm/%40solana/rpc-subscriptions-spec@8.3.0",
+        "pkg:npm/%40solana/subscribable@8.3.0",
+        "pkg:npm/typescript@5.9.3",
+        "pkg:npm/ws@8.22.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/rpc-subscriptions-spec@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/promises@8.3.0",
+        "pkg:npm/%40solana/rpc-spec-types@8.3.0",
+        "pkg:npm/%40solana/subscribable@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/rpc-subscriptions@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/fast-stable-stringify@8.3.0",
+        "pkg:npm/%40solana/functional@8.3.0",
+        "pkg:npm/%40solana/promises@8.3.0",
+        "pkg:npm/%40solana/rpc-spec-types@8.3.0",
+        "pkg:npm/%40solana/rpc-subscriptions-api@8.3.0",
+        "pkg:npm/%40solana/rpc-subscriptions-channel-websocket@8.3.0",
+        "pkg:npm/%40solana/rpc-subscriptions-spec@8.3.0",
+        "pkg:npm/%40solana/rpc-transformers@8.3.0",
+        "pkg:npm/%40solana/rpc-types@8.3.0",
+        "pkg:npm/%40solana/subscribable@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/rpc-transformers@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/functional@8.3.0",
+        "pkg:npm/%40solana/nominal-types@8.3.0",
+        "pkg:npm/%40solana/rpc-spec-types@8.3.0",
+        "pkg:npm/%40solana/rpc-types@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/rpc-transport-http@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/rpc-spec-types@8.3.0",
+        "pkg:npm/%40solana/rpc-spec@8.3.0",
+        "pkg:npm/typescript@5.9.3",
+        "pkg:npm/undici-types@8.11.2"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/rpc-types@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-numbers@8.3.0",
+        "pkg:npm/%40solana/codecs-strings@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/fixed-points@8.3.0",
+        "pkg:npm/%40solana/nominal-types@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/rpc@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/fast-stable-stringify@8.3.0",
+        "pkg:npm/%40solana/functional@8.3.0",
+        "pkg:npm/%40solana/rpc-api@8.3.0",
+        "pkg:npm/%40solana/rpc-spec-types@8.3.0",
+        "pkg:npm/%40solana/rpc-spec@8.3.0",
+        "pkg:npm/%40solana/rpc-transformers@8.3.0",
+        "pkg:npm/%40solana/rpc-transport-http@8.3.0",
+        "pkg:npm/%40solana/rpc-types@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/signers@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/instructions@8.3.0",
+        "pkg:npm/%40solana/keys@8.3.0",
+        "pkg:npm/%40solana/nominal-types@8.3.0",
+        "pkg:npm/%40solana/offchain-messages@8.3.0",
+        "pkg:npm/%40solana/transaction-messages@8.3.0",
+        "pkg:npm/%40solana/transactions@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/subscribable@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/promises@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/sysvars@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/accounts@8.3.0",
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-data-structures@8.3.0",
+        "pkg:npm/%40solana/codecs-numbers@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/rpc-types@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/transaction-confirmation@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/codecs-strings@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/keys@8.3.0",
+        "pkg:npm/%40solana/promises@8.3.0",
+        "pkg:npm/%40solana/rpc-subscriptions@8.3.0",
+        "pkg:npm/%40solana/rpc-types@8.3.0",
+        "pkg:npm/%40solana/rpc@8.3.0",
+        "pkg:npm/%40solana/transaction-messages@8.3.0",
+        "pkg:npm/%40solana/transactions@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/transaction-introspection@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-strings@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/instructions@8.3.0",
+        "pkg:npm/%40solana/rpc-types@8.3.0",
+        "pkg:npm/%40solana/transaction-messages@8.3.0",
+        "pkg:npm/%40solana/transactions@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/transaction-messages@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-data-structures@8.3.0",
+        "pkg:npm/%40solana/codecs-numbers@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/functional@8.3.0",
+        "pkg:npm/%40solana/instructions@8.3.0",
+        "pkg:npm/%40solana/nominal-types@8.3.0",
+        "pkg:npm/%40solana/rpc-types@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/transactions@8.3.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/addresses@8.3.0",
+        "pkg:npm/%40solana/codecs-core@8.3.0",
+        "pkg:npm/%40solana/codecs-data-structures@8.3.0",
+        "pkg:npm/%40solana/codecs-numbers@8.3.0",
+        "pkg:npm/%40solana/codecs-strings@8.3.0",
+        "pkg:npm/%40solana/errors@8.3.0",
+        "pkg:npm/%40solana/functional@8.3.0",
+        "pkg:npm/%40solana/instructions@8.3.0",
+        "pkg:npm/%40solana/keys@8.3.0",
+        "pkg:npm/%40solana/nominal-types@8.3.0",
+        "pkg:npm/%40solana/rpc-types@8.3.0",
+        "pkg:npm/%40solana/transaction-messages@8.3.0",
+        "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/bufferutil@4.1.0",
+      "dependsOn": [
+        "pkg:npm/node-gyp-build@4.8.4"
+      ]
+    },
+    {
+      "ref": "pkg:npm/utf-8-validate@6.0.6",
+      "dependsOn": [
+        "pkg:npm/node-gyp-build@4.8.4"
+      ]
+    },
+    {
+      "ref": "pkg:npm/ws@8.22.0",
+      "dependsOn": [
+        "pkg:npm/bufferutil@4.1.0",
+        "pkg:npm/utf-8-validate@6.0.6"
+      ]
+    }
+  ]
+}

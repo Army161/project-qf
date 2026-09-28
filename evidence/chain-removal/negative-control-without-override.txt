@@ -1,0 +1,8 @@
+# Negative control (2026-09-27): same cp-amm-sdk@1.4.10 dependency WITHOUT the override
+# command: pnpm install --ignore-scripts --lockfile-only (secret-free env)
+208:  chain@0.4.2:
+432:      chain: 0.4.2
+666:  chain@0.4.2: {}
+  chain@0.4.2:
+    resolution: {integrity: sha512-GtM+TlN398yBhtSp1D2dBLQomKM3Umbji3h2/NdCqAWSMKhWbjlz33j0e55rStsEZD+8OLRHuz7kWd0U3xKMDg==}
+    engines: {node: '>=18'}

@@ -1,0 +1,1 @@
+Run 2026-09-27T16:00:51Z with node v22.22.2 against quoteforge-v0-repair-2026-09-27.zip (sha256 c97087f0…31a5) extracted untouched; tool from QF-Repair-Decision-Package (SHA256SUMS verified). Exit 0 = the deficiency REPRODUCED (not a safety pass).

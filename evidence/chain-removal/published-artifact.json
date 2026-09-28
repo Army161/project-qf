@@ -1,0 +1,96 @@
+{
+  "_note": "Evidence of the exact published artifact inspected before install (Decision 4). The tarball itself is not redistributed here.",
+  "package": "@meteora-ag/cp-amm-sdk@1.4.10",
+  "retrievedVia": "npm pack @meteora-ag/cp-amm-sdk@1.4.10 (secret-free env, 2026-09-27)",
+  "tarballSha512": "sha512-Y3UPjP91VWrj86hOr4kDmU1UXiESspy8YP6Z/4XtWD1eCVwUN0xMEzCvKXM2IRz5ECSj8alO2od1czhMhvcD8g==",
+  "tarballSha256": "5bc51276e5a1b4fb063f48cfd8a8e1854083bf17499b416be865b45f882fba71",
+  "manifest": {
+    "version": "1.4.10",
+    "license": "MIT",
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "exports": null,
+    "dependencies": {
+      "@coral-xyz/anchor": "^0.31.0",
+      "@solana/spl-token": "^0.4.8",
+      "@solana/web3.js": "^1.95.3",
+      "@types/bn.js": "^5.1.0",
+      "bn.js": "^5.2.2",
+      "chain": "^0.4.0",
+      "decimal.js": "^10.4.2",
+      "invariant": "^2.2.4"
+    },
+    "installScripts": []
+  },
+  "files": [
+    {
+      "path": "dist/index.d.mts",
+      "bytes": 429064,
+      "sha256": "2544963c63981cb812a1201f6637f69e55343a53d594f9ce0b63d83ad9c225e9"
+    },
+    {
+      "path": "dist/index.d.ts",
+      "bytes": 429064,
+      "sha256": "2544963c63981cb812a1201f6637f69e55343a53d594f9ce0b63d83ad9c225e9"
+    },
+    {
+      "path": "dist/index.js",
+      "bytes": 408930,
+      "sha256": "ebb144f1b1faa2d32025050e70fee5a69861927041ab4c2d8b17304be16be855"
+    },
+    {
+      "path": "dist/index.js.map",
+      "bytes": 738465,
+      "sha256": "ccfcd9989e8bde247ee947bb0d68af0b52a4e7a258cf3d2be5b925b3453d6dd0"
+    },
+    {
+      "path": "dist/index.mjs",
+      "bytes": 394634,
+      "sha256": "4f7db655a25e8eed7b6d89bb30f60f4b5b0e22fe37955c4665e26de979f8b129"
+    },
+    {
+      "path": "dist/index.mjs.map",
+      "bytes": 746477,
+      "sha256": "34c027cc953c8e30c573cda053daba14e53152446d9efdb55a22da49017c3958"
+    }
+  ],
+  "cjsRequireSpecifiers": [
+    "@coral-xyz/anchor",
+    "@coral-xyz/anchor/dist/cjs/utils/bytes",
+    "@solana/spl-token",
+    "@solana/web3.js",
+    "bn.js",
+    "decimal.js",
+    "invariant"
+  ],
+  "esmImportSpecifiers": [
+    "@coral-xyz/anchor",
+    "@coral-xyz/anchor/dist/cjs/utils/bytes",
+    "@solana/spl-token",
+    "@solana/web3.js",
+    "bn.js",
+    "decimal.js",
+    "invariant"
+  ],
+  "chainSpecifierMatches": [],
+  "dynamicImportOrEval": false,
+  "wordChainOccurrences": "4, all in the comment text \"on-chain\" (index.js lines 8327, 13194; same in index.mjs)",
+  "chainPackage": {
+    "name": "chain",
+    "resolvedWithoutOverride": "0.4.2",
+    "integrity": "sha512-GtM+TlN398yBhtSp1D2dBLQomKM3Umbji3h2/NdCqAWSMKhWbjlz33j0e55rStsEZD+8OLRHuz7kWd0U3xKMDg==",
+    "maintainers": [
+      "b-bot"
+    ],
+    "license": "none declared",
+    "scripts": "dev/lint/build/format (turbo); no install lifecycle scripts",
+    "versions": [
+      "0.4.0",
+      "0.4.1",
+      "0.4.2",
+      "1.0.0"
+    ],
+    "modified": "2026-08-14T18:54:50.464Z"
+  }
+}

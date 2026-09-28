@@ -1,0 +1,69 @@
+{
+  "_note": "Packages that declare install-time scripts or native bindings. None were executed: install used --ignore-scripts, .npmrc ignore-scripts=true, onlyBuiltDependencies: [] (secret-free disposable env).",
+  "packages": [
+    {
+      "package": "@solana/buffer-layout-utils@0.3.0",
+      "lifecycle": {
+        "prepare": "yarn build"
+      },
+      "bindingGyp": false
+    },
+    {
+      "package": "@solana/buffer-layout@4.0.1",
+      "lifecycle": {
+        "prepare": "npm run build"
+      },
+      "bindingGyp": false
+    },
+    {
+      "package": "bigint-buffer@1.1.5",
+      "lifecycle": {
+        "install": "npm run rebuild || echo \"Couldn't build bindings. Non-native version used.\"",
+        "prepare": "npm run compile"
+      },
+      "bindingGyp": true
+    },
+    {
+      "package": "bufferutil@4.1.0",
+      "lifecycle": {
+        "install": "node-gyp-build"
+      },
+      "bindingGyp": true
+    },
+    {
+      "package": "cross-fetch@3.2.0",
+      "lifecycle": {
+        "prepare": "husky install"
+      },
+      "bindingGyp": false
+    },
+    {
+      "package": "esbuild@0.28.2",
+      "lifecycle": {
+        "postinstall": "node install.js"
+      },
+      "bindingGyp": false
+    },
+    {
+      "package": "node-fetch@2.7.0",
+      "lifecycle": {
+        "prepare": "npm run build"
+      },
+      "bindingGyp": false
+    },
+    {
+      "package": "utf-8-validate@6.0.6",
+      "lifecycle": {
+        "install": "node-gyp-build"
+      },
+      "bindingGyp": true
+    },
+    {
+      "package": "uuid@14.0.2",
+      "lifecycle": {
+        "prepare": "lefthook install"
+      },
+      "bindingGyp": false
+    }
+  ]
+}

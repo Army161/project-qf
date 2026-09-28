@@ -1,0 +1,405 @@
+# cmd: node --test test/readonly-readiness.test.mjs (verifier 0.3.0 as exported, before the CFG-TYPE/BODY-LIMIT repair)
+# at: 2026-09-27T16:02:31Z
+TAP version 13
+# Subtest: CFG-TYPE: the Customizable route with a Dynamic (1) config and the DBC pool authority passes compatibility
+not ok 1 - CFG-TYPE: the Customizable route with a Dynamic (1) config and the DBC pool authority passes compatibility
+  ---
+  duration_ms: 61.17338
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:14:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - 'Customizable'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'Customizable'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:18:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: CFG-TYPE: a full 328-byte Customizable config with config_type 0 (Static on a dynamic route) fails
+not ok 2 - CFG-TYPE: a full 328-byte Customizable config with config_type 0 (Static on a dynamic route) fails
+  ---
+  duration_ms: 17.58647
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:26:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    'PASS' !== 'FAIL'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'FAIL'
+  actual: 'PASS'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:30:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CFG-TYPE: a full 328-byte Customizable config with config_type 255 (unknown enum) fails
+not ok 3 - CFG-TYPE: a full 328-byte Customizable config with config_type 255 (unknown enum) fails
+  ---
+  duration_ms: 15.256842
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:26:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    'PASS' !== 'FAIL'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'FAIL'
+  actual: 'PASS'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:30:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CFG-TYPE: the right type with the wrong creator authority still fails
+ok 4 - CFG-TYPE: the right type with the wrong creator authority still fails
+  ---
+  duration_ms: 14.067811
+  type: 'test'
+  ...
+# Subtest: CFG-TYPE: correct bytes under the wrong owner fail CONFIG and never reach compatibility PASS
+ok 5 - CFG-TYPE: correct bytes under the wrong owner fail CONFIG and never reach compatibility PASS
+  ---
+  duration_ms: 15.406348
+  type: 'test'
+  ...
+# Subtest: CFG-TYPE: fixed-fee routes are explicitly NOT_ASSESSED in V0, not silently accepted
+not ok 6 - CFG-TYPE: fixed-fee routes are explicitly NOT_ASSESSED in V0, not silently accepted
+  ---
+  duration_ms: 10.228578
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:47:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    FixedBps25
+    + actual - expected
+    
+    + 'PASS'
+    - 'NOT_ASSESSED'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'NOT_ASSESSED'
+  actual: 'PASS'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:51:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: an oversized RPC body is refused while streaming, cancelled, and never fully read
+not ok 7 - BODY-LIMIT: an oversized RPC body is refused while streaming, cancelled, and never fully read
+  ---
+  duration_ms: 25.346834
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:72:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /RPC_RESPONSE_TOO_LARGE/. Input:
+    
+    'SyntaxError: Unexpected end of JSON input'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+  error: 'Unexpected end of JSON input'
+  name: 'SyntaxError'
+  stack: |-
+    JSON.parse (<anonymous>)
+    call (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/lib.mjs:127:20)
+    async waitForActual (node:assert:644:5)
+    async Function.rejects (node:assert:767:25)
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:75:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:75:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: a false small Content-Length header cannot bypass the cap
+not ok 8 - BODY-LIMIT: a false small Content-Length header cannot bypass the cap
+  ---
+  duration_ms: 3.695603
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:80:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /RPC_RESPONSE_TOO_LARGE/. Input:
+    
+    'SyntaxError: Unexpected end of JSON input'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+  error: 'Unexpected end of JSON input'
+  name: 'SyntaxError'
+  stack: |-
+    JSON.parse (<anonymous>)
+    call (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/lib.mjs:127:20)
+    async waitForActual (node:assert:644:5)
+    async Function.rejects (node:assert:767:25)
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:83:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:83:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: a declared oversize Content-Length is refused before reading and the body is cancelled
+not ok 9 - BODY-LIMIT: a declared oversize Content-Length is refused before reading and the body is cancelled
+  ---
+  duration_ms: 7.178868
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:87:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /RPC_RESPONSE_TOO_LARGE declared/. Input:
+    
+    'SyntaxError: Unexpected end of JSON input'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+  error: 'Unexpected end of JSON input'
+  name: 'SyntaxError'
+  stack: |-
+    JSON.parse (<anonymous>)
+    call (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/lib.mjs:127:20)
+    async waitForActual (node:assert:644:5)
+    async Function.rejects (node:assert:767:25)
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:90:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:90:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: exactly at the cap is accepted; one byte over is refused (chunk boundaries)
+not ok 10 - BODY-LIMIT: exactly at the cap is accepted; one byte over is refused (chunk boundaries)
+  ---
+  duration_ms: 2.871263
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:95:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:100:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: the deadline covers body consumption, not just headers; the stalled body is cancelled
+not ok 11 - BODY-LIMIT: the deadline covers body consumption, not just headers; the stalled body is cancelled
+  ---
+  duration_ms: 20531.082579
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:103:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /RPC_RESPONSE_TIMEOUT|aborted|timeout/i. Input:
+    
+    'SyntaxError: Unexpected end of JSON input'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+  error: 'Unexpected end of JSON input'
+  name: 'SyntaxError'
+  stack: |-
+    JSON.parse (<anonymous>)
+    call (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/lib.mjs:127:20)
+    async waitForActual (node:assert:644:5)
+    async Function.rejects (node:assert:767:25)
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:107:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:107:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: an oversized error body is bounded too
+not ok 12 - BODY-LIMIT: an oversized error body is bounded too
+  ---
+  duration_ms: 3.525438
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:112:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /RPC_RESPONSE_TOO_LARGE/. Input:
+    
+    'Error: HTTP 500 :                                                                                                                                                                                                         '
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+  error: 'HTTP 500 :                                                                                                                                                                                                         '
+  stack: |-
+    call (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/lib.mjs:126:24)
+    async waitForActual (node:assert:644:5)
+    async Function.rejects (node:assert:767:25)
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:115:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:115:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: per-operation limits let a legitimate large ProgramData read through while small reads stay small
+not ok 13 - BODY-LIMIT: per-operation limits let a legitimate large ProgramData read through while small reads stay small
+  ---
+  duration_ms: 0.280685
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:119:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'getAccountInfoLarge')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:120:33)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: account reads declare which size class they need; a small read of a large account is refused
+not ok 14 - BODY-LIMIT: account reads declare which size class they need; a small read of a large account is refused
+  ---
+  duration_ms: 4.060712
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:126:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:129:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: decoded account bytes are bounded separately from the encoded body
+not ok 15 - BODY-LIMIT: decoded account bytes are bounded separately from the encoded body
+  ---
+  duration_ms: 1.282016
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:134:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:137:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: the compressed IDL is inflated with a separate decompressed-output cap
+not ok 16 - BODY-LIMIT: the compressed IDL is inflated with a separate decompressed-output cap
+  ---
+  duration_ms: 469.681159
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:140:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /IDL_TOO_LARGE|RangeError|maxOutputLength|buffer/i. Input:
+    
+    'TypeError: lib.inflateIdlBounded is not a function'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+  error: 'lib.inflateIdlBounded is not a function'
+  name: 'TypeError'
+  stack: |-
+    file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:143:27
+    getActual (node:assert:609:5)
+    Function.throws (node:assert:757:24)
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:143:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  operator: 'throws'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:143:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: the OtterSec status body is bounded and an oversize body becomes an error value, not a throw
+not ok 17 - BODY-LIMIT: the OtterSec status body is bounded and an oversize body becomes an error value, not a throw
+  ---
+  duration_ms: 97.885141
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:147:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /RESPONSE_TOO_LARGE/. Input:
+    
+    'SyntaxError: Unexpected end of JSON input'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: 'SyntaxError: Unexpected end of JSON input'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/test/readonly-readiness.test.mjs:150:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 2
+# fail 15
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21407.263443
+# exit: 1

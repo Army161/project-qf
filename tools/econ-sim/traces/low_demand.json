@@ -1,0 +1,373 @@
+{
+ "id": "low_demand",
+ "description": "40 small organic buys ($5-40) spread over about an hour; should not graduate.",
+ "seed": 1005,
+ "label": "SYNTHETIC_TRACE_SIMULATION_ONLY",
+ "quote": {
+  "symbol": "qUSD",
+  "namespace": "test-only",
+  "decimals": 6
+ },
+ "events": [
+  {
+   "seq": 0,
+   "t": 50,
+   "wallet": "org-41",
+   "entity": "org-41",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "24140000"
+  },
+  {
+   "seq": 1,
+   "t": 125,
+   "wallet": "org-41",
+   "entity": "org-41",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "16610000"
+  },
+  {
+   "seq": 2,
+   "t": 151,
+   "wallet": "org-07",
+   "entity": "org-07",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "36760000"
+  },
+  {
+   "seq": 3,
+   "t": 178,
+   "wallet": "org-50",
+   "entity": "org-50",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "10120000"
+  },
+  {
+   "seq": 4,
+   "t": 414,
+   "wallet": "org-56",
+   "entity": "org-56",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "8980000"
+  },
+  {
+   "seq": 5,
+   "t": 437,
+   "wallet": "org-24",
+   "entity": "org-24",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "24700000"
+  },
+  {
+   "seq": 6,
+   "t": 528,
+   "wallet": "org-13",
+   "entity": "org-13",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "7470000"
+  },
+  {
+   "seq": 7,
+   "t": 572,
+   "wallet": "org-19",
+   "entity": "org-19",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "24070000"
+  },
+  {
+   "seq": 8,
+   "t": 636,
+   "wallet": "org-59",
+   "entity": "org-59",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "36820000"
+  },
+  {
+   "seq": 9,
+   "t": 744,
+   "wallet": "org-05",
+   "entity": "org-05",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "39380000"
+  },
+  {
+   "seq": 10,
+   "t": 805,
+   "wallet": "org-05",
+   "entity": "org-05",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "18840000"
+  },
+  {
+   "seq": 11,
+   "t": 892,
+   "wallet": "org-11",
+   "entity": "org-11",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "29310000"
+  },
+  {
+   "seq": 12,
+   "t": 941,
+   "wallet": "org-24",
+   "entity": "org-24",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "12380000"
+  },
+  {
+   "seq": 13,
+   "t": 1045,
+   "wallet": "org-28",
+   "entity": "org-28",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "37610000"
+  },
+  {
+   "seq": 14,
+   "t": 1204,
+   "wallet": "org-31",
+   "entity": "org-31",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "28560000"
+  },
+  {
+   "seq": 15,
+   "t": 1215,
+   "wallet": "org-08",
+   "entity": "org-08",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "5570000"
+  },
+  {
+   "seq": 16,
+   "t": 1246,
+   "wallet": "org-24",
+   "entity": "org-24",
+   "cls": "organic",
+   "side": "SELL",
+   "sellBps": 5000
+  },
+  {
+   "seq": 17,
+   "t": 1307,
+   "wallet": "org-47",
+   "entity": "org-47",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "24010000"
+  },
+  {
+   "seq": 18,
+   "t": 1484,
+   "wallet": "org-50",
+   "entity": "org-50",
+   "cls": "organic",
+   "side": "SELL",
+   "sellBps": 5000
+  },
+  {
+   "seq": 19,
+   "t": 1559,
+   "wallet": "org-59",
+   "entity": "org-59",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "17740000"
+  },
+  {
+   "seq": 20,
+   "t": 1568,
+   "wallet": "org-39",
+   "entity": "org-39",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "29970000"
+  },
+  {
+   "seq": 21,
+   "t": 1576,
+   "wallet": "org-06",
+   "entity": "org-06",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "32900000"
+  },
+  {
+   "seq": 22,
+   "t": 1667,
+   "wallet": "org-11",
+   "entity": "org-11",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "18440000"
+  },
+  {
+   "seq": 23,
+   "t": 1789,
+   "wallet": "org-02",
+   "entity": "org-02",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "18130000"
+  },
+  {
+   "seq": 24,
+   "t": 1887,
+   "wallet": "org-03",
+   "entity": "org-03",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "32620000"
+  },
+  {
+   "seq": 25,
+   "t": 1971,
+   "wallet": "org-20",
+   "entity": "org-20",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "36500000"
+  },
+  {
+   "seq": 26,
+   "t": 2067,
+   "wallet": "org-17",
+   "entity": "org-17",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "7780000"
+  },
+  {
+   "seq": 27,
+   "t": 2130,
+   "wallet": "org-57",
+   "entity": "org-57",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "23400000"
+  },
+  {
+   "seq": 28,
+   "t": 2149,
+   "wallet": "org-26",
+   "entity": "org-26",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "12720000"
+  },
+  {
+   "seq": 29,
+   "t": 2185,
+   "wallet": "org-22",
+   "entity": "org-22",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "16330000"
+  },
+  {
+   "seq": 30,
+   "t": 2272,
+   "wallet": "org-31",
+   "entity": "org-31",
+   "cls": "organic",
+   "side": "SELL",
+   "sellBps": 5000
+  },
+  {
+   "seq": 31,
+   "t": 2294,
+   "wallet": "org-55",
+   "entity": "org-55",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "26060000"
+  },
+  {
+   "seq": 32,
+   "t": 2360,
+   "wallet": "org-16",
+   "entity": "org-16",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "8840000"
+  },
+  {
+   "seq": 33,
+   "t": 2394,
+   "wallet": "org-47",
+   "entity": "org-47",
+   "cls": "organic",
+   "side": "SELL",
+   "sellBps": 5000
+  },
+  {
+   "seq": 34,
+   "t": 2397,
+   "wallet": "org-15",
+   "entity": "org-15",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "36210000"
+  },
+  {
+   "seq": 35,
+   "t": 2465,
+   "wallet": "org-28",
+   "entity": "org-28",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "24320000"
+  },
+  {
+   "seq": 36,
+   "t": 2473,
+   "wallet": "org-59",
+   "entity": "org-59",
+   "cls": "organic",
+   "side": "SELL",
+   "sellBps": 5000
+  },
+  {
+   "seq": 37,
+   "t": 2597,
+   "wallet": "org-40",
+   "entity": "org-40",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "19560000"
+  },
+  {
+   "seq": 38,
+   "t": 2649,
+   "wallet": "org-05",
+   "entity": "org-05",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "28110000"
+  },
+  {
+   "seq": 39,
+   "t": 2900,
+   "wallet": "org-01",
+   "entity": "org-01",
+   "cls": "organic",
+   "side": "BUY",
+   "quoteInRaw": "36260000"
+  }
+ ]
+}

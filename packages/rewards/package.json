@@ -1,0 +1,10 @@
+{
+  "name": "@project-qf/rewards",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "description": "Reward arithmetic: TWAB, exclusions, allocation with dust roll-forward, deterministic Merkle root (SF Rewards leaf format @ df7517d).",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "@project-qf/core": "workspace:*", "@noble/hashes": "1.8.0", "@solana/kit": "8.3.0" }
+}

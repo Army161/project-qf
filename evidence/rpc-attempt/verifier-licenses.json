@@ -1,0 +1,120 @@
+{
+  "MIT": [
+    {
+      "name": "@solana/addresses",
+      "versions": [
+        "8.3.0"
+      ],
+      "paths": [
+        "/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/node_modules/.pnpm/@solana+addresses@8.3.0/node_modules/@solana/addresses"
+      ],
+      "license": "MIT",
+      "author": "Solana Labs Maintainers",
+      "homepage": "https://www.solanakit.com/api#solanaaddresses",
+      "description": "Helpers for generating account addresses"
+    },
+    {
+      "name": "@solana/assertions",
+      "versions": [
+        "8.3.0"
+      ],
+      "paths": [
+        "/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/node_modules/.pnpm/@solana+assertions@8.3.0/node_modules/@solana/assertions"
+      ],
+      "license": "MIT",
+      "author": "Solana Labs Maintainers",
+      "homepage": "https://www.solanakit.com/api#solanaassertions",
+      "description": "Helpers for asserting that a JavaScript environment supports certain features necessary for the operation of the Solana JavaScript SDK"
+    },
+    {
+      "name": "@solana/codecs-core",
+      "versions": [
+        "8.3.0"
+      ],
+      "paths": [
+        "/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/node_modules/.pnpm/@solana+codecs-core@8.3.0/node_modules/@solana/codecs-core"
+      ],
+      "license": "MIT",
+      "author": "Solana Labs Maintainers",
+      "homepage": "https://www.solanakit.com/api#solanacodecs-core",
+      "description": "Core types and helpers for encoding and decoding byte arrays on Solana"
+    },
+    {
+      "name": "@solana/codecs-numbers",
+      "versions": [
+        "8.3.0"
+      ],
+      "paths": [
+        "/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/node_modules/.pnpm/@solana+codecs-numbers@8.3.0/node_modules/@solana/codecs-numbers"
+      ],
+      "license": "MIT",
+      "author": "Solana Labs Maintainers",
+      "homepage": "https://www.solanakit.com/api#solanacodecs-numbers",
+      "description": "Codecs for numbers of different sizes and endianness"
+    },
+    {
+      "name": "@solana/codecs-strings",
+      "versions": [
+        "8.3.0"
+      ],
+      "paths": [
+        "/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/node_modules/.pnpm/@solana+codecs-strings@8.3.0/node_modules/@solana/codecs-strings"
+      ],
+      "license": "MIT",
+      "author": "Solana Labs Maintainers",
+      "homepage": "https://www.solanakit.com/api#solanacodecs-strings",
+      "description": "Codecs for strings of different sizes and encodings"
+    },
+    {
+      "name": "@solana/errors",
+      "versions": [
+        "8.3.0"
+      ],
+      "paths": [
+        "/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/node_modules/.pnpm/@solana+errors@8.3.0/node_modules/@solana/errors"
+      ],
+      "license": "MIT",
+      "author": "Solana Labs Maintainers",
+      "homepage": "https://www.solanakit.com/api#solanaerrors",
+      "description": "Throw, identify, and decode Solana JavaScript errors"
+    },
+    {
+      "name": "@solana/nominal-types",
+      "versions": [
+        "8.3.0"
+      ],
+      "paths": [
+        "/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/node_modules/.pnpm/@solana+nominal-types@8.3.0/node_modules/@solana/nominal-types"
+      ],
+      "license": "MIT",
+      "author": "Solana Labs Maintainers",
+      "homepage": "https://www.solanakit.com/api#solananominal-types",
+      "description": "Type utilties for creating nominal/branded types in TypeScript"
+    },
+    {
+      "name": "chalk",
+      "versions": [
+        "5.6.2"
+      ],
+      "paths": [
+        "/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/node_modules/.pnpm/chalk@5.6.2/node_modules/chalk"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/chalk/chalk#readme",
+      "description": "Terminal string styling done right"
+    },
+    {
+      "name": "commander",
+      "versions": [
+        "15.0.0"
+      ],
+      "paths": [
+        "/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/verifier/node_modules/.pnpm/commander@15.0.0/node_modules/commander"
+      ],
+      "license": "MIT",
+      "author": "TJ Holowaychuk",
+      "homepage": "https://github.com/tj/commander.js#readme",
+      "description": "the complete solution for node.js command-line programs"
+    }
+  ]
+}

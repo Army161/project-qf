@@ -1,0 +1,111 @@
+# cmd: node --test packages/adapter-meteora-dbc/test/mutation.test.ts
+# at: 2026-09-27T12:12:47Z node v22.22.2
+TAP version 13
+# (node:3626) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+# (Use `node --trace-deprecation ...` to show where the warning was created)
+# Subtest: [MOCK_RPC_FIXTURE: synthetic accounts, not live results] baseline: every unmutated SDK transaction binds with zero violations
+ok 1 - [MOCK_RPC_FIXTURE: synthetic accounts, not live results] baseline: every unmutated SDK transaction binds with zero violations
+  ---
+  duration_ms: 647.289204
+  type: 'test'
+  ...
+# Subtest: added System transfer to an attacker is rejected (CREATE_POOL and SWAP)
+ok 2 - added System transfer to an attacker is rejected (CREATE_POOL and SWAP)
+  ---
+  duration_ms: 182.115407
+  type: 'test'
+  ...
+# Subtest: SPL SetAuthority (authority change) is rejected
+ok 3 - SPL SetAuthority (authority change) is rejected
+  ---
+  duration_ms: 96.224438
+  type: 'test'
+  ...
+# Subtest: substituted swap output account (attacker ATA) is rejected
+ok 4 - substituted swap output account (attacker ATA) is rejected
+  ---
+  duration_ms: 90.856385
+  type: 'test'
+  ...
+# Subtest: substituted mint in swap is rejected
+ok 5 - substituted mint in swap is rejected
+  ---
+  duration_ms: 84.993671
+  type: 'test'
+  ...
+# Subtest: substituted fee-claim recipient accounts are rejected
+ok 6 - substituted fee-claim recipient accounts are rejected
+  ---
+  duration_ms: 85.065054
+  type: 'test'
+  ...
+# Subtest: changed swap amount_in and lowered minimum_amount_out are rejected
+ok 7 - changed swap amount_in and lowered minimum_amount_out are rejected
+  ---
+  duration_ms: 155.573889
+  type: 'test'
+  ...
+# Subtest: changed fee-claim max amounts are rejected
+ok 8 - changed fee-claim max amounts are rejected
+  ---
+  duration_ms: 81.487233
+  type: 'test'
+  ...
+# Subtest: compute price above the approved cap and a duplicate compute limit are rejected
+ok 9 - compute price above the approved cap and a duplicate compute limit are rejected
+  ---
+  duration_ms: 181.324013
+  type: 'test'
+  ...
+# Subtest: wrong operation: a claim transaction presented under swap terms is rejected
+ok 10 - wrong operation: a claim transaction presented under swap terms is rejected
+  ---
+  duration_ms: 81.560024
+  type: 'test'
+  ...
+# Subtest: an extra signer attached to the engine instruction is rejected
+ok 11 - an extra signer attached to the engine instruction is rejected
+  ---
+  duration_ms: 96.719617
+  type: 'test'
+  ...
+# Subtest: migration: substituted DAMM config and a reused known account as ephemeral signer are rejected
+ok 12 - migration: substituted DAMM config and a reused known account as ephemeral signer are rejected
+  ---
+  duration_ms: 201.280636
+  type: 'test'
+  ...
+# Subtest: ATA creation for an attacker-owned account is rejected
+ok 13 - ATA creation for an attacker-owned account is rejected
+  ---
+  duration_ms: 92.428957
+  type: 'test'
+  ...
+# Subtest: truncated or extended engine instruction data is rejected
+ok 14 - truncated or extended engine instruction data is rejected
+  ---
+  duration_ms: 167.438986
+  type: 'test'
+  ...
+# Subtest: changed CREATE_CONFIG parameters (fee) do not match the approved digest
+ok 15 - changed CREATE_CONFIG parameters (fee) do not match the approved digest
+  ---
+  duration_ms: 75.498128
+  type: 'test'
+  ...
+# Subtest: an injected instruction to an unknown program is rejected
+ok 16 - an injected instruction to an unknown program is rejected
+  ---
+  duration_ms: 79.3586
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2940.938802
+# exit: 0

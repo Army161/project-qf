@@ -1,0 +1,97 @@
+{
+  "package": "QF-Repair-Decision-Package",
+  "date": "2026-09-27",
+  "type": "supplemental review, not production patch",
+  "files": [
+    {
+      "path": "CLAUDE-NEXT-PASS.md",
+      "bytes": 4875,
+      "sha256": "a58dce47224a8fee08de965b9b4a33239989b9f7dd03b96cd5887a8bf3795397"
+    },
+    {
+      "path": "CONFIG-COMPATIBILITY.md",
+      "bytes": 2635,
+      "sha256": "6c6232738cca3a221184c4ce537d653bee64c554392c325257e965d14bcdce33"
+    },
+    {
+      "path": "DECISIONS.md",
+      "bytes": 6691,
+      "sha256": "3065924e8a4c8ecf75a99291a0af1e601189b9024f0b50ed08a7222394c3c745"
+    },
+    {
+      "path": "METEORA-INQUIRY.md",
+      "bytes": 2443,
+      "sha256": "62284f6897c1cc2ed1c7bd34fcc10775fda2b29608dce08ebbd074d8ed9cf929"
+    },
+    {
+      "path": "NETWORK-RUNBOOK.md",
+      "bytes": 3556,
+      "sha256": "3529ed051853c9941885a879122e62000aa44e952d3b5d141c70d7425d636ec5"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2562,
+      "sha256": "f9662097a43fdffe80eccdf900719142d6a9bd591e9851628abb1eb97e123098"
+    },
+    {
+      "path": "SEC-A-TECHNICAL-REVIEW.json",
+      "bytes": 1609,
+      "sha256": "1ee063a2c92de86adf938fdf74115184d7d1116caf95771b360469c58b5366c6"
+    },
+    {
+      "path": "SOURCES.md",
+      "bytes": 2354,
+      "sha256": "48a6ff4ca8b13cd3695204b3ef10d972e3e99d9a1b893a423495b93c20fe8126"
+    },
+    {
+      "path": "VERIFICATION-CHECKLIST.md",
+      "bytes": 2747,
+      "sha256": "8b5beab9f8d0b925975fb4f4aa3e01beb7e9aff03258bb09e0fe17ca3456ab3a"
+    },
+    {
+      "path": "evidence/archive-integrity.json",
+      "bytes": 126,
+      "sha256": "9742b72246a984da1f06b9d902b95347fc1f97933b36e066f559b8a33fd0712b"
+    },
+    {
+      "path": "evidence/core-validator-rerun.tap",
+      "bytes": 11158,
+      "sha256": "d027fabbda6cc80fc8f95bb36e5c3ffb4f0cfcb505ad85f01ebe88bf08b48279"
+    },
+    {
+      "path": "evidence/network-probes.json",
+      "bytes": 926,
+      "sha256": "e7a82f40ead9123e98c4efeeb92484ce71d9e62a1577b8d468620d0f43920594"
+    },
+    {
+      "path": "evidence/pda-derivation-rerun.json",
+      "bytes": 338,
+      "sha256": "9c30c5dfbf0f6c37a5e3bb103215a58e984a3bd8c0cc37e45492a3c335205bbc"
+    },
+    {
+      "path": "evidence/pda-derivation.json",
+      "bytes": 374,
+      "sha256": "c06c998ff1147cd20310df6496f68423caa31d00b63735cbabcfae0b7b49cd80"
+    },
+    {
+      "path": "evidence/targeted-observations-run.txt",
+      "bytes": 1660,
+      "sha256": "51b35a5266ab47685d593f568d97f5e4eb53d68d319c1aa0999ff6880e21bdfe"
+    },
+    {
+      "path": "evidence/targeted-observations.json",
+      "bytes": 1485,
+      "sha256": "83c8de8ccbc05e4d5216f32dd06b154849ea8369ba70cfb1c5447f3acef597c7"
+    },
+    {
+      "path": "tools/derive-pool-authority.py",
+      "bytes": 2165,
+      "sha256": "c86e1676a3a767989771097ce4a8b63910094d28a4c913ebe6ae28eb93c66701"
+    },
+    {
+      "path": "tools/reproduce-review-observations.mjs",
+      "bytes": 5179,
+      "sha256": "c7b7065b37a139f4157365374ec55abd535603727ec8a9adf688055e53f0a719"
+    }
+  ]
+}

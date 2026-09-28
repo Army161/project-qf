@@ -1,0 +1,55 @@
+# cmd: node --test packages/policy/test/review-findings.test.ts
+# at: 2026-09-27T12:12:47Z node v22.22.2
+TAP version 13
+# Subtest: QF-POL-01: a liquidity WARN with exit-depth PASS requires acknowledgement
+ok 1 - QF-POL-01: a liquidity WARN with exit-depth PASS requires acknowledgement
+  ---
+  duration_ms: 2.649394
+  type: 'test'
+  ...
+# Subtest: QF-POL-02: newer adverse price evidence invalidates a record still inside its TTL
+ok 2 - QF-POL-02: newer adverse price evidence invalidates a record still inside its TTL
+  ---
+  duration_ms: 1.010038
+  type: 'test'
+  ...
+# Subtest: QF-POL-01: the acknowledgement lists every WARN and is bound to evidence and policy
+ok 3 - QF-POL-01: the acknowledgement lists every WARN and is bound to evidence and policy
+  ---
+  duration_ms: 1.850705
+  type: 'test'
+  ...
+# Subtest: QF-POL-01: recheck refuses a missing or stale acknowledgement
+ok 4 - QF-POL-01: recheck refuses a missing or stale acknowledgement
+  ---
+  duration_ms: 1.46708
+  type: 'test'
+  ...
+# Subtest: QF-POL-02: INSUFFICIENT newer price, changed route, failed exit, authority change and freeze all fail closed within TTL
+ok 5 - QF-POL-02: INSUFFICIENT newer price, changed route, failed exit, authority change and freeze all fail closed within TTL
+  ---
+  duration_ms: 1.197056
+  type: 'test'
+  ...
+# Subtest: EV-1: malformed or future-dated current evidence fails closed
+ok 6 - EV-1: malformed or future-dated current evidence fails closed
+  ---
+  duration_ms: 0.491731
+  type: 'test'
+  ...
+# Subtest: EV-1: execution freshness is undefined, so nothing is signable on analytical TTLs
+ok 7 - EV-1: execution freshness is undefined, so nothing is signable on analytical TTLs
+  ---
+  duration_ms: 0.155565
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 149.659628
+# exit: 0

@@ -1,0 +1,295 @@
+{
+  "schema": "qf-sec-a-dispositions/2",
+  "recordedAt": "2026-09-27",
+  "lockfileSha256": "c2bb276af21b15c87bba002d20b51e7f9564cde2247d082370bec4d27f3a90e6",
+  "runtime": {
+    "node": "v22.22.2",
+    "pnpm": "10.33.0"
+  },
+  "rawAudit": {
+    "preMitigation": "evidence/sec-a/audit-prod-raw-pre-mitigation.json (high 3, moderate 2, exit 1)",
+    "postMitigation": "evidence/sec-a/audit-prod-raw-post-mitigation.json (high 1, moderate 2, exit 1)",
+    "command": "pnpm audit --prod --json (secret-free wrapper)",
+    "nativesRemoved": "evidence/sec-a/audit-prod-raw-natives-removed.json (high 1, moderate 2, exit 1)"
+  },
+  "policy": "No blanket waiver and no audit fix --force. The raw audit stays red and visible; each remaining finding has a version-bound, path-specific record below that expires and is re-checked on the listed triggers. Approval is the owner's, not Claude's.",
+  "records": [
+    {
+      "advisory": "GHSA-3gc7-fjrx-p6mg",
+      "npmAdvisoryId": 1103747,
+      "severity": "high",
+      "package": "bigint-buffer",
+      "installedVersion": "1.1.5",
+      "integrity": "sha512-trfYco6AoZ+rKhKnxA0hgX0HAbVP/s808/EuDSe2JDzUnCp/xAsli35Orvk67UrTEcwuxZqYZDmfA2RXJgxVvA==",
+      "patchedUpstream": "none (<0.0.0)",
+      "resolvedPaths": [
+        "packages__adapter-meteora-dbc>@meteora-ag/cp-amm-sdk>@solana/spl-token>@solana/buffer-layout-utils>bigint-buffer"
+      ],
+      "target": "Server-side Meteora adapter (packages/adapter-meteora-dbc) under Node v22.22.2 only; excluded from browser/worker/customer builds by tools/boundary (QF-LIC-EX-001 boundary).",
+      "callPath": "@solana/buffer-layout-utils (u64/u128 layouts) -> bigint-buffer.toBigIntLE/toBufferLE. Upstream dist/node.js tried require(\"bindings\")(\"bigint_buffer\") at module load; the advisory concerns the native toBigIntLE path.",
+      "inputReachability": "Reached by SDK account/instruction layout encode/decode. Inputs are QF-built instruction args (validated u64 by tx validateTerms) and RPC account data (bounded by createBoundedFetch).",
+      "disposition": "MITIGATED_PATCHED",
+      "mitigation": "pnpm patchedDependencies bigint-buffer@1.1.5 -> patches/bigint-buffer@1.1.5.patch (sha256 a36b175bf3d9996bf525b88df4d303561321c6ad7dde7e3a3a19374440c781b1) removes the native loader, so every function takes the pure-JS branch. Install scripts remain disabled (--ignore-scripts), no addon is built, and the test asserts no .node file exists in the installed package. The durable control is the patch; ignore-scripts alone is not relied on.",
+      "residual": "Pure-JS toBufferLE silently truncates values wider than the requested width; QF rejects non-u64 amounts before SDK code. bindings@1.5.0 remains installed as a declared dependency but is never required.",
+      "evidence": [
+        "evidence/sec-a/audit-prod-raw-pre-mitigation.json",
+        "evidence/sec-a/audit-prod-raw-post-mitigation.json (still listed: audit matches version only)",
+        "runtime probe in sec-a.test.ts: patched dist/node.js loaded; bindings never loaded"
+      ],
+      "tests": [
+        "packages/adapter-meteora-dbc/test/sec-a.test.ts :: GHSA-3gc7-fjrx-p6mg bigint-buffer",
+        "packages/adapter-meteora-dbc/test/sec-a.test.ts :: bigint-buffer pure-JS bounds",
+        "packages/tx/test/binding.test.ts :: approved integers are range-checked to their exact IDL width"
+      ],
+      "approval": {
+        "status": "ADOPTED_BY_OWNER",
+        "adoptedBy": "Jeremy Gephart",
+        "adoptedById": "user_01T9qLW7GYKrJ1AGPtvh41a9",
+        "adoptedAt": "2026-09-27T15:59:36Z",
+        "adoptedVia": "Project QF thread message cmsg_013ry5FUqS2YHJbqo46XpuuFWSM1E7MpjQqJsoE4sVNpXZ (\"My decisions: accept the five scoped dispositions ...\")",
+        "signature": null,
+        "signatureNote": "No signature exists or was created; this records the owner's written instruction in the project thread.",
+        "technicalBasis": "QF-Repair-Decision-Package/SEC-A-TECHNICAL-REVIEW.json: ACCEPT_SCOPED_V0 (reviewer did not rerun the installed SEC-A tests); reviewed dispositions sha256 dfdfec67c8b5c399f6752e26641b5a88ffd12ec57035a8b5957430f821c5c650",
+        "scope": "internal Node V0 Meteora adapter only; not production, devnet or mainnet approval; raw audit stays red",
+        "adoptedForLockfileSha256": "307d35bee826b2f7d455967160795d3b77e4635c814b87be9a09f784ae6e7f7d"
+      },
+      "expiry": "2026-12-27",
+      "recheckTriggers": [
+        "any .node file appears under bigint-buffer",
+        "any version bump of @solana/web3.js, @meteora-ag/cp-amm-sdk, @meteora-ag/dynamic-bonding-curve-sdk or @coral-xyz/anchor",
+        "bindings appears in the runtime module list",
+        "deployment target changes (anything other than server-side Node adapter)",
+        "expiry date reached",
+        "mitigating control changes (patch, override, response bounds, browser boundary)",
+        "new or revised GHSA for this package",
+        "package licence change",
+        "patch no longer applies or patch_hash changes",
+        "pnpm-lock.yaml sha256 changes"
+      ],
+      "ownerConditions": "Patched entrypoint must remain the runtime entrypoint; no native loader; integers range-checked to their exact IDL width (u8..u128, i8..i128) in packages/tx normalizeToIdl, and amounts to u64 in terms/intent. Not an upstream fixed release.",
+      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)"
+    },
+    {
+      "advisory": "GHSA-82x6-q7mm-w9cf",
+      "npmAdvisoryId": 1164824,
+      "severity": "high",
+      "package": "toml",
+      "installedVersion": "4.2.0 (was 3.0.0)",
+      "integrity": "sha512-TvAJjbHZlYmI323+srtqHQFyJsoWy6mI09ppkuj9+iRsqsVKG9fvTcOP7FHF2UCb0QSYtjEavffrKzdd0XgClg==",
+      "patchedUpstream": ">=4.2.0",
+      "resolvedPaths": [
+        "packages__adapter-meteora-dbc>@meteora-ag/cp-amm-sdk>@coral-xyz/anchor>toml"
+      ],
+      "target": "Server-side Meteora adapter (packages/adapter-meteora-dbc) under Node v22.22.2 only; excluded from browser/worker/customer builds by tools/boundary (QF-LIC-EX-001 boundary).",
+      "callPath": "@coral-xyz/anchor dist/cjs/workspace.js: toml.parse(fs.readFileSync(\"Anchor.toml\")) inside the lazy `workspace` getter. The module was loaded at runtime before the fix (anchor imports workspace.js eagerly); parse is only called if `anchor.workspace` is accessed.",
+      "inputReachability": "Not reachable from QF: QF never accesses anchor.workspace and ingests no TOML (asserted by source scan). Would only parse a local Anchor.toml in the process working directory.",
+      "disposition": "FIXED_BY_SCOPED_OVERRIDE",
+      "mitigation": "pnpm override \"@coral-xyz/anchor@0.31.1>toml\": \"4.2.0\" (scoped to anchor only). Test proves anchor resolves 4.2.0, Buffer input parses, deep nesting throws a depth error rather than RangeError, and toml 3.x is never loaded.",
+      "residual": "Override is outside anchor's declared ^3.0.0 range; API parity is tested only for anchor's single call.",
+      "evidence": [
+        "evidence/sec-a/audit-prod-raw-post-mitigation.json (no longer listed)"
+      ],
+      "tests": [
+        "packages/adapter-meteora-dbc/test/sec-a.test.ts :: toml"
+      ],
+      "approval": {
+        "status": "ADOPTED_BY_OWNER",
+        "adoptedBy": "Jeremy Gephart",
+        "adoptedById": "user_01T9qLW7GYKrJ1AGPtvh41a9",
+        "adoptedAt": "2026-09-27T15:59:36Z",
+        "adoptedVia": "Project QF thread message cmsg_013ry5FUqS2YHJbqo46XpuuFWSM1E7MpjQqJsoE4sVNpXZ (\"My decisions: accept the five scoped dispositions ...\")",
+        "signature": null,
+        "signatureNote": "No signature exists or was created; this records the owner's written instruction in the project thread.",
+        "technicalBasis": "QF-Repair-Decision-Package/SEC-A-TECHNICAL-REVIEW.json: ACCEPT_SCOPED_V0 (reviewer did not rerun the installed SEC-A tests); reviewed dispositions sha256 dfdfec67c8b5c399f6752e26641b5a88ffd12ec57035a8b5957430f821c5c650",
+        "scope": "internal Node V0 Meteora adapter only; not production, devnet or mainnet approval; raw audit stays red",
+        "adoptedForLockfileSha256": "307d35bee826b2f7d455967160795d3b77e4635c814b87be9a09f784ae6e7f7d"
+      },
+      "expiry": "2026-12-27",
+      "recheckTriggers": [
+        "anchor changes its toml range or call site",
+        "any version bump of @solana/web3.js, @meteora-ag/cp-amm-sdk, @meteora-ag/dynamic-bonding-curve-sdk or @coral-xyz/anchor",
+        "deployment target changes (anything other than server-side Node adapter)",
+        "expiry date reached",
+        "mitigating control changes (patch, override, response bounds, browser boundary)",
+        "new or revised GHSA for this package",
+        "package licence change",
+        "pnpm-lock.yaml sha256 changes"
+      ],
+      "ownerConditions": "Keep the anchor-scoped 4.2.0 override with the Buffer-input parity and depth regression tests; revalidate whenever anchor or its toml range changes.",
+      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)"
+    },
+    {
+      "advisory": "GHSA-v5mp-jgw5-2x6j",
+      "npmAdvisoryId": 1164825,
+      "severity": "high",
+      "package": "toml",
+      "installedVersion": "4.2.0 (was 3.0.0)",
+      "integrity": "sha512-TvAJjbHZlYmI323+srtqHQFyJsoWy6mI09ppkuj9+iRsqsVKG9fvTcOP7FHF2UCb0QSYtjEavffrKzdd0XgClg==",
+      "patchedUpstream": ">=4.1.2",
+      "resolvedPaths": [
+        "packages__adapter-meteora-dbc>@meteora-ag/cp-amm-sdk>@coral-xyz/anchor>toml"
+      ],
+      "target": "Server-side Meteora adapter (packages/adapter-meteora-dbc) under Node v22.22.2 only; excluded from browser/worker/customer builds by tools/boundary (QF-LIC-EX-001 boundary).",
+      "callPath": "Same as GHSA-82x6-q7mm-w9cf.",
+      "inputReachability": "Same as GHSA-82x6-q7mm-w9cf.",
+      "disposition": "FIXED_BY_SCOPED_OVERRIDE",
+      "mitigation": "Same override. Test parses a __proto__ key-path desynchronisation payload and asserts Object.prototype is not polluted.",
+      "evidence": [
+        "evidence/sec-a/audit-prod-raw-post-mitigation.json (no longer listed)"
+      ],
+      "tests": [
+        "packages/adapter-meteora-dbc/test/sec-a.test.ts :: toml"
+      ],
+      "approval": {
+        "status": "ADOPTED_BY_OWNER",
+        "adoptedBy": "Jeremy Gephart",
+        "adoptedById": "user_01T9qLW7GYKrJ1AGPtvh41a9",
+        "adoptedAt": "2026-09-27T15:59:36Z",
+        "adoptedVia": "Project QF thread message cmsg_013ry5FUqS2YHJbqo46XpuuFWSM1E7MpjQqJsoE4sVNpXZ (\"My decisions: accept the five scoped dispositions ...\")",
+        "signature": null,
+        "signatureNote": "No signature exists or was created; this records the owner's written instruction in the project thread.",
+        "technicalBasis": "QF-Repair-Decision-Package/SEC-A-TECHNICAL-REVIEW.json: ACCEPT_SCOPED_V0 (reviewer did not rerun the installed SEC-A tests); reviewed dispositions sha256 dfdfec67c8b5c399f6752e26641b5a88ffd12ec57035a8b5957430f821c5c650",
+        "scope": "internal Node V0 Meteora adapter only; not production, devnet or mainnet approval; raw audit stays red",
+        "adoptedForLockfileSha256": "307d35bee826b2f7d455967160795d3b77e4635c814b87be9a09f784ae6e7f7d"
+      },
+      "expiry": "2026-12-27",
+      "recheckTriggers": [
+        "anchor changes its toml range or call site",
+        "any version bump of @solana/web3.js, @meteora-ag/cp-amm-sdk, @meteora-ag/dynamic-bonding-curve-sdk or @coral-xyz/anchor",
+        "deployment target changes (anything other than server-side Node adapter)",
+        "expiry date reached",
+        "mitigating control changes (patch, override, response bounds, browser boundary)",
+        "new or revised GHSA for this package",
+        "package licence change",
+        "pnpm-lock.yaml sha256 changes"
+      ],
+      "ownerConditions": "Keep the prototype-pollution regression and installed-version proof.",
+      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)"
+    },
+    {
+      "advisory": "GHSA-w5hq-g745-h8pq",
+      "npmAdvisoryId": 1119441,
+      "severity": "moderate",
+      "package": "uuid",
+      "installedVersion": "8.3.2",
+      "integrity": "sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==",
+      "patchedUpstream": ">=11.1.1",
+      "resolvedPaths": [
+        "packages__adapter-meteora-dbc>@solana/web3.js>jayson>uuid"
+      ],
+      "target": "Server-side Meteora adapter (packages/adapter-meteora-dbc) under Node v22.22.2 only; excluded from browser/worker/customer builds by tools/boundary (QF-LIC-EX-001 boundary).",
+      "callPath": "jayson@4.3.0 lib/*: require('uuid').v4, called as uuid() with no buf/offset to generate JSON-RPC ids. uuid@8.3.2 is loaded at runtime (its index also loads v3/v5, which are never called). The advisory concerns v3/v5/v6 with a caller-supplied buf; uuid 8.3.2 exports no v6.",
+      "inputReachability": "No external input reaches uuid: v4() takes no arguments on this path.",
+      "disposition": "NOT_AFFECTED_PATH_SPECIFIC",
+      "mitigation": "None needed on this path. Test pins jayson 4.3.0, every require site to .v4, every call to uuid() with no arguments, no v3/v5/v6 use, and jayson as the only lockfile dependant of uuid@8.3.2. (uuid@14.0.2 used by rpc-websockets is outside the advisory range.)",
+      "evidence": [
+        "evidence/sec-a/audit-prod-raw-post-mitigation.json (still listed, by design)"
+      ],
+      "tests": [
+        "packages/adapter-meteora-dbc/test/sec-a.test.ts :: GHSA-w5hq-g745-h8pq uuid"
+      ],
+      "approval": {
+        "status": "ADOPTED_BY_OWNER",
+        "adoptedBy": "Jeremy Gephart",
+        "adoptedById": "user_01T9qLW7GYKrJ1AGPtvh41a9",
+        "adoptedAt": "2026-09-27T15:59:36Z",
+        "adoptedVia": "Project QF thread message cmsg_013ry5FUqS2YHJbqo46XpuuFWSM1E7MpjQqJsoE4sVNpXZ (\"My decisions: accept the five scoped dispositions ...\")",
+        "signature": null,
+        "signatureNote": "No signature exists or was created; this records the owner's written instruction in the project thread.",
+        "technicalBasis": "QF-Repair-Decision-Package/SEC-A-TECHNICAL-REVIEW.json: ACCEPT_SCOPED_V0 (reviewer did not rerun the installed SEC-A tests); reviewed dispositions sha256 dfdfec67c8b5c399f6752e26641b5a88ffd12ec57035a8b5957430f821c5c650",
+        "scope": "internal Node V0 Meteora adapter only; not production, devnet or mainnet approval; raw audit stays red",
+        "adoptedForLockfileSha256": "307d35bee826b2f7d455967160795d3b77e4635c814b87be9a09f784ae6e7f7d"
+      },
+      "expiry": "2026-12-27",
+      "recheckTriggers": [
+        "QF code imports uuid",
+        "any new dependant of uuid<11.1.1",
+        "any version bump of @solana/web3.js, @meteora-ag/cp-amm-sdk, @meteora-ag/dynamic-bonding-curve-sdk or @coral-xyz/anchor",
+        "deployment target changes (anything other than server-side Node adapter)",
+        "expiry date reached",
+        "jayson version changes",
+        "mitigating control changes (patch, override, response bounds, browser boundary)",
+        "new or revised GHSA for this package",
+        "package licence change",
+        "pnpm-lock.yaml sha256 changes"
+      ],
+      "ownerConditions": "Valid only while the reviewed path calls v4() without a caller buffer; any v3/v5/v6 call or new dependant of uuid<11.1.1 invalidates it.",
+      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)"
+    },
+    {
+      "advisory": "GHSA-528h-pc64-c93x",
+      "npmAdvisoryId": 1164823,
+      "severity": "moderate",
+      "package": "stream-json",
+      "installedVersion": "1.9.1",
+      "integrity": "sha512-uWkjJ+2Nt/LO9Z/JyKZbMusL8Dkh97uUBTv3AJQ74y07lVahLY4eEFsPsE97pxYBwr8nnjMAIch5eqI0gPShyw==",
+      "patchedUpstream": ">=3.5.0",
+      "resolvedPaths": [
+        "packages__adapter-meteora-dbc>@solana/web3.js>jayson>stream-json"
+      ],
+      "target": "Server-side Meteora adapter (packages/adapter-meteora-dbc) under Node v22.22.2 only; excluded from browser/worker/customer builds by tools/boundary (QF-LIC-EX-001 boundary).",
+      "callPath": "jayson@4.3.0 requires only stream-json/streamers/StreamValues and stream-json/utils/Verifier (its server/stream utilities). The advisory concerns the pick/ignore/filter/replace filters. @solana/web3.js uses the jayson browser client, so stream-json is not loaded in the QF runtime at all.",
+      "inputReachability": "Not loaded in the runtime probe; affected filters are not required anywhere on the path.",
+      "disposition": "NOT_AFFECTED_PATH_SPECIFIC",
+      "mitigation": "None needed on this path. Independently, every live RPC response is bounded before parsing by createBoundedFetch/createBoundedConnection (maxBytes 8 MiB, maxDepth 64).",
+      "evidence": [
+        "evidence/sec-a/audit-prod-raw-post-mitigation.json (still listed, by design)"
+      ],
+      "tests": [
+        "packages/adapter-meteora-dbc/test/sec-a.test.ts :: GHSA-528h-pc64-c93x stream-json",
+        "packages/adapter-meteora-dbc/test/sec-a.test.ts :: input bounds regardless of disposition",
+        "packages/adapter-meteora-dbc/test/body-limit.test.ts (streaming cap, deadline, cancellation)"
+      ],
+      "approval": {
+        "status": "ADOPTED_BY_OWNER",
+        "adoptedBy": "Jeremy Gephart",
+        "adoptedById": "user_01T9qLW7GYKrJ1AGPtvh41a9",
+        "adoptedAt": "2026-09-27T15:59:36Z",
+        "adoptedVia": "Project QF thread message cmsg_013ry5FUqS2YHJbqo46XpuuFWSM1E7MpjQqJsoE4sVNpXZ (\"My decisions: accept the five scoped dispositions ...\")",
+        "signature": null,
+        "signatureNote": "No signature exists or was created; this records the owner's written instruction in the project thread.",
+        "technicalBasis": "QF-Repair-Decision-Package/SEC-A-TECHNICAL-REVIEW.json: ACCEPT_SCOPED_V0 (reviewer did not rerun the installed SEC-A tests); reviewed dispositions sha256 dfdfec67c8b5c399f6752e26641b5a88ffd12ec57035a8b5957430f821c5c650",
+        "scope": "internal Node V0 Meteora adapter only; not production, devnet or mainnet approval; raw audit stays red",
+        "adoptedForLockfileSha256": "307d35bee826b2f7d455967160795d3b77e4635c814b87be9a09f784ae6e7f7d"
+      },
+      "expiry": "2026-12-27",
+      "recheckTriggers": [
+        "QF uses the jayson Node client or server",
+        "any version bump of @solana/web3.js, @meteora-ag/cp-amm-sdk, @meteora-ag/dynamic-bonding-curve-sdk or @coral-xyz/anchor",
+        "deployment target changes (anything other than server-side Node adapter)",
+        "expiry date reached",
+        "jayson version changes",
+        "mitigating control changes (patch, override, response bounds, browser boundary)",
+        "new or revised GHSA for this package",
+        "package licence change",
+        "pnpm-lock.yaml sha256 changes",
+        "stream-json appears in the runtime module list"
+      ],
+      "ownerConditions": "Valid only while the affected pick/ignore/filter/replace filters stay outside the executed path. Does NOT cover general response-resource exhaustion; that is handled separately by the streaming limits (BODY-LIMIT).",
+      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)"
+    }
+  ],
+  "observations": [
+    {
+      "observation": "Native ws accelerators removed (owner decision 2026-09-27)",
+      "packages": [
+        "bufferutil@4.1.0",
+        "utf-8-validate@6.0.6",
+        "node-gyp-build@4.8.4"
+      ],
+      "detail": "Excluded with pnpm ignoredOptionalDependencies (targeted; declared optional by rpc-websockets@9.3.9, optional peers of ws). ws@7.5.13 ignores the WS_NO_* flags, so absence is the control. Both ws 7.5.13 and 8.22.0 pass pure-JS mask/unmask, UTF-8 validation and a localhost echo; no .node file is loaded by the adapter runtime.",
+      "test": "packages/adapter-meteora-dbc/test/sec-a.test.ts :: natives decision; ws 7.5.13; ws 8.22.0"
+    }
+  ],
+  "evidenceRefresh": {
+    "at": "2026-09-27",
+    "reason": "optional natives bufferutil/utf-8-validate removed (owner decision); lockfile changed",
+    "previousLockfileSha256": "307d35bee826b2f7d455967160795d3b77e4635c814b87be9a09f784ae6e7f7d",
+    "currentLockfileSha256": "c2bb276af21b15c87bba002d20b51e7f9564cde2247d082370bec4d27f3a90e6",
+    "lockfileChange": "fresh pnpm resolution with ignoredOptionalDependencies; only bufferutil@4.1.0, utf-8-validate@6.0.6 and node-gyp-build@4.8.4 removed; all 161 remaining packages have identical versions and integrities (evidence/readonly-readiness/natives/)",
+    "advisoryPackagesUnchanged": "bigint-buffer 1.1.5 (patched), toml 4.2.0, uuid 8.3.2, stream-json 1.9.1, jayson 4.3.0: same versions and integrities",
+    "tests": "packages/adapter-meteora-dbc/test/sec-a.test.ts 9/9 on the new lockfile (evidence/readonly-readiness/green/sec-a-and-natives.txt)",
+    "rawAudit": "evidence/sec-a/audit-prod-raw-natives-removed.json (high 1, moderate 2, exit 1)",
+    "ownerNote": "The owner adopted these dispositions for lockfile 307d35\u2026 and in the same decision asked for the natives removal and an evidence refresh. The refreshed evidence shows the five records unchanged. Whether the adoption carries to lockfile c2bb276af21b\u2026 is the owner's to confirm; it is not assumed silently."
+  }
+}

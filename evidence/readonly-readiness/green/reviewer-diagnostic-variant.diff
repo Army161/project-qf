@@ -1,0 +1,18 @@
+34,35c34,35
+<  assert.equal(produced,chunks);
+<  output.observations.push({id:'BODY-LIMIT',capBytes:1024,syntheticBytesProduced:produced*chunkBytes,allChunksConsumed:true,cancelled,returnedError:err,interpretation:'Oversize is detected only after complete materialization; not a streaming memory cap.'});
+---
+>  /* variant: record instead of asserting the deficiency */
+>  output.observations.push({id:'BODY-LIMIT',capBytes:1024,syntheticBytesProduced:produced*chunkBytes,allChunksConsumed:produced===chunks,chunksConsumed:produced,cancelled,returnedError:err,interpretation:'Oversize is detected only after complete materialization; not a streaming memory cap.'});
+47c47
+<  const ctx=vm.createContext({Buffer,Uint8Array,DAMM_V2_CONFIG_LAYOUT:layout,DAMM_V2_CONFIG_DISCRIMINATOR:Uint8Array.from(layout.account.discriminator),addrDec:{decode:encode},REQUIRED_CONFIGS:new Set(['Customizable']),COMMITMENT:'finalized',DAMM_V2:damm,DBC_POOL_AUTHORITY:authority,sanitizeError:e=>String(e)});
+---
+>  const ctx=vm.createContext({Buffer,Uint8Array,DAMM_V2_CONFIG_LAYOUT:layout,DAMM_V2_CONFIG_DISCRIMINATOR:Uint8Array.from(layout.account.discriminator),addrDec:{decode:encode},REQUIRED_CONFIGS:new Set(['Customizable']),COMMITMENT:'finalized',DAMM_V2:damm,DBC_POOL_AUTHORITY:authority,sanitizeError:e=>String(e),CONFIG_ROUTES:{Customizable:{poolCreatorAuthority:authority,configType:1,evidence:{}}},DAMM_V2_CONFIG_TYPES:{0:'Static',1:'Dynamic'}});
+54c54
+<   assert.equal(results[1].status,'PASS');
+---
+>   /* variant: record the status */
+57c57
+<  await writeFile(join(evidence,'targeted-observations.json'),JSON.stringify(output,null,2)+'\n');
+---
+>  await writeFile(join(evidence,'targeted-observations-variant-repaired.json'),JSON.stringify(output,null,2)+'\n');

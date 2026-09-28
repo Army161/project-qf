@@ -1,0 +1,124 @@
+# cmd: node --test packages/adapter-meteora-dbc/test/body-limit.test.ts (adapter as exported, before the BODY-LIMIT repair)
+# at: 2026-09-27T16:03:13Z
+TAP version 13
+# (node:576) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+# (Use `node --trace-deprecation ...` to show where the warning was created)
+# Subtest: BODY-LIMIT: the reviewer diagnostic (1,024-byte cap, 32,768-byte body) stops early and cancels
+not ok 1 - BODY-LIMIT: the reviewer diagnostic (1,024-byte cap, 32,768-byte body) stops early and cancels
+  ---
+  duration_ms: 8.337037
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/adapter-meteora-dbc/test/body-limit.test.ts:20:1'
+  failureType: 'testCodeFailure'
+  error: 'consumed 32768 bytes'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/adapter-meteora-dbc/test/body-limit.test.ts:24:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: BODY-LIMIT: absent or false Content-Length cannot bypass the streaming cap
+not ok 2 - BODY-LIMIT: absent or false Content-Length cannot bypass the streaming cap
+  ---
+  duration_ms: 21.336138
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/adapter-meteora-dbc/test/body-limit.test.ts:28:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/adapter-meteora-dbc/test/body-limit.test.ts:32:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: a declared oversize is refused before any body byte is read, and the body is cancelled
+not ok 3 - BODY-LIMIT: a declared oversize is refused before any body byte is read, and the body is cancelled
+  ---
+  duration_ms: 0.963281
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/adapter-meteora-dbc/test/body-limit.test.ts:35:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/adapter-meteora-dbc/test/body-limit.test.ts:40:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: exactly maxBytes is accepted and returned intact; maxBytes + 1 is refused
+ok 4 - BODY-LIMIT: exactly maxBytes is accepted and returned intact; maxBytes + 1 is refused
+  ---
+  duration_ms: 2.391882
+  type: 'test'
+  ...
+# Subtest: BODY-LIMIT: a stalled body hits the whole-body deadline and is cancelled
+not ok 5 - BODY-LIMIT: a stalled body hits the whole-body deadline and is cancelled
+  ---
+  duration_ms: 20535.574923
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/adapter-meteora-dbc/test/body-limit.test.ts:51:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/adapter-meteora-dbc/test/body-limit.test.ts:55:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: BODY-LIMIT: the deadline signal reaches the underlying fetch, and a caller abort is honoured
+not ok 6 - BODY-LIMIT: the deadline signal reaches the underlying fetch, and a caller abort is honoured
+  ---
+  duration_ms: 2.595106
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/adapter-meteora-dbc/test/body-limit.test.ts:60:1'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: BODY-LIMIT: an oversized error body is bounded as well
+not ok 7 - BODY-LIMIT: an oversized error body is bounded as well
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/packages/adapter-meteora-dbc/test/body-limit.test.ts:75:1'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 1
+# fail 4
+# cancelled 2
+# skipped 0
+# todo 0
+# duration_ms 23840.089445
+# exit: 1
