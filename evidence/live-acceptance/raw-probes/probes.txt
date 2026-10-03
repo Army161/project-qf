@@ -1,0 +1,27 @@
+# Raw read-only probes (NOT the program verifier; it could not be installed). 2026-10-03T09:27:33Z
+## api.mainnet.solana.com getGenesisHash
+{"jsonrpc":"2.0","result":"5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d","id":1}
+
+## api.mainnet.solana.com getAccountInfo dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN (finalized, base64, dataSlice 0..36)
+{"jsonrpc":"2.0","result":{"context":{"apiVersion":"4.3.0","slot":452892834},"value":{"data":["AgAAAPTRhnUwUkPcN560lFevp91gACRj3NxvEbJoXSM0nPy6","base64"],"executable":true,"lamports":5593470038,"owner":"BPFLoaderUpgradeab1e11111111111111111111111","rentEpoch":18446744073709551615,"space":36}},"id":1}
+
+## api.mainnet.solana.com getAccountInfo cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG (finalized, base64, dataSlice 0..36)
+{"jsonrpc":"2.0","result":{"context":{"apiVersion":"4.3.0","slot":452892834},"value":{"data":["AgAAAIzRPY+wyFuhSu/8pu7IeZ90WBbMZjY4MGAVjuDHRwQk","base64"],"executable":true,"lamports":11823514,"owner":"BPFLoaderUpgradeab1e11111111111111111111111","rentEpoch":18446744073709551615,"space":36}},"id":1}
+
+## api.devnet.solana.com getGenesisHash
+{"jsonrpc":"2.0","result":"EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG","id":1}
+
+## api.devnet.solana.com getAccountInfo dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN (finalized, base64, dataSlice 0..36)
+{"jsonrpc":"2.0","result":{"context":{"apiVersion":"4.4.0-beta.0","slot":506949287},"value":{"data":["AgAAAPTRhnUwUkPcN560lFevp91gACRj3NxvEbJoXSM0nPy6","base64"],"executable":true,"lamports":211141440,"owner":"BPFLoaderUpgradeab1e11111111111111111111111","rentEpoch":18446744073709551615,"space":36}},"id":1}
+
+## api.devnet.solana.com getAccountInfo cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG (finalized, base64, dataSlice 0..36)
+{"jsonrpc":"2.0","result":{"context":{"apiVersion":"4.4.0-beta.0","slot":506949288},"value":{"data":["AgAAAIzRPY+wyFuhSu/8pu7IeZ90WBbMZjY4MGAVjuDHRwQk","base64"],"executable":true,"lamports":5001141440,"owner":"BPFLoaderUpgradeab1e11111111111111111111111","rentEpoch":18446744073709551615,"space":36}},"id":1}
+
+## verify.osec.io/status/dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN
+{"is_verified":false,"message":"On chain program not verified","on_chain_hash":"b3f7b765e1b9a2e87e45c4663165974819d248f00c1beefe678af60e9dfe6c44","executable_hash":"","repo_url":"","commit":"","last_verified_at":null,"is_frozen":false,"is_closed":false}
+HTTP 200
+## verify.osec.io/status/cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG
+{"is_verified":false,"message":"On chain program not verified","on_chain_hash":"","executable_hash":"","repo_url":"","commit":"","last_verified_at":null,"is_frozen":false,"is_closed":false}
+HTTP 200
+DBC tag 2 programData HUfnSSiJxgspQm6C1rkqv6L3XgVtn7AESApgCQpCXCYh
+DAMMv2 tag 2 programData AUh8bm2XsMfex3KjYGcM3G4uBqUNSDw6HEhWaWMYnyPH

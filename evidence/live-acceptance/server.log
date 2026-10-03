@@ -1,0 +1,4 @@
+(node:1091) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1091) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+{"listening":"http://127.0.0.1:8799","schema":1,"providers":{"mainnet-beta":["api.mainnet.solana.com"],"devnet":["api.devnet.solana.com"]}}

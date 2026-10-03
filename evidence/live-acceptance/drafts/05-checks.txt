@@ -1,0 +1,6 @@
+draft byte-identical across server restart
+report digest matches after restart: 005488f7c4f5a69a958f40f3414b14185cb0545aeb695a90b465e1f0bcf90b3e
+no token: 401
+bad token: 401
+other user reads owner's draft: 404
+other user reads owner's live inspection: 404

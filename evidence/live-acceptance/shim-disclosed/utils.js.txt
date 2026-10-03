@@ -1,0 +1,2 @@
+export const bytesToHex = (b) => Buffer.from(b).toString('hex');
+export const utf8ToBytes = (s) => new TextEncoder().encode(s);

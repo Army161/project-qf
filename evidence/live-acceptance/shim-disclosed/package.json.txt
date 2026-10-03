@@ -1,0 +1,3 @@
+{ "name": "@noble/hashes", "version": "0.0.0-qf-live-run-shim", "type": "module", "private": true,
+  "description": "SCRATCH SHIM for the 2026-10-03 live run only: npm registry blocked in this environment. sha256 via node:crypto. Not committed, not shipped.",
+  "exports": { "./sha2.js": "./sha2.js", "./utils.js": "./utils.js" } }
