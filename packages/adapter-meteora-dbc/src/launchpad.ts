@@ -10,6 +10,7 @@ import BN from 'bn.js';
 import {
   DynamicBondingCurveClient, deriveDbcPoolAddress, deriveDbcTokenVaultAddress, swapQuoteExactIn, type ConfigParameters,
 } from '@meteora-ag/dynamic-bonding-curve-sdk';
+import { CpAmm, getCurrentPoint, swapQuoteExactInput } from '@meteora-ag/cp-amm-sdk';
 import {
   Connection, Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction, sendAndConfirmTransaction,
   type Commitment,
@@ -276,6 +277,65 @@ export async function runMigration(conn: Connection, operator: Keypair, pool: st
   tx.feePayer = operator.publicKey;
   tx.recentBlockhash = blockhash;
   return sendAndConfirmTransaction(conn, tx, [operator, ...signers], { commitment: COMMITMENT });
+}
+
+// ------------------------------------------------------------------ after graduation: the DAMM v2 pool
+
+/** A graduated launch's DAMM v2 pool. Token A is the launched (base) token and token B the quote token; anything else is refused. */
+export interface LiveDammPool {
+  pool: string; baseMint: string; quoteMint: string; baseVault: string; quoteVault: string; sqrtPrice: string; liquidity: string;
+  permanentLockLiquidity: string; activationType: number;
+  /** quote raw per 1 base UI unit, 18-decimal fixed point string (same convention as LivePool) */
+  priceQuotePerBase: string;
+  raw: { poolState: unknown };
+}
+
+export async function readDammPool(conn: Connection, pool: string, expected: { baseMint: string; quoteMint: string }, baseDecimals = 6): Promise<LiveDammPool | null> {
+  const ps: any = await new CpAmm(conn).fetchPoolState(new PublicKey(pool)).catch((e: Error) => { if (/not found|does not exist|Account does not exist/i.test(e.message)) return null; throw e; });
+  if (!ps) return null;
+  const a = ps.tokenAMint.toBase58(), b = ps.tokenBMint.toBase58();
+  if (a !== expected.baseMint || b !== expected.quoteMint) throw new Error(`DAMM_POOL_MISMATCH pool ${pool} holds ${a}/${b}`);
+  const sqrt = big(ps.sqrtPrice);
+  return { pool, baseMint: a, quoteMint: b, baseVault: ps.tokenAVault.toBase58(), quoteVault: ps.tokenBVault.toBase58(), sqrtPrice: sqrt.toString(),
+    liquidity: big(ps.liquidity).toString(), permanentLockLiquidity: big(ps.permanentLockLiquidity).toString(), activationType: Number(ps.activationType),
+    priceQuotePerBase: ((sqrt * sqrt * 10n ** BigInt(baseDecimals) * 10n ** 18n) / Q128).toString(), raw: { poolState: ps } };
+}
+
+/** The pool's activation clock: slot or unix time, whichever its activation type uses. */
+export async function dammCurrentPoint(conn: Connection, p: LiveDammPool): Promise<bigint> {
+  return big(await getCurrentPoint(conn, p.activationType as never));
+}
+
+/** Exact-in quote on the DAMM v2 pool. Price impact is measured against spot and excludes the fee, as for the curve. */
+export function quoteDammSwap(p: LiveDammPool, direction: Direction, amountIn: bigint, slippageBps: number, currentPoint: bigint): SwapQuote {
+  if (!Number.isInteger(slippageBps) || slippageBps < 0 || slippageBps > 5000) throw new Error('slippageBps must be an integer in 0..5000');
+  const sell = direction === 'BASE_TO_QUOTE'; // A to B
+  const q: any = swapQuoteExactInput(p.raw.poolState as never, new BN(currentPoint.toString()), new BN(amountIn.toString()), 0, sell, false, 6, 6);
+  const out = big(q.outputAmount);
+  if (out === 0n) throw new Error('ZERO_OUTPUT: amount too small for this pool');
+  const min = (out * BigInt(10_000 - slippageBps)) / 10_000n;
+  const tradingFee = big(q.claimingFee) + big(q.compoundingFee), protocolFee = big(q.protocolFee) + big(q.referralFee);
+  const feesOnInput = big(q.excludedFeeInputAmount) < amountIn;
+  const netIn = big(q.excludedFeeInputAmount), grossOut = feesOnInput ? out : out + tradingFee + protocolFee;
+  const p2 = big(p.sqrtPrice) ** 2n;
+  const spotOut = p2 === 0n || netIn <= 0n ? 0n : sell ? (netIn * p2) / Q128 : (netIn * Q128) / p2;
+  const impact = spotOut === 0n || grossOut >= spotOut ? 0n : ((spotOut - grossOut) * 10_000n) / spotOut;
+  return { amountIn: amountIn.toString(), expectedOut: out.toString(), minimumAmountOut: min.toString(), tradingFee: tradingFee.toString(),
+    protocolFee: protocolFee.toString(), nextSqrtPrice: big(q.nextSqrtPrice).toString(), priceImpactBps: impact.toString() };
+}
+
+/** Unsigned DAMM v2 swap (exact in) for a graduated launch. The minimum out is bound into the terms the browser verifies. */
+export async function buildDammSwap(conn: Connection, p: LiveDammPool, r: SwapRequest, currentPoint: bigint): Promise<BuiltTx & { quote: SwapQuote }> {
+  const quote = quoteDammSwap(p, r.direction, r.amountIn, r.slippageBps, currentPoint);
+  const user = new PublicKey(r.user), base = new PublicKey(p.baseMint), quoteMint = new PublicKey(p.quoteMint);
+  const sell = r.direction === 'BASE_TO_QUOTE';
+  const tx = await new CpAmm(conn).swap({ payer: user, pool: new PublicKey(p.pool), inputTokenMint: sell ? base : quoteMint, outputTokenMint: sell ? quoteMint : base,
+    amountIn: new BN(r.amountIn.toString()), minimumAmountOut: new BN(quote.minimumAmountOut), tokenAVault: new PublicKey(p.baseVault), tokenBVault: new PublicKey(p.quoteVault),
+    tokenAMint: base, tokenBMint: quoteMint, tokenAProgram: TOKEN, tokenBProgram: TOKEN, referralTokenAccount: null, poolState: p.raw.poolState } as never);
+  const terms: ApprovedTerms = { ...common(r.user), kind: 'DAMM_SWAP', dammConfig: DAMM_V2_CUSTOMIZABLE_CONFIG.toBase58(), pool: p.pool, user: r.user, baseMint: p.baseMint,
+    quoteMint: p.quoteMint, baseTokenProgram: PROGRAM_IDS.TOKEN, quoteTokenProgram: PROGRAM_IDS.TOKEN, direction: r.direction, amountIn: r.amountIn.toString(),
+    minimumAmountOut: quote.minimumAmountOut };
+  return { ...(await finish(conn, tx, user)), terms, quote };
 }
 
 export const dammV2PoolFor = async (baseMint: string, quoteMint: string) => {

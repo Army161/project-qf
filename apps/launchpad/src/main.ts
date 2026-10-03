@@ -43,7 +43,7 @@ if (cmd === 'operator') {
   const app = createLaunchpadApp({ store, chain, platform: () => store.getPlatform<PlatformRecord>('platform'), log,
     staticDir: resolve(env.QF_STATIC_DIR ?? join(here, '..', '..', 'web', 'dist')), publicBaseUrl: env.QF_PUBLIC_BASE_URL ?? `http://127.0.0.1:${port}` });
   app.listen(port, '127.0.0.1', () => log(JSON.stringify({ listening: `http://127.0.0.1:${port}`, operator: chain.operatorAddress, ready: !!store.getPlatform('platform') })));
-  startBackground({ store, chain, poolCache: app.poolCache, log }, Number(env.QF_LP_INTERVAL_MS ?? 15_000));
+  startBackground({ store, chain, poolCache: app.poolCache, dammCache: app.dammCache, log }, Number(env.QF_LP_INTERVAL_MS ?? 15_000));
 } else {
   console.error('usage: main.ts operator | setup | serve');
   process.exitCode = 64;

@@ -1,7 +1,7 @@
 {
   "label": "DEVNET evidence: public on-chain data only, no keys",
   "cluster": "devnet",
-  "generatedAt": "2026-10-03T21:22:24.751Z",
+  "generatedAt": "2026-10-03T21:33:43.241Z",
   "operator": "4eup3PdJfMjbPXA9g6Qy43HPmiC7EMD4PvC74DGVPArX",
   "quote": {
     "mint": "GWjfymuG7NhkWm2aEKhCexJKkXvM8Fe6k3mQGB313Vez",
@@ -145,6 +145,26 @@
       "base_raw": "241641406754871",
       "block_time": 1791062333,
       "source": "app"
+    },
+    {
+      "sig": "2373GZy8bvnRvEJDz2eHyWqmTCdpgpS66TceA2zXriWa22PVTQ5Wam3oxSJ6GP4kLPhaky9AoKiH9aes1g6iKzWz",
+      "mint": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+      "trader": "9Ut47GLNAJXuTFSFedRHib63usWUMQneQVmeudzhzJAn",
+      "side": "BUY",
+      "quote_raw": "25000000",
+      "base_raw": "4830212673994",
+      "block_time": 1791063149,
+      "source": "app"
+    },
+    {
+      "sig": "KMT4QWADFUhbsVpVeApx17TRkd8UVjSUuDhZPDAJKcK9iKNLtF85ZMThaxLnRnTqi4U9QLnWFHhVrCEH1U8u1Gx",
+      "mint": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+      "trader": "9Ut47GLNAJXuTFSFedRHib63usWUMQneQVmeudzhzJAn",
+      "side": "SELL",
+      "quote_raw": "12401302",
+      "base_raw": "2415106336997",
+      "block_time": 1791063157,
+      "source": "app"
     }
   ],
   "faucet": [
@@ -172,6 +192,11 @@
       "wallet": "8t2k9VtK7bEUJZG37xZMMjBuzdCECUVvWxPK4MRPfCpM",
       "at": "2026-10-03T21:18:47.142Z",
       "signature": "2acRSMkowZWXTMoVDtjqgVexSdN9zY8Sgk4MADdVSQ4z7BT43VgF7LqGog2E96LAv3edbAncoW511XXJm6a86Xy6"
+    },
+    {
+      "wallet": "9Ut47GLNAJXuTFSFedRHib63usWUMQneQVmeudzhzJAn",
+      "at": "2026-10-03T21:32:25.042Z",
+      "signature": "4CbDepJy5oyZyKhZPaq5hsCExXhnWfaBAkKjjN4HWTEiSx2gFGTYoCkJjyBPtGATYt2MuY6dn5CF21sS4nGe73LG"
     }
   ],
   "dammV2Check": {
@@ -182,5 +207,9 @@
     "liquidity": "8233136322028285114808361262932",
     "permanentLockLiquidity": "8233136322028285114808361262931",
     "migrationTx": "finalized, err null"
-  }
+  },
+  "dammV2Trades": [
+    "2373GZy8bvnRvEJDz2eHyWqmTCdpgpS66TceA2zXriWa22PVTQ5Wam3oxSJ6GP4kLPhaky9AoKiH9aes1g6iKzWz",
+    "KMT4QWADFUhbsVpVeApx17TRkd8UVjSUuDhZPDAJKcK9iKNLtF85ZMThaxLnRnTqi4U9QLnWFHhVrCEH1U8u1Gx"
+  ]
 }

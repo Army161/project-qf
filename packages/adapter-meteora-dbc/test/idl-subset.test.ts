@@ -5,8 +5,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
-import { DBC_IDL_SUBSET } from '@project-qf/tx';
-import { dbcSubset, dammConfigSubset, renderTsModule } from '../scripts/extract-idl-subsets.ts';
+import { DAMM_IDL_SUBSET, DBC_IDL_SUBSET } from '@project-qf/tx';
+import { dbcSubset, dammConfigSubset, dammSwapSubset, renderTsModule } from '../scripts/extract-idl-subsets.ts';
 
 const require = createRequire(import.meta.url);
 const pkgJson = (name: string) => { let d = dirname(require.resolve(name)); for (;;) { try { const j = JSON.parse(readFileSync(join(d, 'package.json'), 'utf8')); if (j.name === name) return j; } catch {} d = dirname(d); } };
@@ -34,4 +34,15 @@ test('pinned discriminators match the SDK coder for every bound instruction', as
   const dbc = await import('@meteora-ag/dynamic-bonding-curve-sdk');
   const idl = (dbc as unknown as { DynamicBondingCurveIdl: { instructions: { name: string; discriminator: number[] }[] } }).DynamicBondingCurveIdl;
   for (const ix of DBC_IDL_SUBSET.instructions) assert.deepEqual(ix.discriminator, idl.instructions.find((i) => i.name === ix.name)!.discriminator, ix.name);
+});
+
+test('committed DAMM v2 swap subset equals a fresh extraction from the pinned SDK (no drift)', async () => {
+  const fresh = dammSwapSubset();
+  assert.deepEqual(DAMM_IDL_SUBSET, fresh);
+  assert.equal(readFileSync(new URL('../../tx/src/engine/damm-idl-subset.ts', import.meta.url), 'utf8'), renderTsModule(fresh, 'DAMM_IDL_SUBSET'));
+  assert.equal(fresh.provenance.package, '@meteora-ag/cp-amm-sdk@1.4.10');
+  assert.deepEqual(fresh.instructions.map((i) => i.name), ['swap']);
+  const amm = await import('@meteora-ag/cp-amm-sdk');
+  const idl = (amm as unknown as { CpAmmIdl: { instructions: { name: string; discriminator: number[] }[] } }).CpAmmIdl;
+  assert.deepEqual(fresh.instructions[0]!.discriminator, idl.instructions.find((i) => i.name === 'swap')!.discriminator);
 });

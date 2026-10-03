@@ -6,6 +6,8 @@ import { PROGRAM_IDS } from './programs.ts';
 import type { DecodedInstruction, DecodedTransaction } from './decoder.ts';
 import { validateTerms, type ApprovedTerms } from './terms.ts';
 import { DBC_IDL_SUBSET } from './engine/dbc-idl-subset.ts';
+import { DAMM_IDL_SUBSET } from './engine/damm-idl-subset.ts';
+import type { IdlSubset } from './engine/idl-types.ts';
 import { decodeExact, type Decoded } from './engine/borsh.ts';
 import type { IdlInstruction } from './engine/idl-types.ts';
 import * as D from './engine/pda.ts';
@@ -14,11 +16,16 @@ import { sha256Hex } from './terms.ts';
 
 const P = PROGRAM_IDS;
 const fromHex = (h: string) => Uint8Array.from(h.match(/../g) ?? [], (x) => parseInt(x, 16));
-const IX = new Map(DBC_IDL_SUBSET.instructions.map((i) => [i.name, i]));
 const OP_FOR_KIND: Record<ApprovedTerms['kind'], string> = {
   CREATE_CONFIG: 'create_config', CREATE_POOL: 'initialize_virtual_pool_with_spl_token', SWAP: 'swap',
   MIGRATE_DAMM_V2: 'migration_damm_v2', CLAIM_PARTNER_TRADING_FEE: 'claim_trading_fee', CLAIM_CREATOR_TRADING_FEE: 'claim_creator_trading_fee',
+  DAMM_SWAP: 'swap',
 };
+/** The one engine program a transaction of each kind may call, and the pinned format its instruction is decoded under. */
+interface Engine { program: string; label: string; subset: IdlSubset }
+const DBC_ENGINE: Engine = { program: P.DBC, label: 'DBC', subset: DBC_IDL_SUBSET };
+const DAMM_ENGINE: Engine = { program: P.DAMM_V2, label: 'DAMM', subset: DAMM_IDL_SUBSET };
+const engineFor = (kind: ApprovedTerms['kind']) => (kind === 'DAMM_SWAP' ? DAMM_ENGINE : DBC_ENGINE);
 
 /** Digest of a ConfigParameters value in decoded (snake_case, bigint) form; the adapter computes the same via normalizeToIdl. */
 export const configParametersDigest = (value: Decoded) => sha256Hex(canonicalJson({ domain: 'QF-DBC-CONFIG-PARAMETERS', value }));
@@ -34,7 +41,7 @@ interface Expected {
 }
 
 async function expectedFor(t: ApprovedTerms): Promise<{ e: Expected; termViolations: string[] }> {
-  const op = IX.get(OP_FOR_KIND[t.kind])!;
+  const op = engineFor(t.kind).subset.instructions.find((i) => i.name === OP_FOR_KIND[t.kind])!;
   const common = { event_authority: await D.dbcEventAuthority(), program: P.DBC, system_program: P.SYSTEM, pool_authority: D.DBC_POOL_AUTHORITY };
   const tv: string[] = [];
   const eq = (name: string, a: unknown, b: unknown) => (a === b ? [] : [`ARG_MISMATCH ${name}`]);
@@ -78,6 +85,26 @@ async function expectedFor(t: ApprovedTerms): Promise<{ e: Expected; termViolati
           return v;
         } } };
     }
+    case 'DAMM_SWAP': {
+      const pool = await D.dammPool(t.dammConfig, t.baseMint, t.quoteMint);
+      if (pool !== t.pool) tv.push('TERMS_POOL_NOT_DERIVED_FROM_DAMM_CONFIG_AND_MINTS');
+      const q2b = t.direction === 'QUOTE_TO_BASE';
+      const [inMint, inProg, outMint, outProg] = q2b ? [t.quoteMint, t.quoteTokenProgram, t.baseMint, t.baseTokenProgram] : [t.baseMint, t.baseTokenProgram, t.quoteMint, t.quoteTokenProgram];
+      const inAta = await D.ata(t.user, inMint, inProg), outAta = await D.ata(t.user, outMint, outProg);
+      return { termViolations: tv, e: { op, ephemeralSigners: 0, signers: new Set([t.feePayer, t.user]), remaining: { required: [], optional: [] },
+        atas: [{ owner: t.user, mint: inMint, tokenProgram: inProg, address: inAta }, { owner: t.user, mint: outMint, tokenProgram: outProg, address: outAta }],
+        // A graduated launch's pool holds the base token as token A and the quote token as token B.
+        accounts: { pool_authority: await D.dammPoolAuthority(), pool, input_token_account: inAta, output_token_account: outAta,
+          token_a_vault: await D.dammVault(t.baseMint, pool), token_b_vault: await D.dammVault(t.quoteMint, pool), token_a_mint: t.baseMint, token_b_mint: t.quoteMint,
+          payer: t.user, token_a_program: t.baseTokenProgram, token_b_program: t.quoteTokenProgram, referral_token_account: P.DAMM_V2,
+          event_authority: await D.dammEventAuthority(), program: P.DAMM_V2 },
+        checkArgs: async (a) => {
+          const p = a._params as Record<string, Decoded>;
+          const v = eq('amount_in', String(p.amount_in), t.amountIn);
+          if (BigInt(p.minimum_amount_out as bigint) < BigInt(t.minimumAmountOut)) v.push('ARG_BELOW_APPROVED minimum_amount_out');
+          return v;
+        } } };
+    }
     case 'MIGRATE_DAMM_V2': {
       const pool = await D.dbcPool(t.config, t.baseMint, t.quoteMint);
       if (pool !== t.pool) tv.push('TERMS_POOL_NOT_DERIVED_FROM_CONFIG_AND_MINTS');
@@ -111,13 +138,13 @@ async function expectedFor(t: ApprovedTerms): Promise<{ e: Expected; termViolati
   }
 }
 
-function decodeDbc(ix: DecodedInstruction): { op: IdlInstruction; args: Record<string, Decoded> } | { error: string } {
+function decodeEngine(ix: DecodedInstruction, en: Engine): { op: IdlInstruction; args: Record<string, Decoded> } | { error: string } {
   const data = fromHex(ix.dataHex);
-  if (data.length < 8) return { error: 'DBC_DECODE_FAILED data shorter than discriminator' };
-  const op = DBC_IDL_SUBSET.instructions.find((i) => i.discriminator.every((b, k) => data[k] === b));
-  if (!op) return { error: `DBC_UNKNOWN_INSTRUCTION discriminator ${ix.dataHex.slice(0, 16)}` };
-  try { return { op, args: decodeExact(data.subarray(8), op.args, DBC_IDL_SUBSET.types) }; }
-  catch (e) { return { error: `DBC_DECODE_FAILED ${op.name}: ${(e as Error).message}` }; }
+  if (data.length < 8) return { error: `${en.label}_DECODE_FAILED data shorter than discriminator` };
+  const op = en.subset.instructions.find((i) => i.discriminator.every((b, k) => data[k] === b));
+  if (!op) return { error: `${en.label}_UNKNOWN_INSTRUCTION discriminator ${ix.dataHex.slice(0, 16)}` };
+  try { return { op, args: decodeExact(data.subarray(8), op.args, en.subset.types) }; }
+  catch (e) { return { error: `${en.label}_DECODE_FAILED ${op.name}: ${(e as Error).message}` }; }
 }
 
 /** Binds a decoded transaction to approved terms. Returns violations; empty means every instruction is accounted for. */
@@ -128,18 +155,19 @@ export async function bindTransactionToTerms(d: DecodedTransaction, terms: Appro
   if (d.addressTableLookups > 0) v.push('ADDRESS_LOOKUP_TABLES_NOT_SUPPORTED_IN_PREVIEW');
   if (d.feePayer !== terms.feePayer) v.push('FEE_PAYER_MISMATCH');
   const { e, termViolations } = await expectedFor(terms);
+  const engine = engineFor(terms.kind);
   v.push(...termViolations);
 
   const writableExpected = new Set<string>([terms.feePayer]);
   const signersExpected = new Set(e.signers);
-  let dbcCount = 0, limitSeen = 0, priceSeen = 0;
+  let engineCount = 0, limitSeen = 0, priceSeen = 0;
   const atasUsed = new Set<string>();
 
   for (const [k, ix] of d.instructions.entries()) {
     const at = `#${k}`;
-    if (ix.programAddress === P.DBC) {
-      dbcCount++;
-      const r = decodeDbc(ix);
+    if (ix.programAddress === engine.program) {
+      engineCount++;
+      const r = decodeEngine(ix, engine);
       if ('error' in r) { v.push(`${r.error} ${at}`); continue; }
       if (r.op.name !== e.op.name) { v.push(`WRONG_OPERATION ${r.op.name} (approved ${e.op.name}) ${at}`); continue; }
       const n = r.op.accounts.length;
@@ -156,7 +184,7 @@ export async function bindTransactionToTerms(d: DecodedTransaction, terms: Appro
         }
         if (meta.address && got !== meta.address) v.push(`ACCOUNT_MISMATCH ${meta.name} (fixed address) ${at}`);
         if (got !== want) v.push(`ACCOUNT_MISMATCH ${meta.name} ${at}`);
-        if (meta.writable && !(meta.name === 'referral_token_account' && got === P.DBC)) {
+        if (meta.writable && !(meta.name === 'referral_token_account' && got === engine.program)) {
           writableExpected.add(got);
           if (!d.writableAccounts.includes(got)) v.push(`MISSING_WRITABLE ${meta.name} ${at}`);
         }
@@ -216,8 +244,8 @@ export async function bindTransactionToTerms(d: DecodedTransaction, terms: Appro
       v.push(`UNEXPECTED_PROGRAM ${ix.programAddress} ${at}`);
     }
   }
-  if (dbcCount === 0) v.push('NO_ENGINE_INSTRUCTION');
-  if (dbcCount > 1) v.push(`MULTIPLE_ENGINE_INSTRUCTIONS ${dbcCount}`);
+  if (engineCount === 0) v.push('NO_ENGINE_INSTRUCTION');
+  if (engineCount > 1) v.push(`MULTIPLE_ENGINE_INSTRUCTIONS ${engineCount}`);
   if (limitSeen > 1 || priceSeen > 1) v.push('COMPUTE_BUDGET_DUPLICATE');
   for (const s of d.signers) if (!signersExpected.has(s)) v.push(`UNEXPECTED_SIGNER ${s}`);
   for (const s of e.signers) if (!d.signers.includes(s)) v.push(`REQUIRED_SIGNER_MISSING ${s}`);

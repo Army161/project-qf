@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import BN from 'bn.js';
 import * as dbc from '@meteora-ag/dynamic-bonding-curve-sdk';
+import { CpAmm, cpAmmCoder, deriveTokenVaultAddress } from '@meteora-ag/cp-amm-sdk';
+import { readFileSync } from 'node:fs';
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { ECONOMICS_V0_TEST, STANDARD_V1_FLAT_V0_TEST, MIGRATION_POLICY_V0, proposeMigrationThreshold, type MigrationThresholdRecord } from '@project-qf/policy';
 import { EVIDENCE_POLICY_V0_1 } from '@project-qf/validator';
@@ -22,7 +24,20 @@ export const TOKEN = new PublicKey(PROGRAM_IDS.TOKEN);
 const base = { payer: mockKey('payer'), partner: mockKey('partner-fee-claimer'), creator: mockKey('creator'), crank: mockKey('crank'),
   config: mockKey('config'), baseMint: mockKey('base-mint'), quoteMint: mockKey('qusd-mint'), leftover: mockKey('leftover'), attacker: mockKey('attacker') };
 const pool = dbc.deriveDbcPoolAddress(base.quoteMint, base.baseMint, base.config);
-export const K = { ...base, pool, baseVault: dbc.deriveDbcTokenVaultAddress(pool, base.baseMint), quoteVault: dbc.deriveDbcTokenVaultAddress(pool, base.quoteMint) };
+const dammPool = dbc.deriveDammV2PoolAddress(DAMM_V2_CUSTOMIZABLE_CONFIG, base.baseMint, base.quoteMint);
+export const K = { ...base, pool, baseVault: dbc.deriveDbcTokenVaultAddress(pool, base.baseMint), quoteVault: dbc.deriveDbcTokenVaultAddress(pool, base.quoteMint),
+  dammPool, dammBaseVault: deriveTokenVaultAddress(base.baseMint, dammPool), dammQuoteVault: deriveTokenVaultAddress(base.quoteMint, dammPool) };
+
+/** TEST_ONLY: a graduated launch's DAMM v2 pool. The layout and curve values come from a public devnet pool account
+ *  (test/fixtures/damm-v2-pool-devnet.json); its mints and vaults are re-keyed to the synthetic K addresses. */
+export function dammPoolAccount(): Buffer {
+  const f = JSON.parse(readFileSync(new URL('../fixtures/damm-v2-pool-devnet.json', import.meta.url), 'utf8')) as { dataBase64: string };
+  const p = cpAmmCoder.accounts.decode('Pool', Buffer.from(f.dataBase64, 'base64')) as Record<string, any>;
+  Object.assign(p, { token_a_mint: K.baseMint, token_b_mint: K.quoteMint, token_a_vault: K.dammBaseVault, token_b_vault: K.dammQuoteVault, activation_point: new BN(0) });
+  const l = (cpAmmCoder.accounts as unknown as AnchorLike['coder']['accounts']).accountLayouts.get('Pool')!;
+  const buf = Buffer.alloc(4096);
+  return Buffer.concat([Buffer.from(l.discriminator), buf.subarray(0, l.layout.encode(p, buf))]);
+}
 
 export function thresholdRecord(): MigrationThresholdRecord {
   const r = proposeMigrationThreshold({
@@ -76,6 +91,7 @@ export async function accountsForPool(completed: boolean) {
     [K.quoteMint.toBase58(), { owner: TOKEN, data: splMint(6) }],
     [K.baseMint.toBase58(), { owner: TOKEN, data: splMint(6) }],
     [DAMM_V2_CUSTOMIZABLE_CONFIG.toBase58(), { owner: DAMM, data: encodeAccount(damm, 'config', dammCfg) }],
+    [K.dammPool.toBase58(), { owner: DAMM, data: dammPoolAccount() }],
   ]);
   return { accounts, program, cfgParams };
 }
@@ -97,6 +113,8 @@ export async function termsFor(kind: IntentKind, cfgParams?: dbc.ConfigParameter
       direction: 'QUOTE_TO_BASE', amountIn: '1000000', minimumAmountOut: '1', referralTokenAccount: null, allowSysvarInstructions: false };
     case 'MIGRATE_DAMM_V2': return { ...common, ...mints, kind, feePayer: s(K.crank), compute: compute(600_000), config: s(K.config), pool: s(K.pool),
       payer: s(K.crank), dammConfig: s(DAMM_V2_CUSTOMIZABLE_CONFIG) };
+    case 'DAMM_SWAP': return { ...common, ...mints, kind, feePayer: s(K.creator), compute: compute(), dammConfig: s(DAMM_V2_CUSTOMIZABLE_CONFIG), pool: s(K.dammPool),
+      user: s(K.creator), direction: 'QUOTE_TO_BASE', amountIn: '1000000', minimumAmountOut: '1' };
     case 'CLAIM_PARTNER_TRADING_FEE': return { ...common, ...mints, kind, feePayer: s(K.partner), compute: compute(), config: s(K.config), pool: s(K.pool),
       feeClaimer: s(K.partner), receiver: s(K.partner), maxBaseAmount: '0', maxQuoteAmount: '1000000' };
     case 'CLAIM_CREATOR_TRADING_FEE': return { ...common, ...mints, kind, feePayer: s(K.creator), compute: compute(), config: s(K.config), pool: s(K.pool),
@@ -121,6 +139,9 @@ export async function buildFixtureTx(kind: IntentKind): Promise<{ tx: Transactio
       poolCreator: K.creator, config: K.config, baseMint: K.baseMint }), feePayer: K.creator, signer: K.creator, cfgParams, program, unsupported };
     case 'SWAP': return { tx: await c.pool.swap({ owner: K.creator, pool: K.pool, amountIn: new BN(1_000_000), minimumAmountOut: new BN(1), swapBaseForQuote: false,
       referralTokenAccount: null }), feePayer: K.creator, signer: K.creator, cfgParams, program, unsupported };
+    case 'DAMM_SWAP': return { tx: await new CpAmm(connection).swap({ payer: K.creator, pool: K.dammPool, inputTokenMint: K.quoteMint, outputTokenMint: K.baseMint,
+      amountIn: new BN(1_000_000), minimumAmountOut: new BN(1), tokenAVault: K.dammBaseVault, tokenBVault: K.dammQuoteVault, tokenAMint: K.baseMint, tokenBMint: K.quoteMint,
+      tokenAProgram: TOKEN, tokenBProgram: TOKEN, referralTokenAccount: null } as never), feePayer: K.creator, signer: K.creator, cfgParams, program, unsupported };
     case 'MIGRATE_DAMM_V2': return { tx: (await c.migration.migrateToDammV2({ payer: K.crank, pool: K.pool, dammConfig: DAMM_V2_CUSTOMIZABLE_CONFIG })).transaction,
       feePayer: K.crank, signer: K.crank, cfgParams, program, unsupported };
     case 'CLAIM_PARTNER_TRADING_FEE': return { tx: await c.partner.claimPartnerTradingFee({ feeClaimer: K.partner, payer: K.partner, pool: K.pool,

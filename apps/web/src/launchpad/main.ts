@@ -14,7 +14,7 @@ interface Platform {
   faucet: { quoteUi: string; lamports: string; claimsPerDay: number };
 }
 interface Live { priceQuotePerBase: string; marketCapQuoteRaw: string; quoteReserve: string; migrationQuoteThreshold: string; progressBps: number;
-  curveComplete: boolean; isMigrated: boolean; baseDecimals: number; quoteDecimals: number; totalSupplyRaw: string; creatorQuoteFee: string }
+  curveComplete: boolean; isMigrated: boolean; baseDecimals: number; quoteDecimals: number; totalSupplyRaw: string; creatorQuoteFee: string; venue?: 'CURVE' | 'DAMM_V2' }
 interface Token { mint: string; pool: string; name: string; symbol: string; description: string; imageUrl: string | null; creator: string; status: string;
   createdAt: string; liveAt: string | null; website: string | null; twitter: string | null; telegram: string | null; createSig: string | null;
   migrationSig: string | null; dammPool: string | null; live: Live | null; stats: { count: number; volumeQuoteRaw: string; traders: number } }
@@ -423,6 +423,9 @@ async function renderToken(mint: string) {
   const bd = l?.baseDecimals ?? 6;
   void refreshBalances(t.mint);
   const graduated = isGraduated(t);
+  // After graduation the same panel trades on the coin's DAMM v2 pool (the server says which venue it priced).
+  const onDamm = graduated && l?.venue === 'DAMM_V2' && !!t.dammPool;
+  const tradeable = onDamm || (!graduated && !l?.curveComplete);
 
   // trade panel
   let side: 'buy' | 'sell' = 'buy';
@@ -489,8 +492,8 @@ async function renderToken(mint: string) {
     go.disabled = true;
     const out = await runSigningFlow<{ trade: unknown }>(`${side === 'buy' ? 'Buy' : 'Sell'} $${t.symbol}`,
       () => api<Built>('/api/lp/swap', { mint: t.mint, user: w.account.address, side, amountIn: shownQuote.raw.toString(), slippageBps: Number(slip.value) }),
-      () => ({ kind: 'SWAP', wallet: w.account.address, shown: { quote: { ...shownQuote, raw: shownQuote.raw.toString() } },
-        fields: { user: w.account.address, pool: t.pool, baseMint: t.mint, quoteMint: q.mint, direction: dir, amountIn: shownQuote.raw.toString() },
+      () => ({ kind: onDamm ? 'DAMM_SWAP' : 'SWAP', wallet: w.account.address, shown: { quote: { ...shownQuote, raw: shownQuote.raw.toString() } },
+        fields: { user: w.account.address, pool: onDamm ? t.dammPool : t.pool, baseMint: t.mint, quoteMint: q.mint, direction: dir, amountIn: shownQuote.raw.toString() },
         minimumAmountOutAtLeast: shownQuote.minimumAmountOut }));
     go.disabled = false;
     if (out) { toast('Trade confirmed', 'ok'); renderToken(t.mint); }
@@ -503,7 +506,12 @@ async function renderToken(mint: string) {
 
   const trust = h('div', { class: 'trust' }, icon(ICON.shield, 18, 'var(--buy)'), h('span', {}, 'Your browser checks every account and amount in the transaction before your wallet is asked to sign.'));
   let panel: HTMLElement;
-  if (graduated) {
+  if (onDamm) {
+    panelCard.append(h('p', { class: 'venue' }, icon(ICON.shield, 16, 'var(--grad)'), h('span', {}, 'Graduated. Trades on its Meteora DAMM v2 pool, liquidity locked forever.')),
+      tabs, h('label', {}, 'You pay', h('span', { class: 'payfield' }, amount, payUnit)), presets,
+      h('div', { class: 'slip-row' }, h('span', {}, 'Slippage'), slip), quoteBox, go, balanceLine, trust);
+    panel = panelCard;
+  } else if (graduated) {
     panel = h('div', { class: 'card graduated-panel' }, h('h3', {}, 'Graduated'), h('p', { style: { margin: '0' } }, 'This coin filled its bonding curve and now trades on a Meteora DAMM v2 pool with permanently locked liquidity.'),
       t.dammPool ? ext(explorer('address', t.dammPool), 'Open the DAMM v2 pool on Explorer', 'btn wide') : null,
       t.migrationSig ? h('p', { class: 'dim small', style: { margin: '0' } }, 'Migration tx: ', ext(explorer('tx', t.migrationSig), short(t.migrationSig, 8))) : null);
@@ -529,7 +537,7 @@ async function renderToken(mint: string) {
   const kpi = (k: string, v: string) => h('div', {}, h('span', { class: 'k' }, k), h('span', { class: 'v' }, v));
   const toGo = l ? BigInt(l.migrationQuoteThreshold) - BigInt(l.quoteReserve) : 0n;
 
-  const mobileBar = graduated || l?.curveComplete ? null : h('div', { class: 'mobile-trade' },
+  const mobileBar = !tradeable ? null : h('div', { class: 'mobile-trade' },
     h('button', { class: 'btn primary lg', onclick: () => { setSide('buy'); panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); amount.focus({ preventScroll: true }); } }, 'Buy'),
     h('button', { class: 'btn sell lg', onclick: () => { setSide('sell'); panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); amount.focus({ preventScroll: true }); } }, 'Sell'));
 
@@ -560,8 +568,10 @@ async function renderToken(mint: string) {
       h('aside', {}, panel,
         h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'About'), t.description ? h('p', {}, t.description) : null,
           h('dl', { class: 'facts' },
-            h('dt', {}, 'Engine'), h('dd', {}, 'Meteora bonding curve'),
-            h('dt', {}, 'Pool'), h('dd', { class: 'num' }, ext(explorer('address', t.pool), short(t.pool, 4))),
+            h('dt', {}, 'Engine'), h('dd', {}, onDamm ? 'Meteora DAMM v2' : graduated ? 'Graduated to DAMM v2' : 'Meteora bonding curve'),
+            ...(t.dammPool ? [h('dt', {}, 'DAMM v2 pool'), h('dd', { class: 'num' }, ext(explorer('address', t.dammPool), short(t.dammPool, 4)))] : []),
+            h('dt', {}, t.dammPool ? 'Curve pool' : 'Pool'), h('dd', { class: 'num' }, ext(explorer('address', t.pool), short(t.pool, 4))),
+            ...(t.migrationSig ? [h('dt', {}, 'Graduation tx'), h('dd', { class: 'num' }, ext(explorer('tx', t.migrationSig), short(t.migrationSig, 4)))] : []),
             h('dt', {}, 'Launch tx'), h('dd', { class: 'num' }, t.createSig ? ext(explorer('tx', t.createSig), short(t.createSig, 4)) : '—'),
             h('dt', {}, 'Creator fees'), h('dd', { class: 'num' }, l ? `${units(l.creatorQuoteFee, q.decimals, 2)} ${q.symbol}` : '—'))))),
     ...(mobileBar ? [mobileBar] : []));

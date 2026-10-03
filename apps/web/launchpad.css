@@ -305,3 +305,7 @@ ul.checks li.bad { color: var(--sell); } ul.checks li.bad::before { content: "âœ
 .fill-rest { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 14px; background: #1f2a12; color: var(--text); font-size: 14px; }
 .fill-rest p { margin: 0; }
 .fill-rest .chipbtn { align-self: flex-start; background: var(--buy); color: #0a0b0a; border-color: var(--buy); font-weight: 700; }
+
+/* Graduated coins: the trade panel names its venue. */
+.trade .venue { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--grad-tint); color: var(--grad-ink); font-size: 13px; font-weight: 600; }
+.trade .venue svg { flex: none; margin-top: 1px; }

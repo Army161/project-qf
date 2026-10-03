@@ -34,7 +34,7 @@ const createSetAuthorityInstruction = (account: PublicKey, current: PublicKey, n
   keys: [{ pubkey: account, isSigner: false, isWritable: true }, { pubkey: current, isSigner: true, isWritable: false }] });
 
 test(`[${MOCK_RPC_LABEL}] baseline: every unmutated SDK transaction binds with zero violations`, async () => {
-  for (const k of ['CREATE_CONFIG', 'CREATE_POOL', 'SWAP', 'MIGRATE_DAMM_V2', 'CLAIM_PARTNER_TRADING_FEE', 'CLAIM_CREATOR_TRADING_FEE'] as const) {
+  for (const k of ['CREATE_CONFIG', 'CREATE_POOL', 'SWAP', 'MIGRATE_DAMM_V2', 'CLAIM_PARTNER_TRADING_FEE', 'CLAIM_CREATOR_TRADING_FEE', 'DAMM_SWAP'] as const) {
     assert.deepEqual(await preview(k, () => {}), [], k);
   }
 });
@@ -131,4 +131,22 @@ test('changed CREATE_CONFIG parameters (fee) do not match the approved digest', 
 test('an injected instruction to an unknown program is rejected', async () => {
   const v = await preview('CLAIM_PARTNER_TRADING_FEE', (b) => b.tx.add(new TransactionInstruction({ programId: new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111'), keys: [], data: Buffer.from([1]) })));
   expectViolation(v, /UNEXPECTED_PROGRAM BPFLoaderUpgradeab1e/);
+});
+
+// ---------- after graduation: swaps on the DAMM v2 pool ----------
+const dammIx = (b: Built) => b.tx.instructions.find((i) => i.programId.toBase58() === PROGRAM_IDS.DAMM_V2)!;
+test(`[${MOCK_RPC_LABEL}] DAMM v2 swap: a different pool, output account, amount or minimum is rejected`, async () => {
+  expectViolation(await preview('DAMM_SWAP', () => {}, (t) => ({ ...t, pool: mockKey('other-damm-pool').toBase58() })), /TERMS_POOL_NOT_DERIVED_FROM_DAMM_CONFIG_AND_MINTS/);
+  expectViolation(await preview('DAMM_SWAP', (b) => { dammIx(b).keys[3]!.pubkey = getAssociatedTokenAddressSync(K.baseMint, ATTACKER); }), /ACCOUNT_MISMATCH output_token_account|UNEXPECTED_WRITABLE/);
+  expectViolation(await preview('DAMM_SWAP', () => {}, (t) => ({ ...t, amountIn: '2000000' })), /ARG_MISMATCH amount_in/);
+  expectViolation(await preview('DAMM_SWAP', () => {}, (t) => ({ ...t, minimumAmountOut: '999999999999' })), /ARG_BELOW_APPROVED minimum_amount_out/);
+  expectViolation(await preview('DAMM_SWAP', () => {}, (t) => ({ ...t, direction: 'BASE_TO_QUOTE' })), /ACCOUNT_MISMATCH (input|output)_token_account/);
+  expectViolation(await preview('DAMM_SWAP', () => {}, (t) => ({ ...t, dammConfig: mockKey('other-damm-config').toBase58() })), /TERMS_DAMM_CONFIG_NOT_V0_TEMPLATE/);
+});
+
+test(`[${MOCK_RPC_LABEL}] DAMM v2 swap: a curve swap, an extra transfer, or a DAMM swap under curve terms is rejected`, async () => {
+  expectViolation(await preview('DAMM_SWAP', (b) => b.tx.add(createSetAuthorityInstruction(getAssociatedTokenAddressSync(K.quoteMint, K.creator), K.creator, ATTACKER))), /UNBOUND_INSTRUCTION/);
+  const dbcSwap = (await buildFixtureTx('SWAP')).tx.instructions.find((i) => i.programId.toBase58() === PROGRAM_IDS.DBC)!;
+  expectViolation(await preview('DAMM_SWAP', (b) => b.tx.add(dbcSwap)), /UNEXPECTED_PROGRAM dbcij/);
+  expectViolation(await preview('DAMM_SWAP', () => {}, undefined, 'SWAP'), /UNEXPECTED_PROGRAM cpamd|NO_ENGINE_INSTRUCTION/);
 });

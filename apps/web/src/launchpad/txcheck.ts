@@ -7,10 +7,10 @@ import { decodeTransactionBytes, sha256Hex, termsDigest, verifyTransactionPrevie
 
 export interface Check { label: string; ok: boolean; detail?: string }
 export interface Expectation {
-  kind: 'CREATE_POOL' | 'SWAP';
+  kind: 'CREATE_POOL' | 'SWAP' | 'DAMM_SWAP';
   wallet: string;
   fields: Record<string, string | null>;
-  /** for SWAP: the minimum out may be higher than shown, never lower */
+  /** for swaps: the minimum out may be higher than shown, never lower */
   minimumAmountOutAtLeast?: string;
   shown: unknown;
 }
@@ -35,8 +35,9 @@ export async function checkBuiltTransaction(bytes: Uint8Array, terms: ApprovedTe
     violations = r.violations;
     decodedOk = true;
     const programs = [...new Set(d.instructions.map((i) => i.programAddress))];
-    const known = new Set<string>([PROGRAM_IDS.DBC, PROGRAM_IDS.TOKEN, PROGRAM_IDS.ASSOCIATED_TOKEN, PROGRAM_IDS.SYSTEM, PROGRAM_IDS.COMPUTE_BUDGET]);
-    checks.push({ label: 'Only Meteora DBC and token programs are called', ok: programs.every((p) => known.has(p)), detail: `${d.instructions.length} instructions` });
+    const damm = e.kind === 'DAMM_SWAP';
+    const known = new Set<string>([damm ? PROGRAM_IDS.DAMM_V2 : PROGRAM_IDS.DBC, PROGRAM_IDS.TOKEN, PROGRAM_IDS.ASSOCIATED_TOKEN, PROGRAM_IDS.SYSTEM, PROGRAM_IDS.COMPUTE_BUDGET]);
+    checks.push({ label: `Only Meteora ${damm ? 'DAMM v2' : 'DBC'} and token programs are called`, ok: programs.every((p) => known.has(p)), detail: `${d.instructions.length} instructions` });
   } catch (err) {
     violations = [`DECODE_FAILED ${(err as Error).message}`];
   }

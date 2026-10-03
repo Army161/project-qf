@@ -10,7 +10,7 @@ import type { AddressInfo } from 'node:net';
 import { economicsDigest } from '@project-qf/policy';
 import { READINESS } from '@project-qf/core';
 import { addSignature, fromBase64, generateMintKey, parseWire, toBase64, toHex, verifyWireSignatures, type ApprovedTerms } from '@project-qf/tx';
-import { buildCreatePool, buildSwap, quoteSwap, readPool, summarisePool } from '@project-qf/adapter-meteora-dbc/launchpad';
+import { buildCreatePool, buildDammSwap, buildSwap, quoteDammSwap, quoteSwap, readDammPool, readPool, summarisePool } from '@project-qf/adapter-meteora-dbc/launchpad';
 import { createQuoteSimulator } from '@project-qf/adapter-meteora-dbc';
 import { accountsForPool, fixtures, K, thresholdRecord } from '../../../packages/adapter-meteora-dbc/test/support/fixtures.ts';
 import { createMockConnection } from '../../../packages/adapter-meteora-dbc/test/support/mockRpc.ts';
@@ -61,6 +61,10 @@ async function harness() {
     buildCreatePool: (r) => buildCreatePool(conn, r),
     buildSwap: (pool, r, now) => buildSwap(conn, pool, r, now),
     quoteSwap,
+    readDammPool: (p, e) => readDammPool(conn, p, e),
+    dammNow: async () => 1_790_000_000n,
+    quoteDammSwap,
+    buildDammSwap: (p, r, now) => buildDammSwap(conn, p, r, now),
     send: async (b) => { sent.push(b); return (await verifyWireSignatures(b)).firstSignature; },
     txSummary: async () => null,
     newSignatures: async () => [],
@@ -269,4 +273,31 @@ test('a pool read that throws during the migration crank is logged and skipped, 
   const logs: string[] = [];
   assert.deepEqual(await crankMigrations({ store, chain: flaky, poolCache: new PoolCache(flaky), log: (m) => logs.push(m) }), []);
   assert.match(logs.join('\n'), /crank read .*Invalid account discriminator/);
+});
+
+test('after graduation the coin is quoted, built and checked on its DAMM v2 pool, never the finished curve', async () => {
+  const { call, store, platform } = await harness();
+  const t = new Date().toISOString();
+  store.insertPendingLaunch({ mint: K.baseMint.toBase58(), pool: K.pool.toBase58(), config: platform.config.config, quoteMint: platform.quote.mint, creator: K.creator.toBase58(),
+    name: 'MOCK', symbol: 'MOCK', description: '', website: null, twitter: null, telegram: null, imageType: null, metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: t }, null);
+  store.markLaunchLive(K.baseMint.toBase58(), 'sig', t);
+  store.markLaunchMigrated(K.baseMint.toBase58(), 'mig', K.dammPool.toBase58(), t);
+  const q = await call('/api/lp/quote', { mint: K.baseMint.toBase58(), side: 'buy', amountIn: '1000000', slippageBps: 100 });
+  assert.equal(q.status, 200, JSON.stringify(q.body));
+  assert.equal(q.body.venue, 'DAMM_V2');
+  assert.ok(BigInt(q.body.quote.expectedOut) > 0n);
+  const user = K.creator.toBase58();
+  for (const side of ['buy', 'sell'] as const) {
+    const amountIn = side === 'buy' ? '1000000' : '1000000000';
+    const b = await call('/api/lp/swap', { mint: K.baseMint.toBase58(), user, side, amountIn, slippageBps: 100 });
+    assert.equal(b.status, 201, JSON.stringify(b.body));
+    assert.equal(b.body.terms.kind, 'DAMM_SWAP');
+    assert.equal(b.body.terms.pool, K.dammPool.toBase58());
+    const r = await checkBuiltTransaction(fromBase64(b.body.transaction), b.body.terms, { kind: 'DAMM_SWAP', wallet: user, shown: b.body.quote, minimumAmountOutAtLeast: b.body.quote.minimumAmountOut,
+      fields: { user, pool: K.dammPool.toBase58(), baseMint: K.baseMint.toBase58(), direction: side === 'buy' ? 'QUOTE_TO_BASE' : 'BASE_TO_QUOTE', amountIn } });
+    assert.ok(r.ok, JSON.stringify(r.checks.filter((c) => !c.ok)));
+    assert.ok(r.checks.some((c) => c.label === 'Only Meteora DAMM v2 and token programs are called' && c.ok));
+  }
+  const v = await call(`/api/lp/tokens/${K.baseMint.toBase58()}`);
+  assert.equal(v.body.token.live.venue, 'DAMM_V2');
 });

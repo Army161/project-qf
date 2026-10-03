@@ -14,8 +14,8 @@ import {
   bindTransactionToTerms, decodeTransactionBytes, fromBase64, parseWire, sameMessage, toBase64, toHex, validateIntent, verifyWireSignatures,
   type ApprovedTerms, type TxIntent,
 } from '@project-qf/tx';
-import type { LaunchpadChain, LivePool } from './chain.ts';
-import { PoolCache, syncLaunch, tradeFromSummary } from './indexer.ts';
+import type { LaunchpadChain, LiveDammPool, LivePool } from './chain.ts';
+import { PoolCache, syncLaunch, tradeFromSummary, DammCache } from './indexer.ts';
 import type { PlatformRecord } from './platform.ts';
 import type { LaunchRow, LaunchpadStore } from './store.ts';
 
@@ -128,18 +128,23 @@ export interface TokenView {
   createdAt: string; liveAt: string | null; website: string | null; twitter: string | null; telegram: string | null; metadataUri: string;
   createSig: string | null; migrationSig: string | null; dammPool: string | null;
   live: null | { priceQuotePerBase: string; marketCapQuoteRaw: string; quoteReserve: string; migrationQuoteThreshold: string; progressBps: number;
-    curveComplete: boolean; isMigrated: boolean; baseDecimals: number; quoteDecimals: number; totalSupplyRaw: string; creatorQuoteFee: string };
+    curveComplete: boolean; isMigrated: boolean; baseDecimals: number; quoteDecimals: number; totalSupplyRaw: string; creatorQuoteFee: string;
+    /** where the price comes from and where a trade goes: the bonding curve, or the DAMM v2 pool after graduation */
+    venue: 'CURVE' | 'DAMM_V2' };
   stats: { count: number; volumeQuoteRaw: string; traders: number };
 }
-const liveView = (p: LivePool | null): TokenView['live'] => p && {
-  priceQuotePerBase: p.priceQuotePerBase, marketCapQuoteRaw: p.marketCapQuoteRaw, quoteReserve: p.quoteReserve, migrationQuoteThreshold: p.migrationQuoteThreshold,
+const liveView = (p: LivePool | null, damm: LiveDammPool | null = null): TokenView['live'] => p && {
+  priceQuotePerBase: damm ? damm.priceQuotePerBase : p.priceQuotePerBase,
+  marketCapQuoteRaw: damm ? ((BigInt(damm.sqrtPrice) ** 2n * BigInt(p.totalSupplyRaw)) / (1n << 128n)).toString() : p.marketCapQuoteRaw,
+  quoteReserve: p.quoteReserve, migrationQuoteThreshold: p.migrationQuoteThreshold,
   progressBps: p.progressBps, curveComplete: p.curveComplete, isMigrated: p.isMigrated, baseDecimals: p.baseDecimals, quoteDecimals: p.quoteDecimals,
-  totalSupplyRaw: p.totalSupplyRaw, creatorQuoteFee: p.creatorQuoteFee,
+  totalSupplyRaw: p.totalSupplyRaw, creatorQuoteFee: p.creatorQuoteFee, venue: damm ? 'DAMM_V2' : 'CURVE',
 };
 
-export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: PoolCache } {
+export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: PoolCache; dammCache: DammCache } {
   const now = o.now ?? (() => new Date());
   const pools = new PoolCache(o.chain);
+  const damms = new DammCache(o.chain);
   const rate = new Map<string, number[]>();
   const limit = (key: string, max: number) => {
     const t = now().getTime();
@@ -157,7 +162,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
     mint: l.mint, pool: l.pool, name: l.name, symbol: l.symbol, description: l.description, imageUrl: imageUrl(l), creator: l.creator, status: l.status,
     createdAt: l.createdAt, liveAt: l.liveAt, website: l.website, twitter: l.twitter, telegram: l.telegram, metadataUri: l.metadataUri,
     createSig: l.createSig, migrationSig: l.migrationSig, dammPool: l.dammPool,
-    live: liveView(await pools.get(l.pool, fresh).catch(() => null)), stats: o.store.tradeStats(l.mint),
+    live: liveView(await pools.get(l.pool, fresh).catch(() => null), l.status === 'MIGRATED' ? await damms.get(l, fresh).catch(() => null) : null), stats: o.store.tradeStats(l.mint),
   });
   const intentCheck = (i: Omit<TxIntent, 'intentId' | 'createdAt' | 'expiresAt' | 'cluster' | 'mock'>, approvedEconomicsDigest?: string) => {
     const t = now();
@@ -252,12 +257,31 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       onlyKeys(b, isBuild ? ['mint', 'user', 'side', 'amountIn', 'slippageBps'] : ['mint', 'side', 'amountIn', 'slippageBps']);
       const mint = addr(b, 'mint');
       const l = o.store.getLaunch(mint);
-      if (!l || l.status !== 'LIVE') throw new HttpError(l?.status === 'MIGRATED' ? 409 : 404, l?.status === 'MIGRATED' ? 'POOL_MIGRATED' : 'NOT_FOUND',
-        l?.status === 'MIGRATED' ? 'this token graduated; it now trades on its Meteora DAMM v2 pool' : 'token not found');
+      if (!l || (l.status !== 'LIVE' && l.status !== 'MIGRATED')) throw new HttpError(404, 'NOT_FOUND', 'token not found');
       if (b.side !== 'buy' && b.side !== 'sell') throw new HttpError(400, 'INVALID_REQUEST', "side must be 'buy' or 'sell'");
       const amountIn = rawAmount(b, 'amountIn');
       const slippageBps = b.slippageBps === undefined ? 100 : Number(b.slippageBps);
       if (!Number.isInteger(slippageBps) || slippageBps < 0 || slippageBps > 5000) throw new HttpError(400, 'INVALID_REQUEST', 'slippageBps must be an integer in 0..5000');
+      if (l.status === 'MIGRATED') {
+        // After graduation the coin trades on its DAMM v2 pool: same exact-in quote shape, same build/check/sign path.
+        if (!l.dammPool) throw new HttpError(409, 'POOL_MIGRATING', 'this coin is graduating; its DAMM v2 pool is not recorded yet');
+        const dp = await damms.get(l, isBuild);
+        if (!dp) throw new HttpError(502, 'POOL_UNAVAILABLE', 'could not read the DAMM v2 pool');
+        const dir = b.side === 'buy' ? 'QUOTE_TO_BASE' as const : 'BASE_TO_QUOTE' as const;
+        const point = await o.chain.dammNow(dp);
+        const refuse = (e: unknown) => { const m = (e as Error).message;
+          if (/^ZERO_OUTPUT/.test(m)) return new HttpError(409, 'ZERO_OUTPUT', m);
+          if (/insufficient liquidity|exceed|overflow|swap.*disabled|price range/i.test(m)) return new HttpError(409, 'AMOUNT_NOT_FILLABLE', 'the pool cannot fill this amount; try a smaller one');
+          return e; };
+        if (!isBuild) { try { return send(res, 200, { quote: o.chain.quoteDammSwap(dp, dir, amountIn, slippageBps, point), venue: 'DAMM_V2' }); } catch (e) { throw refuse(e); } }
+        const user = addr(b, 'user');
+        intentCheck({ kind: 'DAMM_SWAP', signer: { role: 'USER_WALLET', address: user, serverHeld: false }, feePayer: user, amounts: { amountIn: amountIn.toString() } });
+        let built;
+        try { built = await o.chain.buildDammSwap(dp, { pool: l.dammPool, user, direction: dir, amountIn, slippageBps }, point); }
+        catch (e) { throw refuse(e); }
+        const intent = await storeBuilt('DAMM_SWAP', mint, user, built);
+        return send(res, 201, { intentId: intent.id, expiresAt: intent.expiresAt, transaction: toBase64(built.bytes), terms: built.terms, quote: built.quote, venue: 'DAMM_V2' });
+      }
       const pool = await pools.get(l.pool, isBuild);
       if (!pool) throw new HttpError(502, 'POOL_UNAVAILABLE', 'could not read the pool');
       if (pool.curveComplete || pool.isMigrated) throw new HttpError(409, 'CURVE_COMPLETE', 'the bonding curve is complete; migration to DAMM v2 is pending');
@@ -316,6 +340,13 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       if (intent.kind === 'SWAP' && l) {
         pools.invalidate(l.pool);
         const p = await pools.get(l.pool, true).catch(() => null);
+        const sum = p && await o.chain.txSummary(signature).catch(() => null);
+        trade = sum && p ? tradeFromSummary(l, p, sum, 'app') : null;
+        if (trade) o.store.insertTrade(trade);
+      }
+      if (intent.kind === 'DAMM_SWAP' && l?.dammPool) {
+        damms.invalidate(l.dammPool);
+        const p = await damms.get(l, true).catch(() => null);
         const sum = p && await o.chain.txSummary(signature).catch(() => null);
         trade = sum && p ? tradeFromSummary(l, p, sum, 'app') : null;
         if (trade) o.store.insertTrade(trade);
@@ -395,7 +426,8 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       if (!(e instanceof HttpError)) o.log?.(`internal error: ${(e as Error)?.stack?.slice(0, 800)}`);
       send(res, err.status, { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } });
     }
-  }) as Server & { poolCache: PoolCache };
+  }) as Server & { poolCache: PoolCache; dammCache: DammCache };
   server.poolCache = pools;
+  server.dammCache = damms;
   return server;
 }

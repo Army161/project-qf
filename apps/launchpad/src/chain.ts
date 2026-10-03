@@ -2,13 +2,13 @@
 // implementation delegates to the server-only Meteora adapter (the only package allowed to use web3.js), and tests
 // substitute an in-process fake.
 import {
-  buildCreatePool, buildSwap, dammV2PoolFor, getNewSignatures, getTxSummary, getWalletBalances, getLamports, quoteSwap, readPool,
+  buildCreatePool, buildDammSwap, buildSwap, dammCurrentPoint, dammV2PoolFor, quoteDammSwap, readDammPool, getNewSignatures, getTxSummary, getWalletBalances, getLamports, quoteSwap, readPool,
   runMigration, sendFromTreasury, sendSignedTransaction, publicKeyOf,
-  type BuiltTx, type CreatePoolRequest, type DevnetConnection, type DevnetSigner, type Direction, type LivePool, type SwapQuote, type SwapRequest,
+  type BuiltTx, type CreatePoolRequest, type DevnetConnection, type DevnetSigner, type Direction, type LiveDammPool, type LivePool, type SwapQuote, type SwapRequest,
   type TxSummary,
 } from '@project-qf/adapter-meteora-dbc/launchpad';
 
-export type { BuiltTx, CreatePoolRequest, Direction, LivePool, SwapQuote, SwapRequest, TxSummary };
+export type { BuiltTx, CreatePoolRequest, Direction, LiveDammPool, LivePool, SwapQuote, SwapRequest, TxSummary };
 
 export interface LaunchpadChain {
   operatorAddress: string | null;
@@ -16,6 +16,11 @@ export interface LaunchpadChain {
   buildCreatePool(r: CreatePoolRequest): Promise<BuiltTx & { pool: string }>;
   buildSwap(pool: LivePool, r: SwapRequest, nowSeconds: number): Promise<BuiltTx & { quote: SwapQuote }>;
   quoteSwap(pool: LivePool, direction: Direction, amountIn: bigint, slippageBps: number, nowSeconds: number): SwapQuote;
+  /** After graduation: the launch's DAMM v2 pool (refused unless it holds exactly base/quote as token A/B). */
+  readDammPool(pool: string, expected: { baseMint: string; quoteMint: string }): Promise<LiveDammPool | null>;
+  dammNow(pool: LiveDammPool): Promise<bigint>;
+  quoteDammSwap(pool: LiveDammPool, direction: Direction, amountIn: bigint, slippageBps: number, currentPoint: bigint): SwapQuote;
+  buildDammSwap(pool: LiveDammPool, r: SwapRequest, currentPoint: bigint): Promise<BuiltTx & { quote: SwapQuote }>;
   send(bytes: Uint8Array, blockhash: string, lastValidBlockHeight: number): Promise<string>;
   txSummary(signature: string): Promise<TxSummary | null>;
   newSignatures(address: string, until: string | null): Promise<{ signature: string; slot: number; err: boolean }[]>;
@@ -35,6 +40,10 @@ export function realChain(conn: DevnetConnection, operator: DevnetSigner | null)
     buildCreatePool: (r) => buildCreatePool(conn, r),
     buildSwap: (pool, r, now) => buildSwap(conn, pool, r, now),
     quoteSwap,
+    readDammPool: (p, e) => readDammPool(conn, p, e),
+    dammNow: (p) => dammCurrentPoint(conn, p),
+    quoteDammSwap,
+    buildDammSwap: (p, r, now) => buildDammSwap(conn, p, r, now),
     send: (b, bh, h) => sendSignedTransaction(conn, b, bh, h),
     txSummary: (s) => getTxSummary(conn, s),
     newSignatures: (a, u) => getNewSignatures(conn, a, u),

@@ -2,7 +2,7 @@
 // transaction (program-agnostic: a trade made outside this app is indexed the same way). The crank migrates a
 // completed curve to DAMM v2 with the operator key; on-chain, migration is permissionless and the DBC program itself
 // refuses an incomplete curve, so the crank's read is not a safety decision.
-import type { LaunchpadChain, LivePool, TxSummary } from './chain.ts';
+import type { LaunchpadChain, LiveDammPool, LivePool, TxSummary } from './chain.ts';
 import type { LaunchRow, LaunchpadStore, TradeRow } from './store.ts';
 
 export function tradeFromSummary(launch: Pick<LaunchRow, 'mint'>, pool: Pick<LivePool, 'baseVault' | 'quoteVault'>, s: TxSummary, source: string): TradeRow | null {
@@ -17,7 +17,7 @@ export function tradeFromSummary(launch: Pick<LaunchRow, 'mint'>, pool: Pick<Liv
     blockTime: s.blockTime, source };
 }
 
-export interface IndexerDeps { store: LaunchpadStore; chain: LaunchpadChain; poolCache: PoolCache; log?: (m: string) => void; now?: () => Date }
+export interface IndexerDeps { store: LaunchpadStore; chain: LaunchpadChain; poolCache: PoolCache; dammCache?: DammCache; log?: (m: string) => void; now?: () => Date }
 
 /** Pulls new pool signatures since the last indexed one and records trades; detects completion and migration. */
 export async function syncLaunch(d: IndexerDeps, launch: LaunchRow): Promise<{ trades: number }> {
@@ -35,6 +35,24 @@ export async function syncLaunch(d: IndexerDeps, launch: LaunchRow): Promise<{ t
   }
   if (pool.isMigrated && launch.status !== 'MIGRATED') {
     d.store.markLaunchMigrated(launch.mint, null, await d.chain.dammPoolFor(launch.mint, launch.quoteMint), (d.now ?? (() => new Date()))().toISOString());
+  }
+  return { trades };
+}
+
+/** After graduation: pulls new DAMM v2 pool signatures and records trades from that pool's vault deltas. */
+export async function syncDamm(d: IndexerDeps, launch: LaunchRow): Promise<{ trades: number }> {
+  if (!launch.dammPool || !d.dammCache) return { trades: 0 };
+  const pool = await d.dammCache.get(launch, true);
+  if (!pool) return { trades: 0 };
+  let trades = 0;
+  const sigs = await d.chain.newSignatures(launch.dammPool, launch.lastDammIndexedSig);
+  for (const s of sigs) {
+    if (!s.err) {
+      const sum = await d.chain.txSummary(s.signature);
+      const t = sum && tradeFromSummary(launch, pool, sum, 'indexer');
+      if (t && d.store.insertTrade(t)) trades++;
+    }
+    d.store.setLastDammIndexed(launch.mint, s.signature);
   }
   return { trades };
 }
@@ -75,6 +93,22 @@ export class PoolCache {
   invalidate(pool: string) { this.m.delete(pool); }
 }
 
+/** The same short-lived cache for graduated launches' DAMM v2 pools. */
+export class DammCache {
+  private m = new Map<string, { at: number; v: LiveDammPool | null }>();
+  private chain: LaunchpadChain; private ttlMs: number; private now: () => number;
+  constructor(chain: LaunchpadChain, ttlMs = 4_000, now: () => number = Date.now) { this.chain = chain; this.ttlMs = ttlMs; this.now = now; }
+  async get(l: Pick<LaunchRow, 'dammPool' | 'mint' | 'quoteMint'>, fresh = false): Promise<LiveDammPool | null> {
+    if (!l.dammPool) return null;
+    const hit = this.m.get(l.dammPool);
+    if (!fresh && hit && this.now() - hit.at < this.ttlMs) return hit.v;
+    const v = await this.chain.readDammPool(l.dammPool, { baseMint: l.mint, quoteMint: l.quoteMint });
+    this.m.set(l.dammPool, { at: this.now(), v });
+    return v;
+  }
+  invalidate(pool: string) { this.m.delete(pool); }
+}
+
 /** Background loop: index and crank every `intervalMs`, one pass at a time. */
 export function startBackground(d: IndexerDeps, intervalMs = 15_000): () => void {
   let stopped = false, running = false;
@@ -83,6 +117,7 @@ export function startBackground(d: IndexerDeps, intervalMs = 15_000): () => void
     running = true;
     try {
       for (const l of d.store.listLaunches(['LIVE', 'MIGRATED'])) {
+        if (l.status === 'MIGRATED' && l.dammPool) await syncDamm(d, l).catch((e) => d.log?.(`index damm ${l.mint}: ${(e as Error).message.slice(0, 200)}`));
         if (l.status === 'MIGRATED' && l.lastIndexedSig) continue;
         await syncLaunch(d, l).catch((e) => d.log?.(`index ${l.mint}: ${(e as Error).message.slice(0, 200)}`));
       }

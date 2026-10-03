@@ -17,6 +17,8 @@ const MIGRATIONS: readonly string[] = [
      message_hex TEXT NOT NULL, terms_json TEXT NOT NULL, last_valid_block_height INTEGER NOT NULL, status TEXT NOT NULL, signature TEXT, error TEXT);
    CREATE TABLE faucet_claims (wallet TEXT NOT NULL, at TEXT NOT NULL, signature TEXT NOT NULL);
    CREATE INDEX faucet_wallet ON faucet_claims(wallet, at);`,
+  // after graduation the launch trades on its DAMM v2 pool, indexed separately from the curve
+  `ALTER TABLE launches ADD COLUMN last_damm_indexed_sig TEXT;`,
 ];
 
 export type LaunchStatus = 'PENDING' | 'LIVE' | 'MIGRATED' | 'FAILED';
@@ -24,7 +26,7 @@ export interface LaunchRow {
   mint: string; pool: string; config: string; quoteMint: string; creator: string; name: string; symbol: string; description: string;
   website: string | null; twitter: string | null; telegram: string | null; imageType: string | null; metadataUri: string; status: LaunchStatus;
   createSig: string | null; createdAt: string; liveAt: string | null; migrationSig: string | null; dammPool: string | null; migratedAt: string | null;
-  lastIndexedSig: string | null;
+  lastIndexedSig: string | null; lastDammIndexedSig: string | null;
 }
 export interface TradeRow { sig: string; mint: string; trader: string; side: 'BUY' | 'SELL'; quoteRaw: string; baseRaw: string; slot: number; blockTime: number | null; source: string }
 export interface IntentRow { id: string; kind: string; mint: string | null; user: string; createdAt: string; expiresAt: string; messageHex: string;
@@ -60,7 +62,7 @@ export class LaunchpadStore {
       .run(k, JSON.stringify(v), new Date().toISOString());
   }
 
-  insertPendingLaunch(l: Omit<LaunchRow, 'status' | 'createSig' | 'liveAt' | 'migrationSig' | 'dammPool' | 'migratedAt' | 'lastIndexedSig'>, image: Uint8Array | null) {
+  insertPendingLaunch(l: Omit<LaunchRow, 'status' | 'createSig' | 'liveAt' | 'migrationSig' | 'dammPool' | 'migratedAt' | 'lastIndexedSig' | 'lastDammIndexedSig'>, image: Uint8Array | null) {
     this.db.prepare(`INSERT INTO launches (mint, pool, config, quote_mint, creator, name, symbol, description, website, twitter, telegram, image_type, image,
       metadata_uri, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)`)
       .run(l.mint, l.pool, l.config, l.quoteMint, l.creator, l.name, l.symbol, l.description, l.website, l.twitter, l.telegram, l.imageType, image, l.metadataUri, l.createdAt);
@@ -72,6 +74,7 @@ export class LaunchpadStore {
     this.db.prepare("UPDATE launches SET status = 'MIGRATED', migration_sig = COALESCE(?, migration_sig), damm_pool = ?, migrated_at = ? WHERE mint = ?").run(sig, dammPool, at, mint);
   }
   setLastIndexed(mint: string, sig: string) { this.db.prepare('UPDATE launches SET last_indexed_sig = ? WHERE mint = ?').run(sig, mint); }
+  setLastDammIndexed(mint: string, sig: string) { this.db.prepare('UPDATE launches SET last_damm_indexed_sig = ? WHERE mint = ?').run(sig, mint); }
   getLaunch(mint: string): LaunchRow | null {
     const r = this.db.prepare('SELECT * FROM launches WHERE mint = ?').get(mint) as Record<string, unknown> | undefined;
     if (!r) return null;
@@ -84,7 +87,7 @@ export class LaunchpadStore {
   }
   listLaunches(statuses: LaunchStatus[] = ['LIVE', 'MIGRATED'], limit = 100): LaunchRow[] {
     const q = `SELECT mint, pool, config, quote_mint, creator, name, symbol, description, website, twitter, telegram, image_type, metadata_uri, status, create_sig,
-      created_at, live_at, migration_sig, damm_pool, migrated_at, last_indexed_sig FROM launches WHERE status IN (${statuses.map(() => '?').join(',')})
+      created_at, live_at, migration_sig, damm_pool, migrated_at, last_indexed_sig, last_damm_indexed_sig FROM launches WHERE status IN (${statuses.map(() => '?').join(',')})
       ORDER BY COALESCE(live_at, created_at) DESC LIMIT ?`;
     return (this.db.prepare(q).all(...statuses, limit) as Record<string, unknown>[]).map((r) => camel(r) as unknown as LaunchRow);
   }
