@@ -23,3 +23,12 @@ No change to the gate.
 - The SDK 1.5.13 IDL has no `create_config2`; a compatibility test asserts this.
 - SDK 2.x is not installed.
 - The verifier reports a `has_create_config2` IDL indicator only. It never treats it as proof of a deployed release.
+
+## Amendment 2026-10-03 — release tracking (no change to the gate)
+- Upstream state, from Astra's alignment review of 2026-10-03 (`spec/reviews/2026-10-03-alignment/PINNED-SOURCE-EVIDENCE.md`); Claude did not re-read these pull requests:
+  - the SDK default manifest reads 1.5.13;
+  - PR #116 (open) proposes program 0.2.2 support, including base transfer fees, as **SDK 1.6.0**;
+  - PR #117 (open) is a separate SDK 2.0 refactor;
+  - PR #114 (the earlier 2.0.0 sync cited above) is shown closed by #116.
+- The gate is the eight activation conditions above, read as capability, not version number. They need a **released** SDK artifact with `create_config2` support pinned by exact version and integrity, the deployed program verified, the security delta evaluated, the devnet suite and the mainnet read-only verification passed, and the flag explicitly enabled. A major version number is neither required nor sufficient.
+- Nothing was upgraded. The pin stays at SDK 1.5.13, `DBC_BASE_TRANSFER_FEE` stays `EXPERIMENTAL_DISABLED`, and the inspector milestone does not touch the adapter.

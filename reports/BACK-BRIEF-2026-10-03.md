@@ -16,7 +16,7 @@ Nothing has changed since 2026-09-28. Everything below is still waiting on the o
   - a transaction checker that binds what gets signed to what the creator approved;
   - the Meteora adapter, which runs server-side only.
 - **Safety gates:** licence, dependency, browser-boundary and security dispositions (SEC-A).
-- **Read-only verifier**, built to check Meteora's live programs. It has never been run, because Solana is blocked from the cloud.
+- **Read-only verifier**, built to check Meteora's live programs. It has been attempted but has never successfully verified the live programs, because Solana is blocked from the cloud. *(Wording corrected 2026-10-03: "never run" was imprecise.)*
 - **Local git repo**, with 3 commits. A backup copy is in `git/project-qf.bundle`.
 - **Pictures** in `images/`: an architecture diagram and the mock web app.
 - **Status report and handoff to Astra** (2026-09-28).

@@ -61,3 +61,15 @@ DBC 0.2.2 (`release_0.2.2` @ `746806e`) and SDK 2.0.0 (PR #114) — see METEORA.
 
 ### Amendment 2026-09-27 (decision review)
 The workspace now also carries, in addition to the settings above: the SEC-A scoped override `"@coral-xyz/anchor@0.31.1>toml": "4.2.0"`, `patchedDependencies: bigint-buffer@1.1.5`, and `ignoredOptionalDependencies: [bufferutil, utf-8-validate]` (ADR-012 amendments). Resolved graph: 161 packages (esbuild platform binaries for other OSes included as NOT_INSTALLED), lockfile sha256 `c2bb276af21b15c87bba002d20b51e7f9564cde2247d082370bec4d27f3a90e6`.
+
+### Amendment 2026-10-03 — inspector milestone, release tracking, bigint-buffer exit path
+- **SDK upgrade rule (§3 item 3, §4).** Any DBC SDK release that adds program 0.2.2 / `create_config2` support is adopted only under the ADR-003 gate. Upstream proposes that release as 1.6.0 (PR #116), separate from the 2.0 refactor (PR #117). The gate is capability, released artifact and integrity, deployment, security and tests, not "SDK 2.x". The SDK pin is unchanged at 1.5.13.
+- **Inspector milestone lockfile.** It adds three workspace packages: `@project-qf/contracts`, `@project-qf/features` and `apps/api`. `apps/web` now depends on `@project-qf/contracts`.
+  - No third-party package was added, removed or re-resolved. The `packages` and `snapshots` sections are byte-identical to lockfile `c2bb276a…`; only `importers` changed, by 42 added `workspace:*` link lines.
+  - The new lockfile sha256 is in the milestone return report and in `evidence/milestone-inspector/LOCKFILE-DIFF.txt`.
+  - Persistence uses Node's built-in `node:sqlite` (Node 22, experimental) and HTTP uses `node:http`; neither is an npm dependency.
+  - The SEC-A owner adoption recommended for `c2bb276a…` must be made, for real, against the lockfile actually committed.
+- **bigint-buffer exit path (roadmap, not adopted).** Per Astra's `DEPENDENCY-EXIT-PATH.md` (2026-10-03), no maintained drop-in replacement for the exact SDK pair has been verified. Keep the patched, isolated adapter for V0.
+  - Investigate upstream-first: a Meteora release that removes every introducing path.
+  - Otherwise investigate a bounded client-layer replacement (permitted IDLs, `@solana/kit` codecs, parity tests). Start with one narrow decode or instruction-build path, never a port of program source.
+  - Acceptance: no `bigint-buffer` in the resolved production closure or runtime artifacts, parity and width tests green, and the raw audit and SBOM showing the actual graph.

@@ -44,3 +44,15 @@ Integration layers (localnet-clone, devnet, mainnet-fork) stay BLOCKED per ADR-0
 - **New suites.** `packages/tx/test/binding.test.ts` (terms, consent, strict Borsh); `packages/adapter-meteora-dbc/test/mutation.test.ts` (16 serialized-message mutations of valid SDK transactions); `idl-subset.test.ts` (IDL subset drift/licence); `supply-accounting.test.ts` (ECON-1); `sec-a.test.ts` (installed-artifact assertions for the five advisories); `packages/validator/test/schema-admission.test.ts`; review-findings tests in tx, validator, policy and the verifier.
 - **Licence.** `tools/license-check/test/spdx.test.ts` covers the exact pako exception.
 - Integration layers stay BLOCKED per ADR-011, including the new READ_ONLY_VERIFICATION stage.
+
+## 7. Amendment 2026-10-03 — private read-only inspector milestone
+- **New suites.**
+  - `packages/validator/test/inspect.test.ts`: mint decoding, Token-2022 TLV, the Stage 1 rules, evidence availability, provider disagreement, the full check inventory, and TEST_ONLY never being PASS.
+  - `packages/features/test/features.test.ts`: MEASURED/UNAVAILABLE only, and no overall score.
+  - `packages/contracts/test/contracts.test.ts`: strict parsers, unknown fields, control and bidi characters.
+  - `apps/api/test/rpc.test.ts`: failure mapping including the proxy tunnel refusal, streaming size and time limits, genesis proof, result shapes.
+  - `apps/api/test/api.test.ts`: auth, owner scoping, the integrated slice across a database reopen, a blocked live read with no fixture fallback, wrong genesis, optimistic versions, request hygiene, rate limit, staleness, tampering, policy staleness, static hosting.
+  - `apps/web/test/inspector.e2e.test.ts`: Chromium against the real API server in-process. It inspects, saves, reloads, edits, and shows a blocked live read.
+- **Mock UI.** It moved to `mock.html`; `e2e.test.ts` loads that page.
+- **Counts.** 230 project tests (185 before this milestone, 45 added) and 55 verifier tests. The logs are in `project-qf/evidence/milestone-inspector/full-run/`.
+- **Live acceptance** of the inspector stays blocked until permitted reads succeed (ROADMAP item 12).

@@ -116,3 +116,14 @@ Boundary tests at 24,999.99 / 25,000 / 249,999.99 / 250,000 are in `packages/val
 - **Newer adverse evidence first.** A recheck evaluates newer price, route and authority evidence before accepting an older observation that is still inside its TTL; adverse newer evidence invalidates the earlier approval immediately.
 - **Acknowledgement.** Every applicable WARN (S3.1, S3.2 and any other) makes the proposal `REQUIRES_ACKNOWLEDGEMENT`. The acknowledgement digest binds the exact warnings, evidence digest and policy versions; changed evidence makes a prior acknowledgement stale.
 - **Runtime schemas and required sets.** S3.1 requires the policy's `requiredExitMints` (wSOL, USDC) and `minIndependentExits: 1`; identity exits are not counted. Invalid modes, addresses, notionals or amounts fail. See ADR-007 amendment (repair pass) for registry admission.
+
+## 10. Amendment 2026-10-03 — `inspection-v0.1` (implemented in `project-qf/packages/validator/src/inspect.ts`)
+The private read-only inspector evaluates a quote mint from raw `getAccountInfo` observations. The output lists all 26 checks of §2–4 plus an evidence check, `IN.1`, every time; a check that cannot be evaluated is SKIP with a reason.
+- **Stage 1** is implemented from decoded mint bytes, with Token-2022 TLV parsing and the extension classes of TOKEN-2022.md.
+  - S1.6 applies the TOKEN-2022.md §2 permissionless rule. It has not been re-derived from `is_supported_quote_mint` in this pass.
+  - S1.7 FAILs with `TOKEN_BADGE_UNVERIFIED` because badge lookup is not implemented.
+  - S1.11 is SKIP: metadata is not read.
+  - S1.12 needs two independent providers that answered.
+- **Stage 2** has an empty registry. S2.1 is FAIL on mainnet and WARN elsewhere (§6). S2.4 is WARN (unknown). The rest are SKIP with their missing source named.
+- **Stage 3** is SKIP throughout, with the missing source named. The raw largest-account share is reported as a feature, not as S3.4, because program-owned accounts are not excluded yet.
+- **Aggregate.** In LIVE mode a missing or SKIP required check FAILs the aggregate, so missing evidence can never produce PASS. TEST_ONLY results are capped at WARN.

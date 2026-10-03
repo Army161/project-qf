@@ -29,10 +29,11 @@ See PROTOCOL.md §4. Additional:
 - Migration deposits fee-excluded amounts; fee shortfall accrues to protocol.
 - `EvtCreateConfig` removed; `EvtSwap3` added.
 - SDK 2.0.0 breaking API (client construction, exports).
+- Amended 2026-10-03: the 0.2.2 SDK support is now proposed as SDK 1.6.0 (PR #116, open) and the 2.0 refactor is separate (PR #117, open); PR #114 is shown closed. Activation tracks a released capability, not a major version (ADR-003 amendment 2026-10-03).
 - Audit: Meteora audit page lists DBC reports through v0.2.1 (Offside Labs); none for 0.2.2 as of 2026-09-26 (FACT at retrieval time).
 
 ## 5. Change monitoring
-Weekly job: `git ls-remote` main/release branches, npm dist-tags for both SDKs, Meteora audits page, program upgrade slot (verifier). Any change → ticket + compatibility suite on mainnet-fork.
+Weekly job: `git ls-remote` main/release branches, npm dist-tags for both SDKs, the state of SDK PRs #116 and #117 (added 2026-10-03), Meteora audits page, program upgrade slot (verifier). Any change → ticket + compatibility suite on mainnet-fork.
 
 ## 6. TokenBadge relationship (DECISION)
 Pursue a Meteora partnership for TokenBadge issuance; owner: founder/product owner. QF never promises a creator that a badge will be issued.

@@ -1,0 +1,23 @@
+{
+  "review_date": "2026-10-03",
+  "archive": "quoteforge-v0-readonly-readiness-2026-09-27.zip",
+  "archive_sha256": "6b147099f82fc1e5e5afa6b8d6d6102989f60d2ff1d580746a1deb119132166e",
+  "physical_files": 319,
+  "manifested_content_files": 317,
+  "matched": 317,
+  "mismatches": [],
+  "git_bundle_paths": [],
+  "git_directory_paths": [],
+  "current_lockfile_sha256": "c2bb276af21b15c87bba002d20b51e7f9564cde2247d082370bec4d27f3a90e6",
+  "check_scope": "Archive integrity only, not a security audit or whole-code review.",
+  "lockfile_package_comparison": {
+    "removed": [
+      "bufferutil@4.1.0",
+      "node-gyp-build@4.8.4",
+      "utf-8-validate@6.0.6"
+    ],
+    "added": [],
+    "shared_package_entries": 161,
+    "shared_resolution_changes": []
+  }
+}

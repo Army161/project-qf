@@ -55,3 +55,11 @@ The v0.2.0 verifier emits one status per check.
 - **Schema** `qf-program-verify-report/3`. CLI flags unchanged. 55 offline tests.
 - **Reproduction first.** The decision review's diagnostic reproduced both gaps against the untouched export (same source hashes as the review); after the repair it no longer reproduces (`project-qf/evidence/readonly-readiness/`).
 - **Runs.** A cloud dry run of `run-readonly-local.sh` got `403 Host not in allowlist` (exit 2, nothing verified). The owner-network run has not been performed yet.
+
+## 7. Amendment 2026-10-03 — evidence levels and run status
+- **Customizable route rules: CHECKED_AGAINST_PINNED_SOURCE.** Claude checked these on 2026-10-03 by reading the pinned upstream files at the stated commits: read-only, citation only, nothing copied into QF. They are **not** checked against deployed bytecode.
+  - Authority equality: DBC `f552f20`, `migrate_damm_v2_initialize_pool.rs` lines 490–493 (blob `2d8387ab2a6e4f6c35bda11e3c612e374e7e2099`). The Customizable route reaches `initialize_pool_with_dynamic_config` at lines 151, 166 and 178.
+  - Dynamic config type: DAMM v2 `a85c926`, `ix_initialize_pool_with_dynamic_config.rs` lines 202–205 (blob `0d98382ef3a13c2450dbd5aa734f35f5970e61f1`). Also `state/config.rs` lines 190–191, where 0 is static and 1 is dynamic (blob `551f6596fc45a0117655bc34bf08f9df31493ab1`).
+  - These rules are necessary, not sufficient, for migration compatibility. Owner, layout, cluster and parameter checks stay as they are. Live values remain UNVERIFIED (§3).
+- **Run status, in precise words.** The verifier **has been attempted and has never successfully verified the live chain.** Every attempt from the Claude cloud environment was refused by the egress proxy (§2). "Never run" was imprecise shorthand.
+- **Inspector milestone.** It uses its own three-method read-only client (`apps/api/src/rpc.ts`: `getGenesisHash`, `getAccountInfo`, `getTokenLargestAccounts`, all at finalized commitment, with genesis-hash cluster proof). Its demo on 2026-10-03 hit the same proxy refusal (CONNECT 403) for api.mainnet.solana.com and api.devnet.solana.com. See `project-qf/evidence/milestone-inspector/demo/`.

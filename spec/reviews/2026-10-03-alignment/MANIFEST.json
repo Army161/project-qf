@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-03",
+  "kind": "alignment addendum; not implementation or security audit",
+  "files": [
+    {
+      "path": "ALIGNMENT-BRIEF.md",
+      "bytes": 5675,
+      "sha256": "d7e7765ad65356f0b90a9f334fd5d65b480ca3012f11427327185e0fd3e94004"
+    },
+    {
+      "path": "CLAUDE-MILESTONE-HANDOFF.md",
+      "bytes": 4049,
+      "sha256": "980bf0fe82261e94192fe5e579145622605e4b5fdccedc544ddc45bdc65a408b"
+    },
+    {
+      "path": "DEPENDENCY-EXIT-PATH.md",
+      "bytes": 2382,
+      "sha256": "79a2b62b00d256f4e7d938ba3dfa6a594640ef8554ed965b4fe180a06c661e88"
+    },
+    {
+      "path": "MILESTONE-ACCEPTANCE.md",
+      "bytes": 3214,
+      "sha256": "8bbd38f2559c42aaec687a0e3e791ab43c92a86af045111e2e163cbb285ad4a6"
+    },
+    {
+      "path": "PINNED-SOURCE-EVIDENCE.md",
+      "bytes": 4013,
+      "sha256": "e0a4d89fd00ebd14113db759c984c073d5b029b17971b05d17fcfad8dc1fce7a"
+    },
+    {
+      "path": "READ-AND-TEST-SCOPE.md",
+      "bytes": 2694,
+      "sha256": "7d1e3e6808e5717a976deefcc493c55f46eaa0b65bd6f0cd0c69a42c2fb8c062"
+    },
+    {
+      "path": "evidence/ARCHIVE-AND-LOCKFILE-CHECK.json",
+      "bytes": 760,
+      "sha256": "a0a6395c4838550656d229a406aa87a82623023734bb9f0779141ef710e25ff5"
+    },
+    {
+      "path": "evidence/core-validator-tests-linked.txt",
+      "bytes": 12412,
+      "sha256": "de6affe31796974714f587a8954804b60c6be38544ffe05df440e77506116201"
+    },
+    {
+      "path": "evidence/core-validator-tests.txt",
+      "bytes": 10260,
+      "sha256": "b103b9cd205ba26b89898b6be3ad1e05cff1166e3febba04e9c3c814e3902664"
+    },
+    {
+      "path": "source/RETURN-REPORT-READONLY-READINESS.md",
+      "bytes": 8623,
+      "sha256": "087b0dfcc2305515434834107afc0f51922aa65fb533ba9aab02233a0442aa6d"
+    }
+  ]
+}

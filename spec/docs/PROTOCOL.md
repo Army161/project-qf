@@ -33,7 +33,7 @@ The SDK uses one constant set for all clusters (FACT: `constants.ts:109`). Exist
 | Fees | `claimPartnerTradingFee`, `claimCreatorTradingFee`, `partnerWithdrawSurplus`, `creatorWithdrawSurplus`, `partnerWithdrawMigrationFee`, `creatorWithdrawMigrationFee`, `claimPartnerPoolCreationFee` | FEE_CLAIMER multisig / creator |
 | Reads | `getPoolConfig`, `getPool`, `getPoolByBaseMint`, `getPoolQuoteTokenCurveProgress`, `getPoolFeeBreakdown`, `getTokenBadge`, `deriveDbcPoolAddress`, `deriveDammV2PoolAddress`, `deriveTokenBadgeAddress` | — |
 
-`DBC_BASE_TRANSFER_FEE` (disabled) would require `createConfig2` (program 0.2.2, SDK 2.0.0). SDK 2.0.0 is a breaking API change (services constructed via `DynamicBondingCurveClient`; narrowed exports) — FACT from SDK PR #114 changelog.
+`DBC_BASE_TRANSFER_FEE` (disabled) would require `createConfig2` (program 0.2.2) from a released, pinned SDK that supports it. As of 2026-10-03 that support is proposed as SDK 1.6.0 (PR #116, open), separate from the SDK 2.0 refactor (PR #117, open); see the ADR-003 amendment of 2026-10-03. The earlier SDK PR #114 (2.0.0: a breaking API change, with services constructed via `DynamicBondingCurveClient` and narrowed exports) is shown closed by #116.
 
 ## 4. Engine facts the adapter must enforce (DBC 0.2.1)
 | Fact | Source |

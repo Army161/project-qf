@@ -141,7 +141,7 @@ This is weighted by the work needed for a **V1.0 mainnet beta**, not by test cou
 |---|---|---|---|---|
 | Spec, architecture, decisions | 10% | ~90% | 9% | 13 ADRs, 30 spec docs, validation report PASS |
 | Offline core logic (validator, policy, rewards, tx checker, adapter) | 20% | ~60% | 12% | 185 tests; licence, SBOM and boundary gates. Some logic still runs on mock inputs. |
-| Live Solana integration (verifier run, indexer, devnet then mainnet flows, migration crank, fee harvesting) | 20% | ~2% | 0.5% | Verifier built, never run live (blocked) |
+| Live Solana integration (verifier run, indexer, devnet then mainnet flows, migration crank, fee harvesting) | 20% | ~2% | 0.5% | Verifier built; attempted, never successfully verified live (blocked) *(wording corrected 2026-10-03)* |
 | Real product UI (creator studio, holder claims, operator console) | 15% | ~5% | 0.75% | Only a mock walk-through page |
 | Intelligence (data providers, feature store, scores, AI narrative) | 10% | ~3% | 0.3% | Scores are specified, not coded |
 | Backend, infra, ops (API, database, hosting, monitoring, CI, multisigs) | 10% | ~0% | 0% | Nothing yet; no repo online |
