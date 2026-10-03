@@ -1,0 +1,80 @@
+// Drives the real API server for the live inspector re-run. Tokens are kept in memory only, never written.
+import { spawn, execFileSync } from 'node:child_process';
+import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+const [,, repo, out, wrapper, proxy] = process.argv;
+const api = join(repo, 'apps/api');
+const db = join(process.env.TMPDIR ?? '/tmp', 'qf-live-rerun.sqlite');
+for (const s of ['', '-wal', '-shm']) rmSync(db + s, { force: true });
+mkdirSync(join(out, 'inspections'), { recursive: true }); mkdirSync(join(out, 'drafts'), { recursive: true });
+const PORT = 8811, base = `http://127.0.0.1:${PORT}`;
+const envArgs = ['env', `HTTPS_PROXY=${proxy}`, `NO_PROXY=127.0.0.1,localhost`, `QF_DB_PATH=${db}`, `QF_PORT=${PORT}`];
+const mkUser = (n) => JSON.parse(execFileSync(wrapper, [...envArgs, 'node', 'src/main.ts', 'create-user', n], { cwd: api, stdio: ['ignore', 'pipe', 'ignore'] }).toString()).token;
+const tokA = mkUser('owner-live-rerun'), tokB = mkUser('other-live-rerun');
+let logN = 0;
+async function serve() {
+  const p = spawn(wrapper, [...envArgs, 'node', '--use-env-proxy', 'src/main.ts', 'serve'], { cwd: api });
+  let log = ''; p.stdout.on('data', (d) => (log += d)); p.stderr.on('data', (d) => (log += d));
+  for (let i = 0; i < 100 && !log.includes('listening'); i++) await new Promise((r) => setTimeout(r, 100));
+  return { p, log: () => log };
+}
+const call = async (tok, method, path, body) => {
+  const r = await fetch(base + path, { method, headers: { ...(tok ? { authorization: `Bearer ${tok}` } : {}), ...(body ? { 'content-type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const text = await r.text(); return { status: r.status, text, json: (() => { try { return JSON.parse(text); } catch { return null; } })() };
+};
+const cases = [
+  ['m-usdc', 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', 'mainnet-beta'],
+  ['m-usdt', 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', 'mainnet-beta'],
+  ['m-wsol', 'So11111111111111111111111111111111111111112', 'mainnet-beta'],
+  ['m-pyusd-t22', '2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo', 'mainnet-beta'],
+  ['d-usdc', '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU', 'devnet'],
+  ['wrongnet-mainnet-usdc-on-devnet', 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', 'devnet'],
+  ['notmint-tokenprogram', 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'mainnet-beta'],
+  ['invalid-mint', 'not-a-mint', 'mainnet-beta'],
+  ['invalid-cluster', 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', 'testnet'],
+];
+const s1 = await serve();
+const summary = [`# Live inspector re-run ${new Date().toISOString()} (real server, real installs, one provider per cluster)`];
+const ids = {};
+for (const [name, mint, cluster] of cases) {
+  const r = await call(tokA, 'POST', '/api/inspections', { mint, cluster });
+  writeFileSync(join(out, 'inspections', name + '.json'), r.text);
+  if (r.status !== 201) { summary.push(`${name}: HTTP ${r.status} ${JSON.stringify(r.json?.error ?? r.json)}`); continue; }
+  ids[name] = r.json.id;
+  const i = r.json.inspection, counts = {};
+  for (const c of i.checks) counts[c.decision] = (counts[c.decision] ?? 0) + 1;
+  const nonPass = i.checks.filter((c) => c.decision !== 'PASS').map((c) => `${c.id}=${c.decision}(${c.reason ?? ''})`);
+  summary.push(`\n## ${name}: HTTP 201 label=${r.json.label} decision=${i.aggregate.decision} counts=${JSON.stringify(counts)} features=${r.json.features?.coverage ? JSON.stringify(r.json.features.coverage) : 'n/a'}`,
+    `facts=${JSON.stringify(i.facts)}`, `reads=${JSON.stringify(r.json.reads.map((x) => [x.provider, x.method, x.status, x.reason, x.slot, x.genesisVerified]))}`, `non-PASS: ${nonPass.join(' | ')}`);
+}
+// draft bound to live USDC inspection, then restart
+const d = await call(tokA, 'POST', '/api/drafts', { name: 'Live rerun draft', symbol: 'QFRERUN', description: 'Proposed draft bound to a live USDC inspection. Not a launch.', quoteMint: cases[0][1], cluster: 'mainnet-beta', inspectionId: ids['m-usdc'] });
+writeFileSync(join(out, 'drafts', '01-create.json'), d.text);
+const before = await call(tokA, 'GET', `/api/drafts/${d.json?.id}`);
+const inspBefore = await call(tokA, 'GET', `/api/inspections/${ids['m-usdc']}`);
+writeFileSync(join(out, 'drafts', '02-before-restart.json'), before.text);
+writeFileSync(join(out, 'server.log'), s1.log());
+s1.p.kill('SIGTERM'); await new Promise((r) => s1.p.on('exit', r));
+const s2 = await serve();
+const after = await call(tokA, 'GET', `/api/drafts/${d.json?.id}`);
+const inspAfter = await call(tokA, 'GET', `/api/inspections/${ids['m-usdc']}`);
+writeFileSync(join(out, 'drafts', '03-after-restart.json'), after.text);
+writeFileSync(join(out, 'drafts', '04-inspection-after-restart.json'), inspAfter.text);
+const checks = [
+  `draft create: HTTP ${d.status} version=${d.json?.version} inspectionDigest=${d.json?.inspectionDigest} decision=${d.json?.inspectionDecision}`,
+  `draft byte-identical across server restart: ${before.text === after.text}`,
+  `inspection byte-identical across restart: ${inspBefore.text === inspAfter.text}; reportDigest after restart = draft digest: ${inspAfter.json?.reportDigest === d.json?.inspectionDigest}`,
+  `no token: ${(await call(null, 'GET', '/api/drafts')).status}`,
+  `bad token: ${(await call('qf_wrong', 'GET', '/api/drafts')).status}`,
+  `other user reads owner's draft: ${(await call(tokB, 'GET', `/api/drafts/${d.json?.id}`)).status}`,
+  `other user reads owner's live inspection: ${(await call(tokB, 'GET', `/api/inspections/${ids['m-usdc']}`)).status}`,
+  `update with expectedVersion 1: ${(await call(tokA, 'PUT', `/api/drafts/${d.json?.id}`, { name: 'Live rerun draft v2', symbol: 'QFRERUN', description: 'Edited after restart. Not a launch.', quoteMint: cases[0][1], cluster: 'mainnet-beta', inspectionId: ids['m-usdc'], expectedVersion: 1 })).status}`,
+  `stale update with expectedVersion 1 again: ${(await call(tokA, 'PUT', `/api/drafts/${d.json?.id}`, { name: 'Live rerun draft v2', symbol: 'QFRERUN', description: 'Edited after restart. Not a launch.', quoteMint: cases[0][1], cluster: 'mainnet-beta', inspectionId: ids['m-usdc'], expectedVersion: 1 })).status}`,
+  `version after edits: ${(await call(tokA, 'GET', `/api/drafts/${d.json?.id}`)).json?.version}`,
+];
+writeFileSync(join(out, 'drafts', '05-checks.txt'), checks.join('\n') + '\n');
+writeFileSync(join(out, 'server-after-restart.log'), s2.log());
+s2.p.kill('SIGTERM'); await new Promise((r) => s2.p.on('exit', r));
+for (const s of ['', '-wal', '-shm']) rmSync(db + s, { force: true });
+writeFileSync(join(out, 'inspection-summary.txt'), summary.join('\n') + '\n');
+console.log(summary.join('\n')); console.log(checks.join('\n'));

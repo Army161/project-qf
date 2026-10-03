@@ -1,0 +1,12 @@
+# cmd: pnpm build:web
+# at: 2026-10-03T10:04:23Z
+
+> project-qf@ build:web /tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf
+> pnpm --filter @project-qf/web build
+
+
+> @project-qf/web@0.0.0 build /tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf/apps/web
+> node build.ts
+
+{"outputs":["dist/app.js.map","dist/app.js","dist/main.js.LEGAL.txt","dist/main.js.map","dist/main.js","dist/merkle.worker.js.LEGAL.txt","dist/merkle.worker.js.map","dist/merkle.worker.js"],"inputs":85}
+# exit: 0

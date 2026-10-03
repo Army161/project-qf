@@ -1,6 +1,6 @@
 {
   "tool": "tools/boundary/check-browser-boundary.ts",
-  "generatedAt": "2026-10-03T07:02:34.019Z",
+  "generatedAt": "2026-10-03T10:04:24.798Z",
   "graph": {
     "packages": 57,
     "forbidden": [],
@@ -112,7 +112,7 @@
       },
       {
         "where": "stdin.js.map sources",
-        "what": "../claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/repo/project-qf/node_modules/.pnpm/jayson@4.3.0/node_modules/jayson/lib/generateRequest.js"
+        "what": "../claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf/node_modules/.pnpm/jayson@4.3.0/node_modules/jayson/lib/generateRequest.js"
       }
     ],
     "rpcWebsocketsBundled": true

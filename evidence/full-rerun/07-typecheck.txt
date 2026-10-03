@@ -1,0 +1,7 @@
+# cmd: pnpm typecheck
+# at: 2026-10-03T10:04:25Z
+
+> project-qf@ typecheck /tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf
+> tsc -p tsconfig.json --noEmit
+
+# exit: 0

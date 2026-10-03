@@ -1,0 +1,19 @@
+#!/bin/sh
+cd /tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf
+E=/tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf/evidence/full-rerun
+step() { name=$1; shift; f=$E/$name.txt; { echo "# cmd: $*"; echo "# at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"; } > $f; /tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/cleanenv.sh "$@" >> $f 2>&1; rc=$?; echo "# exit: $rc" >> $f; echo "$name $rc" >> $E/SUMMARY.txt; }
+: > $E/SUMMARY.txt
+step 01-install pnpm install --frozen-lockfile --ignore-scripts
+step 02-sbom pnpm sbom
+step 03-deps-chain pnpm deps:chain
+step 04-license-check pnpm license:check
+step 05-build-web pnpm build:web
+step 06-boundary pnpm boundary
+step 07-typecheck pnpm typecheck
+step 08-test pnpm test
+step 09-sim pnpm sim
+step 10-audit-prod pnpm audit --prod --json
+cd spec/tools/program-verify
+step 11-verifier-install pnpm install --frozen-lockfile --ignore-scripts
+step 12-verifier-test pnpm test
+echo DONE >> $E/SUMMARY.txt

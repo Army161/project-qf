@@ -1,0 +1,6 @@
+node v22.22.0
+pnpm 10.33.0 (via corepack)
+lockfile sha256 f5c8d2e908297ad6dd140ba72ba2c42ee1716690f7e80b97093b95f4b36bc42b
+verifier lockfile sha256 2f6e28dd734d09a6fe2fe50164521f3504f0bd515ff01c4c9380dbdb03558a18
+git HEAD 6c63da55bc3c59eb19aece4e8215f4183206ddcb branch milestone/inspector-draft (clean tree)
+first attempt of 11/12 ran inside the workspace dir; pnpm treated it as part of the root workspace and installed nothing for the verifier, so 12 failed ERR_MODULE_NOT_FOUND. Re-run in a copy, matching the 2026-10-03 07:02Z procedure.

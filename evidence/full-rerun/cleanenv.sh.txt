@@ -1,0 +1,3 @@
+#!/bin/sh
+# Secret-free wrapper: no GH_TOKEN/AWS/etc. Only HOME, PATH, LANG, TZ; extras via 'env K=V' after this.
+exec env -i HOME=/tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/home PATH=/tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/bin:/opt/node22/bin:/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 TZ=UTC NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt SSL_CERT_FILE=/root/.ccr/ca-bundle.crt "$@"

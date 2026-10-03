@@ -1,0 +1,1 @@
+{"error":{"code":"INVALID_REQUEST","message":"invalid inspection request","details":["INVALID_MINT: not a 32-byte base58 Solana address"]}}
