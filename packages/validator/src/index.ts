@@ -4,3 +4,5 @@ export * from './liquidity.ts';
 export * from './exitDepth.ts';
 export * from './aggregate.ts';
 export * from './registry.ts';
+export * from './mint.ts';
+export * from './inspect.ts';

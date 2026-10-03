@@ -1,0 +1,206 @@
+# Project QF inspector milestone demo, 2026-10-03T07:03:12Z
+# server: node --use-env-proxy apps/api/src/main.ts serve (secret-free env, 127.0.0.1:8799), database /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/demo/qf-demo.sqlite
+
+## create-user (token redacted)
+{
+  "user": {
+    "id": "user_579e5032082a9f1b504d7c6a02749dbe",
+    "name": "Jeremy (demo)"
+  },
+  "token": "qf_<redacted>",
+  "note": "Shown once. Store it in a password manager; the server keeps only its SHA-256."
+}
+
+## server start
+(node:5474) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:5474) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+{"listening":"http://127.0.0.1:8799","schema":1,"providers":{"mainnet-beta":["api.mainnet.solana.com"],"devnet":["api.devnet.solana.com"]}}
+
+## GET /api/healthz (no token)
+{"ok":true,"apiVersion":"qf-api/1","schema":1}
+## GET /api/session without a token -> 401
+{"error":{"code":"UNAUTHORIZED","message":"missing or invalid bearer token"}} HTTP 401
+## 1. POST /api/inspections {QUSD fixture, test-only}
+{
+ "id": "insp_613556012398e9dd192148f63dce7fa1",
+ "label": "TEST_ONLY_FIXTURE",
+ "mint": "EtriFwkv36LDftunesYPdxScW2KU5BK55pcm7qwBonXn",
+ "cluster": "test-only",
+ "createdAt": "2026-10-03T07:03:13.621Z",
+ "freshness": "FRESH",
+ "evidenceDigest": "b6c0623cfc284cc8f78c3bf7ec18c50821e6bef237a833eeb278a702b8a2f9ae",
+ "reportDigest": "ea1696ab3b8f24fbea718fc08d999ce50159d3705a952a9beef4643e5e778414",
+ "decision": {
+  "decision": "WARN",
+  "reasons": [
+   "S2.1 WARN: REGISTRY_ABSENT on mock-offline",
+   "S2.4 WARN: ASSET_CLASS_UNKNOWN"
+  ]
+ },
+ "reads": [
+  {
+   "provider": "fixture-a.test-only",
+   "providerClass": "TEST_ONLY",
+   "method": "getAccountInfo",
+   "status": "OK",
+   "reason": null,
+   "slot": "1000",
+   "observedAt": "2026-10-03T07:03:13.618Z",
+   "genesisVerified": null
+  },
+  {
+   "provider": "fixture-b.test-only",
+   "providerClass": "TEST_ONLY",
+   "method": "getAccountInfo",
+   "status": "OK",
+   "reason": null,
+   "slot": "1000",
+   "observedAt": "2026-10-03T07:03:13.619Z",
+   "genesisVerified": null
+  }
+ ],
+ "coverage": {
+  "evaluated": 13,
+  "skipped": 13,
+  "total": 26
+ },
+ "features": {
+  "measured": 9,
+  "total": 25
+ },
+ "overallScore": null
+}
+
+## 2. POST /api/drafts against that inspection
+{
+ "id": "draft_c1cadc3c784c051df0fdb791dec1af3e",
+ "name": "Creator Coin",
+ "symbol": "CRTR",
+ "description": "Demo draft paired with the TEST_ONLY qUSD fixture.",
+ "quoteMint": "EtriFwkv36LDftunesYPdxScW2KU5BK55pcm7qwBonXn",
+ "cluster": "test-only",
+ "inspectionId": "insp_613556012398e9dd192148f63dce7fa1",
+ "version": 1,
+ "status": "DRAFT",
+ "createdAt": "2026-10-03T07:03:13.678Z",
+ "updatedAt": "2026-10-03T07:03:13.678Z",
+ "inspectionDigest": "ea1696ab3b8f24fbea718fc08d999ce50159d3705a952a9beef4643e5e778414",
+ "inspectionDecision": "WARN",
+ "policyRefs": {
+  "economics": {
+   "version": "STANDARD_V1@0-v0test",
+   "digest": "ac2d675e7c0185bd399bf6d645e074bcf1a4a8dd759c927dec5150ef0dacbbb5"
+  },
+  "template": {
+   "version": "STANDARD_V1@0-v0test-flat"
+  },
+  "validator": "validator-v0.1",
+  "inspection": "inspection-v0.1",
+  "features": "features-v0.1"
+ },
+ "policyStale": false,
+ "policyChanges": []
+}
+
+## 3. Restart the server process, then reload the draft and its inspection from the database
+draft after restart identical to saved draft: True | version 1 | policyStale False
+inspection after restart: reportDigest equal True | inspection body equal True | ageSeconds 1 FRESH
+
+## 4. PUT /api/drafts/:id (expectedVersion 1) then a stale PUT (expectedVersion 1 again) -> 409
+{
+ "id": "draft_c1cadc3c784c051df0fdb791dec1af3e",
+ "version": 2,
+ "updatedAt": "2026-10-03T07:03:14.836Z",
+ "description": "Edited after restart."
+}
+{"error":{"code":"VERSION_CONFLICT","message":"the draft changed since it was loaded; reload and retry"}} HTTP 409
+## 5. LIVE: POST /api/inspections {USDC mint, mainnet-beta} through the real network path
+{
+ "id": "insp_b795891a1867967aa0c751ef7355fdc2",
+ "label": "LIVE_READ",
+ "decision": "FAIL",
+ "IN.1": "NO_USABLE_EVIDENCE: api.mainnet.solana.com: NETWORK_POLICY_DENIED (egress proxy refused the tunnel: HTTP 403)",
+ "reads": [
+  {
+   "provider": "api.mainnet.solana.com",
+   "providerClass": "PRODUCTION",
+   "method": "getAccountInfo",
+   "status": "UNAVAILABLE",
+   "reason": "NETWORK_POLICY_DENIED (egress proxy refused the tunnel: HTTP 403)",
+   "slot": null,
+   "observedAt": "2026-10-03T07:03:15.093Z",
+   "genesisVerified": false
+  }
+ ],
+ "facts": null,
+ "measuredFeatures": 0
+}
+
+## 6. LIVE: POST /api/inspections {same mint, devnet}
+{
+ "label": "LIVE_READ",
+ "decision": "FAIL",
+ "reads": [
+  {
+   "provider": "api.devnet.solana.com",
+   "providerClass": "PRODUCTION",
+   "method": "getAccountInfo",
+   "status": "UNAVAILABLE",
+   "reason": "NETWORK_POLICY_DENIED (egress proxy refused the tunnel: HTTP 403)",
+   "slot": null,
+   "observedAt": "2026-10-03T07:03:15.353Z",
+   "genesisVerified": false
+  }
+ ]
+}
+
+## 7. Proxy view of the same hosts (curl through the agent proxy, for comparison)
+api.mainnet.solana.com:
+  * CONNECT tunnel: HTTP/1.1 negotiated
+  < HTTP/1.1 403 Forbidden
+  * CONNECT tunnel failed, response 403
+  curl: (56) CONNECT tunnel failed, response 403
+api.devnet.solana.com:
+  * CONNECT tunnel: HTTP/1.1 negotiated
+  < HTTP/1.1 403 Forbidden
+  * CONNECT tunnel failed, response 403
+  curl: (56) CONNECT tunnel failed, response 403
+
+## 8. Lists
+[
+ {
+  "id": "draft_c1cadc3c784c051df0fdb791dec1af3e",
+  "name": "Creator Coin",
+  "symbol": "CRTR",
+  "version": 2,
+  "inspectionDecision": "WARN",
+  "policyStale": false
+ }
+]
+[
+ {
+  "id": "insp_975abc38e43e810b98d93ede09e7bc74",
+  "createdAt": "2026-10-03T07:03:15.354Z",
+  "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "cluster": "devnet",
+  "label": "LIVE_READ",
+  "decision": "FAIL"
+ },
+ {
+  "id": "insp_b795891a1867967aa0c751ef7355fdc2",
+  "createdAt": "2026-10-03T07:03:15.095Z",
+  "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "cluster": "mainnet-beta",
+  "label": "LIVE_READ",
+  "decision": "FAIL"
+ },
+ {
+  "id": "insp_613556012398e9dd192148f63dce7fa1",
+  "createdAt": "2026-10-03T07:03:13.621Z",
+  "mint": "EtriFwkv36LDftunesYPdxScW2KU5BK55pcm7qwBonXn",
+  "cluster": "test-only",
+  "label": "TEST_ONLY_FIXTURE",
+  "decision": "WARN"
+ }
+]

@@ -3,7 +3,7 @@
   "specVersion": "1.6",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-27T16:13:06.004Z",
+    "timestamp": "2026-10-03T07:02:30.555Z",
     "tools": {
       "components": [
         {
@@ -26,7 +26,7 @@
       },
       {
         "name": "qf:pnpm-lock.sha256",
-        "value": "c2bb276af21b15c87bba002d20b51e7f9564cde2247d082370bec4d27f3a90e6"
+        "value": "f5c8d2e908297ad6dd140ba72ba2c42ee1716690f7e80b97093b95f4b36bc42b"
       },
       {
         "name": "qf:overrides",
@@ -235,7 +235,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc,@project-qf/econ-sim,@project-qf/policy,@project-qf/rewards,@project-qf/web"
+          "value": "@project-qf/adapter-meteora-dbc,@project-qf/api,@project-qf/econ-sim,@project-qf/policy,@project-qf/rewards,@project-qf/web"
         }
       ]
     },

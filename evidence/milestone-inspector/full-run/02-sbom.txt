@@ -1,0 +1,8 @@
+# cmd: pnpm sbom
+# at: 2026-10-03T07:02:29Z
+
+> project-qf@ sbom /tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/repo/project-qf
+> node tools/deps/sbom.ts
+
+{"out":"/tmp/claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/repo/project-qf/sbom/project-qf.cdx.json","components":133,"filter":null,"lockSha256":"f5c8d2e908297ad6dd140ba72ba2c42ee1716690f7e80b97093b95f4b36bc42b"}
+# exit: 0

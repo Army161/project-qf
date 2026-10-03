@@ -1,8 +1,8 @@
 {
   "tool": "tools/boundary/check-browser-boundary.ts",
-  "generatedAt": "2026-09-27T16:12:49.116Z",
+  "generatedAt": "2026-10-03T07:02:34.019Z",
   "graph": {
-    "packages": 55,
+    "packages": 57,
     "forbidden": [],
     "licensesNotPlainAllow": [],
     "walletPackages": [],
@@ -53,6 +53,8 @@
     ],
     "metafileViolations": [],
     "artifacts": [
+      "app.js",
+      "app.js.map",
       "index.html",
       "main.js",
       "main.js.LEGAL.txt",
@@ -61,6 +63,7 @@
       "merkle.worker.js.LEGAL.txt",
       "merkle.worker.js.map",
       "meta.json",
+      "mock.html",
       "styles.css"
     ],
     "artifactViolations": []
@@ -109,7 +112,7 @@
       },
       {
         "where": "stdin.js.map sources",
-        "what": "../claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/v0/project-qf/node_modules/.pnpm/jayson@4.3.0/node_modules/jayson/lib/generateRequest.js"
+        "what": "../claude-0/-home-claude/7b3f6c10-45df-538e-944e-65d53b709ea1/scratchpad/repo/project-qf/node_modules/.pnpm/jayson@4.3.0/node_modules/jayson/lib/generateRequest.js"
       }
     ],
     "rpcWebsocketsBundled": true

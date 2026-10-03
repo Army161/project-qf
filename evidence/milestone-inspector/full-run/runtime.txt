@@ -1,0 +1,4 @@
+node v22.22.2
+pnpm 10.33.0
+lockfile sha256 f5c8d2e908297ad6dd140ba72ba2c42ee1716690f7e80b97093b95f4b36bc42b
+git HEAD 5b33339c8d0f827e8e47c26e0f62bee8d69d168c branch milestone/inspector-draft (working tree includes the uncommitted milestone changes)

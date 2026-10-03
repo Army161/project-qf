@@ -1,0 +1,54 @@
+Lockfile comparison: HEAD (main, sha256 c2bb276af21b15c87bba002d20b51e7f9564cde2247d082370bec4d27f3a90e6) vs milestone working tree (sha256 f5c8d2e908297ad6dd140ba72ba2c42ee1716690f7e80b97093b95f4b36bc42b)
+  ignoredOptionalDependencies IDENTICAL  sha256 53490dce6475fcae
+  importers    CHANGED  sha256 9632e75017f71c30
+  lockfileVersion IDENTICAL  sha256 1a40505e641e48ff
+  overrides    IDENTICAL  sha256 57c8d2cce40453d7
+  packages     IDENTICAL  sha256 e95c9ebf0d696251
+  patchedDependencies IDENTICAL  sha256 4c608dae374b5c9a
+  settings     IDENTICAL  sha256 078cb045ec56da08
+  snapshots    IDENTICAL  sha256 b8bcb2a9316cf78d
+importers lines added: 42 removed: 0
+All non-blank added importer lines are workspace:* links to @project-qf packages: True
+    +  apps/api:
+    +    dependencies:
+    +      '@project-qf/contracts':
+    +        specifier: workspace:*
+    +        version: link:../../packages/contracts
+    +      '@project-qf/core':
+    +        specifier: workspace:*
+    +        version: link:../../packages/core
+    +      '@project-qf/features':
+    +        specifier: workspace:*
+    +        version: link:../../packages/features
+    +      '@project-qf/policy':
+    +        specifier: workspace:*
+    +        version: link:../../packages/policy
+    +      '@project-qf/validator':
+    +        specifier: workspace:*
+    +        version: link:../../packages/validator
+    +
+    +      '@project-qf/contracts':
+    +        specifier: workspace:*
+    +        version: link:../../packages/contracts
+    +  packages/contracts:
+    +    dependencies:
+    +      '@project-qf/core':
+    +        specifier: workspace:*
+    +        version: link:../core
+    +      '@project-qf/features':
+    +        specifier: workspace:*
+    +        version: link:../features
+    +      '@project-qf/validator':
+    +        specifier: workspace:*
+    +        version: link:../validator
+    +
+    +
+    +  packages/features:
+    +    dependencies:
+    +      '@project-qf/core':
+    +        specifier: workspace:*
+    +        version: link:../core
+    +      '@project-qf/validator':
+    +        specifier: workspace:*
+    +        version: link:../validator
+Resolved third-party graph (packages + snapshots) is byte-identical to main; no dependency was added, removed or re-resolved.

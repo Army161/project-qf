@@ -13,3 +13,51 @@ ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
 .d-PASS { color: var(--ok); } .d-WARN { color: var(--warn); } .d-FAIL, .d-BLOCKED { color: var(--fail); }
 dl { display: grid; grid-template-columns: minmax(120px, max-content) 1fr; gap: 2px 12px; margin: 0; }
 dt { color: var(--muted); } dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+/* Product inspector (index.html). The MOCK lifecycle (mock.html) uses the rules above. */
+#preview-banner { padding: 8px 16px; background: var(--card); color: var(--muted); border-bottom: 1px solid var(--line); font-size: 13px; }
+.product main { max-width: 1040px; display: grid; gap: 14px; }
+.product #app { display: grid; gap: 14px; }
+.product #app[hidden], .product [hidden] { display: none; }
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.top h1 { margin: 8px 0 0; }
+.sub-inline { font-weight: 400; color: var(--muted); font-size: 16px; }
+.who { color: var(--muted); font-size: 13px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.product h2 { font-size: 17px; margin: 0 0 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.product h3 { font-size: 15px; margin: 18px 0 6px; }
+.product h4 { font-size: 13px; margin: 10px 0 4px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+input, select, textarea { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; min-width: 0; width: 100%; }
+textarea { resize: vertical; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--ok); outline-offset: 1px; }
+button { font: inherit; border-radius: 6px; padding: 7px 14px; border: 1px solid var(--fg); background: var(--fg); color: var(--bg); cursor: pointer; }
+button:disabled { opacity: .6; cursor: progress; }
+button.secondary { background: transparent; color: var(--fg); }
+button.link { border: 0; background: none; color: inherit; padding: 0; text-decoration: underline; cursor: pointer; }
+.row { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+.row > .grow { flex: 1 1 220px; }
+.row > button { margin-bottom: 8px; }
+.hint, .muted { color: var(--muted); font-size: 13px; }
+.msg { min-height: 1.2em; margin: 6px 0 0; font-size: 13px; }
+.msg.ok { color: var(--ok); } .msg.err { color: var(--fail); }
+code { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+.pill { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.pill.d-PASS, .pill.s-OK, .pill.s-MEASURED, .pill.fresh { color: var(--ok); }
+.pill.d-WARN, .pill.d-SKIP, .pill.s-NOT_FOUND, .pill.s-UNAVAILABLE, .pill.stale { color: var(--warn); }
+.pill.d-FAIL { color: var(--fail); }
+.pill.d-SKIP { color: var(--muted); }
+.pill.live { color: var(--ok); }
+.pill.test-only { color: var(--mock); background: var(--mock-bg); }
+.notice { padding: 8px 10px; border-radius: 6px; margin: 0 0 8px; }
+.notice.test-only { background: var(--mock-bg); color: var(--mock); border: 1px solid var(--mock); font-weight: 600; }
+dl.meta, dl.compact { margin: 8px 0; font-size: 13px; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; vertical-align: top; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; }
+td { overflow-wrap: anywhere; }
+ul.plain, ul.list, ul.missing { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; }
+ul.list { list-style: none; padding: 0; }
+ul.list li { padding: 6px 0; border-bottom: 1px solid var(--line); }
+details.reasons summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+details.reasons ul { font-size: 13px; margin: 4px 0 0; padding-left: 18px; }
+@media (max-width: 600px) { dl { grid-template-columns: 1fr; } dt { margin-top: 6px; } }

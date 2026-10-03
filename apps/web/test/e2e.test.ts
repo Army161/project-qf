@@ -1,4 +1,4 @@
-// Headless Chromium smoke test of the MOCK lifecycle UI (built bundle, CSP on, no network beyond localhost).
+// Headless Chromium smoke test of the MOCK lifecycle UI at /mock.html (built bundle, CSP on, no network beyond localhost).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -30,7 +30,7 @@ test('MOCK lifecycle UI renders, labels every step MOCK, and computes the reward
     page.on('request', (r) => requests.push(r.url()));
     page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
     page.on('pageerror', (e) => errors.push(String(e)));
-    await page.goto(`http://127.0.0.1:${port}/`);
+    await page.goto(`http://127.0.0.1:${port}/mock.html`);
     await page.waitForSelector('body[data-ready="true"]', { timeout: 15_000 });
 
     const banner = await page.textContent('#mock-banner');

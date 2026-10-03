@@ -32,7 +32,7 @@ Rules for every coding agent working in Project QF repositories. These are bindi
 
 ## Hard rules — product boundary (V1)
 - Engine: **Meteora DBC → DAMM v2** only. `RaydiumEngineAdapter` is an interface stub; no implementation.
-- `DBC_BASE_TRANSFER_FEE` capability is `EXPERIMENTAL_DISABLED`. Do not write code paths that require DBC program ≥ 0.2.2 or SDK 2.x outside the disabled capability module.
+- `DBC_BASE_TRANSFER_FEE` capability is `EXPERIMENTAL_DISABLED`. Do not write code paths that require DBC program ≥ 0.2.2 or an SDK release with 0.2.2 support (proposed as 1.6.0 in PR #116; the 2.x refactor is PR #117) outside the disabled capability module. ADR-003 tracks capability, not a version number.
 - Reward strategies: `NONE`, `TRADING_FEE`, `DIRECT`, `MERKLE`, `EPOCH_PROPORTIONAL`. No continuous-rewards contract. Mainnet settlement is feature-gated (`REWARDS_SETTLEMENT_MAINNET=false`).
 - Jupiter: `JupiterProvider` is `OPTIONAL_LEGAL_GATED`. Core must run with it disabled. Never persist Jupiter responses into the Asset Graph / feature store.
 - Tokenized securities are FAIL in the validator. No EVM code. No custom on-chain programs in V1.
@@ -44,6 +44,11 @@ Rules for every coding agent working in Project QF repositories. These are bindi
 - Mocks and fixtures carry `MOCK_BANNER` / `TEST_ONLY` labels and are never presented as live results. Synthetic assets live in the `test-only:` namespace and cannot be promoted to the production registry.
 - All policies (validator thresholds, economics, exclusions, allocation) are versioned objects; every result records the policy version it used.
 - Money math in integer base units (`bigint`); never JS `number` for token amounts.
+- `apps/api` (private read-only API) may read chain state only through `apps/api/src/rpc.ts`.
+  - That client has three methods (`getGenesisHash`, `getAccountInfo`, `getTokenLargestAccounts`), uses finalized commitment, proves the cluster by genesis hash, and bounds response size and time. Never add a send, simulate or signing method there.
+  - Live reads never fall back to fixtures. TEST_ONLY fixtures answer only the explicit `test-only` network.
+  - Missing data is SKIP or UNAVAILABLE with a reason, never a default.
+  - The browser talks only to the same-origin API (CSP `connect-src 'self'`) and never calls an RPC.
 - Before any PR: `pnpm typecheck && pnpm test && pnpm license:check && pnpm deps:chain && pnpm boundary && pnpm audit --prod` (install with `--ignore-scripts` in a secret-free environment).
 
 ## Stop conditions

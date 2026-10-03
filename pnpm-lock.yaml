@@ -30,8 +30,29 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  apps/api:
+    dependencies:
+      '@project-qf/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@project-qf/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@project-qf/features':
+        specifier: workspace:*
+        version: link:../../packages/features
+      '@project-qf/policy':
+        specifier: workspace:*
+        version: link:../../packages/policy
+      '@project-qf/validator':
+        specifier: workspace:*
+        version: link:../../packages/validator
+
   apps/web:
     dependencies:
+      '@project-qf/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@project-qf/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -86,7 +107,28 @@ importers:
         specifier: 5.2.0
         version: 5.2.0
 
+  packages/contracts:
+    dependencies:
+      '@project-qf/core':
+        specifier: workspace:*
+        version: link:../core
+      '@project-qf/features':
+        specifier: workspace:*
+        version: link:../features
+      '@project-qf/validator':
+        specifier: workspace:*
+        version: link:../validator
+
   packages/core: {}
+
+  packages/features:
+    dependencies:
+      '@project-qf/core':
+        specifier: workspace:*
+        version: link:../core
+      '@project-qf/validator':
+        specifier: workspace:*
+        version: link:../validator
 
   packages/policy:
     dependencies:

@@ -3,18 +3,83 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; worker-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
-  <title>Project QF MOCK lifecycle</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Project QF quote asset inspector</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="./styles.css">
 </head>
-<body>
-  <div id="mock-banner" role="alert">MOCK</div>
+<body class="product">
+  <div id="preview-banner" role="note">Private read-only preview. No wallet, no signing, no transactions. Missing data is shown as missing, never estimated.</div>
   <main>
-    <h1>Project QF launch lifecycle <span class="badge">MOCK</span></h1>
-    <p class="sub">Offline V0 walk-through built from synthetic fixtures and the real QF policy code. Nothing here is live blockchain data.</p>
-    <ol id="lifecycle"></ol>
+    <header class="top">
+      <h1>Project QF <span class="sub-inline">Quote asset inspector</span></h1>
+      <div id="who" class="who"></div>
+    </header>
+
+    <section id="signin" class="card">
+      <h2>Sign in</h2>
+      <form id="signin-form" class="row">
+        <label class="grow">Access token <input id="token" type="password" autocomplete="off" spellcheck="false" required></label>
+        <button type="submit">Sign in</button>
+      </form>
+      <p class="hint">The operator creates tokens with <code>pnpm --filter @project-qf/api create-user</code>. The token stays in this tab only.</p>
+      <p id="signin-msg" class="msg" role="status"></p>
+    </section>
+
+    <div id="app" hidden>
+      <section class="card" id="inspect-card">
+        <h2>1. Inspect a quote asset</h2>
+        <form id="inspect-form">
+          <label>Mint address <input id="mint" autocomplete="off" spellcheck="false" placeholder="Base58 mint address" required></label>
+          <div class="row">
+            <label class="grow">Network
+              <select id="cluster">
+                <option value="mainnet-beta">Solana mainnet (live read)</option>
+                <option value="devnet">Solana devnet (live read)</option>
+                <option value="test-only">TEST_ONLY fixtures (synthetic, not a real asset)</option>
+              </select>
+            </label>
+            <button type="submit" id="inspect-btn">Inspect</button>
+          </div>
+        </form>
+        <details id="fixtures-box">
+          <summary>TEST_ONLY fixture mints</summary>
+          <ul id="fixtures" class="plain"></ul>
+        </details>
+        <p id="inspect-msg" class="msg" role="status"></p>
+      </section>
+
+      <section class="card" id="report" hidden aria-live="polite"></section>
+
+      <section class="card" id="draft-card" hidden>
+        <h2>2. Creator draft <span id="draft-state" class="pill"></span></h2>
+        <form id="draft-form">
+          <div class="row">
+            <label class="grow">Token name <input id="d-name" maxlength="32" autocomplete="off" required></label>
+            <label>Symbol <input id="d-symbol" maxlength="10" autocomplete="off" required></label>
+          </div>
+          <label>Description <textarea id="d-desc" maxlength="500" rows="3"></textarea></label>
+          <dl id="draft-bind" class="compact"></dl>
+          <div class="row">
+            <button type="submit" id="draft-save">Save draft</button>
+            <button type="button" id="draft-new" class="secondary">Start a new draft</button>
+          </div>
+        </form>
+        <p class="hint">A draft saves the token details with the inspection it was checked against and the policy versions in force. It launches nothing.</p>
+        <p id="draft-msg" class="msg" role="status"></p>
+      </section>
+
+      <section class="card">
+        <h2>3. Saved drafts</h2>
+        <ul id="drafts" class="list"></ul>
+      </section>
+
+      <section class="card">
+        <h2>Recent inspections</h2>
+        <ul id="inspections" class="list"></ul>
+      </section>
+    </div>
   </main>
-  <script type="module" src="./main.js"></script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
