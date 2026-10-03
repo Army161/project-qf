@@ -1,0 +1,10 @@
+draft create: HTTP 201 version=1 inspectionDigest=cb0c7b24bed8f0105aca724b3de897a16e19be2d7db9dc8778e64e505270ad6f decision=FAIL
+draft byte-identical across server restart: true
+stored inspection identical across restart (ignoring the computed ageSeconds/freshness view fields): true; reportDigest after restart = draft digest: true
+no token: 401
+bad token: 401
+other user reads owner's draft: 404
+other user reads owner's live inspection: 404
+update with expectedVersion 1: 200
+stale update with expectedVersion 1 again: 409
+version after edits: 2

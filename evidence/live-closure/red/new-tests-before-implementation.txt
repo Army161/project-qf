@@ -1,0 +1,175 @@
+(node:548) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ authentication: healthz is open, everything else needs a valid bearer token (60.454736ms)
+✔ the integrated slice: inspect (TEST_ONLY), save a draft, reload both after the server and database are reopened (42.282677ms)
+✔ a blocked live read is shown as UNAVAILABLE and FAILs; it never falls back to fixtures, even for a fixture mint (9.739576ms)
+✔ an endpoint serving the wrong network is rejected by genesis hash before any account read (8.46503ms)
+✔ a successful live read from two providers passes Stage 1 but stays FAIL while Stage 2/3 evidence is missing (19.321281ms)
+✔ records are owner-scoped: another user gets 404 for inspections and drafts, and cannot link them (22.220464ms)
+✔ draft updates use optimistic versions with append-only history; a stale version gets 409 (15.817826ms)
+✔ a draft must reference an inspection of the same mint and network (15.938139ms)
+✔ request hygiene: JSON only, bounded bodies, bad JSON, unknown routes and methods (12.270536ms)
+✔ inspections are rate limited to 30 per minute per user (101.030095ms)
+✔ stored reports show their age, turn STALE after the revalidation window, and a tampered report is refused (12.147958ms)
+✔ a draft saved under older policies reads back as policy-stale with the changed policies named (11.162849ms)
+✔ the database refuses a schema newer than the build (3.815309ms)
+✔ static hosting: CSP headers on the app, no path traversal, no symlink escape (9.828958ms)
+✔ fixture mints are labelled synthetic and the fixture set covers the extension policy cases (0.179484ms)
+✖ planning drafts: a stale or failed report can be saved, with its original references and prominent labels, and nothing is refreshed (12.041319ms)
+✖ editing a planning draft keeps the policies and evidence basis it was saved under; it does not re-consent (14.36168ms)
+node:internal/modules/esm/resolve:274
+    throw new ERR_MODULE_NOT_FOUND(
+          ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf/apps/api/src/config.ts' imported from /tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf/apps/api/test/providers.test.ts
+    at finalizeResolution (node:internal/modules/esm/resolve:274:11)
+    at moduleResolve (node:internal/modules/esm/resolve:859:10)
+    at defaultResolve (node:internal/modules/esm/resolve:983:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38)
+    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38)
+    at ModuleJob._link (node:internal/modules/esm/module_job:182:49) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf/apps/api/src/config.ts'
+}
+
+Node.js v22.22.0
+✖ apps/api/test/providers.test.ts (354.707335ms)
+✖ features-v0.2 is the current version (2.93743ms)
+✖ native mint: raw supply 0 is kept but labelled not tracked; shares stay UNAVAILABLE with the precise reason (1.304217ms)
+✖ ordinary mints: shares are computed as before and the raw sample is reported alongside (0.884095ms)
+file:///tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf/packages/validator/test/native-mint.test.ts:10
+import { aggregate, CLASSIC_NATIVE_MINT, encodeMintForFixture, INSPECTION_VERSION, inspectMint, S1_10_NATIVE_MINT_EXCEPTION, SPL_TOKEN_PROGRAM,
+                    ^^^^^^^^^^^^^^^^^^^
+SyntaxError: The requested module '@project-qf/validator' does not provide an export named 'CLASSIC_NATIVE_MINT'
+    at ModuleJob._instantiate (node:internal/modules/esm/module_job:226:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:335:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.22.0
+✖ packages/validator/test/native-mint.test.ts (127.196534ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 15
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1181.682339
+
+✖ failing tests:
+
+test at apps/api/test/api.test.ts:318:1
+✖ planning drafts: a stale or failed report can be saved, with its original references and prominent labels, and nothing is refreshed (12.041319ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   ageSecondsAtSave: 3660,
+  -   decision: 'WARN',
+  -   freshnessAtSave: 'STALE',
+  -   label: 'TEST_ONLY_FIXTURE',
+  -   observedAt: '2026-10-03T12:00:00.000Z',
+  -   policies: {
+  -     evidence: 'evidence-v0.1',
+  -     features: 'features-v0.1',
+  -     inspection: 'inspection-v0.1',
+  -     validator: 'validator-v0.1'
+  -   },
+  -   reportDigest: '89f26fa69a83efed9930ebf223a93fb3ba365c40fa6a5f672044dcb7f4816ea7'
+  - }
+  
+      at TestContext.<anonymous> (file:///tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf/apps/api/test/api.test.ts:327:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { reportDigest: '89f26fa69a83efed9930ebf223a93fb3ba365c40fa6a5f672044dcb7f4816ea7', observedAt: '2026-10-03T12:00:00.000Z', decision: 'WARN', label: 'TEST_ONLY_FIXTURE', freshnessAtSave: 'STALE', ageSecondsAtSave: 3660, policies: { validator: 'validator-v0.1', evidence: 'evidence-v0.1', inspection: 'inspection-v0.1', features: 'features-v0.1' } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at apps/api/test/api.test.ts:340:1
+✖ editing a planning draft keeps the policies and evidence basis it was saved under; it does not re-consent (14.36168ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf/apps/api/test/api.test.ts:356:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at apps/api/test/providers.test.ts:1:1
+✖ apps/api/test/providers.test.ts (354.707335ms)
+  'test failed'
+
+test at packages/features/test/native-supply.test.ts:12:1
+✖ features-v0.2 is the current version (2.93743ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'features-v0.1'
+  - 'features-v0.2'
+                 ^
+  
+      at TestContext.<anonymous> (file:///tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf/packages/features/test/native-supply.test.ts:12:59)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.start (node:internal/test_runner/test:944:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'features-v0.1',
+    expected: 'features-v0.2',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/features/test/native-supply.test.ts:14:1
+✖ native mint: raw supply 0 is kept but labelled not tracked; shares stay UNAVAILABLE with the precise reason (1.304217ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^NATIVE_MINT_SUPPLY_NOT_TRACKED: .*not a total of wrapped SOL/. Input:
+  
+  'current supply at the read slot'
+  
+      at TestContext.<anonymous> (file:///tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf/packages/features/test/native-supply.test.ts:19:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'current supply at the read slot',
+    expected: /^NATIVE_MINT_SUPPLY_NOT_TRACKED: .*not a total of wrapped SOL/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at packages/features/test/native-supply.test.ts:31:1
+✖ ordinary mints: shares are computed as before and the raw sample is reported alongside (0.884095ms)
+  TypeError: Cannot read properties of undefined (reading 'value')
+      at TestContext.<anonymous> (file:///tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf/packages/features/test/native-supply.test.ts:36:54)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+
+test at packages/validator/test/native-mint.test.ts:1:1
+✖ packages/validator/test/native-mint.test.ts (127.196534ms)
+  'test failed'
+exit 1

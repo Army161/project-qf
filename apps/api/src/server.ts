@@ -5,8 +5,8 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { extname, join, sep } from 'node:path';
-import { API_VERSION, DRAFT_ID, INSPECTION_ID, parseDraftInput, parseDraftUpdate, parseInspectionRequest, type ApiError, type Draft, type DraftInput,
-  type DraftView, type InspectionReport, type InspectionView, type PolicyRefs } from '@project-qf/contracts';
+import { API_VERSION, DRAFT_ID, INSPECTION_ID, parseDraftInput, parseDraftUpdate, parseInspectionRequest, PLANNING_DRAFT_NOTICE, type ApiError, type Draft,
+  type DraftBasis, type DraftInput, type DraftView, type InspectionReport, type InspectionView, type PolicyRefs } from '@project-qf/contracts';
 import { FEATURES_VERSION } from '@project-qf/features';
 import { ECONOMICS_V0_TEST, STANDARD_V1_FLAT_V0_TEST, economicsDigest } from '@project-qf/policy';
 import { INSPECTION_VERSION, VALIDATOR_POLICY_V0_1 } from '@project-qf/validator';
@@ -78,7 +78,25 @@ export function createApp(o: AppOptions): Server {
     const ageSeconds = Math.max(0, Math.floor((now().getTime() - Date.parse(r.createdAt)) / 1000));
     return { ...r, ageSeconds, staleAfterSeconds: STALE_AFTER_SECONDS, freshness: ageSeconds > STALE_AFTER_SECONDS ? 'STALE' : 'FRESH' };
   };
-  const viewDraft = (d: Draft): DraftView => { const ch = policyChanges(d.policyRefs, currentPolicyRefs()); return { ...d, policyStale: ch.length > 0, policyChanges: ch }; };
+  const ageOf = (iso: string) => Math.max(0, Math.floor((now().getTime() - Date.parse(iso)) / 1000));
+  const basisOf = (r: InspectionReport): DraftBasis => {
+    const age = ageOf(r.createdAt);
+    return { reportDigest: r.reportDigest, observedAt: r.createdAt, decision: r.inspection.aggregate.decision, label: r.label,
+      freshnessAtSave: age > STALE_AFTER_SECONDS ? 'STALE' : 'FRESH', ageSecondsAtSave: age, policies: r.policies };
+  };
+  const viewDraft = (d: Draft): DraftView => {
+    const ch = policyChanges(d.policyRefs, currentPolicyRefs());
+    const labels = ['PLANNING_DRAFT'];
+    if (!d.basis) labels.push('BASIS_NOT_RECORDED');
+    else {
+      if (d.basis.freshnessAtSave === 'STALE') labels.push('EVIDENCE_STALE_AT_SAVE');
+      if (ageOf(d.basis.observedAt) > STALE_AFTER_SECONDS) labels.push('EVIDENCE_STALE_NOW');
+      if (d.basis.label === 'TEST_ONLY_FIXTURE') labels.push('TEST_ONLY_EVIDENCE');
+    }
+    if (d.inspectionDecision !== 'PASS') labels.push(`INSPECTION_${d.inspectionDecision}`);
+    if (ch.length) labels.push('POLICY_CHANGED');
+    return { ...d, policyStale: ch.length > 0, policyChanges: ch, labels, notice: PLANNING_DRAFT_NOTICE };
+  };
   const linkedInspection = (user: User, input: DraftInput): InspectionReport => {
     const insp = o.store.getInspection(user.id, input.inspectionId);
     if (!insp) throw new HttpError(422, 'INSPECTION_NOT_FOUND', 'the referenced inspection does not exist for this user');
@@ -126,7 +144,7 @@ export function createApp(o: AppOptions): Server {
         const insp = linkedInspection(user, parsed.value);
         const t = now().toISOString();
         const d = o.store.insertDraft(user.id, { ...parsed.value, version: 1, status: 'DRAFT', createdAt: t, updatedAt: t,
-          inspectionDigest: insp.reportDigest, inspectionDecision: insp.inspection.aggregate.decision, policyRefs: currentPolicyRefs() });
+          inspectionDigest: insp.reportDigest, inspectionDecision: insp.inspection.aggregate.decision, policyRefs: currentPolicyRefs(), basis: basisOf(insp) });
         return send(res, 201, viewDraft(d));
       }
       throw new HttpError(405, 'METHOD_NOT_ALLOWED', method);
@@ -142,8 +160,12 @@ export function createApp(o: AppOptions): Server {
         if (!parsed.ok) throw new HttpError(400, 'INVALID_REQUEST', 'invalid draft update', parsed.errors);
         const { expectedVersion, ...input } = parsed.value;
         const insp = linkedInspection(user, input);
+        // Same inspection: the draft keeps the evidence basis and policies it was saved under (an edit is not re-consent).
+        // An explicitly re-linked inspection brings its own basis and today's policies.
+        const relinked = input.inspectionId !== existing.inspectionId;
         const next: Draft = { ...existing, ...input, version: expectedVersion + 1, updatedAt: now().toISOString(), status: 'DRAFT',
-          inspectionDigest: insp.reportDigest, inspectionDecision: insp.inspection.aggregate.decision, policyRefs: currentPolicyRefs() };
+          inspectionDigest: insp.reportDigest, inspectionDecision: insp.inspection.aggregate.decision,
+          policyRefs: relinked ? currentPolicyRefs() : existing.policyRefs, ...(relinked ? { basis: basisOf(insp) } : {}) };
         const r = o.store.updateDraft(user.id, next, expectedVersion);
         if (r === 'VERSION_CONFLICT') throw new HttpError(409, 'VERSION_CONFLICT', 'the draft changed since it was loaded; reload and retry');
         if (r === 'NOT_FOUND') throw new HttpError(404, 'NOT_FOUND', 'draft not found');

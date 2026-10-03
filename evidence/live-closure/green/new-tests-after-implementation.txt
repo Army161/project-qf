@@ -1,0 +1,46 @@
+(node:1551) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ authentication: healthz is open, everything else needs a valid bearer token (58.31649ms)
+✔ the integrated slice: inspect (TEST_ONLY), save a draft, reload both after the server and database are reopened (47.894908ms)
+✔ a blocked live read is shown as UNAVAILABLE and FAILs; it never falls back to fixtures, even for a fixture mint (12.097941ms)
+✔ an endpoint serving the wrong network is rejected by genesis hash before any account read (10.280256ms)
+✔ a successful live read from two providers passes Stage 1 but stays FAIL while Stage 2/3 evidence is missing (20.442547ms)
+✔ records are owner-scoped: another user gets 404 for inspections and drafts, and cannot link them (22.656092ms)
+✔ draft updates use optimistic versions with append-only history; a stale version gets 409 (17.228957ms)
+✔ a draft must reference an inspection of the same mint and network (16.038832ms)
+✔ request hygiene: JSON only, bounded bodies, bad JSON, unknown routes and methods (11.997334ms)
+✔ inspections are rate limited to 30 per minute per user (110.415891ms)
+✔ stored reports show their age, turn STALE after the revalidation window, and a tampered report is refused (11.981496ms)
+✔ a draft saved under older policies reads back as policy-stale with the changed policies named (10.191851ms)
+✔ the database refuses a schema newer than the build (3.923204ms)
+✔ static hosting: CSP headers on the app, no path traversal, no symlink escape (10.103117ms)
+✔ fixture mints are labelled synthetic and the fixture set covers the extension policy cases (0.185575ms)
+✔ planning drafts: a stale or failed report can be saved, with its original references and prominent labels, and nothing is refreshed (12.103834ms)
+✔ editing a planning draft keeps the policies and evidence basis it was saved under; it does not re-consent (14.012018ms)
+✔ Helius endpoints: host-only id, operator helius, preferred for largest accounts; a malformed key is refused without echoing it (2.947575ms)
+✔ public 429 on largest accounts + Helius success: Helius is used in either configuration order (27.642113ms)
+✔ without a preference the fallback is bounded and keeps every failure: first 429, second answers (2.293105ms)
+✔ every candidate failing gives UNAVAILABLE naming each failure; providers whose mint read failed are never asked (4.531971ms)
+✔ genuine disagreement between providers stays visible: S1.12 FAIL with both observations (3.585486ms)
+✔ two endpoints of the same operator do not satisfy S1.12 (1.607709ms)
+✔ credentials never leak: query and path keys are redacted from reasons, and nothing in a report or its evidence holds a key (2.678587ms)
+✔ server configuration: public endpoints by default; QF_HELIUS_API_KEY adds Helius on both clusters; descriptions hold no key (0.654132ms)
+✔ features-v0.2 is the current version (0.640076ms)
+✔ native mint: raw supply 0 is kept but labelled not tracked; shares stay UNAVAILABLE with the precise reason (0.914566ms)
+✔ ordinary mints: shares are computed as before and the raw sample is reported alongside (1.171293ms)
+✔ the exception is a versioned, narrow policy object (0.870441ms)
+✔ classic native mint on mainnet and devnet: S1.10 is NOT_APPLICABLE with the raw supply kept, and nothing else is waived (5.092945ms)
+✔ the exception does not apply to anything else: ordinary zero supply, contradictions, Token-2022 and fixtures still FAIL (2.069662ms)
+✔ the aggregate re-derives the exception from the subject: a caller-asserted NOT_APPLICABLE is never accepted (0.448728ms)
+✔ two providers: agreement on the native mint passes S1.12, disagreement still FAILs it (0.597667ms)
+✔ two endpoints of one operator are not independent: S1.12 stays SKIP (0.317813ms)
+✔ wrong network: a System-owned address says it is not a mint on this network, keeping the machine-readable reason (0.431856ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 631.871604
+exit 0

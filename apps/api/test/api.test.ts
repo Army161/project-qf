@@ -151,13 +151,14 @@ test('an endpoint serving the wrong network is rejected by genesis hash before a
 });
 
 test('a successful live read from two providers passes Stage 1 but stays FAIL while Stage 2/3 evidence is missing', async () => {
-  const r = await start({ eps: endpoints('rpc-a.example.test', 'rpc-b.example.test') });
+  // Independence is counted by operator (inspection-v0.2), so the two fakes use different domains.
+  const r = await start({ eps: endpoints('rpc.provider-a.test', 'rpc.provider-b.test') });
   const { token } = r.store.createUser('u');
   try {
     const v: InspectionView = (await call(r, token, 'POST', '/api/inspections', { mint: LIVE_MINT, cluster: 'mainnet-beta' })).json;
     assert.deepEqual(v.reads.map((x) => [x.provider, x.method, x.status, x.slot, x.genesisVerified]), [
-      ['rpc-a.example.test', 'getAccountInfo', 'OK', '321', true], ['rpc-b.example.test', 'getAccountInfo', 'OK', '321', true],
-      ['rpc-a.example.test', 'getTokenLargestAccounts', 'OK', '321', true]]);
+      ['rpc.provider-a.test', 'getAccountInfo', 'OK', '321', true], ['rpc.provider-b.test', 'getAccountInfo', 'OK', '321', true],
+      ['rpc.provider-a.test', 'getTokenLargestAccounts', 'OK', '321', true]]);
     for (const id of ['IN.1', 'S1.1', 'S1.12', 'S1.8', 'S1.9']) assert.equal(v.inspection.checks.find((c) => c.id === id)!.decision, 'PASS', id);
     assert.equal(v.inspection.aggregate.decision, 'FAIL');
     assert.ok(v.inspection.aggregate.reasons.some((x) => x.startsWith('REQUIRED_CHECK_MISSING S3')));
@@ -313,4 +314,52 @@ test('fixture mints are labelled synthetic and the fixture set covers the extens
   assert.ok(Object.keys(FIXTURE_MINTS).includes(QUSD));
   assert.ok(Object.values(FIXTURE_MINTS).some((f) => f.extensions?.some((x) => x.type === 14)));
   assert.ok(Object.values(FIXTURE_MINTS).some((f) => f.disagreeOnB));
+});
+
+test('planning drafts: a stale or failed report can be saved, with its original references and prominent labels, and nothing is refreshed', async () => {
+  const r = await start();
+  const { token } = r.store.createUser('u');
+  try {
+    const insp: InspectionView = (await call(r, token, 'POST', '/api/inspections', { mint: QUSD, cluster: 'test-only' })).json;
+    r.clock.t += (STALE_AFTER_SECONDS + 60) * 1000;
+    const res = await call(r, token, 'POST', '/api/drafts', draftFor(insp));
+    assert.equal(res.status, 201);
+    const d: DraftView = res.json;
+    assert.deepEqual(d.basis, { reportDigest: insp.reportDigest, observedAt: insp.createdAt, decision: insp.inspection.aggregate.decision,
+      label: 'TEST_ONLY_FIXTURE', freshnessAtSave: 'STALE', ageSecondsAtSave: STALE_AFTER_SECONDS + 60, policies: insp.policies });
+    for (const l of ['PLANNING_DRAFT', 'EVIDENCE_STALE_AT_SAVE', 'EVIDENCE_STALE_NOW', `INSPECTION_${insp.inspection.aggregate.decision}`, 'TEST_ONLY_EVIDENCE']) {
+      assert.ok(d.labels.includes(l), `label ${l} in ${d.labels.join(',')}`);
+    }
+    assert.match(d.notice, /does not refresh evidence/);
+    assert.match(d.notice, /not consent/);
+    // Saving never ran or substituted a new inspection.
+    assert.deepEqual((await call(r, token, 'GET', '/api/inspections')).json.inspections.map((x: { id: string }) => x.id), [insp.id]);
+    assert.equal(d.inspectionId, insp.id);
+  } finally { await stop(r); }
+});
+
+test('editing a planning draft keeps the policies and evidence basis it was saved under; it does not re-consent', async () => {
+  const r = await start();
+  const { token, user } = r.store.createUser('u');
+  try {
+    const insp: InspectionView = (await call(r, token, 'POST', '/api/inspections', { mint: QUSD, cluster: 'test-only' })).json;
+    const old = { ...currentPolicyRefs(), features: 'features-v0.1', inspection: 'inspection-v0.1' };
+    const t = new Date(r.clock.t).toISOString();
+    const basis = { reportDigest: insp.reportDigest, observedAt: insp.createdAt, decision: insp.inspection.aggregate.decision, label: insp.label,
+      freshnessAtSave: 'FRESH' as const, ageSecondsAtSave: 0, policies: insp.policies };
+    const d = r.store.insertDraft(user.id, { ...(draftFor(insp) as unknown as DraftInput), version: 1, status: 'DRAFT', createdAt: t, updatedAt: t,
+      inspectionDigest: insp.reportDigest, inspectionDecision: insp.inspection.aggregate.decision, policyRefs: old, basis });
+    r.clock.t += 5000;
+    const u = await call(r, token, 'PUT', `/api/drafts/${d.id}`, { ...draftFor(insp, { name: 'Renamed plan' }), expectedVersion: 1 });
+    assert.equal(u.status, 200);
+    assert.deepEqual(u.json.policyRefs, old);
+    assert.deepEqual(u.json.basis, basis);
+    assert.equal(u.json.policyStale, true);
+    assert.deepEqual(u.json.policyChanges, ['inspection', 'features']);
+    assert.ok(u.json.labels.includes('POLICY_CHANGED'));
+    // A draft stored before the basis existed reads back with an explicit label instead of a guess.
+    const legacy = r.store.insertDraft(user.id, { ...(draftFor(insp) as unknown as DraftInput), version: 1, status: 'DRAFT', createdAt: t, updatedAt: t,
+      inspectionDigest: insp.reportDigest, inspectionDecision: 'FAIL', policyRefs: old });
+    assert.ok((await call(r, token, 'GET', `/api/drafts/${legacy.id}`)).json.labels.includes('BASIS_NOT_RECORDED'));
+  } finally { await stop(r); }
 });

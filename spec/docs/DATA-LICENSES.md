@@ -20,7 +20,8 @@ The Asset Graph is strategic IP. Data whose terms forbid storage or derivative u
 | Issuer first-party pages | OPEN_PERMISSIVE (facts: mint address) | Mint addresses are facts; store URL + hash, not page copy |
 | Jupiter APIs | LIVE_ONLY (gated) | License agreement restrictions (ADR-005) |
 | GitHub REST API | UNREVIEWED | GitHub API terms review pending |
-| Birdeye / DEX Screener / CoinGecko / Helius / Bitquery / Dune | UNREVIEWED | Not integrated until contract review |
+| Helius standard RPC (Free plan) | ONCHAIN_PUBLIC (raw RPC reads only) | Selected provider B (D2, 2026-10-03). Reviewer cited the Helius Cloud Services Agreement §3.1 (integration into customer products); agreement version/date NOT yet recorded or verified by QF. Scope: genesis, getAccountInfo, getTokenLargestAccounts for inspections; stored only inside digest-bound inspection reports for audit. Not approved for resale, enrichment caching, competing API services or unlimited retention. Key is server-side only (`QF_HELIUS_API_KEY`). |
+| Birdeye / DEX Screener / CoinGecko / Helius DAS and other Helius APIs / Bitquery / Dune | UNREVIEWED | Not integrated until contract review |
 | Social / news | UNREVIEWED | Prefer derived counts over raw text |
 
 ## 3. Enforcement

@@ -1,0 +1,153 @@
+{
+  "at": "2026-10-03T21:47:23.060Z",
+  "providers": {
+    "mainnet-beta": [
+      {
+        "id": "api.mainnet.solana.com",
+        "operator": "solana-public",
+        "prefer": [],
+        "authenticated": false
+      }
+    ],
+    "devnet": [
+      {
+        "id": "api.devnet.solana.com",
+        "operator": "solana-public",
+        "prefer": [],
+        "authenticated": false
+      }
+    ]
+  },
+  "rows": [
+    {
+      "cluster": "mainnet-beta",
+      "provider": "api.mainnet.solana.com",
+      "operator": "solana-public",
+      "authenticated": false,
+      "method": "getGenesisHash",
+      "mint": null,
+      "status": "OK",
+      "reason": null,
+      "slot": null,
+      "ms": 317,
+      "detail": "genesis matches mainnet-beta"
+    },
+    {
+      "cluster": "mainnet-beta",
+      "provider": "api.mainnet.solana.com",
+      "operator": "solana-public",
+      "authenticated": false,
+      "method": "getAccountInfo",
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "status": "OK",
+      "reason": null,
+      "slot": "453058637",
+      "ms": 87,
+      "detail": "owner TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+    },
+    {
+      "cluster": "mainnet-beta",
+      "provider": "api.mainnet.solana.com",
+      "operator": "solana-public",
+      "authenticated": false,
+      "method": "getTokenLargestAccounts",
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "status": "UNAVAILABLE",
+      "reason": "RATE_LIMITED (HTTP 429)",
+      "slot": null,
+      "ms": 88,
+      "detail": null
+    },
+    {
+      "cluster": "mainnet-beta",
+      "provider": "api.mainnet.solana.com",
+      "operator": "solana-public",
+      "authenticated": false,
+      "method": "getAccountInfo",
+      "mint": "So11111111111111111111111111111111111111112",
+      "status": "OK",
+      "reason": null,
+      "slot": "453058638",
+      "ms": 284,
+      "detail": "owner TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+    },
+    {
+      "cluster": "mainnet-beta",
+      "provider": "api.mainnet.solana.com",
+      "operator": "solana-public",
+      "authenticated": false,
+      "method": "getTokenLargestAccounts",
+      "mint": "So11111111111111111111111111111111111111112",
+      "status": "UNAVAILABLE",
+      "reason": "RATE_LIMITED (HTTP 429)",
+      "slot": null,
+      "ms": 1253,
+      "detail": null
+    },
+    {
+      "cluster": "devnet",
+      "provider": "api.devnet.solana.com",
+      "operator": "solana-public",
+      "authenticated": false,
+      "method": "getGenesisHash",
+      "mint": null,
+      "status": "OK",
+      "reason": null,
+      "slot": null,
+      "ms": 1316,
+      "detail": "genesis matches devnet"
+    },
+    {
+      "cluster": "devnet",
+      "provider": "api.devnet.solana.com",
+      "operator": "solana-public",
+      "authenticated": false,
+      "method": "getAccountInfo",
+      "mint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+      "status": "OK",
+      "reason": null,
+      "slot": "507138719",
+      "ms": 191,
+      "detail": "owner TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+    },
+    {
+      "cluster": "devnet",
+      "provider": "api.devnet.solana.com",
+      "operator": "solana-public",
+      "authenticated": false,
+      "method": "getTokenLargestAccounts",
+      "mint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+      "status": "UNAVAILABLE",
+      "reason": "RATE_LIMITED (HTTP 429)",
+      "slot": null,
+      "ms": 194,
+      "detail": null
+    },
+    {
+      "cluster": "devnet",
+      "provider": "api.devnet.solana.com",
+      "operator": "solana-public",
+      "authenticated": false,
+      "method": "getAccountInfo",
+      "mint": "So11111111111111111111111111111111111111112",
+      "status": "OK",
+      "reason": null,
+      "slot": "507138723",
+      "ms": 629,
+      "detail": "owner TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+    },
+    {
+      "cluster": "devnet",
+      "provider": "api.devnet.solana.com",
+      "operator": "solana-public",
+      "authenticated": false,
+      "method": "getTokenLargestAccounts",
+      "mint": "So11111111111111111111111111111111111111112",
+      "status": "UNAVAILABLE",
+      "reason": "RATE_LIMITED (HTTP 429)",
+      "slot": null,
+      "ms": 393,
+      "detail": null
+    }
+  ]
+}

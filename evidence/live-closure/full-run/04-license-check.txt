@@ -1,0 +1,17 @@
+# cmd: pnpm license:check
+# at: 2026-10-03T21:47:25Z
+
+> project-qf@ license:check /tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf
+> node tools/license-check/check-licenses.ts
+
+{
+  "packages": 161,
+  "tally": {
+    "ALLOW": 134,
+    "NOT_INSTALLED": 25,
+    "ALLOW_EXCEPTION": 2
+  },
+  "failures": [],
+  "reviewRequired": []
+}
+# exit: 0

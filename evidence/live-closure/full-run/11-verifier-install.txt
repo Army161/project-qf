@@ -1,0 +1,13 @@
+# cmd: pnpm install --frozen-lockfile --ignore-scripts
+# at: 2026-10-03T21:47:45Z
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +9
++++++++++
+Progress: resolved 9, reused 9, downloaded 0, added 9, done
+
+dependencies:
++ @solana/addresses 8.3.0
+
+Done in 350ms using pnpm v10.33.0
+# exit: 0

@@ -1,12 +1,14 @@
 // CLI for the private read-only API.
 //   node src/main.ts create-user <name>   prints a new bearer token once (only its SHA-256 is stored)
 //   node --use-env-proxy src/main.ts serve  starts the server (127.0.0.1 only)
+//   node --use-env-proxy src/main.ts probe  read-only provider capability probe; prints sanitized JSON rows
 // Configuration (environment): QF_DB_PATH (default ./qf-api.sqlite), QF_PORT (default 8787), QF_STATIC_DIR (default ../web/dist),
-// QF_RPC_MAINNET / QF_RPC_DEVNET: comma-separated https RPC URLs without credentials (defaults: Solana's public endpoints).
-// Two independent mainnet providers are needed for S1.12; with one, S1.12 stays SKIP and the LIVE aggregate cannot pass.
+// QF_RPC_MAINNET / QF_RPC_DEVNET / QF_HELIUS_API_KEY: providers, see config.ts. The Helius key stays server-side and is never printed.
+// Two independent providers per cluster are needed for S1.12; with one, S1.12 stays SKIP and the LIVE aggregate cannot pass.
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { endpointFromUrl, type LiveCluster } from './rpc.ts';
+import { describeEndpoints, endpointsFromEnv } from './config.ts';
+import { probeProviders } from './probe.ts';
 import { createApp } from './server.ts';
 import { Store } from './store.ts';
 
@@ -21,15 +23,19 @@ if (cmd === 'create-user') {
   console.log(JSON.stringify({ user, token, note: 'Shown once. Store it in a password manager; the server keeps only its SHA-256.' }, null, 2));
   store.close();
 } else if (cmd === 'serve') {
-  const list = (v: string | undefined, d: string, c: LiveCluster) => (v ?? d).split(',').map((s) => s.trim()).filter(Boolean).map((u) => endpointFromUrl(u, c));
-  const endpoints = { 'mainnet-beta': list(env.QF_RPC_MAINNET, 'https://api.mainnet.solana.com', 'mainnet-beta'), devnet: list(env.QF_RPC_DEVNET, 'https://api.devnet.solana.com', 'devnet') };
+  const endpoints = endpointsFromEnv(env);
   const staticDir = resolve(env.QF_STATIC_DIR ?? join(here, '..', '..', 'web', 'dist'));
   const port = Number(env.QF_PORT ?? 8787);
   createApp({ store, staticDir, inspect: { endpoints, fetchImpl: (u, i) => fetch(u, i), now: () => new Date() } }).listen(port, '127.0.0.1', () => {
     console.log(JSON.stringify({ listening: `http://127.0.0.1:${port}`, schema: store.schemaVersion(),
-      providers: { 'mainnet-beta': endpoints['mainnet-beta'].map((e) => e.id), devnet: endpoints.devnet.map((e) => e.id) } }));
+      providers: describeEndpoints(endpoints) }));
   });
+} else if (cmd === 'probe') {
+  const endpoints = endpointsFromEnv(env);
+  store.close();
+  const rows = await probeProviders(endpoints, (u, i) => fetch(u, i));
+  console.log(JSON.stringify({ at: new Date().toISOString(), providers: describeEndpoints(endpoints), rows }, null, 2));
 } else {
-  console.error('usage: main.ts create-user <name> | serve');
+  console.error('usage: main.ts create-user <name> | serve | probe');
   process.exitCode = 64;
 }

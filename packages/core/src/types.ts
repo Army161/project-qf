@@ -3,7 +3,12 @@
 export type Chain = 'solana';
 export type Cluster = 'mainnet-beta' | 'devnet' | 'localnet' | 'mock-offline';
 export type Decision = 'PASS' | 'WARN' | 'FAIL';
-export type CheckDecision = Decision | 'SKIP';
+/**
+ * NOT_APPLICABLE (inspection-v0.2, decision D3 2026-10-03) is an evaluated result, not a missing one. The validator aggregate
+ * accepts it only for a check and subject it can re-derive from an approved exception (today: S1.10 on the classic SPL native
+ * mint); anywhere else it is malformed and FAILs. SKIP still means "not performed".
+ */
+export type CheckDecision = Decision | 'SKIP' | 'NOT_APPLICABLE';
 
 /** PRODUCTION providers may feed live validation. TEST_ONLY providers/issuers are synthetic (devnet qUSD etc.). */
 export type ProviderClass = 'PRODUCTION' | 'TEST_ONLY';

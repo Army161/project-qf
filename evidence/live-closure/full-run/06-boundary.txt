@@ -1,0 +1,70 @@
+# cmd: pnpm boundary
+# at: 2026-10-03T21:47:27Z
+
+> project-qf@ boundary /tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf
+> node tools/boundary/check-browser-boundary.ts
+
+{
+  "result": "PASS",
+  "failures": [],
+  "graphPackages": 57,
+  "bundledPackages": [
+    "@noble/hashes",
+    "@solana/accounts",
+    "@solana/addresses",
+    "@solana/assertions",
+    "@solana/codecs",
+    "@solana/codecs-core",
+    "@solana/codecs-data-structures",
+    "@solana/codecs-numbers",
+    "@solana/codecs-strings",
+    "@solana/errors",
+    "@solana/fast-stable-stringify",
+    "@solana/fixed-points",
+    "@solana/functional",
+    "@solana/instruction-plans",
+    "@solana/instructions",
+    "@solana/keys",
+    "@solana/kit",
+    "@solana/offchain-messages",
+    "@solana/options",
+    "@solana/plugin-core",
+    "@solana/programs",
+    "@solana/promises",
+    "@solana/rpc",
+    "@solana/rpc-api",
+    "@solana/rpc-parsed-types",
+    "@solana/rpc-spec",
+    "@solana/rpc-spec-types",
+    "@solana/rpc-subscriptions",
+    "@solana/rpc-subscriptions-api",
+    "@solana/rpc-subscriptions-channel-websocket",
+    "@solana/rpc-subscriptions-spec",
+    "@solana/rpc-transformers",
+    "@solana/rpc-transport-http",
+    "@solana/rpc-types",
+    "@solana/signers",
+    "@solana/subscribable",
+    "@solana/transaction-confirmation",
+    "@solana/transaction-introspection",
+    "@solana/transaction-messages",
+    "@solana/transactions"
+  ],
+  "artifacts": [
+    "app.js",
+    "app.js.map",
+    "index.html",
+    "main.js",
+    "main.js.LEGAL.txt",
+    "main.js.map",
+    "merkle.worker.js",
+    "merkle.worker.js.LEGAL.txt",
+    "merkle.worker.js.map",
+    "meta.json",
+    "mock.html",
+    "styles.css"
+  ],
+  "canaryA": true,
+  "canaryB": true
+}
+# exit: 0

@@ -25,7 +25,7 @@ Aggregate: any FAIL → FAIL; else any WARN → WARN (creator acknowledges each)
 | S1.7 | TokenBadge | Badge PDA (`deriveTokenBadgeAddress`) exists for mint; absent → FAIL (`reason: requires Meteora TokenBadge`) |
 | S1.8 | Freeze authority | None → PASS. Present: issuer allowlisted (`CANONICAL-ASSETS.md` §4) → WARN with disclosure; **not allowlisted → FAIL** |
 | S1.9 | Mint authority | None → PASS. Present: allowlisted issuer → WARN; **not allowlisted → FAIL** |
-| S1.10 | Supply | 0 → FAIL |
+| S1.10 | Supply | 0 → FAIL. **Exception (D3, 2026-10-03):** the classic SPL native mint `So11…112` on a genesis-verified mainnet/devnet, owned by SPL Token, initialized, 9 decimals, no mint/freeze authority, no extensions → NOT_APPLICABLE `NATIVE_MINT_SUPPLY_NOT_TRACKED` (raw 0 kept; see §inspection-v0.2) |
 | S1.11 | Metadata | Recorded, sanitized, never identity; mismatch with registry → WARN |
 | S1.12 | Two-RPC agreement | Authorities/extensions differ between providers → FAIL (retry once) |
 
@@ -127,3 +127,10 @@ The private read-only inspector evaluates a quote mint from raw `getAccountInfo`
 - **Stage 2** has an empty registry. S2.1 is FAIL on mainnet and WARN elsewhere (§6). S2.4 is WARN (unknown). The rest are SKIP with their missing source named.
 - **Stage 3** is SKIP throughout, with the missing source named. The raw largest-account share is reported as a feature, not as S3.4, because program-owned accounts are not excluded yet.
 - **Aggregate.** In LIVE mode a missing or SKIP required check FAILs the aggregate, so missing evidence can never produce PASS. TEST_ONLY results are capped at WARN.
+
+### inspection-v0.2 amendments (2026-10-03, live-acceptance closure; decisions D2, D3, D6)
+- **S1.10 native-mint exception.** NOT_APPLICABLE is an evaluated result with its own decision value, evidence and the policy reference `qf-exception-S1.10-classic-native-mint-v1` (`packages/validator/src/exceptions.ts`). The aggregate accepts it only for S1.10 and only after re-deriving every condition from the observed subject; a caller-asserted NOT_APPLICABLE, one on any other check, or one whose conditions are contradicted FAILs as `INVALID_NOT_APPLICABLE`. Ordinary zero supply, the Token-2022 native mint, fixtures and any contradiction (decimals, authorities, owner, extensions, cluster) keep the 0 → FAIL rule. It is supply semantics only: S2.1 registry admission and every other gate are unchanged, and required SKIP is still missing.
+- **Features for the native mint.** `supply_raw` stays 0 with the label NATIVE_MINT_SUPPLY_NOT_TRACKED; supply-normalized shares are UNAVAILABLE with that reason. Nothing is divided by it and no SOL supply is substituted.
+- **S1.12 independence.** Counted by operator, not endpoint: two URLs or keys of one operator give SKIP `NOT_INDEPENDENT`.
+- **Largest accounts.** Raw token-account sample only (top token accounts, not owners, program accounts not excluded); never S3.4. Routed to the provider that prefers the method first, then the others, one attempt each, failures kept.
+- **Wrong network.** A System-owned address FAILs S1.1 with `NOT_TOKEN_PROGRAM_OWNED …` plus "not a mint on this network; check the network".

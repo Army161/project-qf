@@ -1,0 +1,140 @@
+# cmd: pnpm audit --prod --json
+# at: 2026-10-03T21:47:42Z
+{
+  "actions": [],
+  "advisories": {
+    "1103747": {
+      "findings": [
+        {
+          "version": "1.1.5",
+          "paths": [
+            "packages__adapter-meteora-dbc>@meteora-ag/cp-amm-sdk>@solana/spl-token>@solana/buffer-layout-utils>bigint-buffer"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://nvd.nist.gov/vuln/detail/CVE-2025-3194\n- https://security.snyk.io/vuln/SNYK-JS-BIGINTBUFFER-3364597\n- https://www.usenix.org/system/files/sec23fall-prepub-262_staicu.pdf\n- https://github.com/no2chem/bigint-buffer/blob/master/src/index.ts#L25\n- https://github.com/advisories/GHSA-3gc7-fjrx-p6mg",
+      "created": "2025-04-04T06:34:22.000Z",
+      "id": 1103747,
+      "npm_advisory_id": null,
+      "overview": "Versions of the package bigint-buffer from 0.0.0 to 1.1.5 are vulnerable to Buffer Overflow in the toBigIntLE() function. Attackers can exploit this to crash the application.",
+      "reported_by": null,
+      "title": "bigint-buffer Vulnerable to Buffer Overflow via toBigIntLE() Function",
+      "metadata": null,
+      "cves": [
+        "CVE-2025-3194"
+      ],
+      "access": "public",
+      "severity": "high",
+      "module_name": "bigint-buffer",
+      "vulnerable_versions": "<=1.1.5",
+      "github_advisory_id": "GHSA-3gc7-fjrx-p6mg",
+      "recommendation": "None",
+      "patched_versions": "<0.0.0",
+      "updated": "2025-04-04T18:23:46.000Z",
+      "cvss": {
+        "score": 7.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "cwe": [
+        "CWE-120"
+      ],
+      "url": "https://github.com/advisories/GHSA-3gc7-fjrx-p6mg"
+    },
+    "1119441": {
+      "findings": [
+        {
+          "version": "8.3.2",
+          "paths": [
+            "packages__adapter-meteora-dbc>@solana/web3.js>jayson>uuid"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/uuidjs/uuid/security/advisories/GHSA-w5hq-g745-h8pq\n- https://github.com/uuidjs/uuid/commit/3d2c5b0342f0fcb52a5ac681c3d47c13e7444b34\n- https://github.com/uuidjs/uuid/releases/tag/v14.0.0\n- https://nvd.nist.gov/vuln/detail/CVE-2026-41907\n- https://github.com/uuidjs/uuid/commit/32389c887c9e75f90442ee4cc95bbab0c4e8346e\n- https://github.com/uuidjs/uuid/commit/3d61d6ac1f782cf6b1dd8661c60f11722cd49a0d\n- https://github.com/uuidjs/uuid/commit/9d27ddf7046ce496ef39569ff84d948eeff9cb2a\n- https://github.com/uuidjs/uuid/releases/tag/v11.1.1\n- https://github.com/uuidjs/uuid/releases/tag/v12.0.1\n- https://github.com/uuidjs/uuid/releases/tag/v13.0.1\n- https://github.com/advisories/GHSA-w5hq-g745-h8pq",
+      "created": "2026-04-22T20:53:24.000Z",
+      "id": 1119441,
+      "npm_advisory_id": null,
+      "overview": "### Summary\n\nThe `v3()`, `v5()`, and `v6()` [API methods](https://github.com/uuidjs/uuid#api-summary) (not `uuid` release versions) accept external output buffers but do not reject out-of-range writes (small `buf` or large `offset`).  \nBy contrast, `v4()`, `v1()`, and `v7()` API methods explicitly throw `RangeError` on invalid bounds.\n\nThis inconsistency allows **silent partial writes** into caller-provided buffers.\n\n\n### Affected code\n\n- `src/v35.ts` (`v3()`/`v5()` path) writes `buf[offset + i]` without bounds validation.\n- `src/v6.ts` writes `buf[offset + i]` without bounds validation.\n\n### Reproducible PoC\n\n```bash\ncd /home/StrawHat/uuid\nnpm ci\nnpm run build\n\nnode --input-type=module -e \"\nimport {v4,v5,v6} from './dist-node/index.js';\nconst ns='6ba7b810-9dad-11d1-80b4-00c04fd430c8';\nfor (const [name,fn] of [\n  ['v4()',()=>v4({},new Uint8Array(8),4)],\n  ['v5()',()=>v5('x',ns,new Uint8Array(8),4)],\n  ['v6()',()=>v6({},new Uint8Array(8),4)],\n]) {\n  try { fn(); console.log(name,'NO_THROW'); }\n  catch(e){ console.log(name,'THREW',e.name); }\n}\"\n```\n\nObserved:\n\n- `v4() THREW RangeError`\n- `v5() NO_THROW`\n- `v6() NO_THROW`\n\nExample partial overwrite evidence captured during audit:\n\n```text\nsame true buf [\n  170, 170, 170, 170,\n   75, 224, 100,  63\n]\nv6 [\n  187, 187, 187, 187,\n   31,  19, 185,  64\n]\n```\n\n### Security impact\n\n- **Primary**: integrity/robustness issue (silent partial output).\n- If an application assumes full UUID writes into preallocated buffers, this can produce malformed/truncated/partially stale identifiers without error.\n- In systems where caller-controlled offsets/buffer sizes are exposed indirectly, this may become a security-relevant logic flaw.\n\n### Suggested fix\n\nAdd the same guard used by `v4()`/`v1()`/`v7()`:\n\n```ts\nif (offset < 0 || offset + 16 > buf.length) {\n  throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);\n}\n```\n\nApply to:\n\n- `src/v35.ts` (covers `v3()` and `v5()`)\n- `src/v6.ts`",
+      "reported_by": null,
+      "title": "uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-41907"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "uuid",
+      "vulnerable_versions": "<11.1.1",
+      "github_advisory_id": "GHSA-w5hq-g745-h8pq",
+      "recommendation": "Upgrade to version 11.1.1 or later",
+      "patched_versions": ">=11.1.1",
+      "updated": "2026-05-21T18:25:57.000Z",
+      "cvss": {
+        "score": 7.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+      },
+      "cwe": [
+        "CWE-787",
+        "CWE-1285"
+      ],
+      "url": "https://github.com/advisories/GHSA-w5hq-g745-h8pq"
+    },
+    "1164823": {
+      "findings": [
+        {
+          "version": "1.9.1",
+          "paths": [
+            "packages__adapter-meteora-dbc>@solana/web3.js>jayson>stream-json"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/uhop/stream-json/security/advisories/GHSA-528h-pc64-c93x\n- https://github.com/uhop/stream-json/commit/a869fb98aaef9225556f49901a8f55954ff856e6\n- https://github.com/advisories/GHSA-528h-pc64-c93x",
+      "created": "2026-09-03T20:27:53.000Z",
+      "id": 1164823,
+      "npm_advisory_id": null,
+      "overview": "## Description\n\nThe path filters `pick`, `ignore`, `filter`, and `replace` — the library's headline \"surgical extraction\" feature — recompute the full path string from the nesting stack on **every checkable token**. Because the stack length equals the current nesting depth, and a checkable token is emitted at every level, processing a document of depth *D* costs **O(D²)**, not O(D).\n\nThis is triggered by document **structure (nesting depth), not byte volume**, so a tiny payload achieves outsized CPU cost, and it is the ordinary \"traverse until the filter matches\" path — including the exact README flagship example `pick({filter: 'data'})`. Any service that uses these filters to extract a field from an untrusted (or larger-than-memory) JSON body — the primary documented use case — can be made to block its event loop.\n\n### Affected code (v3.4.0)\n\n`src/core/filters/filter-base.js`:\n\n```js\n// L26-32 — string filter: rejoins the ENTIRE stack on every call\nconst stringFilter = (string, separator) => {\n  const stringWithSeparator = string + separator;\n  return stack => {\n    const path = stack.join(separator);              // O(depth) — every call\n    return path === string || path.startsWith(stringWithSeparator);\n  };\n};\n\n// L34-39 — regexp filter: same\nconst regExpFilter = (regExp, separator) => {\n  return stack => {\n    regExp.lastIndex = 0;\n    return regExp.test(stack.join(separator));       // O(depth) — every call\n  };\n};\n```\n\n```js\n// L194 — filter(stack, chunk) is invoked for EVERY checkable token while in the 'check' state\nconst action = checkableTokens[chunk.name] !== 1 ? nonCheckableAction : filter(stack, chunk) ? specialAction : defaultAction;\n```\n\n`stack` is pushed/popped on `startObject`/`startArray`/end (L239-250), so `stack.length === depth`. For a depth-*D* document that hasn't matched yet, `filter()` runs once per level and each call is O(depth) ⇒ **O(D²)** total.\n\n**Not affected:** the `streamArray`/`streamObject`/`streamValues` streamers use `asm.depth` (an O(1) getter), so they don't exhibit this. The issue is specific to `filter-base.js` recomputing the path string.\n\n## Proof of concept\n\n```\nnpm i stream-json@3.4.0\nnode poc-quadratic-dos.mjs\n```\n\n```js\nimport parserStream from 'stream-json';\nimport { pick } from 'stream-json/filters/pick.js';\nimport chain from 'stream-chain';\n\nfunction run(D) {\n  const doc = '{\"meta\":'.repeat(D) + '1' + '}'.repeat(D); // depth D, never matches \"data\"\n  return new Promise((resolve) => {\n    const t0 = process.hrtime.bigint();\n    const pipeline = chain([parserStream(), pick({ filter: 'data' })]);\n    pipeline.on('data', () => {});\n    pipeline.on('end', () => resolve({ D, bytes: doc.length, ms: Number(process.hrtime.bigint() - t0) / 1e6 }));\n    pipeline.write(doc); pipeline.end();\n  });\n}\nfor (const D of [5000, 10000, 20000, 40000]) {\n  const r = await run(D);\n  console.log(`D=${r.D}  bytes=${r.bytes}  ms=${Math.round(r.ms)}`);\n}\n```\n\nMeasured (Node v24, single core, clean `npm i stream-json@3.4.0`):\n\n```\nD=5000    bytes= 45001   ms=  160\nD=10000   bytes= 90001   ms=  603   (3.8x for 2x input  -> quadratic)\nD=20000   bytes=180001   ms= 2511   (4.2x)\nD=40000   bytes=360001   ms=11823   (4.7x)\n```\n\nA **~360 KB** body (pure nesting, no data) blocks the event loop for **~12 seconds**; extrapolating O(D²), ~1–2 MB reaches single-digit minutes of CPU on one request.\n\n## Impact\n\nRemote, unauthenticated denial of service against any application that runs untrusted JSON through `pick`/`ignore`/`filter`/`replace` with a string or RegExp filter — the documented primary use of the library. A small request pins a CPU core / blocks the Node event loop, degrading or halting the service.\n\n## Suggested fix\n\nMaintain the joined path incrementally instead of rejoining the whole stack per token:\n- On `startObject`/`startArray` push: append `separator + key` to a cached path string (and remember the pre-push length).\n- On end/pop: truncate the cached path back to the remembered length.\n- Filters test/`startsWith` against the cached string — O(1) amortized per token, making the whole traversal O(D).\n\nAlternatively expose/enforce a maximum nesting depth for the filter path check.\n\n## Resolution\n\nFixed in 3.5.0. The path filters now cap JSON nesting depth at 1024 by default and throw a RangeError beyond it; upgrading is enough. Opt out with `maxDepth: Infinity`.",
+      "reported_by": null,
+      "title": "stream-json: pick/ignore/filter/replace filters are O(depth²) on nested input — small crafted JSON blocks the event loop for seconds→minutes (DoS)",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-71429"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "stream-json",
+      "vulnerable_versions": "<=3.4.0",
+      "github_advisory_id": "GHSA-528h-pc64-c93x",
+      "recommendation": "Upgrade to version 3.5.0 or later",
+      "patched_versions": ">=3.5.0",
+      "updated": "2026-09-03T20:27:54.000Z",
+      "cvss": {
+        "score": 6.2,
+        "vectorString": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "cwe": [
+        "CWE-407"
+      ],
+      "url": "https://github.com/advisories/GHSA-528h-pc64-c93x"
+    }
+  },
+  "muted": [],
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 2,
+      "high": 1,
+      "critical": 0
+    },
+    "dependencies": 145,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 145
+  }
+}
+# exit: 1

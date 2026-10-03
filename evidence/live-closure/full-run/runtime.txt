@@ -1,0 +1,7 @@
+node v22.22.0
+pnpm 10.33.0 (via corepack)
+lockfile sha256 f5c8d2e908297ad6dd140ba72ba2c42ee1716690f7e80b97093b95f4b36bc42b
+verifier lockfile sha256 2f6e28dd734d09a6fe2fe50164521f3504f0bd515ff01c4c9380dbdb03558a18
+git base 87cb8db + the live-closure working tree (committed right after this run)
+node_modules removed before 01-install; verifier installed and tested in a copy of spec/tools/program-verify
+secret-free env -i wrapper: HOME PATH LANG TZ NODE_EXTRA_CA_CERTS SSL_CERT_FILE only

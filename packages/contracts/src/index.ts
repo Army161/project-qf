@@ -15,6 +15,7 @@ export interface InspectionRequest { mint: string; cluster: RequestCluster }
 
 export interface ProviderRead {
   provider: string;                 // host only
+  operator: string;                 // who runs the provider (independence is counted by operator)
   providerClass: 'PRODUCTION' | 'TEST_ONLY';
   method: string;                   // e.g. getAccountInfo
   status: 'OK' | 'NOT_FOUND' | 'UNAVAILABLE';
@@ -68,9 +69,27 @@ export interface Draft extends DraftInput {
   inspectionDigest: string;         // reportDigest of the referenced inspection when the draft was saved
   inspectionDecision: string;       // aggregate decision at save time, for display only
   policyRefs: PolicyRefs;
+  basis?: DraftBasis;               // absent only on drafts saved before 2026-10-03 (reads back labelled BASIS_NOT_RECORDED)
 }
-/** Draft as read back: `policyStale` is true when the current policies differ from the ones the draft was saved under. */
-export interface DraftView extends Draft { policyStale: boolean; policyChanges: string[] }
+/**
+ * The evidence a planning draft was saved against, copied from the linked report at save time and never refreshed by later
+ * saves (decision D6). A stale or failed report may back a planning draft; saving is not revalidation and not consent.
+ */
+export interface DraftBasis {
+  reportDigest: string;
+  observedAt: string;               // the report's createdAt
+  decision: string;                 // aggregate decision of that report
+  label: InspectionReport['label'];
+  freshnessAtSave: 'FRESH' | 'STALE';
+  ageSecondsAtSave: number;
+  policies: InspectionReport['policies'];
+}
+export const PLANNING_DRAFT_NOTICE = 'Planning draft only. Saving does not refresh evidence and is not consent: a new inspection and explicit confirmation are required before any launch step.';
+/**
+ * Draft as read back: `policyStale` is true when the current policies differ from the ones the draft was saved under;
+ * `labels` always include PLANNING_DRAFT plus every caveat that applies (stale or failed evidence, changed policies).
+ */
+export interface DraftView extends Draft { policyStale: boolean; policyChanges: string[]; labels: string[]; notice: string }
 
 export interface ApiError { error: { code: string; message: string; details?: string[] } }
 

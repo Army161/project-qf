@@ -45,9 +45,12 @@ code { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-w
 .pill.d-WARN, .pill.d-SKIP, .pill.s-NOT_FOUND, .pill.s-UNAVAILABLE, .pill.stale { color: var(--warn); }
 .pill.d-FAIL { color: var(--fail); }
 .pill.d-SKIP { color: var(--muted); }
+.pill.d-NOT_APPLICABLE, .pill.planning { color: var(--muted); font-style: italic; }
+.labels .pill { margin-right: 4px; }
 .pill.live { color: var(--ok); }
 .pill.test-only { color: var(--mock); background: var(--mock-bg); }
 .notice { padding: 8px 10px; border-radius: 6px; margin: 0 0 8px; }
+.notice.planning { border: 1px dashed var(--muted); }
 .notice.test-only { background: var(--mock-bg); color: var(--mock); border: 1px solid var(--mock); font-weight: 600; }
 dl.meta, dl.compact { margin: 8px 0; font-size: 13px; }
 .scroll { overflow-x: auto; }

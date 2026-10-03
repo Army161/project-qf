@@ -20,8 +20,10 @@ export const READINESS: Readonly<Record<Stage, Readonly<StageRecord>>> = f({
     status: 'BLOCKED',
     scope: 'read-only verifier (tools/program-verify 0.4.0) against genesis-validated mainnet and devnet public RPC plus verify.osec.io; evidence COLLECTION is authorized on the owner\'s own computer and network (decision 2026-09-27); no wallet, key, airdrop, simulation, transaction or attestation',
     blockers: f([
-      'RO-1 owner-network run not yet returned: the cloud sandbox denies Solana RPC hosts (403), so no live evidence exists; collection is authorized, success is not assumed',
-      'RO-2 live Customizable config values unverified: the authority and Dynamic-type rules are CONFIRMED_FOR_PINNED_SOURCE and the authority PDA is CONFIRMED_OFFLINE, but the deployed account must still be read',
+      'RO-1 single-provider live run exists (2026-10-03, owner-configured cloud environment, verifier exit 0, 86/86 inventory); the stage decision is the owner\'s, not inferred from that exit code',
+      'RO-2 live Customizable config read on mainnet and devnet 2026-10-03 (CONFIG_COMPATIBILITY PASS); re-read before any later stage because both programs are upgradeable',
+      'RO-4 second-provider CROSS_CHECK for program state not yet run: the verifier has no protected secret-input path for an authenticated second provider, so an exit 0 without --mainnet2 is single-provider evidence',
+      'RO-5 source/build provenance UNKNOWN per cluster: OtterSec is_verified=false is not a mismatch; no upstream or independent reproducible source-linked artifact obtained; QF local building stays behind LOCAL-1',
       'RO-3 a complete, exit-0 report is evidence for this stage only; it is not LOCALNET, DEVNET or MAINNET readiness',
     ]),
   }),

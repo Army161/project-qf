@@ -1,0 +1,7 @@
+# cmd (copy of spec/tools/program-verify, dependency-backed, @solana/addresses 8.3.0 from the frozen lockfile): node --use-env-proxy verify-programs.mjs --mainnet https://api.mainnet.solana.com --devnet https://api.devnet.solana.com --out <evidence/live-closure/program-verify>
+# env added inside the secret-free wrapper: HTTPS_PROXY=<local agent proxy>; no --mainnet2 (no protected secret-input path for an authenticated second provider, see RO-4)
+# at: 2026-10-03T21:46:09Z
+(node:2763) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+wrote /tmp/claude-0/-home-user/a044754b-d069-5c76-9e45-868fc907e500/scratchpad/run/project-qf/evidence/live-closure/program-verify/PROGRAM-VERIFICATION-2026-10-03.md and .json (exit 0)
+# exit: 0

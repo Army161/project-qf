@@ -154,7 +154,7 @@ function showReport(v: InspectionView) {
       r.provider, r.method, badge(r.status, `s-${r.status}`), r.slot ?? 'n/a',
       r.genesisVerified === null ? 'n/a (fixture)' : r.genesisVerified ? 'genesis hash matched' : 'no', when(r.observedAt), r.reason ?? '',
     ]), 'reads'),
-    h('h3', {}, `Checks (${v.inspection.coverage.evaluated} evaluated, ${v.inspection.coverage.skipped} skipped of ${v.inspection.coverage.total})`),
+    h('h3', {}, `Checks (${v.inspection.coverage.evaluated} evaluated${v.inspection.coverage.notApplicable ? `, ${v.inspection.coverage.notApplicable} of them not applicable by an approved exception` : ''}, ${v.inspection.coverage.skipped} skipped of ${v.inspection.coverage.total})`),
     ...STAGES.map(([prefix, title]) => {
       const rows = checks.filter((c) => c.id.startsWith(prefix));
       return rows.length ? h('div', { class: 'stage', 'data-stage': prefix.replace('.', '') }, h('h4', {}, title),
@@ -193,12 +193,15 @@ function showDraftForm() {
     ['Checked against', h('span', {}, h('code', {}, short(current.id)), ' ', decisionBadge(current.inspection.aggregate.decision), current.label === 'TEST_ONLY_FIXTURE' ? ' TEST_ONLY' : '')],
   ];
   if (draft) {
+    rows.push(['Planning status', h('span', { class: 'labels' }, ...draft.labels.map((l) => badge(l, l === 'PLANNING_DRAFT' ? 'planning' : 'stale')))]);
+    if (draft.basis) rows.push(['Evidence basis', `report ${draft.basis.reportDigest.slice(0, 12)}… read ${when(draft.basis.observedAt)}, ${draft.basis.decision}, ${draft.basis.freshnessAtSave} when saved (${draft.basis.ageSecondsAtSave} s old)`]);
     rows.push(['Saved', `${when(draft.updatedAt)} (created ${when(draft.createdAt)})`]);
     rows.push(['Policies at save', `${draft.policyRefs.economics.version} (${draft.policyRefs.economics.digest.slice(0, 12)}…), ${draft.policyRefs.template.version}, ${draft.policyRefs.validator}, ${draft.policyRefs.inspection}, ${draft.policyRefs.features}`]);
     rows.push(['Policy status', draft.policyStale ? badge(`POLICY CHANGED: ${draft.policyChanges.join(', ')}`, 'stale') : badge('current', 'fresh')]);
     if (draft.inspectionId !== current.id) rows.push(['Note', 'This draft is linked to a different inspection than the one shown. Saving re-links it to the inspection shown.']);
   }
   byId('draft-bind').replaceChildren(...rows.flatMap(([k, v]) => [h('dt', {}, k), h('dd', {}, v)]));
+  byId('draft-notice').textContent = draft ? draft.notice : 'Drafts are planning records. Saving does not refresh evidence and is not consent to launch.';
   byId('draft-card').dataset.draftId = draft?.id ?? '';
   byId('draft-card').dataset.version = draft ? String(draft.version) : '';
 }
@@ -243,7 +246,8 @@ async function refreshLists() {
       const b = h('button', { type: 'button', class: 'link', 'data-draft-id': x.id }, `${x.name} (${x.symbol})`);
       b.addEventListener('click', () => { void openDraft(x.id); });
       return h('li', { 'data-draft-id': x.id }, b, ' ', h('span', { class: 'muted' }, `v${x.version} · ${when(x.updatedAt)} · quote ${short(x.quoteMint)} on ${CLUSTER_NAMES[x.cluster]} · inspection `),
-        decisionBadge(x.inspectionDecision), x.policyStale ? badge('POLICY CHANGED', 'stale') : null);
+        decisionBadge(x.inspectionDecision), badge('PLANNING', 'planning'), x.labels.includes('EVIDENCE_STALE_NOW') ? badge('STALE EVIDENCE', 'stale') : null,
+        x.policyStale ? badge('POLICY CHANGED', 'stale') : null);
     }) : [h('li', { class: 'muted' }, 'No drafts yet.')]));
   } else dul.replaceChildren(h('li', {}, errText(d.error)));
   const iul = byId('inspections');

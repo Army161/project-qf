@@ -92,6 +92,9 @@ test('inspector: inspect, save a draft, reload it from the backend, edit it, and
     assert.equal(await page.locator('#report').getAttribute('data-id'), inspectionId);
     assert.match(await page.textContent('#draft-bind') ?? '', /Policies at saveSTANDARD_V1@0-v0test .*validator-v0\.1/);
     assert.match(await page.textContent('#draft-bind') ?? '', /Policy statuscurrent/);
+    assert.match(await page.textContent('#draft-bind') ?? '', /Planning statusPLANNING_DRAFT.*TEST_ONLY_EVIDENCE.*INSPECTION_WARN/);
+    assert.match(await page.textContent('#draft-bind') ?? '', /Evidence basisreport [0-9a-f]{12}… read .* WARN, FRESH when saved/);
+    assert.match(await page.textContent('#draft-notice') ?? '', /Planning draft only\. Saving does not refresh evidence and is not consent/);
     await shot('2-draft-reloaded.png');
 
     // Edit and save: optimistic version 2.
@@ -117,6 +120,69 @@ test('inspector: inspect, save a draft, reload it from the backend, edit it, and
     assert.deepEqual(requests.filter((u) => !u.startsWith(`${base}/`)), [], 'the browser talks only to the same-origin server');
     assert.ok(!requests.some((u) => /solana\.com/.test(u)), 'the browser never calls an RPC itself');
     assert.deepEqual(errors, [], 'no console errors (including CSP violations)');
+  } finally {
+    await browser.close();
+    await new Promise((r) => server.close(r));
+    store.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// inspection-v0.2 in the browser: the classic native mint shows S1.10 as an approved NOT_APPLICABLE with the supply label,
+// and a System-owned address on the wrong network says so. Fake RPC answers like a genesis-verified mainnet/devnet node.
+test('inspector: native-mint S1.10 exception and the wrong-network hint are visible', { skip: !existsSync(CHROMIUM) && `Chromium not found at ${CHROMIUM}` }, async () => {
+  assert.ok(existsSync(join(dist, 'index.html')), 'run `pnpm build:web` first');
+  const { decodeBase58 } = await import('@project-qf/core');
+  const { encodeMintForFixture, CLASSIC_NATIVE_MINT, SPL_TOKEN_PROGRAM } = await import('@project-qf/validator');
+  const { GENESIS } = await import('../../api/src/rpc.ts');
+  const native = Buffer.from(encodeMintForFixture({ tokenProgram: 'SPL_TOKEN', initialized: true, mintAuthority: null, freezeAuthority: null, supplyRaw: '0', decimals: 9, extensions: [] }, decodeBase58)).toString('base64');
+  const fake: FetchLike = async (url, init) => {
+    const devnet = new URL(url).host.includes('devnet');
+    const { method, params } = JSON.parse(String(init.body)) as { method: string; params: unknown[] };
+    const result = method === 'getGenesisHash' ? GENESIS[devnet ? 'devnet' : 'mainnet-beta']
+      : method === 'getAccountInfo' ? { context: { slot: 9 }, value: params[0] === CLASSIC_NATIVE_MINT && !devnet ? { owner: SPL_TOKEN_PROGRAM, data: [native, 'base64'] }
+        : { owner: '11111111111111111111111111111111', data: ['', 'base64'] } }
+      : null;
+    if (method === 'getTokenLargestAccounts') return new Response('{"code":429}', { status: 429 });
+    return Response.json({ jsonrpc: '2.0', id: 1, result });
+  };
+  const dir = mkdtempSync(join(tmpdir(), 'qf-e2e-native-'));
+  const store = new Store(join(dir, 'e2e.sqlite'));
+  const { token } = store.createUser('e2e native');
+  const server = createApp({ store, staticDir: dist, inspect: { endpoints: { 'mainnet-beta': [endpointFromUrl('https://api.mainnet.solana.com', 'mainnet-beta')],
+    devnet: [endpointFromUrl('https://api.devnet.solana.com', 'devnet')] }, fetchImpl: fake, now: () => new Date() } });
+  await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  const browser = await chromium.launch({ executablePath: CHROMIUM, args: ['--no-proxy-server'] });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    await page.goto(`${base}/`);
+    await page.waitForSelector('body[data-ready="true"]');
+    await page.fill('#token', token);
+    await page.click('#signin-form button[type=submit]');
+    await page.waitForSelector('body[data-signed-in="true"]');
+    await page.fill('#mint', CLASSIC_NATIVE_MINT);
+    await page.selectOption('#cluster', 'mainnet-beta');
+    await page.click('#inspect-btn');
+    await page.waitForSelector('#report[data-label="LIVE_READ"]');
+    assert.equal(await page.locator('#report').getAttribute('data-decision'), 'FAIL');
+    const checks = await page.locator('#report').textContent() ?? '';
+    assert.match(checks, /S1\.10Supply\s*NOT_APPLICABLE\s*NATIVE_MINT_SUPPLY_NOT_TRACKED/);
+    assert.match(checks, /1 of them not applicable by an approved exception/);
+    assert.match(checks, /S1\.10 NOT_APPLICABLE: NATIVE_MINT_SUPPLY_NOT_TRACKED/);
+    const features = await page.locator('#report table.features').textContent() ?? '';
+    assert.match(features, /supply_raw.*MEASURED.*0.*NATIVE_MINT_SUPPLY_NOT_TRACKED/s);
+    assert.match(features, /top1_account_share_bps.*UNAVAILABLE.*RATE_LIMITED/s);
+    if (SHOTS) await page.screenshot({ path: join(SHOTS, '4-native-mint-not-applicable.png'), fullPage: true });
+
+    await page.fill('#mint', CLASSIC_NATIVE_MINT.replace('So1111', 'So1112'));
+    await page.selectOption('#cluster', 'devnet');
+    await page.click('#inspect-btn');
+    await page.waitForFunction(() => document.querySelector('#report')?.textContent?.includes('check the network'));
+    assert.match(await page.locator('#report').textContent() ?? '', /NOT_A_VALID_MINT: NOT_TOKEN_PROGRAM_OWNED 1{32} \(not a mint on this network; check the network\)/);
+    assert.deepEqual(errors, []);
   } finally {
     await browser.close();
     await new Promise((r) => server.close(r));

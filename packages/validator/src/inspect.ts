@@ -1,18 +1,23 @@
-// Quote-asset inspection (milestone 2026-10-03, `inspection-v0.1`): turns raw mint-account observations from one or more
+// Quote-asset inspection (milestone 2026-10-03, `inspection-v0.2`): turns raw mint-account observations from one or more
 // providers into validator-v0.1 check results. Deterministic and browser-safe. Anything this version cannot measure is
 // an explicit SKIP with a reason; in LIVE mode the aggregate then FAILs on the missing required checks, so missing
 // evidence can never produce PASS. TEST_ONLY observations are never used in LIVE mode, and LIVE inspections never fall
 // back to fixtures (that choice is made by the caller, which passes only the observations it actually obtained).
+// v0.2 (2026-10-03 live-acceptance closure): S1.10 NOT_APPLICABLE for the classic native mint (decision D3, exceptions.ts),
+// S1.12 counts independent operators rather than endpoints, and a System-owned address carries a wrong-network hint.
 import { isSolanaAddress, isValidationMode, type CheckResult, type CheckDecision, type Cluster, type Evidence, type ProviderClass,
   type ValidationMode } from '@project-qf/core';
 import { aggregate } from './aggregate.ts';
+import { nativeMintSupplyExceptionGaps, S1_10_NATIVE_MINT_EXCEPTION } from './exceptions.ts';
 import { decodeMint, TOKEN_2022_NATIVE_MINT, type MintExtension, type MintFacts } from './mint.ts';
 import type { ValidatorPolicy } from './policy.ts';
 
-export const INSPECTION_VERSION = 'inspection-v0.1';
+export const INSPECTION_VERSION = 'inspection-v0.2';
+const SYSTEM_PROGRAM = '11111111111111111111111111111111';
 
 export interface MintObservation {
   provider: string;              // provider id (host only, never a URL with credentials)
+  operator?: string;             // who runs the provider; endpoints of one operator are not independent (default: the provider id)
   providerClass: ProviderClass;
   cluster: Cluster;
   observedAt: string;            // ISO-8601 UTC
@@ -41,7 +46,7 @@ export interface InspectionResult {
   decodeError: string | null;
   checks: CheckResult[];
   aggregate: { decision: 'PASS' | 'WARN' | 'FAIL'; reasons: string[] };
-  coverage: { evaluated: number; skipped: number; total: number };
+  coverage: { evaluated: number; skipped: number; notApplicable: number; total: number };
 }
 
 // TOKEN-2022.md §2 (quote mint, validator S1.4).
@@ -67,11 +72,14 @@ export function inspectMint(i: InspectionInput): InspectionResult {
   const checks: CheckResult[] = [];
   const add = (id: string, decision: CheckDecision, reason: string, evidence: Evidence[] = [], details: Record<string, string> = {}) =>
     checks.push({ id, decision, reason, evidence, details, policyVersion });
+  let subjectOwner: string | null = null;
   const done = (facts: MintFacts | null, decodeError: string | null): InspectionResult => {
     const mode: ValidationMode = isValidationMode(i.mode) ? i.mode : 'LIVE';
     const skipped = checks.filter((c) => c.decision === 'SKIP').length;
+    const notApplicable = checks.filter((c) => c.decision === 'NOT_APPLICABLE').length;
     return { version: INSPECTION_VERSION, mint: i.mint, cluster: i.cluster, mode, facts, decodeError, checks,
-      aggregate: aggregate(checks, i.mode), coverage: { evaluated: checks.length - skipped, skipped, total: checks.length } };
+      aggregate: aggregate(checks, i.mode, { mint: i.mint, cluster: i.cluster, owner: subjectOwner, facts }),
+      coverage: { evaluated: checks.length - skipped, skipped, notApplicable, total: checks.length } };
   };
 
   if (!isSolanaAddress(i.mint)) { add('IN.1', 'FAIL', 'INVALID_MINT_ADDRESS'); return done(null, null); }
@@ -105,7 +113,10 @@ export function inspectMint(i: InspectionInput): InspectionResult {
   const ev = [evidenceOf(primary.o)];
 
   // S1.12 two-provider agreement (authorities, extensions, owner, decimals, existence; supply may move between slots).
+  // Independence is by operator: two endpoints or keys of one operator are one source.
+  const operators = new Set(decoded.map((x) => x.o.operator ?? x.o.provider));
   if (decoded.length < 2) add('S1.12', 'SKIP', `SINGLE_PROVIDER: needs two independent providers${unavailable.length ? ' (second unavailable)' : ''}`, ev);
+  else if (operators.size < 2) add('S1.12', 'SKIP', `NOT_INDEPENDENT: ${decoded.length} answers from 1 operator (${[...operators][0]}); needs two independent providers`, decoded.map((x) => evidenceOf(x.o)));
   else {
     const sig = (x: (typeof decoded)[number]) => {
       if (x.o.status === 'NOT_FOUND') return 'NOT_FOUND';
@@ -127,12 +138,16 @@ export function inspectMint(i: InspectionInput): InspectionResult {
   }
   if (!primary.d || !primary.d.ok) {
     const err = primary.d ? primary.d.error : 'NO_ACCOUNT_DATA';
-    add('S1.1', 'FAIL', `NOT_A_VALID_MINT: ${err}`, ev, { owner: primary.o.owner ?? '' });
+    // A plain System account at a mint address usually means the mint lives on another network.
+    const wrongNet = primary.o.owner === SYSTEM_PROGRAM;
+    add('S1.1', 'FAIL', `NOT_A_VALID_MINT: ${err}${wrongNet ? ` (not a mint on this network; check the network)` : ''}`, ev,
+      { owner: primary.o.owner ?? '', ...(wrongNet ? { hint: 'WRONG_NETWORK_OR_NOT_A_MINT' } : {}) });
     for (const id of ['S1.2', 'S1.3', 'S1.4', 'S1.5', 'S1.6', 'S1.7', 'S1.8', 'S1.9', 'S1.10', 'S1.11']) add(id, 'SKIP', 'S1.1_FAILED');
     stage2and3(add, i.cluster);
     return done(null, err);
   }
   const f = primary.d.facts;
+  subjectOwner = primary.o.owner ?? null;
   if (!f.initialized) {
     add('S1.1', 'FAIL', 'MINT_NOT_INITIALIZED', ev);
     for (const id of ['S1.2', 'S1.3', 'S1.4', 'S1.5', 'S1.6', 'S1.7', 'S1.8', 'S1.9', 'S1.10', 'S1.11']) add(id, 'SKIP', 'S1.1_FAILED');
@@ -166,7 +181,7 @@ export function inspectMint(i: InspectionInput): InspectionResult {
     add('S1.7', 'SKIP', 'NOT_APPLICABLE: no TokenBadge needed', ev);
   } else {
     add('S1.6', 'WARN', 'NOT_PERMISSIONLESS: Meteora TokenBadge required (S1.7)', ev);
-    add('S1.7', 'FAIL', 'TOKEN_BADGE_UNVERIFIED: badge lookup is not implemented in inspection-v0.1', ev);
+    add('S1.7', 'FAIL', `TOKEN_BADGE_UNVERIFIED: badge lookup is not implemented in ${INSPECTION_VERSION}`, ev);
   }
 
   // S1.8 / S1.9 authorities. The issuer allowlist (CANONICAL-ASSETS.md §4) is empty until registry admission is enabled.
@@ -174,8 +189,17 @@ export function inspectMint(i: InspectionInput): InspectionResult {
     { freezeAuthority: f.freezeAuthority ?? 'none' });
   add('S1.9', f.mintAuthority ? 'FAIL' : 'PASS', f.mintAuthority ? 'MINT_AUTHORITY_PRESENT: issuer allowlist is empty in V0, so it cannot be downgraded to WARN' : 'no mint authority', ev,
     { mintAuthority: f.mintAuthority ?? 'none' });
-  add('S1.10', f.supplyRaw === '0' ? 'FAIL' : 'PASS', f.supplyRaw === '0' ? 'ZERO_SUPPLY' : `supply ${f.supplyRaw} raw`, ev, { supplyRaw: f.supplyRaw });
-  add('S1.11', 'SKIP', 'NOT_READ: metadata is not read in inspection-v0.1 (never identity)');
+  // S1.10 supply. The classic native mint's supply field does not count wrapped SOL (decision D3): evaluated NOT_APPLICABLE,
+  // raw value kept. Any contradiction (decimals, authorities, owner, cluster) leaves the ordinary rule in force.
+  if (f.supplyRaw !== '0') add('S1.10', 'PASS', `supply ${f.supplyRaw} raw`, ev, { supplyRaw: f.supplyRaw });
+  else if (i.mint !== S1_10_NATIVE_MINT_EXCEPTION.mint) add('S1.10', 'FAIL', 'ZERO_SUPPLY', ev, { supplyRaw: f.supplyRaw });
+  else {
+    const gaps = nativeMintSupplyExceptionGaps({ mint: i.mint, cluster: i.cluster, owner: subjectOwner, facts: f });
+    if (gaps.length) add('S1.10', 'FAIL', `ZERO_SUPPLY: native-mint exception not applied (${gaps.join(', ')})`, ev, { supplyRaw: f.supplyRaw });
+    else add('S1.10', 'NOT_APPLICABLE', S1_10_NATIVE_MINT_EXCEPTION.reason, ev, { supplyRaw: f.supplyRaw, exception: S1_10_NATIVE_MINT_EXCEPTION.id,
+      note: 'classic SPL native mint: the supply field is not a total of wrapped SOL; raw value kept for audit; no other check is waived' });
+  }
+  add('S1.11', 'SKIP', `NOT_READ: metadata is not read in ${INSPECTION_VERSION} (never identity)`);
   stage2and3(add, i.cluster);
   return done(f, null);
 }

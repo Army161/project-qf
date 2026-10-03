@@ -1,0 +1,13 @@
+01-install 0
+02-sbom 0
+03-deps-chain 0
+04-license-check 0
+05-build-web 0
+06-boundary 0
+07-typecheck 0
+08-test 0
+09-sim 0
+10-audit-prod 1
+11-verifier-install 0
+12-verifier-test 0
+DONE

@@ -6,3 +6,4 @@ export * from './aggregate.ts';
 export * from './registry.ts';
 export * from './mint.ts';
 export * from './inspect.ts';
+export * from './exceptions.ts';
