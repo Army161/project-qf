@@ -251,12 +251,15 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       if (pool.curveComplete || pool.isMigrated) throw new HttpError(409, 'CURVE_COMPLETE', 'the bonding curve is complete; migration to DAMM v2 is pending');
       const direction = b.side === 'buy' ? 'QUOTE_TO_BASE' as const : 'BASE_TO_QUOTE' as const;
       const nowS = Math.floor(now().getTime() / 1000);
-      if (!isBuild) return send(res, 200, { quote: o.chain.quoteSwap(pool, direction, amountIn, slippageBps, nowS) });
+      // The curve math refuses amounts it cannot fill (e.g. buying past the end of the curve): that is the user's input, not a server fault.
+      const curveRefusal = (e: unknown) => { const m = (e as Error).message; if (/^(POOL_COMPLETE|ZERO_OUTPUT)/.test(m)) return new HttpError(409, m.split(':')[0]!, m);
+        if (/insufficient liquidity|exceed|overflow/i.test(m)) return new HttpError(409, 'AMOUNT_NOT_FILLABLE', 'the curve cannot fill this amount; try a smaller one'); return e; };
+      if (!isBuild) { try { return send(res, 200, { quote: o.chain.quoteSwap(pool, direction, amountIn, slippageBps, nowS) }); } catch (e) { throw curveRefusal(e); } }
       const user = addr(b, 'user');
       intentCheck({ kind: 'SWAP', signer: { role: 'USER_WALLET', address: user, serverHeld: false }, feePayer: user, amounts: { amountIn: amountIn.toString() } });
       let built;
       try { built = await o.chain.buildSwap(pool, { pool: l.pool, user, direction, amountIn, slippageBps }, nowS); }
-      catch (e) { const m = (e as Error).message; if (/^(POOL_COMPLETE|ZERO_OUTPUT)/.test(m)) throw new HttpError(409, m.split(':')[0]!, m); throw e; }
+      catch (e) { throw curveRefusal(e); }
       const intent = await storeBuilt('SWAP', mint, user, built);
       return send(res, 201, { intentId: intent.id, expiresAt: intent.expiresAt, transaction: toBase64(built.bytes), terms: built.terms, quote: built.quote });
     }

@@ -10,7 +10,7 @@ import type { AddressInfo } from 'node:net';
 import { economicsDigest } from '@project-qf/policy';
 import { READINESS } from '@project-qf/core';
 import { addSignature, fromBase64, generateMintKey, parseWire, toBase64, toHex, verifyWireSignatures, type ApprovedTerms } from '@project-qf/tx';
-import { buildCreatePool, buildSwap, quoteSwap, readPool } from '@project-qf/adapter-meteora-dbc/launchpad';
+import { buildCreatePool, buildSwap, quoteSwap, readPool, summarisePool } from '@project-qf/adapter-meteora-dbc/launchpad';
 import { createQuoteSimulator } from '@project-qf/adapter-meteora-dbc';
 import { accountsForPool, fixtures, K, thresholdRecord } from '../../../packages/adapter-meteora-dbc/test/support/fixtures.ts';
 import { createMockConnection } from '../../../packages/adapter-meteora-dbc/test/support/mockRpc.ts';
@@ -42,13 +42,22 @@ function platformRecord(): PlatformRecord {
     economicsVersion: 'e', templateVersion: 't', launchEconomics, launchEconomicsDigest: economicsDigest(launchEconomics), createdAt: new Date().toISOString() };
 }
 
+// The adapter fixture config predates migrationSqrtPrice; fill it from the same curve simulator the adapter tests use.
+function withMigrationPrice<T extends { raw: { config: unknown } } | null>(pool: T): T {
+  if (!pool) return pool;
+  const { cfgParams } = fixtures();
+  const BNc = (cfgParams.migrationQuoteThreshold as unknown as { constructor: new (s: string) => unknown }).constructor;
+  (pool.raw.config as Record<string, unknown>).migrationSqrtPrice = new BNc(createQuoteSimulator(cfgParams).migrationSqrtPrice.toString());
+  return pool;
+}
+
 async function harness() {
   const conn = await mockConn();
   const sent: Uint8Array[] = [];
   const faucetCalls: unknown[] = [];
   const chain: LaunchpadChain = {
     operatorAddress: K.partner.toBase58(),
-    readPool: (p) => readPool(conn, p),
+    readPool: async (p) => withMigrationPrice(await readPool(conn, p)),
     buildCreatePool: (r) => buildCreatePool(conn, r),
     buildSwap: (pool, r, now) => buildSwap(conn, pool, r, now),
     quoteSwap,
@@ -198,4 +207,33 @@ test('the faucet is rate limited per wallet and sends SOL only to empty wallets'
   assert.equal((await call('/api/lp/faucet', { wallet: w })).body.error.code, 'FAUCET_LIMIT');
   assert.equal(faucetCalls.length, FAUCET.claimsPerDay);
   assert.equal((faucetCalls[0] as unknown[])[3], FAUCET.lamports);
+});
+
+test('quotes come from the curve, and amounts the curve cannot fill are refused as input errors, not server faults', async () => {
+  const { call, store, platform } = await harness();
+  const t = new Date().toISOString();
+  store.insertPendingLaunch({ mint: K.baseMint.toBase58(), pool: K.pool.toBase58(), config: platform.config.config, quoteMint: platform.quote.mint, creator: K.creator.toBase58(),
+    name: 'MOCK', symbol: 'MOCK', description: '', website: null, twitter: null, telegram: null, imageType: null, metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: t }, null);
+  store.markLaunchLive(K.baseMint.toBase58(), 'sig', t);
+  const ok = await call('/api/lp/quote', { mint: K.baseMint.toBase58(), side: 'buy', amountIn: '1000000', slippageBps: 100 });
+  assert.equal(ok.status, 200, JSON.stringify(ok.body));
+  assert.ok(BigInt(ok.body.quote.expectedOut) > 0n && BigInt(ok.body.quote.minimumAmountOut) <= BigInt(ok.body.quote.expectedOut));
+  const big = await call('/api/lp/quote', { mint: K.baseMint.toBase58(), side: 'buy', amountIn: '1000000000', slippageBps: 100 });
+  const [small, large] = [Number(ok.body.quote.priceImpactBps), Number(big.body.quote.priceImpactBps)];
+  assert.ok(small < 100 && large > small, `impact small=${small} large=${large}`);
+  const huge = await call('/api/lp/quote', { mint: K.baseMint.toBase58(), side: 'sell', amountIn: (10n ** 18n).toString(), slippageBps: 100 });
+  assert.notEqual(huge.status, 500, JSON.stringify(huge.body));
+  assert.equal(huge.status, 409);
+});
+
+test('pool summaries ignore a zero fixed-supply field (a zero BN is truthy) and fall back to the curve amounts', async () => {
+  const conn = await mockConn();
+  const p = (await readPool(conn, K.pool.toBase58()))!;
+  const cfg = p.raw.config as Record<string, unknown>;
+  const BNc = (cfg.migrationQuoteThreshold as object).constructor as new (v: string) => unknown;
+  const zero = summarisePool(p.pool, p.raw.virtualPool, { ...cfg, preMigrationTokenSupply: new BNc('0'), swapBaseAmount: new BNc('800'), migrationBaseThreshold: new BNc('200') });
+  assert.equal(zero.totalSupplyRaw, '1000');
+  const fixed = summarisePool(p.pool, p.raw.virtualPool, { ...cfg, preMigrationTokenSupply: new BNc('1000000000000000') });
+  assert.equal(fixed.totalSupplyRaw, '1000000000000000');
+  assert.ok(BigInt(fixed.marketCapQuoteRaw) > 0n);
 });

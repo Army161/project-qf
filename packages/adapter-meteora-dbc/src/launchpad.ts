@@ -182,9 +182,14 @@ export function quoteSwap(pool: LivePool, direction: Direction, amountIn: bigint
   const q = swapQuoteExactIn(pool.raw.virtualPool as never, pool.raw.config as never, sell, new BN(amountIn.toString()), 0, false, new BN(nowSeconds), false);
   const out = BigInt(q.outputAmount.toString());
   const min = (out * BigInt(10_000 - slippageBps)) / 10_000n;
-  const before = BigInt(pool.sqrtPrice), after = BigInt(q.nextSqrtPrice.toString());
-  const pb = before * before, pa = after * after;
-  const impact = pb === 0n ? 0n : ((pa > pb ? pa - pb : pb - pa) * 10_000n) / pb;
+  // Price impact = how much worse than the current spot price this trade fills, excluding the fee (shown separately).
+  // Fees are charged in the quote token: on the input of a buy, on the output of a sell.
+  const s = (pool.raw.virtualPool as any).poolState ?? pool.raw.virtualPool;
+  const p2 = BigInt(s.sqrtPrice.toString()) ** 2n, fees = BigInt(q.tradingFee.toString()) + BigInt(q.protocolFee.toString());
+  const netIn = sell ? amountIn : amountIn - fees, grossOut = sell ? out + fees : out;
+  const spotOut = p2 === 0n || netIn <= 0n ? 0n : sell ? (netIn * p2) / Q128 : (netIn * Q128) / p2;
+  const impact = spotOut === 0n || grossOut >= spotOut ? 0n : ((spotOut - grossOut) * 10_000n) / spotOut;
+  const after = BigInt(q.nextSqrtPrice.toString());
   return { amountIn: amountIn.toString(), expectedOut: out.toString(), minimumAmountOut: min.toString(), tradingFee: q.tradingFee.toString(),
     protocolFee: q.protocolFee.toString(), nextSqrtPrice: after.toString(), priceImpactBps: impact.toString() };
 }
@@ -223,7 +228,9 @@ export function summarisePool(pool: string, vp: any, cfg: any): LivePool {
   const sqrt = big(s.sqrtPrice), quoteReserve = big(s.quoteReserve), threshold = big(cfg.migrationQuoteThreshold);
   const baseDecimals = Number(cfg.tokenDecimal), quoteDecimals = Number(cfg.quoteTokenDecimal ?? 6);
   // total supply after an SPL launch with Immutable authority is fixed: pre-migration supply + post-migration supply
-  const totalSupplyRaw = cfg.preMigrationTokenSupply ? big(cfg.preMigrationTokenSupply) : big(cfg.swapBaseAmount) + big(cfg.migrationBaseThreshold);
+  // (a BN of zero is truthy, so compare the value: the program stores 0 when the config has no fixed supply)
+  const fixedSupply = cfg.preMigrationTokenSupply === undefined ? 0n : big(cfg.preMigrationTokenSupply);
+  const totalSupplyRaw = fixedSupply > 0n ? fixedSupply : big(cfg.swapBaseAmount ?? 0) + big(cfg.migrationBaseThreshold ?? 0);
   const priceFp = (sqrt * sqrt * 10n ** BigInt(baseDecimals) * 10n ** 18n) / Q128; // quote raw per base UI, x1e18
   const mcapRaw = (sqrt * sqrt * totalSupplyRaw) / Q128;                           // quote raw
   const progressBps = threshold === 0n ? 0 : Number(quoteReserve >= threshold ? 10_000n : (quoteReserve * 10_000n) / threshold);

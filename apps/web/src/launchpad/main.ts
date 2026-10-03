@@ -36,7 +36,7 @@ function h<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, 
     if (v === undefined || v === null || v === false) continue;
     if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
     else if (k === 'class') el.className = v;
-    else if (k === 'style') el.setAttribute('style', v);
+    else if (k === 'style') Object.assign(el.style, v); // CSSOM, not a style attribute: the page CSP has no 'unsafe-inline'
     else if (k in el && typeof v !== 'string') (el as any)[k] = v;
     else el.setAttribute(k, v === true ? '' : String(v));
   }
@@ -55,6 +55,7 @@ function toast(msg: string, kind: 'ok' | 'err' | 'info' = 'info') {
   const t = h('div', { class: `toast ${kind}`, role: 'status' }, msg);
   $('#toasts').append(t);
   setTimeout(() => t.remove(), kind === 'err' ? 9000 : 5000);
+  return () => t.remove();
 }
 
 function avatar(t: Pick<Token, 'mint' | 'symbol' | 'imageUrl'>, size = 'md') {
@@ -99,12 +100,13 @@ function openWalletPicker() {
 async function claimFaucet() {
   if (!state.wallet) return openWalletPicker();
   const q = Q();
+  let pending: (() => void) | undefined;
   try {
-    toast(`Requesting test ${q.symbol}…`);
+    pending = toast(`Requesting test ${q.symbol}…`);
     const r = await api<{ signature: string; quoteRaw: string; lamports: string }>('/api/lp/faucet', { wallet: state.wallet.account.address });
     toast(`Received ${units(r.quoteRaw, q.decimals, 0)} ${q.symbol}${BigInt(r.lamports) > 0n ? ` and ${units(r.lamports, 9, 3)} SOL for fees` : ''}`, 'ok');
     await refreshBalances(currentMint());
-  } catch (e) { toast(`Faucet: ${(e as Error).message}`, 'err'); }
+  } catch (e) { toast(`Faucet: ${(e as Error).message}`, 'err'); } finally { pending?.(); }
 }
 const requireWallet = (): Connected | null => { if (!state.wallet) { openWalletPicker(); return null; } return state.wallet; };
 
@@ -170,7 +172,7 @@ const currentMint = () => (/^#\/t\/([1-9A-HJ-NP-Za-km-z]{32,44})$/.exec(location
 
 function progressBar(bps: number, complete: boolean) {
   return h('div', { class: `bar${complete ? ' done' : ''}`, role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(Math.round(bps / 100)) },
-    h('div', { class: 'fill', style: `width:${Math.min(100, bps / 100)}%` }));
+    h('div', { class: 'fill', style: { width: `${Math.min(100, bps / 100)}%` } }));
 }
 function statusChip(t: Token) {
   if (t.status === 'MIGRATED' || t.live?.isMigrated) return h('span', { class: 'chip grad' }, 'Graduated');
@@ -188,7 +190,7 @@ function tokenCard(t: Token) {
       h('div', {}, h('span', { class: 'k' }, 'Market cap'), h('span', { class: 'v' }, l ? `${compact(l.marketCapQuoteRaw, q.decimals)} ${q.symbol}` : '—')),
       h('div', {}, h('span', { class: 'k' }, 'Volume'), h('span', { class: 'v' }, `${compact(t.stats.volumeQuoteRaw, q.decimals)} ${q.symbol}`))),
     l ? progressBar(l.progressBps, l.curveComplete || l.isMigrated) : null,
-    h('div', { class: 'tc-foot' }, h('span', {}, l ? `${pct(l.progressBps)} to graduation` : ''), h('span', { class: 'dim' }, `${ago(t.liveAt ?? t.createdAt)} · by ${short(t.creator)}`)));
+    h('div', { class: 'tc-foot' }, h('span', {}, !l ? '' : l.isMigrated || t.status === 'MIGRATED' ? 'Graduated to DAMM v2' : l.curveComplete ? 'Curve full, graduating' : `${pct(l.progressBps)} to graduation`), h('span', { class: 'dim' }, `${ago(t.liveAt ?? t.createdAt)} · by ${short(t.creator)}`)));
 }
 
 async function renderHome() {
@@ -448,6 +450,7 @@ async function renderToken(mint: string) {
 // ------------------------------------------------------------------ router + boot
 async function route() {
   clearInterval(tokenTimer);
+  if ($('.sheet .x')) closeModal(); // a finished or idle dialog never follows you to another page; a running signing flow has no close button
   const m = currentMint();
   document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === (m ? '' : location.hash || '#/')));
   if (m) await renderToken(m);
