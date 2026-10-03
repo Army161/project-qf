@@ -1,6 +1,6 @@
 {
   "tool": "tools/boundary/check-browser-boundary.ts",
-  "generatedAt": "2026-10-03T21:06:12.410Z",
+  "generatedAt": "2026-10-03T21:21:55.025Z",
   "graph": {
     "packages": 57,
     "forbidden": [],

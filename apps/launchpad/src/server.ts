@@ -25,7 +25,7 @@ export const LAUNCH_BODY_LIMIT_BYTES = 400 * 1024;
 export const IMAGE_LIMIT_BYTES = 256 * 1024;
 export const INTENT_TTL_MS = 120_000;
 export const BUILDS_PER_MINUTE = 30;
-export const FAUCET = Object.freeze({ quoteUi: 10_000n, lamports: 20_000_000n, minLamportsBeforeTopUp: 10_000_000n, claimsPerDay: 3 });
+export const FAUCET = Object.freeze({ quoteUi: 10_000n, lamports: 100_000_000n, minLamportsBeforeTopUp: 50_000_000n, claimsPerDay: 3 });
 
 export interface LaunchpadOptions {
   store: LaunchpadStore;
@@ -236,6 +236,15 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       return send(res, 201, { intentId: intent.id, expiresAt: intent.expiresAt, transaction: toBase64(built.bytes), terms: built.terms, pool: built.pool, metadataUri });
     }
 
+    /** Largest input below `limit` the curve can fill (binary search over the local curve math; no RPC). */
+    const maxFillable = (pool: LivePool, direction: 'QUOTE_TO_BASE' | 'BASE_TO_QUOTE', limit: bigint, nowS: number): bigint => {
+      let lo = 0n, hi = limit;
+      while (lo < hi) {
+        const mid = (lo + hi + 1n) / 2n;
+        try { o.chain.quoteSwap(pool, direction, mid, 0, nowS); lo = mid; } catch { hi = mid - 1n; }
+      }
+      return lo;
+    };
     if ((path === '/api/lp/swap' || path === '/api/lp/quote') && method === 'POST') {
       limit(`build:${ip}`, BUILDS_PER_MINUTE * 2);
       const b = await readJson(req, BODY_LIMIT_BYTES);
@@ -256,7 +265,14 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       const nowS = Math.floor(now().getTime() / 1000);
       // The curve math refuses amounts it cannot fill (e.g. buying past the end of the curve): that is the user's input, not a server fault.
       const curveRefusal = (e: unknown) => { const m = (e as Error).message; if (/^(POOL_COMPLETE|ZERO_OUTPUT)/.test(m)) return new HttpError(409, m.split(':')[0]!, m);
-        if (/insufficient liquidity|exceed|overflow/i.test(m)) return new HttpError(409, 'AMOUNT_NOT_FILLABLE', 'the curve cannot fill this amount; try a smaller one'); return e; };
+        if (/insufficient liquidity|exceed|overflow/i.test(m)) {
+          // A buy past the end of the curve: tell the buyer the most it can take, so the last buy before graduation is one tap.
+          const max = direction === 'QUOTE_TO_BASE' ? maxFillable(pool, direction, amountIn, nowS) : 0n;
+          return max > 0n
+            ? new HttpError(409, 'AMOUNT_NOT_FILLABLE', 'more than is left on the curve before graduation', [`maxAmountIn:${max}`])
+            : new HttpError(409, 'AMOUNT_NOT_FILLABLE', 'the curve cannot fill this amount; try a smaller one');
+        }
+        return e; };
       if (!isBuild) { try { return send(res, 200, { quote: o.chain.quoteSwap(pool, direction, amountIn, slippageBps, nowS) }); } catch (e) { throw curveRefusal(e); } }
       const user = addr(b, 'user');
       intentCheck({ kind: 'SWAP', signer: { role: 'USER_WALLET', address: user, serverHeld: false }, feePayer: user, amounts: { amountIn: amountIn.toString() } });
@@ -373,7 +389,9 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       else serveStatic(req, res, path);
     } catch (e) {
       if (res.headersSent) { res.destroy(); return; }
-      const err = e instanceof HttpError ? e : new HttpError(500, 'INTERNAL', 'internal error');
+      // The public devnet RPC rate-limits bursts; that is a retryable outage, not a server fault.
+      const rpcBusy = !(e instanceof HttpError) && /\b429\b|Too Many Requests|rate limit/i.test((e as Error)?.message ?? '');
+      const err = e instanceof HttpError ? e : rpcBusy ? new HttpError(503, 'RPC_BUSY', 'the devnet RPC is busy; try again in a few seconds') : new HttpError(500, 'INTERNAL', 'internal error');
       if (!(e instanceof HttpError)) o.log?.(`internal error: ${(e as Error)?.stack?.slice(0, 800)}`);
       send(res, err.status, { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } });
     }

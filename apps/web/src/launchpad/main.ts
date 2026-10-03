@@ -80,10 +80,13 @@ function avatar(t: Pick<Token, 'mint' | 'symbol' | 'imageUrl'>, size = 'md') {
 }
 
 // ------------------------------------------------------------------ wallet UI
+// The token page's "Balance:" line repaints itself whenever balances are refreshed.
+let paintBalance: () => void = () => {};
 async function refreshBalances(mint?: string) {
   if (!state.wallet || !state.platform?.ready) { state.balances = null; renderWallet(); return; }
   try { state.balances = await api(`/api/lp/wallet/${state.wallet.account.address}${mint ? `?mint=${mint}` : ''}`); } catch { state.balances = null; }
   renderWallet();
+  paintBalance();
 }
 function renderWallet() {
   const box = $('#wallet');
@@ -218,7 +221,7 @@ function featureCard(t: Token) {
   const q = Q();
   const l = t.live!;
   return h('a', { class: 'feature', href: `#/t/${t.mint}` },
-    h('div', { class: 'feature-top' }, h('span', { class: 'eyebrow' }, 'Next to graduate'), h('span', { class: 'num dim small' }, `${t.stats.count} trades · ${t.stats.traders} traders`)),
+    h('div', { class: 'feature-top' }, h('span', { class: 'eyebrow' }, 'Next to graduate'), h('span', { class: 'num dim small' }, `${t.stats.count} ${t.stats.count === 1 ? 'trade' : 'trades'} · ${t.stats.traders} ${t.stats.traders === 1 ? 'trader' : 'traders'}`)),
     h('div', { class: 'feature-id' }, avatar(t, 'xl'), h('div', { class: 'names' }, h('b', {}, t.name), h('span', { class: 'dim' }, `$${t.symbol}`)),
       h('div', { class: 'mcap' }, h('div', { class: 'num' }, `${compact(l.marketCapQuoteRaw, q.decimals)} ${q.symbol}`), h('div', { class: 'dim small' }, 'market cap'))),
     progressBar(l.progressBps, false, true),
@@ -430,7 +433,7 @@ async function renderToken(mint: string) {
   const go = h('button', { class: 'btn primary lg wide', id: 'trade' }, 'Buy');
   const presets = h('div', { class: 'presets' });
   const tabs = h('div', { class: 'seg' });
-  const balanceLine = h('p', { class: 'dim small', style: { margin: '0' } });
+  const balanceLine = h('p', { class: 'dim small', id: 'bal', style: { margin: '0' } });
   const panelCard = h('div', { class: 'card trade' });
   const unitOf = () => (side === 'buy' ? q.decimals : bd);
   let lastQuote: any = null, qTimer: number | undefined;
@@ -464,7 +467,15 @@ async function renderToken(mint: string) {
           h('dt', {}, 'At least'), h('dd', {}, `${units(quote.minimumAmountOut, outDec, 2)} ${outSym}`),
           h('dt', {}, 'Fee'), h('dd', {}, `${units(BigInt(quote.tradingFee) + BigInt(quote.protocolFee), q.decimals, 4)} ${q.symbol}`),
           h('dt', {}, 'Price impact'), h('dd', { class: Number(quote.priceImpactBps) > 500 ? 'err' : '' }, pct(Number(quote.priceImpactBps)))));
-      } catch (e) { quoteBox.replaceChildren(h('p', { class: 'err' }, (e as Error).message)); }
+      } catch (e) {
+        const max = e instanceof ApiError && e.code === 'AMOUNT_NOT_FILLABLE' ? e.details.find((d) => d.startsWith('maxAmountIn:'))?.slice(12) : undefined;
+        if (max && side === 'buy') {
+          const ui = units(max, q.decimals, q.decimals).replace(/,/g, '');
+          quoteBox.replaceChildren(h('div', { class: 'fill-rest' },
+            h('p', {}, `Only ${units(max, q.decimals, 2)} ${q.symbol} fits on the curve. That buy completes it and the coin graduates.`),
+            h('button', { class: 'chipbtn', onclick: () => { amount.value = ui; requote(); } }, `Buy the rest · ${units(max, q.decimals, 2)} ${q.symbol}`)));
+        } else quoteBox.replaceChildren(h('p', { class: 'err' }, (e as Error).message));
+      }
     }, 250);
   };
   amount.addEventListener('input', requote);
@@ -485,7 +496,10 @@ async function renderToken(mint: string) {
     if (out) { toast('Trade confirmed', 'ok'); renderToken(t.mint); }
   });
   setSide('buy');
-  if (state.balances) balanceLine.textContent = `Balance: ${units(state.balances.tokens[q.mint] ?? '0', q.decimals, 2)} ${q.symbol} · ${units(state.balances.tokens[t.mint] ?? '0', bd, 2)} $${t.symbol}`;
+  paintBalance = () => {
+    if (state.balances) balanceLine.textContent = `Balance: ${units(state.balances.tokens[q.mint] ?? '0', q.decimals, 2)} ${q.symbol} · ${units(state.balances.tokens[t.mint] ?? '0', bd, 2)} $${t.symbol}`;
+  };
+  paintBalance();
 
   const trust = h('div', { class: 'trust' }, icon(ICON.shield, 18, 'var(--buy)'), h('span', {}, 'Your browser checks every account and amount in the transaction before your wallet is asked to sign.'));
   let panel: HTMLElement;

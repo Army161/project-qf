@@ -1,0 +1,186 @@
+{
+  "label": "DEVNET evidence: public on-chain data only, no keys",
+  "cluster": "devnet",
+  "generatedAt": "2026-10-03T21:22:24.751Z",
+  "operator": "4eup3PdJfMjbPXA9g6Qy43HPmiC7EMD4PvC74DGVPArX",
+  "quote": {
+    "mint": "GWjfymuG7NhkWm2aEKhCexJKkXvM8Fe6k3mQGB313Vez",
+    "signature": "3rAWRTYpLw8z5SXJnstSNrQbixbS63K4rzLYDgZhf3xh6xLDeXGJ6qqmS53Dzy4HgpyvgpqeHYx68DA72JDNQjzJ",
+    "label": "TEST_ONLY",
+    "symbol": "qUSD"
+  },
+  "dbcConfig": {
+    "address": "5EEfERmwCSGaDy7YEnieF13ohbZXzQytAaM3Kg4SKXaC",
+    "signature": "5hPvRgcmr1mYKeDdYAMuMapVYj4tLUWoBJLhEi27HEGBx7biE5vyBDi4fJ6zHtVFMttyfPAPoD85LSgXZ3RTMYsJ"
+  },
+  "migrationThresholdRaw": "1000000000",
+  "launchEconomicsDigest": "4bf894dc6b614224f22b18797004b267895b2d1bc2ea7a7781258a1ca4851ace",
+  "launches": [
+    {
+      "mint": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+      "symbol": "MCAT",
+      "name": "Moon Cat",
+      "pool": "86cYZ61o6r8FcYSJvQGsyer9JfU22xiJF9x7EPcmUigu",
+      "status": "MIGRATED",
+      "creator": "74p3Ju6UyzNCYThJ9cPz2a2wsoUbLeHYHtLmovo7Wz5n",
+      "create_sig": "3nKNmbC9cMFM9jcUW9CFktpUrYH8Smy9kMQzYeDAxq9DxCm8PcWH4YYwFqWCPTroNZE8bXSTrvFoUf7LjFqSRUns",
+      "created_at": "2026-10-03T21:09:58.324Z",
+      "live_at": "2026-10-03T21:09:59.040Z",
+      "migration_sig": "4gMyG9fEZ6qewhZxY27u1N6dooCQhYjX7SHkMvHKsmg8VTh1F1gdQQQfW3Mvb4BAgVhFaZZmCYnyT4MrK453qYDH",
+      "damm_pool": "2CDuAUAnb7TdWZUG4RsenVu62SHKwrhN8qSe7Ezhw5XJ",
+      "migrated_at": "2026-10-03T21:19:05.299Z"
+    },
+    {
+      "mint": "4TzRBV1sP1sZUATwxJ4Q3w56ADhj3W885UJGaaWAyeQb",
+      "symbol": "FROG",
+      "name": "Devnet Frog",
+      "pool": "HucJFzW1MrfJo9EoqmD5rki5e8NuEceG1bwqT7Ki2gfB",
+      "status": "LIVE",
+      "creator": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+      "create_sig": "c6WCUmz63ZbDjqaPbUFv5RUAhNPFr6ego6Mqo9PDC5vN6j5xb7XHWkaZZMcMsCmmTMSherSgFnZCQAFGCnLbvtk",
+      "created_at": "2026-10-03T21:15:57.807Z",
+      "live_at": "2026-10-03T21:16:00.931Z",
+      "migration_sig": null,
+      "damm_pool": null,
+      "migrated_at": null
+    }
+  ],
+  "trades": [
+    {
+      "sig": "21woG25Vf2a8siiiCKQn6hWNGZS4ZZNwm5gcrd19QgV8USSLKipaMjDBEpEGS1r8FeeryTXNzgWTjAfM28XK3XZa",
+      "mint": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+      "trader": "74p3Ju6UyzNCYThJ9cPz2a2wsoUbLeHYHtLmovo7Wz5n",
+      "side": "BUY",
+      "quote_raw": "50000000",
+      "base_raw": "137918992007203",
+      "block_time": 1791061806,
+      "source": "app"
+    },
+    {
+      "sig": "54y3tTqWR2ASzuJwbdF6AneGTDEYZNLeGrYKRo1NV8GqFm7Y1WLHg7cGiasaoGu1nHsL7WrUCUbrDidoz2LEcVUD",
+      "mint": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+      "trader": "4ebtmzcQA8yyiN8Tyd7T1hJCZcnPbj7QtGu3B2quXTcN",
+      "side": "BUY",
+      "quote_raw": "40000000",
+      "base_raw": "87063203380793",
+      "block_time": 1791062029,
+      "source": "app"
+    },
+    {
+      "sig": "31SnfN6kEF4UTSvw52efmYdG3zRz3G1H9Ap5FoUDfjkdqqgAg5QwbqpGajgGGoRSzFVprQ62SQNz2dSdJmMKY1AE",
+      "mint": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+      "trader": "4ebtmzcQA8yyiN8Tyd7T1hJCZcnPbj7QtGu3B2quXTcN",
+      "side": "SELL",
+      "quote_raw": "49681",
+      "base_raw": "100000000000",
+      "block_time": 1791062036,
+      "source": "app"
+    },
+    {
+      "sig": "yHQice2A65dsy8f4ZLNqH3wfBQppTvMz7hu83vKHLoi59gBGJFjRV4NLRwbjykDocKhgbaY8cdDjsSstrm5RX7m",
+      "mint": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+      "trader": "4ebtmzcQA8yyiN8Tyd7T1hJCZcnPbj7QtGu3B2quXTcN",
+      "side": "BUY",
+      "quote_raw": "120000000",
+      "base_raw": "184787670231629",
+      "block_time": 1791062043,
+      "source": "app"
+    },
+    {
+      "sig": "4vQfE9aTi2o7vr4WRFvhXrbbomwdvuDQDVMBqQNA58Rybb3Wz9Qw6yWdKmTq3zHWF83VrJrx3J8YqwoKPGpSyJPy",
+      "mint": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+      "trader": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+      "side": "BUY",
+      "quote_raw": "40000000",
+      "base_raw": "44796525267315",
+      "block_time": 1791062136,
+      "source": "app"
+    },
+    {
+      "sig": "resG2gvDaXZxJBahhdkRHsocop4HjoJ2vKpVTXeSjDVp9UE1zYTprJ6XusNDCDxQggbvz6rA8cxep7WFE746p35",
+      "mint": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+      "trader": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+      "side": "SELL",
+      "quote_raw": "93903",
+      "base_raw": "100000000000",
+      "block_time": 1791062143,
+      "source": "app"
+    },
+    {
+      "sig": "4oGc7NY4x89BWyRmGgsz8YCANMzvQt74VRQsx4km3XzVrNLmniBQWKBedREQNwKbuXU1FkKc7E4v96fwRwGR9cBr",
+      "mint": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+      "trader": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+      "side": "BUY",
+      "quote_raw": "120000000",
+      "base_raw": "103992098231716",
+      "block_time": 1791062150,
+      "source": "app"
+    },
+    {
+      "sig": "2PtpDhCHZTpUa4heZt75mGoPXvdCFodJmrBQ7S9fMG6w7T8eWRjFfWjpKFGaknPynLKn1QwULXQXTaAvzoAZ75Sz",
+      "mint": "4TzRBV1sP1sZUATwxJ4Q3w56ADhj3W885UJGaaWAyeQb",
+      "trader": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+      "side": "BUY",
+      "quote_raw": "200000000",
+      "base_raw": "397490511944212",
+      "block_time": 1791062166,
+      "source": "app"
+    },
+    {
+      "sig": "2u1N56eLXcKuTof5MH9KTpXtDtKVwb6NEzm172p1LC1KoYnCWFXAdHTXdTvUVuuDzDCDxVKJYj1MtTSTsQxKw5tu",
+      "mint": "4TzRBV1sP1sZUATwxJ4Q3w56ADhj3W885UJGaaWAyeQb",
+      "trader": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+      "side": "BUY",
+      "quote_raw": "35000000",
+      "base_raw": "40967545895012",
+      "block_time": 1791062173,
+      "source": "app"
+    },
+    {
+      "sig": "649rs81xaxZ4QKhn31UE4o8KxmzrzgjXTDhbwkzQPEbT2xTkoqTadPpauYh5bJa3CN9yDJP73Kfg8kwKRv2qB7N2",
+      "mint": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+      "trader": "8t2k9VtK7bEUJZG37xZMMjBuzdCECUVvWxPK4MRPfCpM",
+      "side": "BUY",
+      "quote_raw": "640247512",
+      "base_raw": "241641406754871",
+      "block_time": 1791062333,
+      "source": "app"
+    }
+  ],
+  "faucet": [
+    {
+      "wallet": "74p3Ju6UyzNCYThJ9cPz2a2wsoUbLeHYHtLmovo7Wz5n",
+      "at": "2026-10-03T21:09:55.344Z",
+      "signature": "51VQNByL54NYVYPbWxHKa2kEjyi3SApXvTQEc5KQPwr31WdUMsr9cJLzgw8EfE3jwtdw1mhg4929efjJtAMeUJNR"
+    },
+    {
+      "wallet": "4ebtmzcQA8yyiN8Tyd7T1hJCZcnPbj7QtGu3B2quXTcN",
+      "at": "2026-10-03T21:13:44.594Z",
+      "signature": "4mff3b3E953KUq4geuem3VnWQUKoawTe5di5W4BeFMikvuK21XBnX8VqjNSJkTdHmjzdN8kFiWmvTPArGX5iQqMP"
+    },
+    {
+      "wallet": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+      "at": "2026-10-03T21:15:31.587Z",
+      "signature": "5AvNgw74GFEJHkaQY3TaaA5QNxy2wv2Z2DPzA7pr9bjDRBmAWcC1gFppJGHoaKFvq8DrQMTwavcKqdqfdAJyJBW6"
+    },
+    {
+      "wallet": "4KAt4HgMN1hdK9nsicen8ATXvNsdTAv7iNsvB9ZXMqC7",
+      "at": "2026-10-03T21:17:41.047Z",
+      "signature": "3LrVPHUcoDR71kPk8BGfpAjBhrUjaGEnozegRv8giBmks3jy7Gs4jgNwDYviwtEUdQm9N5FzbGqhCvWoa5drn5s6"
+    },
+    {
+      "wallet": "8t2k9VtK7bEUJZG37xZMMjBuzdCECUVvWxPK4MRPfCpM",
+      "at": "2026-10-03T21:18:47.142Z",
+      "signature": "2acRSMkowZWXTMoVDtjqgVexSdN9zY8Sgk4MADdVSQ4z7BT43VgF7LqGog2E96LAv3edbAncoW511XXJm6a86Xy6"
+    }
+  ],
+  "dammV2Check": {
+    "pool": "2CDuAUAnb7TdWZUG4RsenVu62SHKwrhN8qSe7Ezhw5XJ",
+    "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+    "tokenA": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+    "tokenB": "GWjfymuG7NhkWm2aEKhCexJKkXvM8Fe6k3mQGB313Vez",
+    "liquidity": "8233136322028285114808361262932",
+    "permanentLockLiquidity": "8233136322028285114808361262931",
+    "migrationTx": "finalized, err null"
+  }
+}

@@ -16,7 +16,7 @@ import { accountsForPool, fixtures, K, thresholdRecord } from '../../../packages
 import { createMockConnection } from '../../../packages/adapter-meteora-dbc/test/support/mockRpc.ts';
 import { checkBuiltTransaction } from '../../web/src/launchpad/txcheck.ts';
 import type { LaunchpadChain } from '../src/chain.ts';
-import { tradeFromSummary } from '../src/indexer.ts';
+import { crankMigrations, PoolCache, tradeFromSummary } from '../src/indexer.ts';
 import { launchEconomicsFor, type PlatformRecord } from '../src/platform.ts';
 import { createLaunchpadApp, FAUCET, sniffImage } from '../src/server.ts';
 import { LaunchpadStore } from '../src/store.ts';
@@ -224,6 +224,13 @@ test('quotes come from the curve, and amounts the curve cannot fill are refused 
   const huge = await call('/api/lp/quote', { mint: K.baseMint.toBase58(), side: 'sell', amountIn: (10n ** 18n).toString(), slippageBps: 100 });
   assert.notEqual(huge.status, 500, JSON.stringify(huge.body));
   assert.equal(huge.status, 409);
+  const past = await call('/api/lp/quote', { mint: K.baseMint.toBase58(), side: 'buy', amountIn: (10n ** 15n).toString(), slippageBps: 100 });
+  assert.equal(past.status, 409, JSON.stringify(past.body));
+  const max = String(past.body.error.details?.find((d: string) => d.startsWith('maxAmountIn:'))).slice(12);
+  assert.ok(BigInt(max) > 0n, JSON.stringify(past.body));
+  const rest = await call('/api/lp/quote', { mint: K.baseMint.toBase58(), side: 'buy', amountIn: max, slippageBps: 100 });
+  assert.equal(rest.status, 200, `the advertised maximum must itself be fillable: ${JSON.stringify(rest.body)}`);
+  assert.equal((await call('/api/lp/quote', { mint: K.baseMint.toBase58(), side: 'buy', amountIn: (BigInt(max) + 1n).toString(), slippageBps: 100 })).status, 409);
 });
 
 test('pool summaries ignore a zero fixed-supply field (a zero BN is truthy) and fall back to the curve amounts', async () => {
@@ -250,4 +257,16 @@ test('the trade tape lists recent trades of live coins only, newest first', asyn
   const r = await call('/api/lp/trades/recent');
   assert.equal(r.status, 200);
   assert.deepEqual(r.body.trades.map((x: { sig: string; symbol: string }) => `${x.sig}:${x.symbol}`), ['new:LIVE', 'old:LIVE']);
+});
+
+test('a pool read that throws during the migration crank is logged and skipped, not fatal', async () => {
+  const { store, platform, chain } = await harness();
+  const t = new Date().toISOString();
+  store.insertPendingLaunch({ config: platform.config.config, quoteMint: platform.quote.mint, creator: K.creator.toBase58(), description: '', website: null, twitter: null,
+    telegram: null, imageType: null, metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: t, mint: K.baseMint.toBase58(), pool: K.pool.toBase58(), name: 'Live', symbol: 'LIVE' }, null);
+  store.markLaunchLive(K.baseMint.toBase58(), 'sig-live', t);
+  const flaky: LaunchpadChain = { ...chain, readPool: async () => { throw new Error('Invalid account discriminator'); } };
+  const logs: string[] = [];
+  assert.deepEqual(await crankMigrations({ store, chain: flaky, poolCache: new PoolCache(flaky), log: (m) => logs.push(m) }), []);
+  assert.match(logs.join('\n'), /crank read .*Invalid account discriminator/);
 });

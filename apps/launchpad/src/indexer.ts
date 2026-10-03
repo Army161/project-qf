@@ -44,7 +44,8 @@ export async function crankMigrations(d: IndexerDeps): Promise<{ mint: string; s
   if (!d.chain.operatorAddress) return [];
   const out: { mint: string; signature: string }[] = [];
   for (const launch of d.store.listLaunches(['LIVE'])) {
-    const pool = await d.poolCache.get(launch.pool, true);
+    // A failed read of one pool (public RPCs occasionally return a bad account) must not stop the loop or the server.
+    const pool = await d.poolCache.get(launch.pool, true).catch((e) => { d.log?.(`crank read ${launch.mint}: ${(e as Error).message.slice(0, 200)}`); return null; });
     if (!pool || pool.isMigrated || !pool.curveComplete) continue;
     try {
       d.log?.(`migrating ${launch.symbol} (${launch.mint}) to DAMM v2`);
@@ -86,6 +87,8 @@ export function startBackground(d: IndexerDeps, intervalMs = 15_000): () => void
         await syncLaunch(d, l).catch((e) => d.log?.(`index ${l.mint}: ${(e as Error).message.slice(0, 200)}`));
       }
       await crankMigrations(d);
+    } catch (e) {
+      d.log?.(`background pass failed: ${(e as Error).message.slice(0, 200)}`);
     } finally { running = false; }
   };
   const t = setInterval(pass, intervalMs);

@@ -286,6 +286,22 @@ ul.checks li.bad { color: var(--sell); } ul.checks li.bad::before { content: "âœ
 }
 @media (max-width: 520px) {
   .bal { display: none; }
+  header.top { gap: 8px; }
+  .brand b { display: none; }
+  nav { gap: 2px; }
+  nav a { padding: 8px 10px; }
+  #wallet { margin-left: auto; }
   #wallet .btn { height: 40px; padding: 0 12px; }
+  .tok-id { align-items: flex-start; gap: 12px; }
+  .avatar.lg { width: 56px; height: 56px; font-size: 20px; }
+  .tok-title { gap: 4px 8px; }
+  .tok-title h1 { font-size: 30px; }
+  .tok-title .sym { font-size: 16px; }
+  .tok-meta { gap: 4px 10px; font-size: 13px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } .tape-run { width: auto; flex-wrap: nowrap; overflow-x: auto; } }
+
+/* Last buy before graduation: the curve can take only part of what was entered. */
+.fill-rest { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 14px; background: #1f2a12; color: var(--text); font-size: 14px; }
+.fill-rest p { margin: 0; }
+.fill-rest .chipbtn { align-self: flex-start; background: var(--buy); color: #0a0b0a; border-color: var(--buy); font-weight: 700; }
