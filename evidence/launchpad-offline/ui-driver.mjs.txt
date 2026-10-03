@@ -1,0 +1,46 @@
+import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
+const require = createRequire('/home/user/qf/apps/web/package.json');
+const { chromium } = require('playwright-core');
+const BASE = process.env.BASE ?? 'http://127.0.0.1:8799';
+const OUT = new URL('./shots/', import.meta.url).pathname;
+const wallet = readFileSync(new URL('./testwallet.js', import.meta.url), 'utf8');
+const toks = (await (await fetch(`${BASE}/api/lp/tokens`)).json()).tokens;
+const bySym = Object.fromEntries(toks.map((t) => [t.symbol, t.mint]));
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+const problems = [];
+async function run(name, viewport, scheme, fn) {
+  const ctx = await browser.newContext({ viewport, colorScheme: scheme, deviceScaleFactor: 1 });
+  await ctx.addInitScript(wallet);
+  const page = await ctx.newPage();
+  page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') problems.push(`${name} console.${m.type()}: ${m.text()}`); });
+  page.on('pageerror', (e) => problems.push(`${name} pageerror: ${e.message}`));
+  page.on('response', (r) => { if (r.status() >= 400) problems.push(`${name} HTTP ${r.status()} ${r.url()}`); });
+  try { await fn(page); } catch (e) { problems.push(`${name} DRIVER: ${e.message.split('\n')[0]}`); await page.screenshot({ path: `${OUT}${name}-FAIL.png`, fullPage: true }); }
+  await ctx.close();
+}
+const shot = (page, n) => page.screenshot({ path: `${OUT}${n}.png`, fullPage: true });
+const settle = (page) => page.waitForTimeout(700);
+
+await run('desktop', { width: 1280, height: 860 }, 'dark', async (page) => {
+  await page.goto(`${BASE}/#/`); await settle(page); await shot(page, '01-explore');
+  await page.click('#connect'); await settle(page); await shot(page, '02-wallet-picker');
+  await page.click('.wopt'); await settle(page); await shot(page, '03-connected');
+  await page.locator('#wallet').getByText(/Get test/).click(); await settle(page); await shot(page, '04-faucet');
+  await page.goto(`${BASE}/#/t/${bySym.SFROG}`); await settle(page); await shot(page, '05-token');
+  await page.fill('#amt', '25'); await page.waitForTimeout(1200); await shot(page, '06-buy-quote');
+  await page.click('#trade'); await page.waitForTimeout(1500); await shot(page, '07-buy-flow');
+  await page.goto(`${BASE}/#/t/${bySym.GRAD}`); await settle(page); await shot(page, '08-graduated');
+  await page.goto(`${BASE}/#/create`); await settle(page);
+  await page.fill('#f-name', 'Moon Cat'); await page.fill('#f-symbol', 'mcat'); await page.fill('#f-desc', 'A sample devnet coin.');
+  await page.check('#f-consent'); await shot(page, '09-create');
+  await page.getByRole('button', { name: 'Launch coin' }).click(); await page.waitForTimeout(1500); await shot(page, '10-create-flow');
+});
+await run('mobile', { width: 390, height: 844 }, 'light', async (page) => {
+  await page.goto(`${BASE}/#/`); await settle(page); await shot(page, '11-mobile-explore');
+  await page.goto(`${BASE}/#/t/${bySym.TCAT}`); await settle(page); await shot(page, '12-mobile-token');
+  const w = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
+  if (w[0] > w[1]) problems.push(`mobile horizontal overflow ${w[0]} > ${w[1]}`);
+});
+await browser.close();
+console.log(problems.length ? problems.join('\n') : 'NO PROBLEMS');

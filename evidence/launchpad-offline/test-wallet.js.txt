@@ -1,0 +1,37 @@
+// Injected TEST wallet (Wallet Standard). Key generated in-page with WebCrypto, never leaves the page.
+(() => {
+  if (!globalThis.crypto?.subtle) return; // about:blank before navigation
+  const ALPH = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  const b58 = (b) => { let n = 0n; for (const x of b) n = n * 256n + BigInt(x); let s = ''; while (n > 0n) { s = ALPH[Number(n % 58n)] + s; n /= 58n; } for (const x of b) { if (x) break; s = '1' + s; } return s; };
+  const cu16 = (b, o) => { let v = 0, s = 0, i = 0; for (;;) { const x = b[o + i++]; v |= (x & 0x7f) << s; if (!(x & 0x80)) break; s += 7; } return [v, i]; };
+  let kp, pub, address;
+  const ready = (async () => { kp = await crypto.subtle.generateKey({ name: 'Ed25519' }, false, ['sign', 'verify']); pub = new Uint8Array(await crypto.subtle.exportKey('raw', kp.publicKey)); address = b58(pub); })();
+  const account = () => ({ address, publicKey: pub, chains: ['solana:devnet'], features: ['solana:signTransaction'] });
+  window.__testWallet = { signed: 0, rejectNext: false, address: () => address };
+  const wallet = {
+    version: '1.0.0', name: 'QF Test Wallet', icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4=', chains: ['solana:devnet'],
+    get accounts() { return address ? [account()] : []; },
+    features: {
+      'standard:connect': { version: '1.0.0', connect: async () => { await ready; return { accounts: [account()] }; } },
+      'standard:disconnect': { version: '1.0.0', disconnect: async () => {} },
+      'standard:events': { version: '1.0.0', on: () => () => {} },
+      'solana:signTransaction': { version: '1.0.0', supportedTransactionVersions: ['legacy', 0], signTransaction: async (...inputs) => {
+        await ready;
+        if (window.__testWallet.rejectNext) { window.__testWallet.rejectNext = false; throw new Error('User rejected the request.'); }
+        return Promise.all(inputs.map(async ({ transaction }) => {
+          const tx = new Uint8Array(transaction);
+          const [n, l] = cu16(tx, 0); const msgOff = l + 64 * n; const msg = tx.slice(msgOff);
+          let o = (msg[0] & 0x80) ? 1 : 0; o += 3; const [nk, kl] = cu16(msg, o); o += kl;
+          let idx = -1; for (let i = 0; i < nk; i++) { const k = msg.slice(o + 32 * i, o + 32 * i + 32); if (k.every((x, j) => x === pub[j])) { idx = i; break; } }
+          if (idx < 0 || idx >= n) throw new Error('wallet is not a signer of this transaction');
+          const s = new Uint8Array(await crypto.subtle.sign('Ed25519', kp.privateKey, msg));
+          tx.set(s, l + 64 * idx); window.__testWallet.signed++;
+          return { signedTransaction: tx };
+        }));
+      } },
+    },
+  };
+  const reg = (api) => api.register(wallet);
+  try { window.dispatchEvent(new CustomEvent('wallet-standard:register-wallet', { detail: reg })); } catch {}
+  window.addEventListener('wallet-standard:app-ready', (e) => reg(e.detail));
+})();

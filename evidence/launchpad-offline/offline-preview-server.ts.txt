@@ -1,0 +1,92 @@
+// SCRATCH (not committed): offline UI preview. Fake chain + seeded SAMPLE launches; nothing live, no keys.
+import { randomBytes } from 'node:crypto';
+import { deflateSync } from 'node:zlib';
+import { economicsDigest } from '@project-qf/policy';
+import { base58, verifyWireSignatures } from '@project-qf/tx';
+import { buildCreatePool, buildSwap, quoteSwap, readPool, summarisePool, type LivePool } from '@project-qf/adapter-meteora-dbc/launchpad';
+import { createQuoteSimulator } from '@project-qf/adapter-meteora-dbc';
+import { accountsForPool, fixtures, K, thresholdRecord } from '../../../packages/adapter-meteora-dbc/test/support/fixtures.ts';
+import { createMockConnection } from '../../../packages/adapter-meteora-dbc/test/support/mockRpc.ts';
+import type { LaunchpadChain } from '../src/chain.ts';
+import { launchEconomicsFor, type PlatformRecord } from '../src/platform.ts';
+import { createLaunchpadApp } from '../src/server.ts';
+import { LaunchpadStore } from '../src/store.ts';
+
+const addr = () => base58(randomBytes(32));
+const sig = () => base58(randomBytes(64));
+const { accounts } = await accountsForPool(false);
+const { connection: conn } = createMockConnection(accounts);
+Object.assign(conn, { getLatestBlockhash: async () => ({ blockhash: 'GfVcyD4kkTrj4bKc7WA9sZCin9JDbdT4Zkd3EittNR1W', lastValidBlockHeight: 1000 }) });
+const basePool = (await readPool(conn, K.pool.toBase58()))!;
+{ const { cfgParams } = fixtures(); const B = (cfgParams.migrationQuoteThreshold as any).constructor; (basePool.raw.config as any).migrationSqrtPrice = new B(createQuoteSimulator(cfgParams).migrationSqrtPrice.toString()); }
+const baseState = ((basePool.raw.virtualPool as any).poolState ?? basePool.raw.virtualPool);
+const BNc = baseState.quoteReserve.constructor;
+const threshold = thresholdRecord();
+const quote = { mint: K.quoteMint.toBase58(), decimals: 6 };
+const launchEconomics = launchEconomicsFor(K.config.toBase58(), quote, threshold);
+const platform: PlatformRecord = { cluster: 'devnet', operator: K.partner.toBase58(), quote: { ...quote, supplyRaw: '1000000000000000', signature: sig(), label: 'TEST_ONLY', symbol: 'qUSD' }, threshold,
+  config: { config: K.config.toBase58(), quoteMint: quote.mint, feeClaimer: K.partner.toBase58(), leftoverReceiver: K.leftover.toBase58(), signature: sig() },
+  economicsVersion: 'economics-v0-test', templateVersion: 'standard-v1-flat-v0-test', launchEconomics, launchEconomicsDigest: economicsDigest(launchEconomics), createdAt: new Date().toISOString() };
+
+function png(r: number, g: number, b: number) {
+  const crc = (buf: Buffer) => { let c = ~0; for (const x of buf) { c ^= x; for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1)); } return ~c >>> 0; };
+  const chunk = (t: string, d: Buffer) => { const l = Buffer.alloc(4); l.writeUInt32BE(d.length); const td = Buffer.concat([Buffer.from(t), d]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([l, td, c]); };
+  const W = 64, ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(W, 4); ihdr[8] = 8; ihdr[9] = 2;
+  const rows = []; for (let y = 0; y < W; y++) { rows.push(0); for (let x = 0; x < W; x++) { const d = Math.hypot(x - 32, y - 32) < 24; rows.push(d ? r : 30, d ? g : 30, d ? b : 40); } }
+  return new Uint8Array(Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(Buffer.from(rows))), chunk('IEND', Buffer.alloc(0))]));
+}
+
+const store = new LaunchpadStore(process.env.PREVIEW_DB ?? ':memory:');
+const pools = new Map<string, LivePool>();
+const thr = BigInt(basePool.migrationQuoteThreshold);
+const seeds = [
+  { name: 'Sample Frog', symbol: 'SFROG', frac: 0.72, color: [80, 200, 120] as const, trades: 40 },
+  { name: 'Test Cat Coin', symbol: 'TCAT', frac: 0.31, color: [240, 160, 60] as const, trades: 18 },
+  { name: 'Devnet Doge', symbol: 'DDOGE', frac: 0.06, color: [220, 200, 80] as const, trades: 5 },
+  { name: 'Graduated Sample', symbol: 'GRAD', frac: 1, color: [140, 120, 240] as const, trades: 60, migrated: true },
+  { name: 'No Image Yet', symbol: 'NOIMG', frac: 0, color: null, trades: 0 },
+];
+const now = Date.now();
+for (const [i, s] of seeds.entries()) {
+  const mint = addr(), pool = addr(), creator = addr();
+  const vp: any = { ...baseState };
+  const reserve = (thr * BigInt(Math.round(s.frac * 1000))) / 1000n;
+  const sqrt0 = BigInt(basePool.sqrtPrice);
+  const sqrt = (sqrt0 * BigInt(Math.round(1000 + s.frac * 1400))) / 1000n;
+  Object.assign(vp, { quoteReserve: new BNc(reserve.toString()), sqrtPrice: new BNc(sqrt.toString()), isMigrated: s.migrated ? 1 : 0 });
+  const lp = summarisePool(pool, { ...(basePool.raw.virtualPool as any), poolState: vp }, { ...(basePool.raw.config as any), preMigrationTokenSupply: new BNc('1000000000000000') });
+  pools.set(pool, { ...lp, raw: basePool.raw }); // display varies; quoting uses the consistent fixture curve
+  const createdAt = new Date(now - (i + 1) * 3_600_000 * 2.3).toISOString();
+  store.insertPendingLaunch({ mint, pool, config: platform.config.config, quoteMint: quote.mint, creator, name: s.name, symbol: s.symbol,
+    description: `SAMPLE data for the offline UI preview (${s.symbol}). Not a real token.`, website: i === 0 ? 'https://example.com' : null, twitter: i === 0 ? 'https://x.com/example' : null, telegram: null,
+    imageType: s.color ? 'image/png' : null, metadataUri: `http://127.0.0.1:8788/m/${mint}.json`, createdAt }, s.color ? png(...s.color) : null);
+  store.markLaunchLive(mint, sig(), createdAt);
+  if (s.migrated) store.markLaunchMigrated(mint, sig(), addr(), new Date(now - 600_000).toISOString());
+  const traders = [creator, addr(), addr(), addr(), addr()];
+  for (let t = 0; t < s.trades; t++) {
+    const buy = t < 3 || Math.random() < 0.7;
+    const q = BigInt(Math.floor(5 + Math.random() * 60)) * 1_000_000n;
+    const pFp = (BigInt(lp.priceQuotePerBase) * BigInt(300 + Math.round((700 * (t + 1)) / s.trades) + Math.floor(Math.random() * 60) - 30)) / 1000n; // ramps up to the live price
+    store.insertTrade({ sig: sig(), mint, trader: traders[t % traders.length]!, side: buy ? 'BUY' : 'SELL', quoteRaw: q.toString(), baseRaw: ((q * 10n ** 18n * 1_000_000n) / pFp).toString(),
+      slot: 1000 + t, blockTime: Math.floor((Date.parse(createdAt) + t * 120_000) / 1000), source: 'SAMPLE' });
+  }
+}
+
+const chain: LaunchpadChain = {
+  operatorAddress: K.partner.toBase58(),
+  readPool: async (p) => pools.get(p) ?? null,
+  buildCreatePool: (r) => buildCreatePool(conn, r),
+  buildSwap: (pool, r, n) => buildSwap(conn, pool, r, n),
+  quoteSwap,
+  send: async (b) => (await verifyWireSignatures(b)).firstSignature,
+  txSummary: async () => null,
+  newSignatures: async () => [],
+  balances: async (_o, mints) => ({ lamports: '1500000000', tokens: Object.fromEntries(mints.map((m, i) => [m, i === 0 ? '10000000000' : '0'])) }),
+  lamports: async () => 1_500_000_000n,
+  faucet: async () => sig(),
+  migrate: async () => sig(),
+  dammPoolFor: async () => addr(),
+};
+void createQuoteSimulator;
+const app = createLaunchpadApp({ store, chain, platform: () => platform, staticDir: new URL('../../web/dist', import.meta.url).pathname, publicBaseUrl: 'http://127.0.0.1:8788', log: console.log });
+app.listen(Number(process.env.PORT ?? 8799), '127.0.0.1', () => console.log('preview on', (app.address() as any).port));

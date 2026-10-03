@@ -1,0 +1,13 @@
+PASS  override-declared: pnpm-workspace.yaml contains "@meteora-ag/cp-amm-sdk@1.4.10>chain": "-"
+PASS  lockfile-override-recorded: pnpm-lock.yaml overrides section records the removal
+PASS  lockfile-no-chain-package: no chain@* key in packages/snapshots
+PASS  lockfile-no-chain-edge: no dependency edge named chain
+PASS  resolved-graph: 0 of 513 graph occurrences are named chain
+PASS  node_modules: no chain directory in the virtual store or any node_modules
+PASS  runtime-module-cache: CJS load of both SDKs: 306 modules, chain modules 0, resolvable=false
+PASS  published-artifact-imports: no chain import/require/dynamic import in index.d.mts, index.d.ts, index.js, index.js.map, index.mjs, index.mjs.map
+PASS  published-artifact-unmodified: installed cp-amm-sdk package.json still declares chain ^0.4.0 (artifact not patched)
+PASS  published-artifact-integrity: lockfile integrity sha512-Y3UPjP91VWrj86hOr4kDmU1UXiESspy8YP6Z/4XtWD1eCVwUN0xMEzCvKXM2IRz5ECSj8alO2od1czhMhvcD8g== matches the inspected npm pack tarball
+PASS  sbom:sbom/project-qf.cdx.json: 133 components, none named chain
+PASS  sbom:sbom/apps-web.cdx.json: 53 components, none named chain
+RESULT PASS
