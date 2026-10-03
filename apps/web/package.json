@@ -9,15 +9,18 @@
     "build": "node build.ts"
   },
   "dependencies": {
-    "@project-qf/core": "workspace:*",
     "@project-qf/contracts": "workspace:*",
-    "@project-qf/validator": "workspace:*",
+    "@project-qf/core": "workspace:*",
     "@project-qf/policy": "workspace:*",
     "@project-qf/rewards": "workspace:*",
-    "@project-qf/tx": "workspace:*"
+    "@project-qf/tx": "workspace:*",
+    "@project-qf/validator": "workspace:*"
   },
   "devDependencies": {
-    "playwright-core": "1.56.1",
-    "esbuild": "0.28.2"
+    "@fontsource-variable/bricolage-grotesque": "5.3.0",
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
+    "esbuild": "0.28.2",
+    "playwright-core": "1.56.1"
   }
 }

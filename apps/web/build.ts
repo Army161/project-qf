@@ -18,4 +18,11 @@ const r = await build({
 });
 writeFileSync(join(out, 'meta.json'), JSON.stringify(r.metafile, null, 2));
 for (const f of ['index.html', 'mock.html', 'styles.css', 'launchpad.html', 'launchpad.css']) copyFileSync(join(here, f), join(out, f));
+// Launchpad web fonts (OFL-1.1, exact exceptions QF-LIC-EX-003..005): the unmodified latin variable woff2 files, each with its licence beside it.
+mkdirSync(join(out, 'fonts'), { recursive: true });
+for (const f of ['bricolage-grotesque', 'geist', 'geist-mono']) {
+  const pkg = join(here, 'node_modules/@fontsource-variable', f);
+  copyFileSync(join(pkg, 'files', `${f}-latin-wght-normal.woff2`), join(out, 'fonts', `${f}.woff2`));
+  copyFileSync(join(pkg, 'LICENSE'), join(out, 'fonts', `${f}.OFL.txt`));
+}
 console.log(JSON.stringify({ outputs: Object.keys(r.metafile.outputs).map((p) => p.split('/dist/').pop()), inputs: Object.keys(r.metafile.inputs).length }));

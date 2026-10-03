@@ -1,6 +1,6 @@
 {
   "tool": "tools/boundary/check-browser-boundary.ts",
-  "generatedAt": "2026-10-03T10:51:17.288Z",
+  "generatedAt": "2026-10-03T21:06:12.410Z",
   "graph": {
     "packages": 57,
     "forbidden": [],
@@ -55,6 +55,12 @@
     "artifacts": [
       "app.js",
       "app.js.map",
+      "fonts/bricolage-grotesque.OFL.txt",
+      "fonts/bricolage-grotesque.woff2",
+      "fonts/geist-mono.OFL.txt",
+      "fonts/geist-mono.woff2",
+      "fonts/geist.OFL.txt",
+      "fonts/geist.woff2",
       "index.html",
       "launchpad.css",
       "launchpad.html",

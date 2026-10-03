@@ -35,18 +35,15 @@ export const READINESS: Readonly<Record<Stage, Readonly<StageRecord>>> = f({
     ]),
   }),
   DEVNET_INTEGRATION: f({
-    status: 'BLOCKED',
-    scope: 'public devnet with disposable test wallets and valueless TEST_ONLY assets',
-    blockers: f([
-      'DEV-1 read-only program/config verification with validated devnet genesis (tools/program-verify)',
-      'DEV-2 cluster-safety checks (genesis-pinned RPC, no mainnet-capable keys in the environment)',
-      'DEV-3 review of deployed-service terms for commercial devnet testing',
-    ]),
+    status: 'ACTIVE',
+    scope: 'public devnet with disposable test wallets and valueless TEST_ONLY assets. Opened 2026-10-03T21:06:00Z by the product owner (Jeremy Gephart, "unblock devnet" in the launchpad thread), standing in for DEV-3 on devnet only. DEV-1: devnet read-only verification ran 2026-10-03 (single provider; F7 devnet program bytes differ from mainnet, so devnet results are not mainnet evidence). DEV-2: the launchpad adapter pins the devnet genesis hash, refuses mainnet and requires MAINNET_WRITES=false; operator key is a throwaway generated outside git',
+    blockers: f([]),
   }),
   MAINNET: f({
     status: 'BLOCKED',
     scope: 'production',
-    blockers: f(['P0-M1..P0-M7 (DEPLOYMENT.md §2)', 'MAINNET_WRITES=false', 'REWARDS_SETTLEMENT_MAINNET=false']),
+    blockers: f(['P0-M1..P0-M7 (DEPLOYMENT.md §2)', 'MAINNET_WRITES=false', 'REWARDS_SETTLEMENT_MAINNET=false',
+      'DEV-3 review of deployed-service terms for commercial use (owner waived it for devnet only on 2026-10-03; still required before mainnet)']),
   }),
 });
 

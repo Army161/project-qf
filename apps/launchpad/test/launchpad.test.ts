@@ -237,3 +237,17 @@ test('pool summaries ignore a zero fixed-supply field (a zero BN is truthy) and 
   assert.equal(fixed.totalSupplyRaw, '1000000000000000');
   assert.ok(BigInt(fixed.marketCapQuoteRaw) > 0n);
 });
+
+test('the trade tape lists recent trades of live coins only, newest first', async () => {
+  const { call, store, platform } = await harness();
+  const t = new Date().toISOString();
+  const base = { config: platform.config.config, quoteMint: platform.quote.mint, creator: K.creator.toBase58(), description: '', website: null, twitter: null, telegram: null, imageType: null, metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: t };
+  store.insertPendingLaunch({ ...base, mint: K.baseMint.toBase58(), pool: K.pool.toBase58(), name: 'Live', symbol: 'LIVE' }, null);
+  store.markLaunchLive(K.baseMint.toBase58(), 'sig-live', t);
+  store.insertPendingLaunch({ ...base, mint: K.quoteMint.toBase58(), pool: K.config.toBase58(), name: 'Pending', symbol: 'PEND' }, null);
+  const trade = (sig: string, mint: string, blockTime: number) => store.insertTrade({ sig, mint, trader: K.creator.toBase58(), side: 'BUY', quoteRaw: '1', baseRaw: '1', slot: blockTime, blockTime, source: 'test' });
+  trade('old', K.baseMint.toBase58(), 100); trade('new', K.baseMint.toBase58(), 200); trade('hidden', K.quoteMint.toBase58(), 300);
+  const r = await call('/api/lp/trades/recent');
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.body.trades.map((x: { sig: string; symbol: string }) => `${x.sig}:${x.symbol}`), ['new:LIVE', 'old:LIVE']);
+});

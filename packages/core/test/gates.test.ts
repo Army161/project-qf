@@ -20,10 +20,14 @@ test('readiness is tracked as four separate stages', () => {
   assert.equal(READINESS.OFFLINE_V0.status, 'ACTIVE');
   assert.equal(READINESS.READ_ONLY_VERIFICATION.status, 'BLOCKED');
   assert.equal(READINESS.LOCALNET_INTEGRATION.status, 'BLOCKED');
-  assert.equal(READINESS.DEVNET_INTEGRATION.status, 'BLOCKED');
+  // devnet opened by the product owner 2026-10-03T21:06Z (devnet only; DEV-3 carried to MAINNET)
+  assert.equal(READINESS.DEVNET_INTEGRATION.status, 'ACTIVE');
+  assert.match(READINESS.DEVNET_INTEGRATION.scope, /2026-10-03T21:06:00Z/);
+  assert.ok(READINESS.MAINNET.blockers.some((b) => b.startsWith('DEV-3')), 'DEV-3 stays a mainnet blocker');
   assert.equal(READINESS.MAINNET.status, 'BLOCKED');
   assert.doesNotThrow(() => assertStageActive('OFFLINE_V0'));
-  for (const s of ['LOCALNET_INTEGRATION', 'DEVNET_INTEGRATION', 'MAINNET'] as const) {
+  assert.doesNotThrow(() => assertStageActive('DEVNET_INTEGRATION'));
+  for (const s of ['LOCALNET_INTEGRATION', 'MAINNET'] as const) {
     assert.throws(() => assertStageActive(s), /BLOCKED/);
     assert.ok(READINESS[s].blockers.length > 0, `${s} must list blockers`);
   }

@@ -45,10 +45,24 @@ function h<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, 
 }
 const $ = (sel: string) => document.querySelector(sel) as HTMLElement;
 const ext = (href: string, text: string, cls = '') => h('a', { href, target: '_blank', rel: 'noopener noreferrer', class: cls }, text);
+/** Stroke icon from path data (no innerHTML). */
+function icon(paths: string[], size = 18, color = 'currentColor') {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  for (const [k, v] of Object.entries({ width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) svg.setAttribute(k, String(v));
+  for (const d of paths) { const p = document.createElementNS(ns, 'path'); p.setAttribute('d', d); svg.append(p); }
+  return svg;
+}
+const ICON = {
+  shield: ['M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z', 'm9 12 2 2 4-4'],
+  copy: ['M9 9h11v11H9z', 'M5 15V5a2 2 0 0 1 2-2h8'],
+  image: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'm21 15-5-5L5 21', 'M9 7.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z'],
+};
 
 // ------------------------------------------------------------------ state
-const state: { platform: Platform | null; wallet: Connected | null; balances: { lamports: string; tokens: Record<string, string> } | null; tokens: Token[]; sort: 'new' | 'mcap' | 'progress' } =
-  { platform: null, wallet: null, balances: null, tokens: [], sort: 'new' };
+type Sort = 'traded' | 'new' | 'progress' | 'graduated';
+const state: { platform: Platform | null; wallet: Connected | null; balances: { lamports: string; tokens: Record<string, string> } | null; tokens: Token[]; sort: Sort; query: string } =
+  { platform: null, wallet: null, balances: null, tokens: [], sort: 'traded', query: '' };
 const Q = () => state.platform?.platform?.quote ?? { mint: '', decimals: 6, symbol: 'qUSD', label: 'TEST_ONLY' };
 
 function toast(msg: string, kind: 'ok' | 'err' | 'info' = 'info') {
@@ -62,7 +76,7 @@ function avatar(t: Pick<Token, 'mint' | 'symbol' | 'imageUrl'>, size = 'md') {
   if (t.imageUrl) return h('img', { class: `avatar ${size}`, src: t.imageUrl, alt: '' });
   let x = 0;
   for (const c of t.mint) x = (x * 31 + c.charCodeAt(0)) >>> 0;
-  return h('div', { class: `avatar ${size} gen`, 'data-hue': String(x % 12), 'aria-hidden': 'true' }, t.symbol.slice(0, 2).toUpperCase());
+  return h('div', { class: `avatar ${size} gen`, 'data-hue': String(x % 8), 'aria-hidden': 'true' }, t.symbol.slice(0, 2).toUpperCase());
 }
 
 // ------------------------------------------------------------------ wallet UI
@@ -125,10 +139,10 @@ function stepsView(labels: string[]) {
   const checks = h('ul', { class: 'checks' });
   const msg = h('p', { class: 'flowmsg' });
   const set = (k: number, s: StepState) => { items[k]!.className = `step ${s}`; };
-  return { el: h('div', {}, h('ol', { class: 'steps' }, ...items), checks, msg), set, checks, msg };
+  return { el: h('div', { class: 'flow' }, h('ol', { class: 'steps' }, ...items), h('div', { class: 'checks-box' }, h('span', { class: 'eyebrow' }, 'Checked in your browser'), checks), msg), set, checks, msg };
 }
 function renderChecks(ul: HTMLElement, cs: Check[]) {
-  ul.replaceChildren(...cs.map((c) => h('li', { class: c.ok ? 'ok' : 'bad' }, c.ok ? '✓ ' : '✗ ', c.label, c.detail && !c.ok ? h('span', { class: 'dim' }, ` (${c.detail})`) : null)));
+  ul.replaceChildren(...cs.map((c) => h('li', { class: c.ok ? 'ok' : 'bad' }, h('span', {}, c.label, c.detail && !c.ok ? h('span', { class: 'dim' }, ` (${c.detail})`) : null))));
 }
 
 interface Built { intentId: string; transaction: string; terms: ApprovedTerms }
@@ -136,7 +150,7 @@ interface Built { intentId: string; transaction: string; terms: ApprovedTerms }
 async function runSigningFlow<T>(title: string, build: () => Promise<Built>, expect: (b: Built) => Expectation, extraSigner?: { address: string; key: CryptoKey }): Promise<T | null> {
   const w = requireWallet();
   if (!w) return null;
-  const v = stepsView(['Build transaction on the server', 'Verify it in your browser', 'Sign in your wallet', 'Confirm on devnet']);
+  const v = stepsView(['Build the transaction', 'Check it in this browser', 'Sign in your wallet', 'Confirm on devnet']);
   openModal(title, v.el, { dismissable: false });
   let k = 0;
   try {
@@ -149,7 +163,7 @@ async function runSigningFlow<T>(title: string, build: () => Promise<Built>, exp
     if (!r.ok) throw new Error('The transaction did not match what you asked for, so it was not sent to your wallet.');
     v.set(k++, 'ok'); v.set(k, 'run');
     if (extraSigner) bytes = await addSignature(bytes, extraSigner.address, extraSigner.key);
-    v.msg.textContent = `Approve the transaction in ${w.wallet.name}.`;
+    v.msg.replaceChildren('Approve the request in ', h('strong', {}, w.wallet.name), '. It should say devnet. If any check above had failed, we would have stopped before asking.');
     const signed = await signTransaction(w, bytes);
     v.set(k++, 'ok'); v.set(k, 'run');
     v.msg.textContent = 'Sending and waiting for devnet confirmation…';
@@ -169,49 +183,105 @@ async function runSigningFlow<T>(title: string, build: () => Promise<Built>, exp
 
 // ------------------------------------------------------------------ views
 const currentMint = () => (/^#\/t\/([1-9A-HJ-NP-Za-km-z]{32,44})$/.exec(location.hash)?.[1]);
+const isGraduated = (t: Token) => t.status === 'MIGRATED' || !!t.live?.isMigrated;
 
-function progressBar(bps: number, complete: boolean) {
-  return h('div', { class: `bar${complete ? ' done' : ''}`, role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(Math.round(bps / 100)) },
+function progressBar(bps: number, complete: boolean, big = false) {
+  return h('div', { class: `bar${complete ? ' done' : ''}${big ? ' big' : ''}`, role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(Math.round(bps / 100)) },
     h('div', { class: 'fill', style: { width: `${Math.min(100, bps / 100)}%` } }));
 }
 function statusChip(t: Token) {
-  if (t.status === 'MIGRATED' || t.live?.isMigrated) return h('span', { class: 'chip grad' }, 'Graduated');
-  if (t.live?.curveComplete) return h('span', { class: 'chip warn' }, 'Migrating');
+  if (isGraduated(t)) return h('span', { class: 'chip grad' }, 'Graduated');
+  if (t.live?.curveComplete) return h('span', { class: 'chip warn' }, 'Graduating');
+  if ((t.live?.progressBps ?? 0) >= 8000) return h('span', { class: 'chip hot' }, 'Hot');
   return h('span', { class: 'chip live' }, 'Bonding');
+}
+function progressLabel(t: Token) {
+  const l = t.live;
+  if (!l) return '';
+  return isGraduated(t) ? 'Trading on DAMM v2' : l.curveComplete ? 'Curve full, graduating' : `${pct(l.progressBps)} to graduation`;
 }
 
 function tokenCard(t: Token) {
   const q = Q();
   const l = t.live;
   return h('a', { class: 'tcard', href: `#/t/${t.mint}` },
-    h('div', { class: 'tc-top' }, avatar(t), h('div', { class: 'tc-id' }, h('div', { class: 'tc-name' }, t.name), h('div', { class: 'tc-sym' }, `$${t.symbol}`)), statusChip(t)),
+    h('div', { class: 'tc-top' }, avatar(t), h('div', { class: 'tc-id' }, h('span', { class: 'tc-name' }, t.name), h('span', { class: 'tc-sym' }, `$${t.symbol}`, statusChip(t)))),
     t.description ? h('p', { class: 'tc-desc' }, t.description) : null,
     h('div', { class: 'tc-stats' },
       h('div', {}, h('span', { class: 'k' }, 'Market cap'), h('span', { class: 'v' }, l ? `${compact(l.marketCapQuoteRaw, q.decimals)} ${q.symbol}` : '—')),
       h('div', {}, h('span', { class: 'k' }, 'Volume'), h('span', { class: 'v' }, `${compact(t.stats.volumeQuoteRaw, q.decimals)} ${q.symbol}`))),
     l ? progressBar(l.progressBps, l.curveComplete || l.isMigrated) : null,
-    h('div', { class: 'tc-foot' }, h('span', {}, !l ? '' : l.isMigrated || t.status === 'MIGRATED' ? 'Graduated to DAMM v2' : l.curveComplete ? 'Curve full, graduating' : `${pct(l.progressBps)} to graduation`), h('span', { class: 'dim' }, `${ago(t.liveAt ?? t.createdAt)} · by ${short(t.creator)}`)));
+    h('div', { class: 'tc-foot' }, h('b', {}, progressLabel(t)), h('span', {}, `${ago(t.liveAt ?? t.createdAt)} · by ${short(t.creator)}`)));
 }
+
+function featureCard(t: Token) {
+  const q = Q();
+  const l = t.live!;
+  return h('a', { class: 'feature', href: `#/t/${t.mint}` },
+    h('div', { class: 'feature-top' }, h('span', { class: 'eyebrow' }, 'Next to graduate'), h('span', { class: 'num dim small' }, `${t.stats.count} trades · ${t.stats.traders} traders`)),
+    h('div', { class: 'feature-id' }, avatar(t, 'xl'), h('div', { class: 'names' }, h('b', {}, t.name), h('span', { class: 'dim' }, `$${t.symbol}`)),
+      h('div', { class: 'mcap' }, h('div', { class: 'num' }, `${compact(l.marketCapQuoteRaw, q.decimals)} ${q.symbol}`), h('div', { class: 'dim small' }, 'market cap'))),
+    progressBar(l.progressBps, false, true),
+    h('div', { class: 'tc-foot' }, h('span', {}, h('b', { class: 'num' }, units(l.quoteReserve, q.decimals, 0)), ` of ${units(l.migrationQuoteThreshold, q.decimals, 0)} ${q.symbol} raised`), h('b', { class: 'up' }, pct(l.progressBps))));
+}
+
+async function renderTape() {
+  const box = $('#tape');
+  if (location.hash !== '' && location.hash !== '#/') { box.hidden = true; return; }
+  try {
+    const { trades } = await api<{ trades: { sig: string; mint: string; symbol: string; trader: string; side: 'BUY' | 'SELL'; quoteRaw: string }[] }>('/api/lp/trades/recent');
+    if (trades.length < 3) { box.hidden = true; return; }
+    const q = Q();
+    const item = (x: typeof trades[number]) => h('a', { class: 'tape-item', href: `#/t/${x.mint}` }, h('span', { class: `side ${x.side === 'BUY' ? 'buy' : 'sell'}` }, x.side === 'BUY' ? 'BUY' : 'SELL'),
+      h('span', { class: 'dim' }, short(x.trader)), h('span', {}, `${units(x.quoteRaw, q.decimals, 2)} ${q.symbol}`), h('span', { class: 'up' }, `$${x.symbol}`));
+    // two copies so the loop is seamless; the second copy is hidden from screen readers
+    const run = h('div', { class: 'tape-run' }, ...trades.map(item), ...trades.map((x) => { const a = item(x); a.setAttribute('aria-hidden', 'true'); a.tabIndex = -1; return a; }));
+    box.replaceChildren(run);
+    box.hidden = false;
+  } catch { box.hidden = true; }
+}
+
+function sortedTokens(): Token[] {
+  const qy = state.query.trim().toLowerCase();
+  let list = state.tokens.filter((t) => !qy || t.name.toLowerCase().includes(qy) || t.symbol.toLowerCase().includes(qy.replace(/^\$/, '')) || t.mint === state.query.trim());
+  if (state.sort === 'graduated') list = list.filter(isGraduated);
+  if (state.sort === 'progress') list = list.filter((t) => !isGraduated(t));
+  const key = (t: Token) => state.sort === 'traded' ? BigInt(t.stats.volumeQuoteRaw) : state.sort === 'progress' ? BigInt(t.live?.progressBps ?? 0) : BigInt(Date.parse(t.liveAt ?? t.createdAt));
+  return [...list].sort((a, b) => (key(b) > key(a) ? 1 : key(b) < key(a) ? -1 : 0));
+}
+let paintGrid: (() => void) | null = null;
 
 async function renderHome() {
   const main = $('#view');
   const q = Q();
-  const grid = h('div', { class: 'grid' }, h('div', { class: 'empty' }, 'Loading tokens…'));
-  const sortBtn = (k: typeof state.sort, label: string) => h('button', { class: `tab${state.sort === k ? ' on' : ''}`, onclick: () => { state.sort = k; renderHome(); } }, label);
-  main.replaceChildren(
-    h('section', { class: 'hero' },
-      h('div', {}, h('h1', {}, 'Launch a coin on a bonding curve in one signature.'),
-        h('p', { class: 'lead' }, `Every coin starts on a Meteora Dynamic Bonding Curve priced in ${q.symbol}. At ${state.platform?.platform ? units(state.platform.platform.threshold.rawQuoteThreshold, q.decimals, 0) : '—'} ${q.symbol} raised it graduates to a Meteora DAMM v2 pool with its liquidity locked for good.`),
-        h('div', { class: 'cta' }, h('a', { class: 'btn primary lg', href: '#/create' }, 'Create a coin'), h('button', { class: 'btn ghost lg', onclick: claimFaucet }, `Get test ${q.symbol}`))),
-      h('div', { class: 'hero-art', 'aria-hidden': 'true' }, h('div', { class: 'orb a' }), h('div', { class: 'orb b' }), h('div', { class: 'orb c' }))),
-    h('div', { class: 'section-head' }, h('h2', {}, 'Coins'), h('div', { class: 'tabs' }, sortBtn('new', 'Newest'), sortBtn('mcap', 'Market cap'), sortBtn('progress', 'About to graduate'))),
-    grid);
+  const threshold = state.platform?.platform ? units(state.platform.platform.threshold.rawQuoteThreshold, q.decimals, 0) : '—';
+  const grid = h('div', { class: 'grid' }, h('div', { class: 'empty' }, 'Loading coins…'));
+  const side = h('div', { class: 'how' }, h('span', { class: 'eyebrow' }, 'How it works'), h('ol', {},
+    h('li', {}, h('span', {}, 'Make a coin with a name, a ticker and a picture. One signature.')),
+    h('li', {}, h('span', {}, `Anyone can buy and sell it on its bonding curve, priced in ${q.symbol}.`)),
+    h('li', {}, h('span', {}, `At ${threshold} ${q.symbol} raised it graduates to Meteora DAMM v2 and its liquidity is locked forever.`))));
+  const hero = h('section', { class: 'hero' },
+    h('div', { class: 'hero-copy' }, h('h1', {}, 'Launch a coin', h('br'), 'in one signature.'),
+      h('p', { class: 'lead' }, `Every coin starts on a bonding curve priced in ${q.symbol}. When ${threshold} ${q.symbol} is raised it graduates to a Meteora DAMM v2 pool, and its liquidity is locked for good.`),
+      h('div', { class: 'cta' }, h('a', { class: 'btn primary lg', href: '#/create' }, 'Create a coin'), h('button', { class: 'btn ghost lg', onclick: claimFaucet }, `Get test ${q.symbol}`))),
+    side);
+  const tabs = h('div', { class: 'tabs', role: 'tablist', 'aria-label': 'Sort coins' });
+  const paintTabs = () => tabs.replaceChildren(...([['traded', 'Most traded'], ['new', 'New'], ['progress', 'About to graduate'], ['graduated', 'Graduated']] as [Sort, string][])
+    .map(([k, label]) => h('button', { class: `tab${state.sort === k ? ' on' : ''}`, role: 'tab', 'aria-selected': String(state.sort === k), onclick: () => { state.sort = k; paintTabs(); paintGrid?.(); } }, label)));
+  paintTabs();
+  main.replaceChildren(hero, h('section', {}, h('div', { class: 'section-head' }, h('h2', {}, 'Coins'), tabs), grid));
+  paintGrid = () => {
+    const list = sortedTokens();
+    grid.replaceChildren(...(list.length ? list.map(tokenCard)
+      : [h('div', { class: 'empty' }, state.tokens.length ? 'No coins match.' : 'No coins yet. ', state.tokens.length ? null : h('a', { href: '#/create' }, 'Launch the first one.'))]));
+  };
+  void renderTape();
   try {
     const { tokens } = await api<{ tokens: Token[] }>('/api/lp/tokens');
     state.tokens = tokens;
-    const key = (t: Token) => state.sort === 'mcap' ? BigInt(t.live?.marketCapQuoteRaw ?? '0') : state.sort === 'progress' ? BigInt(t.live?.isMigrated ? -1 : (t.live?.progressBps ?? 0)) : BigInt(Date.parse(t.liveAt ?? t.createdAt));
-    const sorted = [...tokens].sort((a, b) => (key(b) > key(a) ? 1 : key(b) < key(a) ? -1 : 0));
-    grid.replaceChildren(...(sorted.length ? sorted.map(tokenCard) : [h('div', { class: 'empty' }, 'No coins yet. ', h('a', { href: '#/create' }, 'Launch the first one.'))]));
+    const next = tokens.filter((t) => t.live && !isGraduated(t) && !t.live.curveComplete && t.live.progressBps > 0).sort((a, b) => b.live!.progressBps - a.live!.progressBps)[0];
+    if (next) side.replaceWith(featureCard(next));
+    paintGrid();
   } catch (e) { grid.replaceChildren(h('div', { class: 'empty err' }, `Could not load coins: ${(e as Error).message}`)); }
 }
 
@@ -235,52 +305,60 @@ function renderCreate() {
   if (!p) { main.replaceChildren(h('div', { class: 'empty' }, 'The devnet platform is not set up yet.')); return; }
   let imageDataUrl: string | null = null;
   const name = h('input', { id: 'f-name', maxLength: 32, placeholder: 'Moon Cat', required: true, autocomplete: 'off' });
-  const symbol = h('input', { id: 'f-symbol', maxLength: 10, placeholder: 'MCAT', required: true, autocomplete: 'off' });
+  const symbol = h('input', { id: 'f-symbol', maxLength: 10, placeholder: 'MCAT', required: true, autocomplete: 'off', 'aria-label': 'Ticker' });
   const desc = h('textarea', { id: 'f-desc', maxLength: 500, rows: 3, placeholder: 'What is this coin about?' });
   const web = h('input', { id: 'f-web', placeholder: 'https://', type: 'url' });
   const tw = h('input', { id: 'f-x', placeholder: 'https://x.com/…', type: 'url' });
   const tg = h('input', { id: 'f-tg', placeholder: 'https://t.me/…', type: 'url' });
   const file = h('input', { id: 'f-img', type: 'file', accept: 'image/png,image/jpeg,image/gif,image/webp' });
   const consent = h('input', { id: 'f-consent', type: 'checkbox' });
+  const pic = h('span', { class: 'pic' }, icon(ICON.image, 32));
   const preview = h('div', { class: 'preview' });
   const e = p.launchEconomics;
-  const updatePreview = () => preview.replaceChildren(tokenCard({ mint: 'preview', pool: '', name: name.value || 'Your coin', symbol: (symbol.value || 'TICKER').toUpperCase(), description: desc.value,
-    imageUrl: imageDataUrl, creator: state.wallet?.account.address ?? 'you', status: 'LIVE', createdAt: new Date().toISOString(), liveAt: null, website: null, twitter: null,
-    telegram: null, createSig: null, migrationSig: null, dammPool: null, stats: { count: 0, volumeQuoteRaw: '0', traders: 0 },
-    live: { priceQuotePerBase: '0', marketCapQuoteRaw: '0', quoteReserve: '0', migrationQuoteThreshold: p.threshold.rawQuoteThreshold, progressBps: 0, curveComplete: false, isMigrated: false,
-      baseDecimals: 6, quoteDecimals: q.decimals, totalSupplyRaw: '0', creatorQuoteFee: '0' } }));
+  const submit = h('button', { class: 'btn primary lg wide', type: 'submit' }, 'Launch coin');
+  const updatePreview = () => {
+    const sym = (symbol.value.trim() || 'TICKER').toUpperCase();
+    submit.textContent = symbol.value.trim() ? `Launch $${sym}` : 'Launch coin';
+    preview.replaceChildren(tokenCard({ mint: 'preview', pool: '', name: name.value || 'Your coin', symbol: sym, description: desc.value,
+      imageUrl: imageDataUrl, creator: state.wallet?.account.address ?? 'you', status: 'LIVE', createdAt: new Date().toISOString(), liveAt: null, website: null, twitter: null,
+      telegram: null, createSig: null, migrationSig: null, dammPool: null, stats: { count: 0, volumeQuoteRaw: '0', traders: 0 },
+      live: { priceQuotePerBase: '0', marketCapQuoteRaw: '0', quoteReserve: '0', migrationQuoteThreshold: p.threshold.rawQuoteThreshold, progressBps: 0, curveComplete: false, isMigrated: false,
+        baseDecimals: 6, quoteDecimals: q.decimals, totalSupplyRaw: '0', creatorQuoteFee: '0' } }));
+  };
   for (const el of [name, symbol, desc]) el.addEventListener('input', updatePreview);
   file.addEventListener('change', async () => {
     const f = file.files?.[0];
     if (!f) return;
-    try { imageDataUrl = await shrinkImage(f); updatePreview(); } catch (err) { toast(`Image: ${(err as Error).message}`, 'err'); }
+    try { imageDataUrl = await shrinkImage(f); pic.replaceChildren(h('img', { src: imageDataUrl, alt: '' })); updatePreview(); } catch (err) { toast(`Image: ${(err as Error).message}`, 'err'); }
   });
   updatePreview();
   const digestOk = economicsDigest(e) === p.launchEconomicsDigest;
-  const econ = h('dl', { class: 'econ' },
-    h('dt', {}, 'Total supply'), h('dd', {}, `${units(BigInt(e.totalSupply) * 10n ** BigInt(e.baseDecimals), e.baseDecimals, 0)} tokens, mint authority revoked at launch`),
-    h('dt', {}, 'Trading fee'), h('dd', {}, `${e.economics.baseFeeBps / 100}% flat on every trade, paid in ${q.symbol}`),
-    h('dt', {}, 'Your share'), h('dd', {}, `${e.economics.creatorTradingFeePct}% of trading fees (after the 20% Meteora protocol share)`),
-    h('dt', {}, 'Graduation'), h('dd', {}, `at ${units(e.migrationQuoteThresholdRaw, q.decimals, 0)} ${q.symbol} raised → Meteora DAMM v2, ${e.percentageSupplyOnMigration}% of supply paired`),
-    h('dt', {}, 'Liquidity'), h('dd', {}, `100% permanently locked after graduation (${e.economics.lp.creatorPermanentLockedPct}% creator / ${e.economics.lp.partnerPermanentLockedPct}% platform positions)`),
-    h('dt', {}, 'Launch cost'), h('dd', {}, 'no platform fee; you pay devnet rent and network fees (~0.03 SOL)'),
-    h('dt', {}, 'Policy'), h('dd', { class: 'mono' }, `${p.economicsVersion} · ${p.templateVersion} · digest ${p.launchEconomicsDigest.slice(0, 12)}…${digestOk ? '' : ' (MISMATCH)'}`));
-  const submit = h('button', { class: 'btn primary lg', type: 'submit' }, 'Launch coin');
+  const tile = (k: string, v: string) => h('div', {}, h('span', {}, k), h('b', {}, v));
+  const econ = h('div', { class: 'econ-tiles' },
+    tile('Supply', `${units(BigInt(e.totalSupply) * 10n ** BigInt(e.baseDecimals), e.baseDecimals, 0)}, fixed forever`),
+    tile('Trading fee', `${e.economics.baseFeeBps / 100}% on every trade, paid in ${q.symbol}`),
+    tile('Your cut', `${e.economics.creatorTradingFeePct}% of fees, after Meteora’s 20%`),
+    tile('Graduates at', `${units(e.migrationQuoteThresholdRaw, q.decimals, 0)} ${q.symbol} raised`),
+    tile('After graduation', `Meteora DAMM v2, ${e.percentageSupplyOnMigration}% of supply paired`),
+    tile('Liquidity', `Locked forever (${e.economics.lp.creatorPermanentLockedPct}% creator, ${e.economics.lp.partnerPermanentLockedPct}% platform)`));
   const form = h('form', { class: 'create-form', novalidate: true },
-    h('div', { class: 'two' }, h('label', {}, 'Name', name), h('label', {}, 'Ticker', symbol)),
+    h('div', {}, h('h1', {}, 'Make a coin.'), h('p', { class: 'lead' }, 'One signature creates the token, its picture and its bonding curve. Nobody, including you, can mint more later.')),
+    h('label', { class: 'drop' }, pic, h('span', {}, h('strong', {}, 'Drop a picture or tap to choose'), h('span', { class: 'dim small' }, 'PNG, JPEG, GIF or WebP. Resized to 512 px.')), file),
+    h('div', { class: 'row3' }, h('label', { class: 'span2' }, 'Name', name), h('label', {}, 'Ticker', h('span', { class: 'prefixed' }, '$', symbol))),
     h('label', {}, 'Description', desc),
-    h('label', { class: 'file' }, 'Image (PNG, JPEG, GIF or WebP; resized to 512 px)', file),
     h('details', {}, h('summary', {}, 'Links (optional)'), h('label', {}, 'Website', web), h('label', {}, 'X / Twitter', tw), h('label', {}, 'Telegram', tg)),
-    h('div', { class: 'card econ-card' }, h('h3', {}, 'Launch economics'), econ),
-    h('label', { class: 'consent' }, consent, h('span', {}, 'I reviewed the launch economics above. This is devnet: the coin and qUSD have no value.')),
-    submit);
+    h('div', { class: 'card econ-card' }, h('h3', {}, 'What you’re launching'), econ,
+      h('span', { class: 'mono dim' }, `${p.economicsVersion} · ${p.templateVersion} · digest ${p.launchEconomicsDigest.slice(0, 12)}…${digestOk ? '' : ' (MISMATCH)'}`)),
+    h('label', { class: 'consent' }, consent, h('span', {}, `I’ve read what I’m launching. This is devnet, so the coin and ${q.symbol} have no value.`)),
+    submit,
+    h('p', { class: 'dim small', style: { textAlign: 'center', margin: '0' } }, 'No platform fee. You pay devnet rent and network fees, about 0.03 SOL.'));
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const sym = symbol.value.trim().toUpperCase();
     const errs: string[] = [];
     if (!name.value.trim()) errs.push('name is required');
     if (!/^[A-Z0-9]{1,10}$/.test(sym)) errs.push('ticker must be 1–10 letters or digits');
-    if (!consent.checked) errs.push('tick the economics box');
+    if (!consent.checked) errs.push('tick the box to confirm you read what you are launching');
     if (!digestOk) errs.push('the economics shown do not match their digest; reload');
     if (errs.length) { toast(errs.join(', '), 'err'); return; }
     const w = requireWallet();
@@ -301,23 +379,27 @@ function renderCreate() {
     submit.disabled = false;
     if (out) { toast(`$${sym} is live`, 'ok'); location.hash = `#/t/${mintKey.address}`; }
   });
-  main.replaceChildren(h('div', { class: 'create' },
-    h('div', {}, h('h1', {}, 'Create a coin'), h('p', { class: 'lead' }, 'One wallet signature creates the token, its metadata and its bonding curve. Nobody, including you, can mint more later.'), form),
-    h('aside', {}, h('h4', {}, 'Preview'), preview)));
+  main.replaceChildren(h('div', { class: 'create' }, form,
+    h('aside', {}, h('span', { class: 'eyebrow' }, 'Preview'), preview,
+      h('div', { class: 'steps-explain' }, h('b', {}, 'What happens when you press Launch'), h('ol', {},
+        h('li', {}, 'Our server builds the launch transaction.'), h('li', {}, 'Your browser checks it against what you see here.'),
+        h('li', {}, 'Your wallet asks you to sign once.'), h('li', {}, 'The coin is live and tradable right away.'))))));
 }
 
 // ---------------- token page
+const tradePrice = (t: Trade, baseDecimals: number) => (BigInt(t.quoteRaw) * 10n ** BigInt(baseDecimals) * 10n ** 18n) / BigInt(t.baseRaw === '0' ? '1' : t.baseRaw);
 function chart(trades: Trade[], live: Live | null, baseDecimals: number) {
-  const pts = [...trades].reverse().map((t) => (BigInt(t.quoteRaw) * 10n ** BigInt(baseDecimals) * 10n ** 18n) / BigInt(t.baseRaw === '0' ? '1' : t.baseRaw));
+  const pts = [...trades].reverse().map((t) => tradePrice(t, baseDecimals));
   if (live) pts.push(BigInt(live.priceQuotePerBase));
-  const W = 640, H = 220, pad = 8;
-  if (pts.length < 2) return h('div', { class: 'chart empty' }, 'The price chart appears after the first trades.');
+  const W = 800, H = 260, pad = 10;
+  if (pts.length < 2) return h('div', { class: 'chart empty dim' }, 'The price chart appears after the first trades.');
   const max = pts.reduce((a, b) => (b > a ? b : a)), min = pts.reduce((a, b) => (b < a ? b : a));
   const span = max - min || 1n;
   const xy = pts.map((v, i) => [pad + (i * (W - 2 * pad)) / (pts.length - 1), H - pad - Number(((v - min) * 1000n) / span) * (H - 2 * pad) / 1000]);
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('class', 'chart'); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Price by trade');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('class', 'chart'); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Price by trade');
+  for (const y of [H / 4, H / 2, (3 * H) / 4]) { const g = document.createElementNS(ns, 'path'); g.setAttribute('d', `M0 ${y} H${W}`); g.setAttribute('class', 'grid-l'); svg.append(g); }
   const area = document.createElementNS(ns, 'path');
   area.setAttribute('d', `M${xy[0]![0]},${H} ${xy.map(([x, y]) => `L${x},${y}`).join(' ')} L${xy[xy.length - 1]![0]},${H} Z`); area.setAttribute('class', 'area');
   const line = document.createElementNS(ns, 'polyline');
@@ -337,29 +419,34 @@ async function renderToken(mint: string) {
   const l = t.live;
   const bd = l?.baseDecimals ?? 6;
   void refreshBalances(t.mint);
-  const graduated = t.status === 'MIGRATED' || !!l?.isMigrated;
+  const graduated = isGraduated(t);
 
   // trade panel
   let side: 'buy' | 'sell' = 'buy';
-  const amount = h('input', { id: 'amt', inputMode: 'decimal', placeholder: '0.00', autocomplete: 'off' });
-  const slip = h('select', { id: 'slip' }, ...[50, 100, 300, 500, 1000].map((b) => h('option', { value: String(b), selected: b === 100 }, `${b / 100}% slippage`)));
+  const amount = h('input', { id: 'amt', inputMode: 'decimal', placeholder: '0.00', autocomplete: 'off', 'aria-label': 'Amount to pay' });
+  const payUnit = h('span', {});
+  const slip = h('select', { id: 'slip', 'aria-label': 'Slippage' }, ...[50, 100, 300, 500, 1000].map((b) => h('option', { value: String(b), selected: b === 100 }, `${b / 100}%`)));
   const quoteBox = h('div', { class: 'quote' });
   const go = h('button', { class: 'btn primary lg wide', id: 'trade' }, 'Buy');
   const presets = h('div', { class: 'presets' });
   const tabs = h('div', { class: 'seg' });
+  const balanceLine = h('p', { class: 'dim small', style: { margin: '0' } });
+  const panelCard = h('div', { class: 'card trade' });
   const unitOf = () => (side === 'buy' ? q.decimals : bd);
   let lastQuote: any = null, qTimer: number | undefined;
   const setSide = (s: typeof side) => {
     side = s; amount.value = ''; quoteBox.replaceChildren(); lastQuote = null;
+    panelCard.classList.toggle('sell', s === 'sell');
+    payUnit.textContent = s === 'buy' ? q.symbol : `$${t.symbol}`;
     tabs.replaceChildren(h('button', { class: s === 'buy' ? 'on buy' : '', onclick: () => setSide('buy') }, 'Buy'), h('button', { class: s === 'sell' ? 'on sell' : '', onclick: () => setSide('sell') }, 'Sell'));
     go.textContent = s === 'buy' ? `Buy $${t.symbol}` : `Sell $${t.symbol}`;
-    go.className = `btn lg wide ${s === 'buy' ? 'primary' : 'danger'}`;
+    go.className = `btn lg wide ${s === 'buy' ? 'primary' : 'sell'}`;
     presets.replaceChildren(...(s === 'buy'
-      ? ['100', '500', '1000', '5000'].map((v) => h('button', { class: 'chipbtn', onclick: () => { amount.value = v; requote(); } }, `${v} ${q.symbol}`))
-      : [25, 50, 100].map((p) => h('button', { class: 'chipbtn', onclick: () => {
+      ? ['10', '50', '100', '500'].map((v) => h('button', { class: 'chipbtn', onclick: () => { amount.value = v; requote(); } }, `${v} ${q.symbol}`))
+      : [25, 50, 75, 100].map((p) => h('button', { class: 'chipbtn', onclick: () => {
         const bal = BigInt(state.balances?.tokens[t.mint] ?? '0');
         amount.value = units((bal * BigInt(p)) / 100n, bd, bd).replace(/,/g, ''); requote();
-      } }, `${p}%`))));
+      } }, p === 100 ? 'Max' : `${p}%`))));
   };
   const requote = () => {
     clearTimeout(qTimer);
@@ -374,7 +461,7 @@ async function renderToken(mint: string) {
         const outDec = side === 'buy' ? bd : q.decimals, outSym = side === 'buy' ? `$${t.symbol}` : q.symbol;
         quoteBox.replaceChildren(h('dl', {},
           h('dt', {}, 'You receive'), h('dd', { class: 'big' }, `${units(quote.expectedOut, outDec, 2)} ${outSym}`),
-          h('dt', {}, 'Minimum received'), h('dd', {}, `${units(quote.minimumAmountOut, outDec, 2)} ${outSym}`),
+          h('dt', {}, 'At least'), h('dd', {}, `${units(quote.minimumAmountOut, outDec, 2)} ${outSym}`),
           h('dt', {}, 'Fee'), h('dd', {}, `${units(BigInt(quote.tradingFee) + BigInt(quote.protocolFee), q.decimals, 4)} ${q.symbol}`),
           h('dt', {}, 'Price impact'), h('dd', { class: Number(quote.priceImpactBps) > 500 ? 'err' : '' }, pct(Number(quote.priceImpactBps)))));
       } catch (e) { quoteBox.replaceChildren(h('p', { class: 'err' }, (e as Error).message)); }
@@ -385,7 +472,7 @@ async function renderToken(mint: string) {
   go.addEventListener('click', async () => {
     const w = requireWallet();
     if (!w) return;
-    if (!lastQuote) { toast('Enter an amount first', 'err'); return; }
+    if (!lastQuote) { toast('Enter an amount first', 'err'); amount.focus(); return; }
     const shownQuote = lastQuote;
     const dir = side === 'buy' ? 'QUOTE_TO_BASE' : 'BASE_TO_QUOTE';
     go.disabled = true;
@@ -398,51 +485,72 @@ async function renderToken(mint: string) {
     if (out) { toast('Trade confirmed', 'ok'); renderToken(t.mint); }
   });
   setSide('buy');
+  if (state.balances) balanceLine.textContent = `Balance: ${units(state.balances.tokens[q.mint] ?? '0', q.decimals, 2)} ${q.symbol} · ${units(state.balances.tokens[t.mint] ?? '0', bd, 2)} $${t.symbol}`;
 
-  const panel = graduated
-    ? h('div', { class: 'card trade' }, h('h3', {}, 'Graduated 🎓'), h('p', {}, `This coin completed its bonding curve and now trades on a Meteora DAMM v2 pool with permanently locked liquidity.`),
-      t.dammPool ? ext(explorer('address', t.dammPool), 'Open the DAMM v2 pool on Explorer', 'btn ghost wide') : null,
-      t.migrationSig ? h('p', { class: 'dim' }, 'Migration tx: ', ext(explorer('tx', t.migrationSig), short(t.migrationSig, 8))) : null)
-    : l?.curveComplete
-      ? h('div', { class: 'card trade' }, h('h3', {}, 'Curve complete'), h('p', {}, 'The bonding curve is full. Migration to Meteora DAMM v2 runs automatically within a minute.'))
-      : h('div', { class: 'card trade' }, tabs, h('label', {}, side === 'buy' ? `Amount (${q.symbol})` : `Amount ($${t.symbol})`, amount), presets, slip, quoteBox, go,
-        state.balances ? h('p', { class: 'dim small' }, `Balance: ${units(state.balances.tokens[q.mint] ?? '0', q.decimals, 2)} ${q.symbol} · ${units(state.balances.tokens[t.mint] ?? '0', bd, 2)} $${t.symbol}`) : null);
+  const trust = h('div', { class: 'trust' }, icon(ICON.shield, 18, 'var(--buy)'), h('span', {}, 'Your browser checks every account and amount in the transaction before your wallet is asked to sign.'));
+  let panel: HTMLElement;
+  if (graduated) {
+    panel = h('div', { class: 'card graduated-panel' }, h('h3', {}, 'Graduated'), h('p', { style: { margin: '0' } }, 'This coin filled its bonding curve and now trades on a Meteora DAMM v2 pool with permanently locked liquidity.'),
+      t.dammPool ? ext(explorer('address', t.dammPool), 'Open the DAMM v2 pool on Explorer', 'btn wide') : null,
+      t.migrationSig ? h('p', { class: 'dim small', style: { margin: '0' } }, 'Migration tx: ', ext(explorer('tx', t.migrationSig), short(t.migrationSig, 8))) : null);
+  } else if (l?.curveComplete) {
+    panel = h('div', { class: 'card graduated-panel' }, h('h3', {}, 'Curve full'), h('p', { style: { margin: '0' } }, 'The bonding curve is full. The move to Meteora DAMM v2 runs automatically within a minute.'));
+  } else {
+    panelCard.append(tabs, h('label', {}, 'You pay', h('span', { class: 'payfield' }, amount, payUnit)), presets,
+      h('div', { class: 'slip-row' }, h('span', {}, 'Slippage'), slip), quoteBox, go, balanceLine, trust);
+    panel = panelCard;
+  }
 
+  // header numbers
+  const oldest = trades.length ? tradePrice(trades[trades.length - 1]!, bd) : 0n;
+  const changeBps = l && oldest > 0n ? Number(((BigInt(l.priceQuotePerBase) - oldest) * 10000n) / oldest) : null;
   const links = [t.website && ext(t.website, 'Website'), t.twitter && ext(t.twitter, 'X'), t.telegram && ext(t.telegram, 'Telegram')].filter(Boolean) as HTMLElement[];
   const tradeRows = trades.map((x) => h('tr', {},
     h('td', { class: x.side === 'BUY' ? 'buy' : 'sell' }, x.side === 'BUY' ? 'Buy' : 'Sell'),
-    h('td', {}, ext(explorer('address', x.trader), short(x.trader))),
+    h('td', { class: 'mono' }, ext(explorer('address', x.trader), short(x.trader))),
     h('td', { class: 'num' }, units(x.quoteRaw, q.decimals, 2)),
     h('td', { class: 'num' }, compact(x.baseRaw, bd)),
     h('td', { class: 'dim' }, x.blockTime ? ago(x.blockTime) : `slot ${x.slot}`),
-    h('td', {}, ext(explorer('tx', x.sig), short(x.sig, 4)))));
+    h('td', { class: 'mono' }, ext(explorer('tx', x.sig), short(x.sig, 4)))));
+  const kpi = (k: string, v: string) => h('div', {}, h('span', { class: 'k' }, k), h('span', { class: 'v' }, v));
+  const toGo = l ? BigInt(l.migrationQuoteThreshold) - BigInt(l.quoteReserve) : 0n;
 
-  main.replaceChildren(h('div', { class: 'token' },
-    h('div', { class: 'tok-main' },
-      h('div', { class: 'tok-head' }, avatar(t, 'lg'),
-        h('div', {}, h('h1', {}, t.name, ' ', h('span', { class: 'sym' }, `$${t.symbol}`), ' ', statusChip(t)),
-          h('p', { class: 'dim' }, 'Mint ', h('button', { class: 'copy', title: 'Copy', onclick: () => navigator.clipboard?.writeText(t.mint).then(() => toast('Mint address copied', 'ok')) }, short(t.mint, 6)),
-            ' · created by ', ext(explorer('address', t.creator), short(t.creator)), ' · ', ago(t.liveAt ?? t.createdAt),
-            ...(links.length ? [' · ', ...links.flatMap((a, k) => (k ? [' · ', a] : [a]))] : [])))),
-      t.description ? h('p', { class: 'tok-desc' }, t.description) : null,
-      h('div', { class: 'kpis' },
-        h('div', {}, h('span', { class: 'k' }, 'Price'), h('span', { class: 'v' }, l ? `${price(l.priceQuotePerBase, q.decimals)} ${q.symbol}` : '—')),
-        h('div', {}, h('span', { class: 'k' }, 'Market cap'), h('span', { class: 'v' }, l ? `${compact(l.marketCapQuoteRaw, q.decimals)} ${q.symbol}` : '—')),
-        h('div', {}, h('span', { class: 'k' }, 'Volume'), h('span', { class: 'v' }, `${compact(t.stats.volumeQuoteRaw, q.decimals)} ${q.symbol}`)),
-        h('div', {}, h('span', { class: 'k' }, 'Trades'), h('span', { class: 'v' }, String(t.stats.count)))),
-      h('div', { class: 'card' }, chart(trades, l, bd)),
-      l ? h('div', { class: 'card grad-card' },
-        h('div', { class: 'grad-top' }, h('strong', {}, 'Bonding curve progress'), h('span', {}, pct(l.progressBps))),
-        progressBar(l.progressBps, l.curveComplete || l.isMigrated),
-        h('p', { class: 'dim small' }, graduated ? 'Graduated to Meteora DAMM v2.' : `${units(l.quoteReserve, q.decimals, 0)} of ${units(l.migrationQuoteThreshold, q.decimals, 0)} ${q.symbol} raised. When the curve fills, the coin graduates to Meteora DAMM v2 and its liquidity is locked forever.`)) : null,
-      h('div', { class: 'card' }, h('h3', {}, 'Trades'), trades.length ? h('div', { class: 'scroll' }, h('table', { class: 'trades' },
-        h('thead', {}, h('tr', {}, ...['Side', 'Trader', q.symbol, `$${t.symbol}`, 'When', 'Tx'].map((c) => h('th', {}, c)))), h('tbody', {}, ...tradeRows))) : h('p', { class: 'dim' }, 'No trades yet.'))),
-    h('aside', {}, panel,
-      h('div', { class: 'card small' }, h('h4', {}, 'On-chain'), h('dl', { class: 'mini' },
-        h('dt', {}, 'Engine'), h('dd', {}, 'Meteora Dynamic Bonding Curve'),
-        h('dt', {}, 'Pool'), h('dd', {}, ext(explorer('address', t.pool), short(t.pool, 6))),
-        h('dt', {}, 'Launch tx'), h('dd', {}, t.createSig ? ext(explorer('tx', t.createSig), short(t.createSig, 6)) : '—'),
-        h('dt', {}, 'Creator fees'), h('dd', {}, l ? `${units(l.creatorQuoteFee, q.decimals, 2)} ${q.symbol} unclaimed` : '—'))))));
+  const mobileBar = graduated || l?.curveComplete ? null : h('div', { class: 'mobile-trade' },
+    h('button', { class: 'btn primary lg', onclick: () => { setSide('buy'); panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); amount.focus({ preventScroll: true }); } }, 'Buy'),
+    h('button', { class: 'btn sell lg', onclick: () => { setSide('sell'); panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); amount.focus({ preventScroll: true }); } }, 'Sell'));
+
+  main.replaceChildren(
+    h('section', { class: 'tok-head' },
+      h('div', { class: 'tok-id' }, avatar(t, 'lg'),
+        h('div', {}, h('div', { class: 'tok-title' }, h('h1', {}, t.name), h('span', { class: 'sym' }, `$${t.symbol}`), statusChip(t)),
+          h('div', { class: 'tok-meta' }, h('span', {}, 'by ', ext(explorer('address', t.creator), short(t.creator))), h('span', {}, `launched ${ago(t.liveAt ?? t.createdAt)}`),
+            h('button', { class: 'copy', 'aria-label': 'Copy mint address', onclick: () => navigator.clipboard?.writeText(t.mint).then(() => toast('Mint address copied', 'ok')) }, short(t.mint, 4), icon(ICON.copy, 14)),
+            ...links))),
+      l ? h('div', { class: 'tok-price' }, h('div', { class: 'num' }, price(l.priceQuotePerBase, q.decimals)),
+        h('div', { class: 'dim' }, `${q.symbol} per ${t.symbol}`, changeBps === null ? '' : ' · ', changeBps === null ? null : h('span', { class: changeBps >= 0 ? 'up' : 'down' }, `${changeBps >= 0 ? '+' : '−'}${pct(Math.abs(changeBps))} since launch`))) : null),
+    h('div', { class: 'token' },
+      h('div', { class: 'tok-main' },
+        h('div', { class: 'kpis' },
+          kpi('Market cap', l ? `${compact(l.marketCapQuoteRaw, q.decimals)} ${q.symbol}` : '—'),
+          kpi('Volume', `${compact(t.stats.volumeQuoteRaw, q.decimals)} ${q.symbol}`),
+          kpi('Traders', String(t.stats.traders)),
+          kpi('Trades', String(t.stats.count))),
+        h('div', { class: 'card' }, h('h3', {}, 'Price'), chart(trades, l, bd)),
+        l ? h('div', { class: `card grad-card${graduated ? ' done' : ''}` },
+          h('div', { class: 'grad-top' }, h('b', {}, 'Graduation'), h('span', { class: 'num' }, graduated ? 'Done' : pct(l.progressBps))),
+          progressBar(l.progressBps, l.curveComplete || l.isMigrated, true),
+          h('p', { class: 'dim small' }, graduated ? 'Graduated to Meteora DAMM v2. Its liquidity is locked forever.'
+            : `${units(l.quoteReserve, q.decimals, 0)} of ${units(l.migrationQuoteThreshold, q.decimals, 0)} ${q.symbol} raised. At ${units(l.migrationQuoteThreshold, q.decimals, 0)} the coin moves to a Meteora DAMM v2 pool and its liquidity is locked forever.${toGo > 0n ? ` About ${units(toGo, q.decimals, 0)} ${q.symbol} of buying to go.` : ''}`)) : null,
+        h('div', { class: 'card' }, h('h3', {}, 'Trades'), trades.length ? h('div', { class: 'scroll' }, h('table', { class: 'trades' },
+          h('thead', {}, h('tr', {}, ...[['Side', ''], ['Trader', ''], [q.symbol, 'num'], [`$${t.symbol}`, 'num'], ['When', ''], ['Tx', '']].map(([c, cls]) => h('th', { class: cls }, c)))), h('tbody', {}, ...tradeRows))) : h('p', { class: 'dim', style: { margin: '0' } }, 'No trades yet. Be the first.'))),
+      h('aside', {}, panel,
+        h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'About'), t.description ? h('p', {}, t.description) : null,
+          h('dl', { class: 'facts' },
+            h('dt', {}, 'Engine'), h('dd', {}, 'Meteora bonding curve'),
+            h('dt', {}, 'Pool'), h('dd', { class: 'num' }, ext(explorer('address', t.pool), short(t.pool, 4))),
+            h('dt', {}, 'Launch tx'), h('dd', { class: 'num' }, t.createSig ? ext(explorer('tx', t.createSig), short(t.createSig, 4)) : '—'),
+            h('dt', {}, 'Creator fees'), h('dd', { class: 'num' }, l ? `${units(l.creatorQuoteFee, q.decimals, 2)} ${q.symbol}` : '—'))))),
+    ...(mobileBar ? [mobileBar] : []));
   clearInterval(tokenTimer);
   tokenTimer = window.setInterval(() => { if (currentMint() === mint && !document.hidden && $('#modal').hidden) void api('/api/lp/refresh', { mint }).catch(() => {}); }, 20_000);
 }
@@ -453,6 +561,7 @@ async function route() {
   if ($('.sheet .x')) closeModal(); // a finished or idle dialog never follows you to another page; a running signing flow has no close button
   const m = currentMint();
   document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === (m ? '' : location.hash || '#/')));
+  if (m || location.hash === '#/create') $('#tape').hidden = true;
   if (m) await renderToken(m);
   else if (location.hash === '#/create') renderCreate();
   else await renderHome();
@@ -466,10 +575,16 @@ async function boot() {
   catch (e) { $('#view').replaceChildren(h('div', { class: 'empty err' }, `Launchpad API unavailable: ${(e as Error).message}`)); return; }
   const q = Q();
   $('#netnote').textContent = state.platform.ready
-    ? `Devnet test network. ${q.symbol} is a TEST_ONLY token with no value; coins launched here are worthless. Mainnet writes are disabled.`
+    ? `Test network. ${q.symbol} and every coin here have no value. Mainnet is off.`
     : 'Devnet platform not set up yet (the operator wallet needs devnet SOL). Browsing works; launching does not.';
   renderWallet();
   window.addEventListener('hashchange', route);
+  const search = $('#q') as HTMLInputElement;
+  search.addEventListener('input', () => {
+    state.query = search.value;
+    if (location.hash !== '' && location.hash !== '#/') location.hash = '#/';
+    else paintGrid?.();
+  });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('.sheet .x')) closeModal(); });
   await route();
 }

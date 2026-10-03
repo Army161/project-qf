@@ -5,7 +5,7 @@
 Rules for every coding agent working in Project QF repositories. These are binding. If a task conflicts with a rule here, stop and ask.
 
 ## Status
-- Stage: **V0 offline implementation** (amended 2026-09-27, ADR-011). Readiness is tracked per stage: `OFFLINE_V0` ACTIVE; `LOCALNET_INTEGRATION`, `DEVNET_INTEGRATION` and `MAINNET` BLOCKED (see `packages/core/src/readiness.ts`). No mainnet write transactions. No production deployment.
+- Stage: **V0 offline implementation** (amended 2026-09-27, ADR-011). Readiness is tracked per stage: `OFFLINE_V0` ACTIVE; `DEVNET_INTEGRATION` ACTIVE since 2026-10-03 (owner's "unblock devnet", devnet test launches with throwaway keys and free test SOL only); `LOCALNET_INTEGRATION` and `MAINNET` BLOCKED (see `packages/core/src/readiness.ts`). No mainnet write transactions. No production deployment.
 - Codename only: `QuoteForge` / `Project QF`. Do not create public branding, domains, or package scopes using "QuoteForge". Internal npm scope: `@project-qf/*`.
 
 ## Source of truth

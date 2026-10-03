@@ -269,7 +269,94 @@
       "license": "Unlicense (LICENSE.md; no package.json license field)",
       "via": "borsh@0.7.0 via @solana/web3.js",
       "status": "ALLOWED"
+    },
+    {
+      "exceptionId": "QF-LIC-EX-003",
+      "name": "@fontsource-variable/bricolage-grotesque",
+      "version": "5.3.0",
+      "license": "OFL-1.1",
+      "resolvedIntegrity": "sha512-TLi9Q4hJjS2UvoTMRSS2nHu6c4R56lAw60NR9QYtVRCHn0XtsFpiEhNffZ8Glsoxu6wEEwLKBP8lb94J52PNBA==",
+      "dependencyPath": "@project-qf/web (devDependency) > @fontsource-variable/bricolage-grotesque@5.3.0; only the latin woff2 font file is copied into apps/web/dist/fonts by build.ts",
+      "status": "APPROVED_EXACT",
+      "decision": "Product owner Jeremy Gephart chose \"Allow fonts\" on the decision card in the launchpad thread, 2026-10-03T21:04:20Z (not a legal opinion)",
+      "obligations": [
+        "SIL Open Font License 1.1: the font files are bundled and served with the web app; the copyright notice and licence text ship next to them (dist/fonts/*.OFL.txt)",
+        "the fonts are not sold by themselves",
+        "unmodified: no subsetting, renaming or editing of the font files (a modified version would have to drop any Reserved Font Name and needs re-review)"
+      ],
+      "notices": [
+        {
+          "upstreamPath": "LICENSE",
+          "preservedAt": "licenses/@fontsource-variable/bricolage-grotesque@5.3.0/LICENSE"
+        }
+      ],
+      "scope": "exact name@version and integrity only. OFL-1.1 is not added to the policy allow list",
+      "enforcement": "tools/license-check (APPROVED_EXACT): licence expression, lockfile integrity, not patched, notice byte-identical to the installed package",
+      "reviewTriggers": [
+        "version or integrity change",
+        "any modification of the font files",
+        "2027-10-03 (12 months)"
+      ],
+      "evidence": "project-qf/evidence/license-check.json"
+    },
+    {
+      "exceptionId": "QF-LIC-EX-004",
+      "name": "@fontsource-variable/geist",
+      "version": "5.3.0",
+      "license": "OFL-1.1",
+      "resolvedIntegrity": "sha512-j0m+vLQuG5XAYoHtGCVu0spvlGreR3EzpECUVzkFmI1mTVnAO38l/NEPDCFgZ177JxzYJCLSmTQibIiYPilGrA==",
+      "dependencyPath": "@project-qf/web (devDependency) > @fontsource-variable/geist@5.3.0; only the latin woff2 font file is copied into apps/web/dist/fonts by build.ts",
+      "status": "APPROVED_EXACT",
+      "decision": "Product owner Jeremy Gephart chose \"Allow fonts\" on the decision card in the launchpad thread, 2026-10-03T21:04:20Z (not a legal opinion)",
+      "obligations": [
+        "SIL Open Font License 1.1: the font files are bundled and served with the web app; the copyright notice and licence text ship next to them (dist/fonts/*.OFL.txt)",
+        "the fonts are not sold by themselves",
+        "unmodified: no subsetting, renaming or editing of the font files (a modified version would have to drop any Reserved Font Name and needs re-review)"
+      ],
+      "notices": [
+        {
+          "upstreamPath": "LICENSE",
+          "preservedAt": "licenses/@fontsource-variable/geist@5.3.0/LICENSE"
+        }
+      ],
+      "scope": "exact name@version and integrity only. OFL-1.1 is not added to the policy allow list",
+      "enforcement": "tools/license-check (APPROVED_EXACT): licence expression, lockfile integrity, not patched, notice byte-identical to the installed package",
+      "reviewTriggers": [
+        "version or integrity change",
+        "any modification of the font files",
+        "2027-10-03 (12 months)"
+      ],
+      "evidence": "project-qf/evidence/license-check.json"
+    },
+    {
+      "exceptionId": "QF-LIC-EX-005",
+      "name": "@fontsource-variable/geist-mono",
+      "version": "5.3.0",
+      "license": "OFL-1.1",
+      "resolvedIntegrity": "sha512-vBbuwDEo9AkrqADMXOrlAR3DFcJi4/JxeuU43FoiQERnNwsfXNnvxvReZG02cQKmyk4DZkZdBZX3oTDvy2zBAw==",
+      "dependencyPath": "@project-qf/web (devDependency) > @fontsource-variable/geist-mono@5.3.0; only the latin woff2 font file is copied into apps/web/dist/fonts by build.ts",
+      "status": "APPROVED_EXACT",
+      "decision": "Product owner Jeremy Gephart chose \"Allow fonts\" on the decision card in the launchpad thread, 2026-10-03T21:04:20Z (not a legal opinion)",
+      "obligations": [
+        "SIL Open Font License 1.1: the font files are bundled and served with the web app; the copyright notice and licence text ship next to them (dist/fonts/*.OFL.txt)",
+        "the fonts are not sold by themselves",
+        "unmodified: no subsetting, renaming or editing of the font files (a modified version would have to drop any Reserved Font Name and needs re-review)"
+      ],
+      "notices": [
+        {
+          "upstreamPath": "LICENSE",
+          "preservedAt": "licenses/@fontsource-variable/geist-mono@5.3.0/LICENSE"
+        }
+      ],
+      "scope": "exact name@version and integrity only. OFL-1.1 is not added to the policy allow list",
+      "enforcement": "tools/license-check (APPROVED_EXACT): licence expression, lockfile integrity, not patched, notice byte-identical to the installed package",
+      "reviewTriggers": [
+        "version or integrity change",
+        "any modification of the font files",
+        "2027-10-03 (12 months)"
+      ],
+      "evidence": "project-qf/evidence/license-check.json"
     }
   ],
-  "amended": "2026-09-27 (V0 decisions 1 and 4; see docs/DECISIONS/ADR-011 and ADR-012); 2026-09-27 repair pass: QF-LIC-EX-002 pako@2.2.0 exact (LIC-R1, ADR-012)"
+  "amended": "2026-09-27 (V0 decisions 1 and 4; see docs/DECISIONS/ADR-011 and ADR-012); 2026-09-27 repair pass: QF-LIC-EX-002 pako@2.2.0 exact (LIC-R1, ADR-012); 2026-10-03: QF-LIC-EX-003..005 OFL-1.1 web fonts exact (owner card decision 21:04Z)"
 }

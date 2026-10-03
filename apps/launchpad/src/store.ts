@@ -98,6 +98,11 @@ export class LaunchpadStore {
     return (this.db.prepare('SELECT * FROM trades WHERE mint = ? ORDER BY slot DESC, sig LIMIT ?').all(mint, limit) as Record<string, unknown>[])
       .map((r) => camel(r) as unknown as TradeRow);
   }
+  /** Latest trades across launches that are LIVE or MIGRATED, newest first, with the coin's symbol (for the trade tape). */
+  listRecentTrades(limit = 30): (TradeRow & { symbol: string })[] {
+    return (this.db.prepare(`SELECT t.*, l.symbol AS symbol FROM trades t JOIN launches l ON l.mint = t.mint WHERE l.status IN ('LIVE', 'MIGRATED')
+      ORDER BY COALESCE(t.block_time, 0) DESC, t.slot DESC, t.sig LIMIT ?`).all(limit) as Record<string, unknown>[]).map((r) => camel(r) as unknown as TradeRow & { symbol: string });
+  }
   tradeStats(mint: string): { count: number; volumeQuoteRaw: string; traders: number } {
     const rows = this.db.prepare('SELECT quote_raw, trader FROM trades WHERE mint = ?').all(mint) as { quote_raw: string; trader: string }[];
     return { count: rows.length, volumeQuoteRaw: rows.reduce((a, r) => a + BigInt(r.quote_raw), 0n).toString(), traders: new Set(rows.map((r) => r.trader)).size };

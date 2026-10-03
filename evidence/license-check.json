@@ -1,12 +1,12 @@
 {
   "tool": "tools/license-check/check-licenses.ts",
-  "generatedAt": "2026-10-03T10:51:15.386Z",
+  "generatedAt": "2026-10-03T21:06:09.995Z",
   "manifestVersion": "2",
-  "packages": 161,
+  "packages": 164,
   "tally": {
     "ALLOW": 134,
     "NOT_INSTALLED": 25,
-    "ALLOW_EXCEPTION": 2
+    "ALLOW_EXCEPTION": 5
   },
   "failures": [],
   "reviewRequired": [],
@@ -315,6 +315,39 @@
         "project-qf"
       ],
       "note": "optional dependency not installed on this platform"
+    },
+    {
+      "package": "@fontsource-variable/bricolage-grotesque@5.3.0",
+      "license": "OFL-1.1",
+      "class": "ALLOW_EXCEPTION",
+      "devOnly": true,
+      "importers": [
+        "@project-qf/web"
+      ],
+      "note": "QF-LIC-EX-003 conditions hold (exact version, integrity, licence expression, unmodified, notices preserved verbatim)",
+      "sampleChain": "@project-qf/web > @fontsource-variable/bricolage-grotesque@5.3.0"
+    },
+    {
+      "package": "@fontsource-variable/geist-mono@5.3.0",
+      "license": "OFL-1.1",
+      "class": "ALLOW_EXCEPTION",
+      "devOnly": true,
+      "importers": [
+        "@project-qf/web"
+      ],
+      "note": "QF-LIC-EX-005 conditions hold (exact version, integrity, licence expression, unmodified, notices preserved verbatim)",
+      "sampleChain": "@project-qf/web > @fontsource-variable/geist-mono@5.3.0"
+    },
+    {
+      "package": "@fontsource-variable/geist@5.3.0",
+      "license": "OFL-1.1",
+      "class": "ALLOW_EXCEPTION",
+      "devOnly": true,
+      "importers": [
+        "@project-qf/web"
+      ],
+      "note": "QF-LIC-EX-004 conditions hold (exact version, integrity, licence expression, unmodified, notices preserved verbatim)",
+      "sampleChain": "@project-qf/web > @fontsource-variable/geist@5.3.0"
     },
     {
       "package": "@meteora-ag/cp-amm-sdk@1.4.10",

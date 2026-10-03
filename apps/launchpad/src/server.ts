@@ -44,9 +44,9 @@ class HttpError extends Error {
 
 const API_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer' };
 // Signing page CSP: no third-party script, no inline script, no remote connections; images only from self and data:.
-const STATIC_CSP = "default-src 'none'; script-src 'self'; worker-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+const STATIC_CSP = "default-src 'none'; script-src 'self'; worker-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 const TYPES: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
-  '.map': 'application/json; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml' };
+  '.map': 'application/json; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
 
 const send = (res: ServerResponse, status: number, body: unknown) => res.writeHead(status, API_HEADERS).end(JSON.stringify(body, (_k, v) => (typeof v === 'bigint' ? v.toString() : v)));
 
@@ -190,6 +190,9 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
     if (path === '/api/lp/tokens' && method === 'GET') {
       const list = o.store.listLaunches(['LIVE', 'MIGRATED']);
       return send(res, 200, { tokens: await Promise.all(list.map((l) => tokenView(l))) });
+    }
+    if (path === '/api/lp/trades/recent' && method === 'GET') {
+      return send(res, 200, { trades: o.store.listRecentTrades(30).map((t) => ({ sig: t.sig, mint: t.mint, symbol: t.symbol, trader: t.trader, side: t.side, quoteRaw: t.quoteRaw, blockTime: t.blockTime })) });
     }
     const tm = /^\/api\/lp\/tokens\/([1-9A-HJ-NP-Za-km-z]{32,44})$/.exec(path);
     if (tm && method === 'GET') {
