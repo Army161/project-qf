@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="dark light">
+  <title>QF Launchpad (devnet)</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./launchpad.css">
+</head>
+<body>
+  <div id="netbar" role="note"><span class="pill">DEVNET</span> <span id="netnote">Devnet test network. Nothing here has value.</span></div>
+  <header class="top">
+    <a class="brand" href="#/"><span class="logo" aria-hidden="true"></span>QF<span class="brand-sub">launchpad</span></a>
+    <nav><a href="#/">Explore</a><a href="#/create">Create</a></nav>
+    <div id="wallet"></div>
+  </header>
+  <main id="view"></main>
+  <footer class="foot">Meteora Dynamic Bonding Curve → DAMM v2 · devnet build · transactions are built by the server, checked in your browser and signed only in your wallet</footer>
+  <div id="modal" hidden></div>
+  <div id="toasts" aria-live="polite"></div>
+  <script type="module" src="./launchpad.js"></script>
+</body>
+</html>

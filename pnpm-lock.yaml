@@ -48,6 +48,24 @@ importers:
         specifier: workspace:*
         version: link:../../packages/validator
 
+  apps/launchpad:
+    dependencies:
+      '@project-qf/adapter-meteora-dbc':
+        specifier: workspace:*
+        version: link:../../packages/adapter-meteora-dbc
+      '@project-qf/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@project-qf/policy':
+        specifier: workspace:*
+        version: link:../../packages/policy
+      '@project-qf/tx':
+        specifier: workspace:*
+        version: link:../../packages/tx
+      '@project-qf/validator':
+        specifier: workspace:*
+        version: link:../../packages/validator
+
   apps/web:
     dependencies:
       '@project-qf/contracts':

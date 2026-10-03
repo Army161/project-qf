@@ -8,6 +8,9 @@
   "exports": {
     ".": {
       "node": "./src/index.ts"
+    },
+    "./launchpad": {
+      "node": "./src/launchpad.ts"
     }
   },
   "dependencies": {
