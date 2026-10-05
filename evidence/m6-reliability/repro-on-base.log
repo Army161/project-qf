@@ -1,0 +1,155 @@
+== base 6617acd: reproduction tests
+✖ M5-R1 reproduces: a CURVE trade whose details arrive only after the retry limit is still indexed (2358.333593ms)
+✖ M5-R1 reproduces: a DAMM_V2 trade whose details arrive only after the retry limit is still indexed (185.544807ms)
+✖ M5-R1 reproduces: a trade still missing at a restart is recovered after the restart (1831.577987ms)
+✖ M5-R2 reproduces: a CURVE pool that cannot be read before enrichment never turns a receipt into 0 (63.801864ms)
+✖ M5-R2 reproduces: a DAMM_V2 pool that cannot be read before enrichment never turns a receipt into 0 (39.608062ms)
+✖ M5-R2 reproduces: a receipt whose transaction details are missing marks the claims total incomplete (180.872936ms)
+✖ M5-R2 reproduces: a transaction without a balance observation for the claim vault is not a zero receipt (175.849154ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 0
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5521.339354
+
+✖ failing tests:
+
+test at apps/launchpad/test/m5-reliability.test.ts:61:3
+✖ M5-R1 reproduces: a CURVE trade whose details arrive only after the retry limit is still indexed (2358.333593ms)
+  AssertionError [ERR_ASSERTION]: served on the 7th pass, after the 5-pass limit: must not be lost
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///tmp/tmp.6EHiVgh3wm/base/apps/launchpad/test/m5-reliability.test.ts:66:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at apps/launchpad/test/m5-reliability.test.ts:61:3
+✖ M5-R1 reproduces: a DAMM_V2 trade whose details arrive only after the retry limit is still indexed (185.544807ms)
+  AssertionError [ERR_ASSERTION]: served on the 7th pass, after the 5-pass limit: must not be lost
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///tmp/tmp.6EHiVgh3wm/base/apps/launchpad/test/m5-reliability.test.ts:66:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at apps/launchpad/test/m5-reliability.test.ts:70:1
+✖ M5-R1 reproduces: a trade still missing at a restart is recovered after the restart (1831.577987ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///tmp/tmp.6EHiVgh3wm/base/apps/launchpad/test/m5-reliability.test.ts:79:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at apps/launchpad/test/m5-reliability.test.ts:84:3
+✖ M5-R2 reproduces: a CURVE pool that cannot be read before enrichment never turns a receipt into 0 (63.801864ms)
+  AssertionError [ERR_ASSERTION]: missing pool evidence must stay unknown, not become a stored zero
+      at TestContext.<anonymous> (file:///tmp/tmp.6EHiVgh3wm/base/apps/launchpad/test/m5-reliability.test.ts:93:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '0',
+    expected: '0',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at apps/launchpad/test/m5-reliability.test.ts:84:3
+✖ M5-R2 reproduces: a DAMM_V2 pool that cannot be read before enrichment never turns a receipt into 0 (39.608062ms)
+  AssertionError [ERR_ASSERTION]: missing pool evidence must stay unknown, not become a stored zero
+      at TestContext.<anonymous> (file:///tmp/tmp.6EHiVgh3wm/base/apps/launchpad/test/m5-reliability.test.ts:93:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '0',
+    expected: '0',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at apps/launchpad/test/m5-reliability.test.ts:101:1
+✖ M5-R2 reproduces: a receipt whose transaction details are missing marks the claims total incomplete (180.872936ms)
+  AssertionError [ERR_ASSERTION]: an unresolved receipt is counted as 0, so the total must say it is incomplete
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///tmp/tmp.6EHiVgh3wm/base/apps/launchpad/test/m5-reliability.test.ts:107:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at apps/launchpad/test/m5-reliability.test.ts:113:1
+✖ M5-R2 reproduces: a transaction without a balance observation for the claim vault is not a zero receipt (175.849154ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  '0' !== null
+  
+      at TestContext.<anonymous> (file:///tmp/tmp.6EHiVgh3wm/base/apps/launchpad/test/m5-reliability.test.ts:119:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '0',
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+== this checkout b39e5a2: reproduction tests
+✔ M5-R1 reproduces: a CURVE trade whose details arrive only after the retry limit is still indexed (2348.869579ms)
+✔ M5-R1 reproduces: a DAMM_V2 trade whose details arrive only after the retry limit is still indexed (166.193626ms)
+✔ M5-R1 reproduces: a trade still missing at a restart is recovered after the restart (1877.750686ms)
+✔ M5-R2 reproduces: a CURVE pool that cannot be read before enrichment never turns a receipt into 0 (224.872173ms)
+✔ M5-R2 reproduces: a DAMM_V2 pool that cannot be read before enrichment never turns a receipt into 0 (207.375364ms)
+✔ M5-R2 reproduces: a receipt whose transaction details are missing marks the claims total incomplete (184.654509ms)
+✔ M5-R2 reproduces: a transaction without a balance observation for the claim vault is not a zero receipt (202.09367ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5914.762131
+base exit=1 (expected 1)  this checkout exit=0 (expected 0)

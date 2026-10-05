@@ -1,0 +1,151 @@
+{
+  "label": "TEST_ONLY devnet qUSD (6 decimals), no value. Public chain data only. Server at b39e5a2 against the existing devnet database (schema 3 -> 4).",
+  "method": "Before: claims as stored by milestone 5 (schema 3). Store migration 4 moved each amount to legacy_* and set the receipt UNKNOWN. Each GET /api/lp/earnings?fresh=1 then re-read up to 5 receipts from their own transaction and their own pool vaults (derived from the confirmed intent terms).",
+  "before": [
+    {
+      "sig": "5Hr9EyrHme24ti9HW7dQr6d6mvpnsTw8JDPdaHN1mgcAQacmn3eurDuDvPKsnUieZ7sBZK8oKBJVmF2bxwAQesvn",
+      "coin": "PAYDAY",
+      "venue": "CURVE",
+      "quoteRaw": "1400318",
+      "baseRaw": "0"
+    },
+    {
+      "sig": "2egKXucfREhg9D8Ec64KaJ1aLAqpj9guMVCXQNxc4kRHokSUBrMogZxXTZFQ4nzS7PgbRMHfyZs1BdMQQbsZQ8dK",
+      "coin": "CASH",
+      "venue": "CURVE",
+      "quoteRaw": "1400318",
+      "baseRaw": "0"
+    },
+    {
+      "sig": "EtuZ5PrcrWmjdW159aFpmizpCqWUGyxEaKyhxLCMb7wNWuKdxPNp15kEj3eXHupfgN1SdY6bWx4FjZQ4SmBirHx",
+      "coin": "CASH",
+      "venue": "DAMM_V2",
+      "quoteRaw": "4998368",
+      "baseRaw": "0"
+    }
+  ],
+  "firstRequest": {
+    "asOf": "2026-10-05T14:21:29.710Z",
+    "totals": {
+      "unclaimed": {
+        "creatorCurve": "11063339",
+        "platformCurve": "13863978",
+        "creatorLp": "150106",
+        "platformLp": "5148473"
+      },
+      "claimedThroughApp": "2800636",
+      "coverage": {
+        "unclaimedComplete": true,
+        "claimsComplete": false,
+        "unresolvedClaims": 1
+      },
+      "incomplete": true
+    },
+    "claims": [
+      {
+        "sig": "EtuZ5PrcrWmjdW159aFpmizpCqWUGyxEaKyhxLCMb7wNWuKdxPNp15kEj3eXHupfgN1SdY6bWx4FjZQ4SmBirHx",
+        "coin": "CASH",
+        "venue": "DAMM_V2",
+        "pool": "Huy9yeqGsRGUZQRemKdhpbmngKDBBVa8FKcU3Xf4PSvS",
+        "quoteVault": "F5Ue5jMinbgFbe6vx1LiYJ4AzYedbqwwKSqsfH2YSir4",
+        "baseVault": "EtwBrirMtDZLu1qq1CSaepHYvZAtdQSyAA9bVvnbBbuq",
+        "status": "UNKNOWN",
+        "evidence": "NO_TX_DETAILS",
+        "quoteRaw": null,
+        "baseRaw": null,
+        "legacyQuoteRaw": "4998368",
+        "legacyBaseRaw": "0"
+      },
+      {
+        "sig": "2egKXucfREhg9D8Ec64KaJ1aLAqpj9guMVCXQNxc4kRHokSUBrMogZxXTZFQ4nzS7PgbRMHfyZs1BdMQQbsZQ8dK",
+        "coin": "CASH",
+        "venue": "CURVE",
+        "pool": "BZBFH6JToZrubGgQWJtHMTJEqmpbH8rbaiULFVp9xbpE",
+        "quoteVault": "EXgAKZm4BDNnbo6mTJzjwTrhai8uvqd677BFgGgireV1",
+        "baseVault": "Hhxj433HKqMFvMPqnSmu5Pa5JG4SJkLoeWUEGzZV2sG7",
+        "status": "RESOLVED",
+        "evidence": "TX_VAULT_DELTAS",
+        "quoteRaw": "1400318",
+        "baseRaw": "0",
+        "legacyQuoteRaw": "1400318",
+        "legacyBaseRaw": "0"
+      },
+      {
+        "sig": "5Hr9EyrHme24ti9HW7dQr6d6mvpnsTw8JDPdaHN1mgcAQacmn3eurDuDvPKsnUieZ7sBZK8oKBJVmF2bxwAQesvn",
+        "coin": "PAYDAY",
+        "venue": "CURVE",
+        "pool": "HQmPe4asmQ9CrPuRhHHCG5LBLzF3o2ZoVZJJhXaF1U6r",
+        "quoteVault": "DLZXfRnTCDMS5fc39qnvEY7C9WA4L6mPsgTMGNVgwpai",
+        "baseVault": "8P24QAvHEH4ycjMoGXQAcrLLp9dkYP8HzXGduzgg5na5",
+        "status": "RESOLVED",
+        "evidence": "TX_VAULT_DELTAS",
+        "quoteRaw": "1400318",
+        "baseRaw": "0",
+        "legacyQuoteRaw": "1400318",
+        "legacyBaseRaw": "0"
+      }
+    ]
+  },
+  "secondRequest": {
+    "asOf": "2026-10-05T14:21:34.070Z",
+    "totals": {
+      "unclaimed": {
+        "creatorCurve": "11063339",
+        "platformCurve": "13863978",
+        "creatorLp": "150106",
+        "platformLp": "5148473"
+      },
+      "claimedThroughApp": "7799004",
+      "coverage": {
+        "unclaimedComplete": true,
+        "claimsComplete": true,
+        "unresolvedClaims": 0
+      },
+      "incomplete": false
+    },
+    "claims": [
+      {
+        "sig": "EtuZ5PrcrWmjdW159aFpmizpCqWUGyxEaKyhxLCMb7wNWuKdxPNp15kEj3eXHupfgN1SdY6bWx4FjZQ4SmBirHx",
+        "coin": "CASH",
+        "venue": "DAMM_V2",
+        "pool": "Huy9yeqGsRGUZQRemKdhpbmngKDBBVa8FKcU3Xf4PSvS",
+        "quoteVault": "F5Ue5jMinbgFbe6vx1LiYJ4AzYedbqwwKSqsfH2YSir4",
+        "baseVault": "EtwBrirMtDZLu1qq1CSaepHYvZAtdQSyAA9bVvnbBbuq",
+        "status": "RESOLVED",
+        "evidence": "TX_VAULT_DELTAS",
+        "quoteRaw": "4998368",
+        "baseRaw": "0",
+        "legacyQuoteRaw": "4998368",
+        "legacyBaseRaw": "0"
+      },
+      {
+        "sig": "2egKXucfREhg9D8Ec64KaJ1aLAqpj9guMVCXQNxc4kRHokSUBrMogZxXTZFQ4nzS7PgbRMHfyZs1BdMQQbsZQ8dK",
+        "coin": "CASH",
+        "venue": "CURVE",
+        "pool": "BZBFH6JToZrubGgQWJtHMTJEqmpbH8rbaiULFVp9xbpE",
+        "quoteVault": "EXgAKZm4BDNnbo6mTJzjwTrhai8uvqd677BFgGgireV1",
+        "baseVault": "Hhxj433HKqMFvMPqnSmu5Pa5JG4SJkLoeWUEGzZV2sG7",
+        "status": "RESOLVED",
+        "evidence": "TX_VAULT_DELTAS",
+        "quoteRaw": "1400318",
+        "baseRaw": "0",
+        "legacyQuoteRaw": "1400318",
+        "legacyBaseRaw": "0"
+      },
+      {
+        "sig": "5Hr9EyrHme24ti9HW7dQr6d6mvpnsTw8JDPdaHN1mgcAQacmn3eurDuDvPKsnUieZ7sBZK8oKBJVmF2bxwAQesvn",
+        "coin": "PAYDAY",
+        "venue": "CURVE",
+        "pool": "HQmPe4asmQ9CrPuRhHHCG5LBLzF3o2ZoVZJJhXaF1U6r",
+        "quoteVault": "DLZXfRnTCDMS5fc39qnvEY7C9WA4L6mPsgTMGNVgwpai",
+        "baseVault": "8P24QAvHEH4ycjMoGXQAcrLLp9dkYP8HzXGduzgg5na5",
+        "status": "RESOLVED",
+        "evidence": "TX_VAULT_DELTAS",
+        "quoteRaw": "1400318",
+        "baseRaw": "0",
+        "legacyQuoteRaw": "1400318",
+        "legacyBaseRaw": "0"
+      }
+    ]
+  }
+}

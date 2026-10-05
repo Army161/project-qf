@@ -1,0 +1,11 @@
+source commit b39e5a24dbac36479be5296634391d4fe71d3539 (Launchpad: no lost trades and no unproven receipts (Astra's milestone 5 review))
+node v22.22.0, pnpm 10.33.0, run 2026-10-05T14:25:21Z; secret-free wrapper: env -i PATH HOME HTTPS_PROXY HTTP_PROXY NODE_EXTRA_CA_CERTS
+install          exit=0     2s  pnpm install --frozen-lockfile --ignore-scripts
+typecheck        exit=0     5s  pnpm -s typecheck
+test             exit=0    20s  pnpm -s test
+license-check    exit=0     2s  pnpm -s license:check
+deps-chain       exit=0     1s  pnpm -s deps:chain
+build-web        exit=0     1s  pnpm -s build:web
+boundary         exit=0     1s  pnpm -s boundary
+audit-prod       exit=1     2s  pnpm audit --prod
+repro-on-base    exit=0    12s  bash evidence/m6-reliability/repro-on-base.sh 6617acd
