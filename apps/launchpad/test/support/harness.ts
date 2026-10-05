@@ -16,7 +16,7 @@ import { accountsForPool, fixtures, K, thresholdRecord } from '../../../../packa
 import { createMockConnection } from '../../../../packages/adapter-meteora-dbc/test/support/mockRpc.ts';
 import type { LaunchpadChain } from '../../src/chain.ts';
 import { launchEconomicsFor, type PlatformRecord } from '../../src/platform.ts';
-import { createLaunchpadApp } from '../../src/server.ts';
+import { createLaunchpadApp, type ServerProfile } from '../../src/server.ts';
 import { LaunchpadStore } from '../../src/store.ts';
 
 export const dir = mkdtempSync(join(tmpdir(), 'qf-lp-test-'));
@@ -49,7 +49,7 @@ export function withMigrationPrice<T extends { raw: { config: unknown } } | null
 }
 
 /** A fresh store, chain double and running app. `dbPath` lets a test reopen the same database to simulate a restart. */
-export async function harness() {
+export async function harness(opts: { profile?: ServerProfile } = {}) {
   const conn = await mockConn();
   const sent: Uint8Array[] = [];
   const faucetCalls: unknown[] = [];
@@ -113,7 +113,7 @@ export async function harness() {
   const store = new LaunchpadStore(dbPath);
   const platform = platformRecord();
   let clock = Date.now();
-  const app = createLaunchpadApp({ store, chain, platform: () => platform, staticDir: null, publicBaseUrl: 'http://127.0.0.1:8788', now: () => new Date(clock) });
+  const app = createLaunchpadApp({ store, chain, platform: () => platform, staticDir: null, publicBaseUrl: 'http://127.0.0.1:8788', now: () => new Date(clock), ...opts });
   await new Promise<void>((r) => app.listen(0, '127.0.0.1', r));
   after(() => { app.close(); try { store.close(); } catch { /* a test may have closed it to simulate a restart */ } });
   const base = `http://127.0.0.1:${(app.address() as AddressInfo).port}`;

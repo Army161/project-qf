@@ -1,0 +1,8 @@
+POST /api/lp/launch -> 423 WRITES_LOCKED
+POST /api/lp/swap -> 423 WRITES_LOCKED
+POST /api/lp/submit -> 423 WRITES_LOCKED
+POST /api/lp/claim -> 423 WRITES_LOCKED
+POST /api/lp/treasury/propose -> 423 WRITES_LOCKED
+POST /api/lp/treasury/approve -> 423 WRITES_LOCKED
+POST /api/lp/treasury/execute -> 423 WRITES_LOCKED
+POST /api/lp/faucet -> 404 NO_FAUCET

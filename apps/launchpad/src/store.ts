@@ -136,6 +136,16 @@ export class LaunchpadStore {
   }
   close() { this.db.close(); }
 
+  /** Ties this database to one network for life. A database that predates the marker but holds devnet data is devnet. Opening
+   *  it for another network throws, so devnet records can never be served or acted on as mainnet (or the reverse). */
+  bindCluster(cluster: string): string {
+    const marked = this.getPlatform<string>('cluster');
+    const legacy = !marked && (this.getPlatform('platform') !== null || (this.db.prepare('SELECT COUNT(*) AS n FROM launches').get() as { n: number }).n > 0) ? 'devnet' : null;
+    const bound = marked ?? legacy ?? cluster;
+    if (!marked) this.setPlatform('cluster', bound);
+    if (bound !== cluster) throw new Error(`STORE_CLUSTER_MISMATCH this database belongs to ${bound}, not ${cluster}`);
+    return bound;
+  }
   getPlatform<T>(k: string): T | null {
     const r = this.db.prepare('SELECT v FROM platform WHERE k = ?').get(k) as { v: string } | undefined;
     return r ? (JSON.parse(r.v) as T) : null;

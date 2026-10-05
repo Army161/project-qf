@@ -2,16 +2,20 @@
 // through Wallet Standard. Every string that came from a creator or from chain data is rendered with textContent.
 import { economicsDigest } from '@project-qf/policy';
 import { addSignature, fromBase64, generateMintKey, toBase64, type ApprovedTerms } from '@project-qf/tx';
-import { ago, compact, explorer, parseUnits, pct, price, short, units } from './format.ts';
+import { ago, compact, explorer, parseUnits, pct, price, setExplorerCluster, short, units } from './format.ts';
 import { checkBuiltTransaction, type Check, type Expectation } from './txcheck.ts';
 import { connect, disconnect, listWallets, onWalletsChanged, signTransaction, startWalletDiscovery, type Connected } from './wallet.ts';
 
 // ------------------------------------------------------------------ types from lp-api/1
+interface ChainCheck { address: string; label: string; status: 'MATCH' | 'MISMATCH' | 'MISSING' | 'SINGLE_PROVIDER' | 'UNAVAILABLE'; value: unknown; slots: number[]; detail?: string }
 interface Platform {
-  ready: boolean; cluster: 'devnet'; operator: string | null; readiness: Record<string, string>;
+  ready: boolean; cluster: 'devnet' | 'mainnet-beta'; mode: 'DEVNET' | 'MAINNET_READ_ONLY'; writesEnabled: boolean; writesLockedBecause: string[]; label: string;
+  operator: string | null; readiness: Record<string, string>; mainnetBlockers: string[];
+  mainnetQuote: { mint: string; decimals: number; symbol: string } | null;
+  chainChecks: { at: string; crossChecked: boolean; ok: boolean; items: ChainCheck[]; problems: string[] } | null;
   platform: null | { quote: { mint: string; decimals: number; symbol: string; label: string }; config: string; threshold: { rawQuoteThreshold: string };
     launchEconomics: any; launchEconomicsDigest: string; economicsVersion: string; templateVersion: string };
-  faucet: { quoteUi: string; lamports: string; claimsPerDay: number };
+  faucet: { quoteUi: string; lamports: string; claimsPerDay: number } | null;
 }
 interface Live { priceQuotePerBase: string | null; marketCapQuoteRaw: string | null; priceUnavailable?: boolean; launchPriceQuotePerBase?: string; lockedBps?: number | null; quoteReserve: string; migrationQuoteThreshold: string; progressBps: number;
   curveComplete: boolean; isMigrated: boolean; baseDecimals: number; quoteDecimals: number; totalSupplyRaw: string; creatorQuoteFee: string; venue?: 'CURVE' | 'DAMM_V2' }
@@ -70,7 +74,9 @@ const ICON = {
 type Sort = 'traded' | 'new' | 'progress' | 'graduated';
 const state: { platform: Platform | null; wallet: Connected | null; balances: { lamports: string; tokens: Record<string, string> } | null; tokens: Token[]; sort: Sort; query: string } =
   { platform: null, wallet: null, balances: null, tokens: [], sort: 'traded', query: '' };
-const Q = () => state.platform?.platform?.quote ?? { mint: '', decimals: 6, symbol: 'qUSD', label: 'TEST_ONLY' };
+const Q = () => state.platform?.platform?.quote ?? (state.platform?.mainnetQuote ? { ...state.platform.mainnetQuote, label: 'mainnet' } : { mint: '', decimals: 6, symbol: 'qUSD', label: 'TEST_ONLY' });
+const isMainnet = () => state.platform?.cluster === 'mainnet-beta';
+const hasFaucet = () => !!state.platform?.faucet;
 /** Market cap text; after graduation it is unknown (not the old curve's) while the DAMM v2 pool cannot be read. */
 const mcapText = (l: Live | null) => (l?.marketCapQuoteRaw ? `${compact(l.marketCapQuoteRaw, Q().decimals)} ${Q().symbol}` : '—');
 const lockedText = (l: Live | null) => (l?.lockedBps == null ? null : `${(l.lockedBps / 100).toFixed(2)}%`);
@@ -108,8 +114,8 @@ function renderWallet() {
   const q = Q();
   const b = state.balances;
   box.append(...[
-    b ? h('span', { class: 'bal', title: 'devnet balances' }, `${units(b.tokens[q.mint] ?? '0', q.decimals, 0)} ${q.symbol}`, h('span', { class: 'dim' }, ` · ${units(b.lamports, 9, 3)} SOL`)) : null,
-    h('button', { class: 'btn ghost', onclick: claimFaucet, title: 'TEST_ONLY devnet tokens with no value' }, `Get test ${q.symbol}`),
+    b ? h('span', { class: 'bal', title: `${isMainnet() ? 'mainnet' : 'devnet'} balances` }, `${units(b.tokens[q.mint] ?? '0', q.decimals, 0)} ${q.symbol}`, h('span', { class: 'dim' }, ` · ${units(b.lamports, 9, 3)} SOL`)) : null,
+    hasFaucet() ? h('button', { class: 'btn ghost', onclick: claimFaucet, title: 'TEST_ONLY devnet tokens with no value' }, `Get test ${q.symbol}`) : null,
     h('button', { class: 'btn wallet', onclick: async () => { if (state.wallet) await disconnect(state.wallet); state.wallet = null; renderWallet(); } , title: 'Disconnect' },
       h('img', { src: state.wallet.wallet.icon, alt: '', class: 'wicon' }), short(state.wallet.account.address)),
   ].filter((x): x is HTMLElement => !!x));
@@ -267,16 +273,18 @@ let paintGrid: (() => void) | null = null;
 async function renderHome() {
   const main = $('#view');
   const q = Q();
-  const threshold = state.platform?.platform ? units(state.platform.platform.threshold.rawQuoteThreshold, q.decimals, 0) : '—';
+  const threshold = state.platform?.platform ? units(state.platform.platform.threshold.rawQuoteThreshold, q.decimals, 0) : null;
+  const target = threshold ? `${threshold} ${q.symbol}` : 'its graduation target';
   const grid = h('div', { class: 'grid' }, h('div', { class: 'empty' }, 'Loading coins…'));
   const side = h('div', { class: 'how' }, h('span', { class: 'eyebrow' }, 'How it works'), h('ol', {},
     h('li', {}, h('span', {}, 'Make a coin with a name, a ticker and a picture. One signature.')),
     h('li', {}, h('span', {}, `Anyone can buy and sell it on its bonding curve, priced in ${q.symbol}.`)),
-    h('li', {}, h('span', {}, `At ${threshold} ${q.symbol} raised it graduates to Meteora DAMM v2 and its liquidity is locked forever.`))));
+    h('li', {}, h('span', {}, `At ${target} raised it graduates to Meteora DAMM v2 and its liquidity is locked forever.`))));
   const hero = h('section', { class: 'hero' },
     h('div', { class: 'hero-copy' }, h('h1', {}, 'Launch a coin', h('br'), 'in one signature.'),
-      h('p', { class: 'lead' }, `Every coin starts on a bonding curve priced in ${q.symbol}. When ${threshold} ${q.symbol} is raised it graduates to a Meteora DAMM v2 pool, and its liquidity is locked for good.`),
-      h('div', { class: 'cta' }, h('a', { class: 'btn primary lg', href: '#/create' }, 'Create a coin'), h('button', { class: 'btn ghost lg', onclick: claimFaucet }, `Get test ${q.symbol}`))),
+      h('p', { class: 'lead' }, `Every coin starts on a bonding curve priced in ${q.symbol}. When ${target} is raised it graduates to a Meteora DAMM v2 pool, and its liquidity is locked for good.`),
+      h('div', { class: 'cta' }, state.platform?.writesEnabled ? h('a', { class: 'btn primary lg', href: '#/create' }, 'Create a coin') : h('a', { class: 'btn primary lg', href: '#/status' }, 'Why launching is locked'),
+        hasFaucet() ? h('button', { class: 'btn ghost lg', onclick: claimFaucet }, `Get test ${q.symbol}`) : null)),
     side);
   const tabs = h('div', { class: 'tabs', role: 'tablist', 'aria-label': 'Sort coins' });
   const paintTabs = () => tabs.replaceChildren(...([['traded', 'Most traded'], ['new', 'New'], ['progress', 'About to graduate'], ['graduated', 'Graduated']] as [Sort, string][])
@@ -286,7 +294,7 @@ async function renderHome() {
   paintGrid = () => {
     const list = sortedTokens();
     grid.replaceChildren(...(list.length ? list.map(tokenCard)
-      : [h('div', { class: 'empty' }, state.tokens.length ? 'No coins match.' : 'No coins yet. ', state.tokens.length ? null : h('a', { href: '#/create' }, 'Launch the first one.'))]));
+      : [h('div', { class: 'empty' }, state.tokens.length ? 'No coins match.' : 'No coins yet. ', state.tokens.length || !state.platform?.writesEnabled ? null : h('a', { href: '#/create' }, 'Launch the first one.'))]));
   };
   void renderTape();
   try {
@@ -315,6 +323,7 @@ function renderCreate() {
   const p = state.platform?.platform;
   const q = Q();
   const main = $('#view');
+  if (!state.platform?.writesEnabled) { main.replaceChildren(lockedPanel('Launching is locked')); return; }
   if (!p) { main.replaceChildren(h('div', { class: 'empty' }, 'The devnet platform is not set up yet.')); return; }
   let imageDataUrl: string | null = null;
   const name = h('input', { id: 'f-name', maxLength: 32, placeholder: 'Moon Cat', required: true, autocomplete: 'off' });
@@ -878,6 +887,42 @@ async function renderFees(wallet: string | null) {
     notes));
 }
 
+// ------------------------------------------------------------------ network status (read-only)
+/** Why sending is locked on this network, in the server's own words. */
+function lockedPanel(title: string) {
+  const p = state.platform!;
+  return h('section', { class: 'status' }, h('div', { class: 'card' }, h('h1', {}, title),
+    h('p', { class: 'dim' }, `This server runs on ${isMainnet() ? 'mainnet' : 'devnet'} and cannot build or send transactions there yet.`),
+    h('ul', { class: 'notes' }, ...p.writesLockedBecause.map((w) => h('li', {}, w))),
+    h('p', {}, h('a', { href: '#/status' }, 'See the full network status'))));
+}
+function renderStatus() {
+  const p = state.platform!;
+  const ch = p.chainChecks;
+  const stat = (k: string, v: string | HTMLElement, sub: string) => h('div', {}, h('span', { class: 'k' }, k), h('span', { class: 'v' }, v), h('span', { class: 'dim small' }, sub));
+  const statusCell = (c: ChainCheck) => h('span', { class: c.status === 'MATCH' ? 'check-ok' : c.status === 'SINGLE_PROVIDER' ? 'check-residual' : 'check-bad', title: c.detail ?? '' },
+    c.status === 'MATCH' ? 'both providers agree' : c.status === 'SINGLE_PROVIDER' ? 'one provider only' : c.status.toLowerCase().replace('_', ' '));
+  const rows = (ch?.items ?? []).map((c) => h('tr', {}, h('td', {}, c.label), h('td', { class: 'mono' }, ext(explorer('address', c.address), short(c.address))), h('td', {}, statusCell(c)),
+    h('td', { class: 'num dim' }, c.slots.join(' / '))));
+  main_(h('section', { class: 'status earnings' },
+    h('div', { class: 'earn-head' }, h('h1', {}, 'Network status'), h('p', { class: 'dim' }, `${p.label}.`)),
+    h('div', { class: 'kpis' },
+      stat('Network', p.cluster === 'devnet' ? 'devnet' : 'mainnet', p.mode === 'DEVNET' ? 'test network, valueless tokens' : 'real network'),
+      stat('Sending', p.writesEnabled ? 'on' : 'locked', p.writesEnabled ? 'launch, trade, claim, treasury' : 'this server cannot send'),
+      stat('Quote token', Q().symbol, Q().mint ? short(Q().mint) : '—'),
+      stat('Mainnet readiness', p.readiness.MAINNET ?? '—', `${p.mainnetBlockers.length} open items`)),
+    p.writesLockedBecause.length ? h('div', { class: 'card' }, h('h3', {}, 'Why sending is locked'), h('ul', { class: 'notes' }, ...p.writesLockedBecause.map((w) => h('li', {}, w)))) : null,
+    ch ? h('div', { class: 'card' }, h('h3', {}, 'What this server reads from chain'),
+      h('p', { class: 'dim small', style: { margin: '0 0 12px' } }, ch.crossChecked
+        ? `Read at ${new Date(ch.at).toLocaleTimeString()} from two RPC providers at finalized commitment and compared.`
+        : `Read at ${new Date(ch.at).toLocaleTimeString()} from one RPC provider. A second provider is needed before any mainnet decision.`),
+      ch.problems.length ? h('ul', { class: 'notes err' }, ...ch.problems.map((x) => h('li', {}, x))) : null,
+      h('div', { class: 'scroll' }, h('table', { class: 'trades' }, h('thead', {}, h('tr', {}, h('th', {}, 'Account'), h('th', {}, 'Address'), h('th', {}, 'Check'), h('th', { class: 'num' }, 'Slot'))), h('tbody', {}, ...rows)))) : null,
+    h('div', { class: 'card' }, h('h3', {}, 'Before mainnet can go live'), h('p', { class: 'dim small', style: { margin: '0 0 8px' } }, 'From the readiness record in the code. Each item is closed by the owner or a reviewer, not by this server.'),
+      h('ul', { class: 'notes' }, ...p.mainnetBlockers.map((b) => h('li', {}, b))))));
+}
+const main_ = (...c: HTMLElement[]) => $('#view').replaceChildren(...c);
+
 // ------------------------------------------------------------------ router + boot
 async function route() {
   clearInterval(tokenTimer);
@@ -886,9 +931,10 @@ async function route() {
   document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === (m ? '' : location.hash || '#/')));
   const fw = feesWallet();
   if (fw !== undefined) document.querySelector('nav a[href="#/fees"]')?.classList.add('on');
-  if (m || fw !== undefined || location.hash === '#/create' || location.hash === '#/earnings') $('#tape').hidden = true;
+  if (m || fw !== undefined || location.hash === '#/create' || location.hash === '#/earnings' || location.hash === '#/status') $('#tape').hidden = true;
   if (m) await renderToken(m);
   else if (fw !== undefined) await renderFees(fw);
+  else if (location.hash === '#/status') renderStatus();
   else if (location.hash === '#/create') renderCreate();
   else if (location.hash === '#/earnings') await renderEarnings();
   else await renderHome();
@@ -901,7 +947,14 @@ async function boot() {
   try { state.platform = await api<Platform>('/api/lp/platform'); }
   catch (e) { $('#view').replaceChildren(h('div', { class: 'empty err' }, `Launchpad API unavailable: ${(e as Error).message}`)); return; }
   const q = Q();
-  $('#netnote').textContent = state.platform.ready
+  setExplorerCluster(state.platform.cluster);
+  if (isMainnet()) {
+    $('#netbar').classList.add('mainnet');
+    $('#netbar .pill').textContent = 'MAINNET · READ-ONLY';
+    $('#netnote').replaceChildren('Real network, read-only. Launching, trading and claiming are locked until mainnet is approved. ', h('a', { href: '#/status' }, 'Why'));
+    document.title = 'QF Launchpad (mainnet, read-only)';
+    $('.foot').textContent = 'Meteora Dynamic Bonding Curve to DAMM v2 · mainnet read-only build · this server cannot send transactions';
+  } else $('#netnote').textContent = state.platform.ready
     ? `Test network. ${q.symbol} and every coin here have no value. Mainnet is off.`
     : 'Devnet platform not set up yet (the operator wallet needs devnet SOL). Browsing works; launching does not.';
   renderWallet();

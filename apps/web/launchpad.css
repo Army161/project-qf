@@ -27,6 +27,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 /* devnet bar + header */
 #netbar { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; text-align: center; padding: 8px 16px; background: var(--devnet-ground); color: var(--devnet); font-size: 13px; font-weight: 500; }
+#netbar.mainnet { background: color-mix(in srgb, #3d7cff 18%, var(--ground)); color: #a9c4ff; }
+#netbar a { color: inherit; text-decoration: underline; }
 #netbar .pill { border: 1px solid currentColor; border-radius: 999px; padding: 1px 10px; font-weight: 700; letter-spacing: .08em; font-size: 11px; }
 header.top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 24px; padding: 14px 32px; background: color-mix(in srgb, var(--ground) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line-soft); }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--text); }

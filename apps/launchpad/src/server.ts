@@ -17,6 +17,7 @@ import {
 import type { LaunchpadChain, LiveDammPool, LivePool } from './chain.ts';
 import { PoolCache, syncLaunch, tradeFromSummary, DammCache } from './indexer.ts';
 import { feeClaimerFor, isTreasuryConfig, type PlatformRecord } from './platform.ts';
+import type { ChainChecks, ClusterProfile } from './cluster.ts';
 import { claimIdentity, claimReceipt, resolveClaims } from './receipts.ts';
 import { sumFees, type ClaimRow, type FeeTotals, type LaunchRow, type LaunchpadStore, type StoredTrade } from './store.ts';
 
@@ -36,7 +37,18 @@ export interface LaunchpadOptions {
   publicBaseUrl: string;
   now?: () => Date;
   log?: (m: string) => void;
+  /** network and what the server may do there; devnet when omitted */
+  profile?: ServerProfile;
+  /** latest startup checks of the chain this server reads (mainnet: quote mint and programs, two providers) */
+  chainChecks?: () => ChainChecks | null;
 }
+/** The part of the cluster profile the HTTP layer needs (see cluster.ts). */
+export type ServerProfile = Pick<ClusterProfile, 'cluster' | 'mode' | 'writes' | 'faucet' | 'label' | 'writesLockedBecause' | 'quote'>;
+export const DEVNET_PROFILE: ServerProfile = Object.freeze({ cluster: 'devnet', mode: 'DEVNET', writes: true, faucet: true, label: 'TEST_ONLY devnet tokens with no value',
+  writesLockedBecause: [], quote: null });
+/** Requests that build a transaction for someone to sign, send one, or move tokens. All refused while writes are locked. */
+const WRITE_ROUTES = new Set(['POST /api/lp/launch', 'POST /api/lp/swap', 'POST /api/lp/submit', 'POST /api/lp/claim', 'POST /api/lp/treasury/propose',
+  'POST /api/lp/treasury/approve', 'POST /api/lp/treasury/execute', 'POST /api/lp/faucet']);
 
 class HttpError extends Error {
   status: number; code: string; details: string[] | undefined;
@@ -223,6 +235,8 @@ const FINAL_PROPOSAL = new Set(['Executed', 'Rejected', 'Cancelled']);
 
 export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: PoolCache; dammCache: DammCache } {
   const now = o.now ?? (() => new Date());
+  const profile = o.profile ?? DEVNET_PROFILE;
+  const network = profile.cluster === 'devnet' ? 'devnet' : 'mainnet';
   const pools = new PoolCache(o.chain);
   const damms = new DammCache(o.chain);
   const rate = new Map<string, number[]>();
@@ -235,7 +249,9 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
   };
   const platform = () => {
     const p = o.platform();
-    if (!p) throw new HttpError(503, 'PLATFORM_NOT_READY', 'the devnet platform (test quote + DBC config) has not been set up yet; run `main.ts setup` once the operator wallet holds devnet SOL');
+    if (!p) throw new HttpError(503, 'PLATFORM_NOT_READY', profile.cluster === 'devnet'
+      ? 'the devnet platform (test quote + DBC config) has not been set up yet; run `main.ts setup` once the operator wallet holds devnet SOL'
+      : 'there is no mainnet platform: mainnet is read-only until the owner approves it');
     return p;
   };
   const imageUrl = (l: LaunchRow) => (l.imageType ? `/m/${l.mint}.img` : null);
@@ -248,13 +264,14 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
   });
   const intentCheck = (i: Omit<TxIntent, 'intentId' | 'createdAt' | 'expiresAt' | 'cluster' | 'mock'>, approvedEconomicsDigest?: string) => {
     const t = now();
-    const r = validateIntent({ ...i, intentId: 'pending', cluster: 'devnet', mock: false, createdAt: t.toISOString(), expiresAt: new Date(t.getTime() + INTENT_TTL_MS).toISOString() },
+    const r = validateIntent({ ...i, intentId: 'pending', cluster: profile.cluster, mock: false, createdAt: t.toISOString(), expiresAt: new Date(t.getTime() + INTENT_TTL_MS).toISOString() },
       { now: t.toISOString(), ...(approvedEconomicsDigest ? { approvedEconomicsDigest } : {}) });
     if (!r.ok) throw new HttpError(409, 'INTENT_REFUSED', 'the transaction intent is refused by policy', r.violations);
   };
   const storeBuilt = async (kind: string, mint: string | null, user: string, built: { bytes: Uint8Array; terms: ApprovedTerms; blockhash: string; lastValidBlockHeight: number },
     ctx: BindingContext = {}) => {
-    // Defence in depth: what we built must bind to the terms we are about to hand out.
+    // Defence in depth: what we built must be for this network and bind to the terms we are about to hand out.
+    if (built.terms.cluster !== profile.cluster) throw new HttpError(500, 'CLUSTER_MISMATCH', `built for ${built.terms.cluster}, this server runs on ${profile.cluster}`);
     const v = await bindTransactionToTerms(decodeTransactionBytes(built.bytes), built.terms, ctx);
     if (v.length) { o.log?.(`binding failed for ${kind}: ${v.join('; ')}`); throw new HttpError(500, 'BINDING_FAILED', 'the built transaction does not bind to its terms', v); }
     const t = now();
@@ -307,11 +324,18 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
   async function api(req: IncomingMessage, res: ServerResponse, path: string, query: URLSearchParams) {
     const method = req.method ?? 'GET';
     const ip = req.socket.remoteAddress ?? 'local';
-    if (path === '/api/lp/healthz' && method === 'GET') return send(res, 200, { ok: true, apiVersion: LP_API_VERSION });
+    if (path === '/api/lp/healthz' && method === 'GET') return send(res, 200, { ok: true, apiVersion: LP_API_VERSION, cluster: profile.cluster, mode: profile.mode });
+    // one gate for everything that builds, sends or moves tokens: nothing below runs while writes are locked
+    if (WRITE_ROUTES.has(`${method} ${path}`)) {
+      if (path === '/api/lp/faucet' && !profile.faucet) throw new HttpError(404, 'NO_FAUCET', `there is no faucet on ${network}`);
+      if (!profile.writes) throw new HttpError(423, 'WRITES_LOCKED', `${network} is read-only: launching, trading, claiming and treasury steps are locked until the owner approves ${network}`, profile.writesLockedBecause);
+    }
 
     if (path === '/api/lp/platform' && method === 'GET') {
       const p = o.platform();
-      return send(res, 200, { apiVersion: LP_API_VERSION, cluster: 'devnet', ready: !!p, readiness: { DEVNET_INTEGRATION: READINESS.DEVNET_INTEGRATION.status, MAINNET: READINESS.MAINNET.status },
+      return send(res, 200, { apiVersion: LP_API_VERSION, cluster: profile.cluster, mode: profile.mode, writesEnabled: profile.writes, writesLockedBecause: profile.writesLockedBecause,
+        label: profile.label, mainnetQuote: profile.cluster === 'mainnet-beta' ? profile.quote : null, chainChecks: o.chainChecks?.() ?? null,
+        mainnetBlockers: READINESS.MAINNET.blockers, ready: !!p, readiness: { DEVNET_INTEGRATION: READINESS.DEVNET_INTEGRATION.status, MAINNET: READINESS.MAINNET.status },
         operator: o.chain.operatorAddress, platform: p && { quote: p.quote, config: p.config.config, threshold: p.threshold, launchEconomics: p.launchEconomics,
           launchEconomicsDigest: p.launchEconomicsDigest, economicsVersion: p.economicsVersion, templateVersion: p.templateVersion,
           configs: [p.config, ...(p.legacyConfigs ?? [])].map((c) => ({ config: c.config, feeClaimer: c.feeClaimer, current: c.config === p.config.config,
@@ -319,7 +343,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
             label: configRole(p, c.config) === 'LEGACY' ? 'Legacy config: coins launched on it keep it, and their platform fees still go to its fee claimer, unchanged'
               : isTreasuryConfig(p, c.config) ? 'Current config: platform fees go to the treasury vault' : 'Current config' })),
           treasury: p.treasury ? treasuryView(p) : null },
-        faucet: { quoteUi: FAUCET.quoteUi.toString(), lamports: FAUCET.lamports.toString(), claimsPerDay: FAUCET.claimsPerDay } });
+        faucet: profile.faucet ? { quoteUi: FAUCET.quoteUi.toString(), lamports: FAUCET.lamports.toString(), claimsPerDay: FAUCET.claimsPerDay } : null });
     }
 
     if (path === '/api/lp/tokens' && method === 'GET') {
@@ -725,7 +749,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       const lpOf = lpOfCoin;
       // two separate questions: were all pools and positions read (unclaimed), and is every receipt proven (claims)
       const unclaimedComplete = !coins.some((c) => !c.curve || c.lp === 'UNAVAILABLE' || (lpOf(c) && (lpOf(c)!.creatorQuoteRaw === null || lpOf(c)!.platformQuoteRaw === null)));
-      const body = { cluster: 'devnet', label: 'TEST_ONLY devnet tokens with no value', quote: p.quote, platformWallet, asOf: now().toISOString(),
+      const body = { cluster: profile.cluster, label: profile.label, quote: p.quote, platformWallet, asOf: now().toISOString(),
         totals: {
           unclaimed: { creatorCurve: add((c) => c.curve?.creatorQuoteRaw), platformCurve: add((c) => c.curve?.platformQuoteRaw),
             creatorLp: add((c) => lpOf(c)?.creatorQuoteRaw), platformLp: add((c) => lpOf(c)?.platformQuoteRaw) },
@@ -807,7 +831,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       if (res.headersSent) { res.destroy(); return; }
       // The public devnet RPC rate-limits bursts; that is a retryable outage, not a server fault.
       const rpcBusy = !(e instanceof HttpError) && /\b429\b|Too Many Requests|rate limit/i.test((e as Error)?.message ?? '');
-      const err = e instanceof HttpError ? e : rpcBusy ? new HttpError(503, 'RPC_BUSY', 'the devnet RPC is busy; try again in a few seconds') : new HttpError(500, 'INTERNAL', 'internal error');
+      const err = e instanceof HttpError ? e : rpcBusy ? new HttpError(503, 'RPC_BUSY', `the ${network} RPC is busy; try again in a few seconds`) : new HttpError(500, 'INTERNAL', 'internal error');
       if (!(e instanceof HttpError)) o.log?.(rpcBusy ? `rpc busy on ${path}` : `internal error: ${(e as Error)?.stack?.slice(0, 800)}`);
       send(res, err.status, { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } });
     }

@@ -56,4 +56,7 @@ export function ago(iso: string | number | null, now = Date.now()): string {
 
 export const pct = (bps: number) => `${(bps / 100).toFixed(bps % 100 === 0 ? 0 : 1)}%`;
 
-export const explorer = (kind: 'tx' | 'address', id: string) => `https://explorer.solana.com/${kind}/${id}?cluster=devnet`;
+let explorerQuery = '?cluster=devnet';
+/** Explorer links point at the network this server runs on (set once at boot from lp-api/platform). */
+export const setExplorerCluster = (cluster: 'devnet' | 'mainnet-beta') => { explorerQuery = cluster === 'devnet' ? '?cluster=devnet' : ''; };
+export const explorer = (kind: 'tx' | 'address', id: string) => `https://explorer.solana.com/${kind}/${id}${explorerQuery}`;
