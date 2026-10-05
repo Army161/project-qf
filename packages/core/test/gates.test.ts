@@ -24,6 +24,7 @@ test('readiness is tracked as four separate stages', () => {
   assert.equal(READINESS.DEVNET_INTEGRATION.status, 'ACTIVE');
   assert.match(READINESS.DEVNET_INTEGRATION.scope, /2026-10-03T21:06:00Z/);
   assert.ok(READINESS.MAINNET.blockers.some((b) => b.startsWith('DEV-3')), 'DEV-3 stays a mainnet blocker');
+  assert.ok(READINESS.MAINNET.blockers.some((b) => b.startsWith('IDX-1')), 'the indexer scaling bound stays a mainnet blocker');
   assert.equal(READINESS.MAINNET.status, 'BLOCKED');
   assert.doesNotThrow(() => assertStageActive('OFFLINE_V0'));
   assert.doesNotThrow(() => assertStageActive('DEVNET_INTEGRATION'));
