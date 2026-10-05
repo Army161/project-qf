@@ -9,6 +9,7 @@ import { PROGRAM_IDS } from '@project-qf/tx';
 import { USDC_MAINNET } from '@project-qf/adapter-meteora-dbc/launchpad';
 import { mainnetChainChecks, mintFields, profileFromEnv } from '../src/cluster.ts';
 import { LaunchpadStore } from '../src/store.ts';
+import { clientIp } from '../src/server.ts';
 import { harness, seedLaunch } from './support/harness.ts';
 
 test('devnet stays the default; mainnet is read-only, with USDC, no faucet, its own database and every reason stated', () => {
@@ -105,4 +106,15 @@ test('[TEST_ONLY] mainnet startup checks: the quote mint and the three programs,
   assert.match(disagree.problems.join(), /quote mint .*MISMATCH/);
   const m = mintFields(PROGRAM_IDS.TOKEN, mintBytes(6));
   assert.deepEqual([m.decimals, m.initialized, typeof m.mintAuthority, typeof m.freezeAuthority], [6, true, 'string', 'string']);
+});
+
+test('behind a hosting proxy, rate limits use only the header the proxy sets; without it, the socket address', () => {
+  const req = (headers: Record<string, string | string[]>) => ({ headers, socket: { remoteAddress: '10.0.0.1' } }) as never;
+  assert.equal(clientIp(req({ 'x-forwarded-for': '1.1.1.1' })), '10.0.0.1'); // not trusted unless named
+  assert.equal(clientIp(req({ 'fly-client-ip': '203.0.113.7' }), 'Fly-Client-IP'), '203.0.113.7');
+  // a client can put anything first; the proxy appends the real address last
+  assert.equal(clientIp(req({ 'x-forwarded-for': '6.6.6.6, 203.0.113.9' }), 'x-forwarded-for'), '203.0.113.9');
+  assert.equal(clientIp(req({ 'x-forwarded-for': ['6.6.6.6', '198.51.100.4'] }), 'x-forwarded-for'), '198.51.100.4');
+  assert.equal(clientIp(req({}), 'fly-client-ip'), '10.0.0.1');
+  assert.equal(clientIp(req({ 'fly-client-ip': 'x'.repeat(65) }), 'fly-client-ip'), '10.0.0.1');
 });

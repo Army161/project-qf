@@ -5,13 +5,17 @@
 //                                               (src/member.ts init makes them) and a new DBC config paying platform fees to its vault
 //   node --use-env-proxy src/main.ts serve      starts the launchpad on 127.0.0.1 (indexer + migration crank in the background)
 //   node --use-env-proxy src/main.ts chain-check   reads the quote mint and programs from both RPC providers and prints the result
+//   QF_CLUSTER=mainnet-beta node --use-env-proxy src/main.ts plan [--members a,b,c] [--threshold 2] [--time-lock 0] [--graduation-usd 5000] [--out dir]
+//                                               builds the mainnet setup plan (treasury multisig + USDC config) for review:
+//                                               placeholder signers, never signable, reads only (mainnet-plan.ts)
 // Mainnet: QF_CLUSTER=mainnet-beta runs the same app read-only (DEPLOYMENT.md staging): no operator key is loaded, the RPC
 // connections cannot send, and every launch, trade, claim, treasury and faucet request is refused (cluster.ts).
 // Configuration (environment): QF_CLUSTER (devnet | mainnet-beta, default devnet), QF_RPC_URL (QF_RPC_DEVNET still works on
 // devnet; default the public endpoint), QF_RPC_URL_2 (second provider for cross-checked reads), QF_LP_DB (default
 // ./qf-launchpad.sqlite, mainnet ./qf-launchpad-mainnet.sqlite; a database is bound to one network), QF_LP_PORT (default
 // 8788), QF_LP_HOST (default 127.0.0.1), QF_DEVNET_KEY (default ~/.qf-devnet/operator.json; outside any git checkout, mode
-// 0600), QF_PUBLIC_BASE_URL (default http://127.0.0.1:<port>; written into on-chain metadata URIs), QF_STATIC_DIR (default ../web/dist).
+// 0600), QF_PUBLIC_BASE_URL (default http://127.0.0.1:<port>; written into on-chain metadata URIs), QF_STATIC_DIR (default ../web/dist),
+// QF_CLIENT_IP_HEADER (behind a hosting proxy: the header carrying the client address, e.g. fly-client-ip; deploy/RUNBOOK.md).
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +26,8 @@ import { startBackground } from './indexer.ts';
 import { ensurePlatform, setupTreasury, type PlatformRecord } from './platform.ts';
 import { createLaunchpadApp } from './server.ts';
 import { mainnetChainChecks, profileFromEnv, type ChainChecks } from './cluster.ts';
+import { buildMainnetSetupPlan, renderPlanMarkdown } from './mainnet-plan.ts';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { LaunchpadStore } from './store.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -31,7 +37,7 @@ const [cmd] = process.argv.slice(2);
 
 const profile = profileFromEnv(env);
 const mainnet = profile.cluster === 'mainnet-beta';
-if (mainnet && cmd !== 'serve' && cmd !== 'chain-check') {
+if (mainnet && cmd !== 'serve' && cmd !== 'chain-check' && cmd !== 'plan') {
   console.error(`${cmd ?? '(none)'} is not available on mainnet: mainnet is read-only (${profile.writesLockedBecause.join('; ')})`);
   process.exit(78);
 }
@@ -49,6 +55,19 @@ if (cmd === 'chain-check') {
   const r = mainnet ? await mainnetChainChecks(conn, conn2, profile.quote!) : { cluster: 'devnet', note: 'chain-check reads the mainnet quote mint and programs; run it with QF_CLUSTER=mainnet-beta' };
   console.log(JSON.stringify({ cluster: profile.cluster, mode: profile.mode, writes: profile.writes, writesLockedBecause: profile.writesLockedBecause, ...r }, null, 2));
   if ('ok' in r && !r.ok) process.exitCode = 1;
+} else if (cmd === 'plan') {
+  if (!mainnet) { console.error('plan is the mainnet setup plan: run it with QF_CLUSTER=mainnet-beta'); process.exit(64); }
+  const arg = (name: string) => { const k = process.argv.indexOf(`--${name}`); return k > 0 ? process.argv[k + 1] : undefined; };
+  const members = arg('members')?.split(',').filter(Boolean) ?? null;
+  const plan = await buildMainnetSetupPlan(conn, conn2, { members, threshold: Number(arg('threshold') ?? 2), timeLockSeconds: Number(arg('time-lock') ?? 0),
+    graduationUsd: arg('graduation-usd') ?? '5000' });
+  const out = resolve(arg('out') ?? '.');
+  mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, 'mainnet-setup-plan.json'), JSON.stringify(plan, null, 2) + '\n');
+  writeFileSync(join(out, 'MAINNET-SETUP-PLAN.md'), renderPlanMarkdown(plan));
+  console.log(JSON.stringify({ status: plan.status, signable: plan.signable, ok: plan.ok, checks: plan.transactions.checks.map((c) => `${c.ok ? 'PASS' : 'FAIL'} ${c.id}`),
+    totalLamports: plan.totalLamports, wrote: [join(out, 'mainnet-setup-plan.json'), join(out, 'MAINNET-SETUP-PLAN.md')] }, null, 2));
+  if (!plan.ok) process.exitCode = 1;
 } else if (!operator) {
   // only `serve` reaches here without a key (mainnet, read-only)
   await serve();
@@ -69,7 +88,7 @@ if (cmd === 'chain-check') {
 } else if (cmd === 'serve') {
   await serve();
 } else {
-  console.error('usage: main.ts operator | setup | treasury-setup <m1,m2,m3> | serve | chain-check');
+  console.error('usage: main.ts operator | setup | treasury-setup <m1,m2,m3> | serve | chain-check | plan (mainnet)');
   process.exitCode = 64;
 }
 
@@ -86,9 +105,14 @@ async function serve() {
   const refreshChecks = async () => { try { checks = await mainnetChainChecks(conn, conn2, profile.quote!); if (!checks.ok) log(`chain checks: ${checks.problems.join('; ')}`); } catch (e) { log(`chain checks failed: ${(e as Error).message}`); } };
   if (mainnet) { await refreshChecks(); setInterval(refreshChecks, 600_000).unref(); }
   const app = createLaunchpadApp({ store, chain, platform: () => store.getPlatform<PlatformRecord>('platform'), log, profile, chainChecks: () => checks,
+    ...(env.QF_CLIENT_IP_HEADER ? { clientIpHeader: env.QF_CLIENT_IP_HEADER } : {}),
     staticDir: resolve(env.QF_STATIC_DIR ?? join(here, '..', '..', 'web', 'dist')), publicBaseUrl: env.QF_PUBLIC_BASE_URL ?? `http://127.0.0.1:${port}` });
   app.listen(port, host, () => log(JSON.stringify({ listening: `http://${host}:${port}`, cluster: profile.cluster, mode: profile.mode, writes: profile.writes,
     operator: chain.operatorAddress, ready: !!store.getPlatform('platform'), crossChecked: !!conn2 })));
+  // a container stops the server with SIGTERM, and node running as PID 1 has no default handler: close cleanly here
+  const stop = (sig: string) => { log(`${sig}: closing`); app.close(); app.closeAllConnections(); try { store.close(); } catch { /* already closed */ } process.exit(0); };
+  process.once('SIGTERM', () => stop('SIGTERM'));
+  process.once('SIGINT', () => stop('SIGINT'));
   // mainnet read-only has no launches to index and nothing to crank
   if (!mainnet) startBackground({ store, chain, poolCache: app.poolCache, dammCache: app.dammCache, log }, Number(env.QF_LP_INTERVAL_MS ?? 15_000));
 }

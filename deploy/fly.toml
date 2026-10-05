@@ -1,0 +1,35 @@
+# Fly.io settings for the launchpad (deploy/RUNBOOK.md). From the repository root:
+#   fly deploy --config deploy/fly.toml --dockerfile deploy/Dockerfile
+# One machine only: the database is SQLite on one volume. Do not scale out.
+app = "CHANGE-ME"          # the app name you create with `fly apps create`
+primary_region = "iad"     # pick the region nearest your users
+
+[env]
+  QF_CLUSTER = "mainnet-beta"          # read-only; "devnet" for the test launchpad
+  QF_LP_PORT = "8080"
+  QF_LP_DB = "/data/qf-launchpad-mainnet.sqlite"
+  QF_CLIENT_IP_HEADER = "fly-client-ip"
+  # QF_PUBLIC_BASE_URL = "https://<your domain>"
+  # QF_RPC_URL and QF_RPC_URL_2 carry API keys: set them with Fly secrets, not here
+
+[[mounts]]
+  source = "qf_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"     # the indexer and chain checks run in the background
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "30s"
+    interval = "30s"
+    method = "GET"
+    path = "/api/lp/healthz"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

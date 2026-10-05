@@ -1,0 +1,26 @@
+# Allowlist: only what the launchpad image needs enters the build context. Keys, stores, evidence, reports and Git
+# history never do (deploy/Dockerfile).
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!.npmrc
+!tsconfig.json
+!LICENSE-MANIFEST.json
+!patches/
+!packages/
+!apps/
+!tools/
+!licenses/
+!spec/THIRD_PARTY_NOTICES.md
+!spec/PROPRIETARY-NOTICE.md
+!deploy/entrypoint.sh
+**/node_modules
+**/dist
+**/test
+**/*.sqlite*
+**/*.keypair.json
+**/.env
+**/.env.*
+apps/launchpad/.preview
+tools/econ-sim/traces

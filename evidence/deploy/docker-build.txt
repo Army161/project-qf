@@ -1,0 +1,23 @@
+# docker build --no-cache -f deploy/Dockerfile (sandbox: base = the pinned node:22.22.0-bookworm-slim digest plus the sandbox proxy CA, a test-only layer; build args carried the proxy, which Docker keeps out of the image)
+#4 [build 1/6] FROM docker.io/library/qf-test-base:latest@sha256:55070730dd0194ad2f2ba27488f8e3f759c71165f762483607e5db589ca21249
+#5 [build 2/6] WORKDIR /app
+#7 [build 3/6] RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
+#8 [build 4/6] COPY . .
+#9 [runtime 5/8] RUN pnpm --filter "@project-qf/launchpad..." install --prod --frozen-lockfile --ignore-scripts  && rm -rf /root/.cache /root/.local/share/pnpm /tmp/*  && mkdir -p /data && chown node:node /data
+#10 [build 5/6] RUN pnpm install --frozen-lockfile --ignore-scripts
+#11 [build 6/6] RUN pnpm build:web && pnpm boundary
+#9 [runtime 5/8] RUN pnpm --filter "@project-qf/launchpad..." install --prod --frozen-lockfile --ignore-scripts  && rm -rf /root/.cache /root/.local/share/pnpm /tmp/*  && mkdir -p /data && chown node:node /data
+#11 [build 6/6] RUN pnpm build:web && pnpm boundary
+#11 1.599 > project-qf@ boundary /app
+#11 1.599 > node tools/boundary/check-browser-boundary.ts
+#11 2.291   "result": "PASS",
+#12 [runtime 6/8] COPY --from=build /app/apps/web/dist /app/apps/web/dist
+#13 [runtime 7/8] COPY --chmod=755 deploy/entrypoint.sh /usr/local/bin/qf-entrypoint
+#14 [runtime 8/8] WORKDIR /app/apps/launchpad
+#15 naming to docker.io/library/qf-launchpad:test done
+build_exit=0
+
+image size: 503MB
+image env: ["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin","NODE_VERSION=22.22.0","YARN_VERSION=1.22.22","NODE_EXTRA_CA_CERTS=/usr/local/share/sandbox-proxy-ca.crt","NODE_ENV=production","HOME=/data","QF_CLUSTER=mainnet-beta","QF_LP_HOST=0.0.0.0","QF_LP_PORT=8080","QF_LP_DB=/data/qf-launchpad-mainnet.sqlite","QF_STATIC_DIR=/app/apps/web/dist"]
+entrypoint: ["/usr/local/bin/qf-entrypoint"] ["node","--no-warnings","--use-env-proxy","src/main.ts","serve"]
+sandbox proxy address in image history or env: 0 occurrences

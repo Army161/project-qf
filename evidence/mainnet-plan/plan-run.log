@@ -1,0 +1,23 @@
+{
+  "status": "PLAN_ONLY",
+  "signable": false,
+  "ok": true,
+  "checks": [
+    "PASS SQUADS_PROGRAM_CONFIG",
+    "PASS MULTISIG_ADDRESS_DERIVED_TWICE",
+    "PASS MULTISIG_ARGS",
+    "PASS CONFIG_BOUND_TO_TERMS",
+    "PASS FEE_CLAIMER_IS_TREASURY_VAULT",
+    "PASS LEFTOVER_RECEIVER_IS_TREASURY_VAULT",
+    "PASS QUOTE_MINT",
+    "PASS DBC_PROGRAM",
+    "PASS NOT_SIGNABLE",
+    "PASS NOT_LANDABLE",
+    "PASS MEMBERS_NOT_PLACEHOLDER_SIGNERS"
+  ],
+  "totalLamports": "7817800",
+  "wrote": [
+    "/home/user/qf/evidence/mainnet-plan/mainnet-setup-plan.json",
+    "/home/user/qf/evidence/mainnet-plan/MAINNET-SETUP-PLAN.md"
+  ]
+}

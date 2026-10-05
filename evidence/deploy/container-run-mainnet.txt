@@ -1,0 +1,70 @@
+image sha256:00835aca8336; read-only root filesystem; /data is a host directory that was root:root 755 before start (root-owned, as Fly.io mounts a new volume)
+[launchpad 2026-10-05T21:37:18.621Z] {"listening":"http://0.0.0.0:8790","cluster":"mainnet-beta","mode":"MAINNET_READ_ONLY","writes":false,"operator":null,"ready":false,"crossChecked":true}
+== the server process (PID 1)
+Name:	node
+Uid:	1000	1000	1000	1000
+Gid:	1000	1000	1000	1000
+== /data after start
+total 220
+drwxr-xr-x 2 node node   4096 Oct  5 21:37 .
+drwxr-xr-x 1 root root   4096 Oct  5 21:37 ..
+-rw-r--r-- 1 node node   4096 Oct  5 21:37 qf-launchpad-mainnet.sqlite
+-rw-r--r-- 1 node node  32768 Oct  5 21:37 qf-launchpad-mainnet.sqlite-shm
+-rw-r--r-- 1 node node 177192 Oct  5 21:37 qf-launchpad-mainnet.sqlite-wal
+== healthz
+{"ok":true,"apiVersion":"lp-api/1","cluster":"mainnet-beta","mode":"MAINNET_READ_ONLY"}
+== platform (chain checks)
+{
+ "mode": "MAINNET_READ_ONLY",
+ "writesEnabled": false,
+ "faucet": null,
+ "mainnetQuote": {
+  "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "decimals": 6,
+  "symbol": "USDC"
+ },
+ "chainChecks": {
+  "ok": true,
+  "crossChecked": true,
+  "items": [
+   "quote mint (6 decimals expected): MATCH @453701829/453701829",
+   "Meteora Dynamic Bonding Curve program: MATCH @453701829/453701829",
+   "Meteora DAMM v2 program: MATCH @453701829/453701829",
+   "Squads v4 multisig program (platform treasury): MATCH @453701829/453701829"
+  ],
+  "problems": []
+ }
+}
+== POST /api/lp/launch
+423 {"error":{"code":"WRITES_LOCKED","message":"mainnet is read-only: launching, trading, claiming and treasury steps are locked until the owner approves mainnet","
+== POST /api/lp/swap
+423 {"error":{"code":"WRITES_LOCKED","message":"mainnet is read-only: launching, trading, claiming and treasury steps are locked until the owner approves mainnet","
+== POST /api/lp/submit
+423 {"error":{"code":"WRITES_LOCKED","message":"mainnet is read-only: launching, trading, claiming and treasury steps are locked until the owner approves mainnet","
+== POST /api/lp/claim
+423 {"error":{"code":"WRITES_LOCKED","message":"mainnet is read-only: launching, trading, claiming and treasury steps are locked until the owner approves mainnet","
+== POST /api/lp/treasury/propose
+423 {"error":{"code":"WRITES_LOCKED","message":"mainnet is read-only: launching, trading, claiming and treasury steps are locked until the owner approves mainnet","
+== POST /api/lp/treasury/approve
+423 {"error":{"code":"WRITES_LOCKED","message":"mainnet is read-only: launching, trading, claiming and treasury steps are locked until the owner approves mainnet","
+== POST /api/lp/treasury/execute
+423 {"error":{"code":"WRITES_LOCKED","message":"mainnet is read-only: launching, trading, claiming and treasury steps are locked until the owner approves mainnet","
+== POST /api/lp/faucet
+404 {"error":{"code":"NO_FAUCET","message":"there is no faucet on mainnet"}}
+== GET / headers
+HTTP/1.1 200 OK
+content-security-policy: default-src 'none'; script-src 'self'; worker-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+x-content-type-options: nosniff
+referrer-policy: no-referrer
+x-frame-options: DENY
+== GET /launchpad.html
+200 2141 bytes
+== root filesystem is read-only
+touch: cannot touch '/app/x': Read-only file system
+== memory
+99.82MiB / 15.72GiB
+== docker health
+healthy
+== stop
+stopped in 0s, exit code 0
+[launchpad 2026-10-05T21:37:52.507Z] SIGTERM: closing

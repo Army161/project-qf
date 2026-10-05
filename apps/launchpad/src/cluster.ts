@@ -34,7 +34,7 @@ const DEFAULT_RPC: Record<ClusterName, string> = { devnet: 'https://api.devnet.s
 export function profileFromEnv(env: Record<string, string | undefined>, readiness = READINESS, flags = CAPABILITY_FLAGS): ClusterProfile {
   const cluster = (env.QF_CLUSTER ?? 'devnet') as ClusterName;
   if (cluster !== 'devnet' && cluster !== 'mainnet-beta') throw new Error(`QF_CLUSTER must be devnet or mainnet-beta, not ${String(env.QF_CLUSTER)}`);
-  const rpc = env.QF_RPC_URL ?? (cluster === 'devnet' ? env.QF_RPC_DEVNET : undefined) ?? DEFAULT_RPC[cluster];
+  const rpc = env.QF_RPC_URL || (cluster === 'devnet' ? env.QF_RPC_DEVNET : undefined) || DEFAULT_RPC[cluster]; // an empty setting counts as unset
   const rpc2 = env.QF_RPC_URL_2 || null;
   if (cluster === 'devnet') {
     const ok = readiness.DEVNET_INTEGRATION.status === 'ACTIVE';

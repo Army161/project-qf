@@ -1,0 +1,11 @@
+== devnet boot on a fresh root-owned volume, no platform set up yet
+[launchpad 2026-10-05T21:36:45.820Z] {"listening":"http://0.0.0.0:8791","cluster":"devnet","mode":"DEVNET","writes":true,"operator":"<new throwaway devnet address>","ready":false,"crossChecked":false}
+{"ok":true,"apiVersion":"lp-api/1","cluster":"devnet","mode":"DEVNET"}
+== platform before setup (writes on, no token or config yet)
+{"cluster":"devnet","mode":"DEVNET","writesEnabled":true,"ready":false,"config":null}
+== throwaway key file on the volume (mode and owner only; contents never printed)
+700 node /data/.qf-devnet
+600 node /data/.qf-devnet/operator.json
+== the runbook's admin command (as root, minimal env, dropped to node) reads the same key as the server: yes
+== a mainnet database will not open as devnet (same volume, QF_CLUSTER=devnet)
+Error: STORE_CLUSTER_MISMATCH this database belongs to mainnet-beta, not devnet

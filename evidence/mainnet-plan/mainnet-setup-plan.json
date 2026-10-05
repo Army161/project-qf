@@ -1,0 +1,487 @@
+{
+  "domain": "QF-MAINNET-SETUP-PLAN",
+  "status": "PLAN_ONLY",
+  "signable": false,
+  "generatedAt": "2026-10-05T21:24:52.223Z",
+  "cluster": "mainnet-beta",
+  "notice": [
+    "PLAN ONLY. Nothing here was signed, simulated or sent, and nothing can be: the payer, the multisig create key, the config account and the blockhash are placeholders no one holds a key for.",
+    "The economics are STANDARD_V1@0-v0test (usage V0_TEST), the devnet test economics. They are not approved for production (DEPLOYMENT.md §2 item 6).",
+    "The graduation target assumes USDC at $1.00 with no live price or liquidity evidence. At execution the record is made again from live evidence.",
+    "Members are placeholders: the owner has not named the real signers yet (TRE-1)."
+  ],
+  "gate": {
+    "mainnetReadiness": "BLOCKED",
+    "mainnetWrites": false,
+    "openItems": [
+      "P0-M1..P0-M7 (DEPLOYMENT.md §2)",
+      "MAINNET_WRITES=false",
+      "REWARDS_SETTLEMENT_MAINNET=false",
+      "DEV-3 review of deployed-service terms for commercial use (owner waived it for devnet only on 2026-10-03; still required before mainnet)",
+      "IDX-1 trade history at production volume: signature listing stops at 5,000 per pool per pass (logged when hit); before relying on it, unread ranges must stay recoverable and history coverage must report the truncation (Astra, milestone 6 review, 2026-10-05)",
+      "TRE-1 platform treasury: the devnet 2-of-3 Squads multisig uses three throwaway member keys, no time lock and no spending limits (milestone 7). Before mainnet the owner decides the real signers, threshold, time lock and any spending limits, the Squads v4 program terms are reviewed, and the server still holds no member key"
+    ]
+  },
+  "inputs": {
+    "members": "PLACEHOLDER",
+    "memberCount": 3,
+    "threshold": 2,
+    "timeLockSeconds": 0,
+    "graduationUsd": "5000"
+  },
+  "economics": {
+    "version": "STANDARD_V1@0-v0test",
+    "usage": "V0_TEST",
+    "approvedForProduction": false,
+    "template": "STANDARD_V1@0-v0test-flat",
+    "summary": {
+      "trading fee on the curve": "1% of each trade (flat; dynamic fee off)",
+      "Meteora's protocol share": "20% of that fee, set by the DBC program (observed on every devnet trade)",
+      "creator share of the rest": "50%",
+      "platform share of the rest": "50%, to the treasury vault",
+      "platform share split (revenue / holder rewards)": "50 / 50 (policy only: holder rewards are not built for mainnet)",
+      "fee collected in": "the quote token (USDC)",
+      "graduated DAMM v2 pool fee": "1%",
+      "LP after graduation": "platform 50% and creator 50%, both permanently locked (fees claimable, principal not)",
+      "migration fee taken by the platform": "0%",
+      "pool creation fee charged to creators": "0 lamports",
+      "token mint and update authority after launch": "Immutable",
+      "token supply": "1000000000 (6 decimals), 20% of supply moves to DAMM v2 at graduation"
+    }
+  },
+  "graduation": {
+    "quantity": "MIGRATION_QUOTE_RESERVE_THRESHOLD",
+    "policyVersion": "migration-v0.2",
+    "requestedUsd": "5000",
+    "quoteMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "quoteDecimals": 6,
+    "priceUsd": "1",
+    "priceSources": [
+      "plan-only:usdc-par-assumption-a",
+      "plan-only:usdc-par-assumption-b"
+    ],
+    "priceObservedAt": "2026-10-05T21:24:52.223Z",
+    "priceSlot": null,
+    "rounding": "DOWN",
+    "rawQuoteThreshold": "5000000000",
+    "usdEquivalentAtObservation": "5000",
+    "evidence": "PLAN_ONLY_PAR_ASSUMPTION"
+  },
+  "costs": [
+    {
+      "item": "Squads multisig creation fee (from its program config on mainnet)",
+      "lamports": "0"
+    },
+    {
+      "item": "rent for the multisig account (231 bytes; both providers agree)",
+      "lamports": "1823720"
+    },
+    {
+      "item": "rent for the DBC config account (1048 bytes; both providers agree)",
+      "lamports": "5974080"
+    },
+    {
+      "item": "network fees (2 transactions x 2 signatures x 5,000 lamports; no priority fee)",
+      "lamports": "20000"
+    }
+  ],
+  "totalLamports": "7817800",
+  "transactions": {
+    "placeholders": {
+      "payer": "BmnG5deTGQPpsjUXY97fJWV6t8hXzRfALGJYXvsiZKS1",
+      "createKey": "EvZro4eJ8PtgubWXm9QNtjA594BpFyjXZs2Ew5XDCy22",
+      "config": "55hQZoQqX3dypU4wTnq82SdybPW7yuSfVbD4f99VBZun",
+      "blockhash": "HwvUCFh3rkorwnGL6k1pyRRsFwnePsyLDpdNbY2zeDyw"
+    },
+    "members": [
+      {
+        "address": "AMkK85iLWDzrBF2U133jASwbBKpUHn36ka5VSdhRjzYP",
+        "placeholder": true
+      },
+      {
+        "address": "H6GDUBkcjQKuzJDq4xfJUfyDvrx8JmcexsNGPm3JLNcz",
+        "placeholder": true
+      },
+      {
+        "address": "AgULNkdgafhd1a6hZd4U1aeiuSARNMewex1Fx7Ew6aiJ",
+        "placeholder": true
+      }
+    ],
+    "squadsProgramConfig": {
+      "address": "BSTq9w3kZwNwpBXJEvTZz2G9ZTNyKBvoSeXMvwb4cNZr",
+      "label": "Squads v4 program config (creation fee and its treasury)",
+      "status": "MATCH",
+      "value": {
+        "owner": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+        "authority": "8xgjL6yqGmNeMUKMBcjUug47JL2QcWY3EBrFfYeHtYFT",
+        "multisigCreationFee": "0",
+        "treasury": "5DH2e3cJmFpyi6mk65EGFediunm4ui6BiKNUNrhWtD1b"
+      },
+      "slots": [
+        453699050,
+        453699050
+      ]
+    },
+    "multisig": {
+      "title": "Create the 2-of-3 platform treasury (Squads v4 multisig)",
+      "program": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+      "instruction": "multisig_create_v2",
+      "transactionBase64": "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgEDB6ANmbq16l0/NVdt3F/PPwyLDgRDwMKYDLfQQ541UktCzuDdvWNad0xKC5i82QooycKhLeHy0jP20SC0R9xaZFM+k9cyxEgkJ5DS27UxpAq9GfFsVeMTLP9Sd63J1pOrWmanUi91T3X2/AIq42AKyyIeKRY3v3X+285KWz/vwsOgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACbGrn+ly+yZhxebQwZs5X/1yCFK/bj44BdqL6GYhjPTQaBxM5H4iNouLFVXsiHrwku/H77tmyj9S+/aNSsnLeo+8zP28Wi0p9b6fcOOELQYgiJ+7j48TF6NTftzzqO4E4BBgYFAgMBAAR4Mt3HXSj1i+kAAgADAAAAiwnFpdgmH98aT4DxR/R7e8CVThw+5Xe78x79XnVm0LAH7xQZNx4blW9cfiBEBasIurtXdXiO6yYNqF3pGc5SkWMHj9W9mCMrrmYfeF7ZY/fo7sc8wN2nSVTs5A5qOzVrMUcHAAAAAAAA",
+      "messageBase64": "AgEDB6ANmbq16l0/NVdt3F/PPwyLDgRDwMKYDLfQQ541UktCzuDdvWNad0xKC5i82QooycKhLeHy0jP20SC0R9xaZFM+k9cyxEgkJ5DS27UxpAq9GfFsVeMTLP9Sd63J1pOrWmanUi91T3X2/AIq42AKyyIeKRY3v3X+285KWz/vwsOgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACbGrn+ly+yZhxebQwZs5X/1yCFK/bj44BdqL6GYhjPTQaBxM5H4iNouLFVXsiHrwku/H77tmyj9S+/aNSsnLeo+8zP28Wi0p9b6fcOOELQYgiJ+7j48TF6NTftzzqO4E4BBgYFAgMBAAR4Mt3HXSj1i+kAAgADAAAAiwnFpdgmH98aT4DxR/R7e8CVThw+5Xe78x79XnVm0LAH7xQZNx4blW9cfiBEBasIurtXdXiO6yYNqF3pGc5SkWMHj9W9mCMrrmYfeF7ZY/fo7sc8wN2nSVTs5A5qOzVrMUcHAAAAAAAA",
+      "requiredSigners": [
+        "EvZro4eJ8PtgubWXm9QNtjA594BpFyjXZs2Ew5XDCy22",
+        "BmnG5deTGQPpsjUXY97fJWV6t8hXzRfALGJYXvsiZKS1"
+      ],
+      "accounts": [
+        {
+          "name": "program_config",
+          "address": "BSTq9w3kZwNwpBXJEvTZz2G9ZTNyKBvoSeXMvwb4cNZr",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "name": "squads_treasury",
+          "address": "5DH2e3cJmFpyi6mk65EGFediunm4ui6BiKNUNrhWtD1b",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "name": "multisig",
+          "address": "7uiZkoTuNwgUgGKpZioGKPdEjG2bqVfDSFb4bTBQZdBV",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "name": "create_key",
+          "address": "EvZro4eJ8PtgubWXm9QNtjA594BpFyjXZs2Ew5XDCy22",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "name": "creator (payer)",
+          "address": "BmnG5deTGQPpsjUXY97fJWV6t8hXzRfALGJYXvsiZKS1",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "args": {
+        "configAuthority": null,
+        "threshold": 2,
+        "members": [
+          {
+            "key": "AMkK85iLWDzrBF2U133jASwbBKpUHn36ka5VSdhRjzYP",
+            "permissions": {
+              "mask": 7
+            }
+          },
+          {
+            "key": "H6GDUBkcjQKuzJDq4xfJUfyDvrx8JmcexsNGPm3JLNcz",
+            "permissions": {
+              "mask": 7
+            }
+          },
+          {
+            "key": "AgULNkdgafhd1a6hZd4U1aeiuSARNMewex1Fx7Ew6aiJ",
+            "permissions": {
+              "mask": 7
+            }
+          }
+        ],
+        "timeLock": 0,
+        "rentCollector": null,
+        "memo": null
+      },
+      "rent": {
+        "accountBytes": 231,
+        "lamports": "1823720",
+        "providers": "both providers agree"
+      },
+      "multisig": "7uiZkoTuNwgUgGKpZioGKPdEjG2bqVfDSFb4bTBQZdBV",
+      "vault": "6TauWKgWHh7djAPdRBjnSFH7oRYxL7UZeNJZzgm1b8g7",
+      "creationFeeLamports": "0",
+      "squadsTreasury": "5DH2e3cJmFpyi6mk65EGFediunm4ui6BiKNUNrhWtD1b"
+    },
+    "config": {
+      "title": "Create the mainnet DBC config (USDC quote; platform fees and leftovers to the treasury vault)",
+      "program": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+      "instruction": "createConfig",
+      "transactionBase64": "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAFB6ANmbq16l0/NVdt3F/PPwyLDgRDwMKYDLfQQ541UktCPKLCLJr2OwOuZsMrWkB5HsmfXYrgGH4lcktEIc7SVMUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFEZ31qhDajeELXaf3CekItgEmAAAKHSmMbinGSWXfXobNbMgMewCyTCECA4Qz9Iqg/KjufoGQM8D+H7pyjf9QwJYAylJPext9bMscOXOqAzDRkD2mAcybXe48ZitMrRScb6evO+2606PWXzaqvJdDGxu+TC0vbg5HymAgNFL11h+8zP28Wi0p9b6fcOOELQYgiJ+7j48TF6NTftzzqO4E4BBQgBAwMGAAIEBYMCyc/zcktvL72AlpgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAAYAMgAyAPIFKgEAAAAJMrhuhetRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYBAIDGpH6NAwAAgMakfo0DADIBAAAAAGQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAArkfhehSuRwEAAAAAAAAAADntzZXse34/Y3rccDYBAACbV2lOqRpchLHE/v8AAAAAfoCmX3qncF2X1wIAAAAAAA==",
+      "messageBase64": "AgAFB6ANmbq16l0/NVdt3F/PPwyLDgRDwMKYDLfQQ541UktCPKLCLJr2OwOuZsMrWkB5HsmfXYrgGH4lcktEIc7SVMUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFEZ31qhDajeELXaf3CekItgEmAAAKHSmMbinGSWXfXobNbMgMewCyTCECA4Qz9Iqg/KjufoGQM8D+H7pyjf9QwJYAylJPext9bMscOXOqAzDRkD2mAcybXe48ZitMrRScb6evO+2606PWXzaqvJdDGxu+TC0vbg5HymAgNFL11h+8zP28Wi0p9b6fcOOELQYgiJ+7j48TF6NTftzzqO4E4BBQgBAwMGAAIEBYMCyc/zcktvL72AlpgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAAYAMgAyAPIFKgEAAAAJMrhuhetRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYBAIDGpH6NAwAAgMakfo0DADIBAAAAAGQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAArkfhehSuRwEAAAAAAAAAADntzZXse34/Y3rccDYBAACbV2lOqRpchLHE/v8AAAAAfoCmX3qncF2X1wIAAAAAAA==",
+      "requiredSigners": [
+        "55hQZoQqX3dypU4wTnq82SdybPW7yuSfVbD4f99VBZun",
+        "BmnG5deTGQPpsjUXY97fJWV6t8hXzRfALGJYXvsiZKS1"
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "address": "55hQZoQqX3dypU4wTnq82SdybPW7yuSfVbD4f99VBZun",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "name": "fee_claimer",
+          "address": "6TauWKgWHh7djAPdRBjnSFH7oRYxL7UZeNJZzgm1b8g7",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "name": "leftover_receiver",
+          "address": "6TauWKgWHh7djAPdRBjnSFH7oRYxL7UZeNJZzgm1b8g7",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "name": "quote_mint",
+          "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "name": "payer",
+          "address": "BmnG5deTGQPpsjUXY97fJWV6t8hXzRfALGJYXvsiZKS1",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "name": "event_authority",
+          "address": "8Ks12pbrD6PXxfty1hVQiE9sc289zgU1zHkvXhrSdriF",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "name": "program",
+          "address": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "args": {
+        "configParameters": {
+          "poolFees": {
+            "baseFee": {
+              "cliffFeeNumerator": "10000000",
+              "firstFactor": 0,
+              "secondFactor": "0",
+              "thirdFactor": "0",
+              "baseFeeMode": 0
+            },
+            "dynamicFee": null
+          },
+          "collectFeeMode": 0,
+          "migrationOption": 1,
+          "activationType": 1,
+          "tokenType": 0,
+          "tokenDecimal": 6,
+          "partnerLiquidityPercentage": 0,
+          "partnerPermanentLockedLiquidityPercentage": 50,
+          "creatorLiquidityPercentage": 0,
+          "creatorPermanentLockedLiquidityPercentage": 50,
+          "migrationQuoteThreshold": "5000000000",
+          "sqrtStartPrice": "23058431434306057",
+          "lockedVesting": {
+            "amountPerPeriod": "0",
+            "cliffDurationFromMigrationTime": "0",
+            "frequency": "0",
+            "numberOfPeriod": "0",
+            "cliffUnlockAmount": "0"
+          },
+          "migrationFeeOption": 6,
+          "tokenSupply": {
+            "preMigrationTokenSupply": "1000000000000000",
+            "postMigrationTokenSupply": "1000000000000000"
+          },
+          "creatorTradingFeePercentage": 50,
+          "tokenUpdateAuthority": 1,
+          "migrationFee": {
+            "feePercentage": 0,
+            "creatorFeePercentage": 0
+          },
+          "migratedPoolFee": {
+            "collectFeeMode": 0,
+            "dynamicFee": 0,
+            "poolFeeBps": 100
+          },
+          "poolCreationFee": "0",
+          "partnerLiquidityVestingInfo": {
+            "vestingPercentage": 0,
+            "bpsPerPeriod": 0,
+            "numberOfPeriods": 0,
+            "cliffDurationFromMigrationTime": 0,
+            "frequency": 0
+          },
+          "creatorLiquidityVestingInfo": {
+            "vestingPercentage": 0,
+            "bpsPerPeriod": 0,
+            "numberOfPeriods": 0,
+            "cliffDurationFromMigrationTime": 0,
+            "frequency": 0
+          },
+          "migratedPoolBaseFeeMode": 0,
+          "migratedPoolMarketCapFeeSchedulerParams": {
+            "numberOfPeriod": 0,
+            "sqrtPriceStepBps": 0,
+            "schedulerExpirationDuration": 0,
+            "reductionFactor": "0"
+          },
+          "enableFirstSwapWithMinFee": false,
+          "compoundingFeeBps": 0,
+          "padding": [
+            0,
+            0
+          ],
+          "curve": [
+            {
+              "sqrtPrice": "92233720368547758",
+              "liquidity": "24595659242161764324035707923769"
+            },
+            {
+              "sqrtPrice": "79226673521066979257578248091",
+              "liquidity": "3435952624466949164138622"
+            }
+          ]
+        }
+      },
+      "rent": {
+        "accountBytes": 1048,
+        "lamports": "5974080",
+        "providers": "both providers agree"
+      },
+      "config": "55hQZoQqX3dypU4wTnq82SdybPW7yuSfVbD4f99VBZun",
+      "feeClaimer": "6TauWKgWHh7djAPdRBjnSFH7oRYxL7UZeNJZzgm1b8g7",
+      "leftoverReceiver": "6TauWKgWHh7djAPdRBjnSFH7oRYxL7UZeNJZzgm1b8g7",
+      "quoteMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "configParametersDigest": "3fa727eb71a8b29b19172cc17f96bce4a9330620e658be1ee2f7f0020fe82d63",
+      "terms": {
+        "kind": "CREATE_CONFIG",
+        "cluster": "mainnet-beta",
+        "policyVersion": "tx-binding-v0.1",
+        "feePayer": "BmnG5deTGQPpsjUXY97fJWV6t8hXzRfALGJYXvsiZKS1",
+        "compute": {
+          "maxUnitLimit": 400000,
+          "maxUnitPriceMicroLamports": "0"
+        },
+        "config": "55hQZoQqX3dypU4wTnq82SdybPW7yuSfVbD4f99VBZun",
+        "payer": "BmnG5deTGQPpsjUXY97fJWV6t8hXzRfALGJYXvsiZKS1",
+        "feeClaimer": "6TauWKgWHh7djAPdRBjnSFH7oRYxL7UZeNJZzgm1b8g7",
+        "leftoverReceiver": "6TauWKgWHh7djAPdRBjnSFH7oRYxL7UZeNJZzgm1b8g7",
+        "quoteMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "configParametersDigest": "3fa727eb71a8b29b19172cc17f96bce4a9330620e658be1ee2f7f0020fe82d63"
+      },
+      "bindingViolations": []
+    },
+    "checks": [
+      {
+        "id": "SQUADS_PROGRAM_CONFIG",
+        "ok": true,
+        "detail": "read at finalized, MATCH: fee 0 lamports to 5DH2e3cJmFpyi6mk65EGFediunm4ui6BiKNUNrhWtD1b"
+      },
+      {
+        "id": "MULTISIG_ADDRESS_DERIVED_TWICE",
+        "ok": true,
+        "detail": "multisig 7uiZkoTuNwgUgGKpZioGKPdEjG2bqVfDSFb4bTBQZdBV, vault 6TauWKgWHh7djAPdRBjnSFH7oRYxL7UZeNJZzgm1b8g7 (Squads SDK and QF derivation agree)"
+      },
+      {
+        "id": "MULTISIG_ARGS",
+        "ok": true,
+        "detail": "decoded from the instruction bytes: threshold 2, time lock 0s, config authority none, 3 members with initiate+vote+execute"
+      },
+      {
+        "id": "CONFIG_BOUND_TO_TERMS",
+        "ok": true,
+        "detail": "QF decoder: one create_config, every account, signer, writable and the parameter digest match"
+      },
+      {
+        "id": "FEE_CLAIMER_IS_TREASURY_VAULT",
+        "ok": true,
+        "detail": "fee_claimer 6TauWKgWHh7djAPdRBjnSFH7oRYxL7UZeNJZzgm1b8g7"
+      },
+      {
+        "id": "LEFTOVER_RECEIVER_IS_TREASURY_VAULT",
+        "ok": true,
+        "detail": "leftover_receiver 6TauWKgWHh7djAPdRBjnSFH7oRYxL7UZeNJZzgm1b8g7"
+      },
+      {
+        "id": "QUOTE_MINT",
+        "ok": true,
+        "detail": "quote_mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      },
+      {
+        "id": "DBC_PROGRAM",
+        "ok": true,
+        "detail": "config instruction calls the pinned DBC program; multisig instruction calls the pinned Squads v4 program"
+      },
+      {
+        "id": "NOT_SIGNABLE",
+        "ok": true,
+        "detail": "required signers EvZro4eJ8PtgubWXm9QNtjA594BpFyjXZs2Ew5XDCy22, BmnG5deTGQPpsjUXY97fJWV6t8hXzRfALGJYXvsiZKS1, 55hQZoQqX3dypU4wTnq82SdybPW7yuSfVbD4f99VBZun are all placeholders (sha256 of a label; no one holds their keys)"
+      },
+      {
+        "id": "NOT_LANDABLE",
+        "ok": true,
+        "detail": "recent blockhash HwvUCFh3rkorwnGL6k1pyRRsFwnePsyLDpdNbY2zeDyw is a placeholder, not a mainnet blockhash"
+      },
+      {
+        "id": "MEMBERS_NOT_PLACEHOLDER_SIGNERS",
+        "ok": true,
+        "detail": "no member is the payer, create key or config account"
+      }
+    ]
+  },
+  "ok": true,
+  "ownerDecisions": [
+    {
+      "id": "TRE-1 members",
+      "question": "Who are the treasury signers?",
+      "planUses": "3 placeholders",
+      "note": "Three different people, each on a hardware wallet (DEPLOYMENT.md §2 item 5). No signer may be the server, the payer or a hot wallet."
+    },
+    {
+      "id": "TRE-1 threshold",
+      "question": "How many approvals move money?",
+      "planUses": "2 of 3",
+      "note": "The policy says 2-of-3. With 3-of-3, one lost device locks the treasury for good."
+    },
+    {
+      "id": "TRE-1 time lock",
+      "question": "Should approved proposals wait before they can run?",
+      "planUses": "0 seconds",
+      "note": "A time lock (for example 24 hours) gives signers a window to cancel a bad proposal, and delays every fee claim by the same amount."
+    },
+    {
+      "id": "ECON",
+      "question": "Which fees go live?",
+      "planUses": "STANDARD_V1@0-v0test (test economics)",
+      "note": "Production economics and curve template need approval with a simulation report (DEPLOYMENT.md §2 item 6). A config cannot be changed after it is created; new economics mean a new config."
+    },
+    {
+      "id": "GRAD",
+      "question": "At how many USDC does a coin graduate to DAMM v2?",
+      "planUses": "5000 USDC",
+      "note": "The migration policy allows 1000 to 100000 USD; 5000 is its standard default."
+    },
+    {
+      "id": "PAYER",
+      "question": "Which wallet pays for setup?",
+      "planUses": "placeholder",
+      "note": "A funded wallet with about 0.0078 SOL. It gets no rights over the treasury or the config."
+    }
+  ],
+  "afterExecution": [
+    "Read the multisig back at finalized from two providers: members, threshold, time lock, config authority none.",
+    "Read the DBC config back at finalized from two providers and decode it: fee claimer and leftover receiver are the vault, quote mint is USDC, every parameter equals the approved digest (DEPLOYMENT.md §3, verifier parity).",
+    "Record the config in the registry as active only after both read-backs match.",
+    "Run program-verify on mainnet with two RPCs and set up upgrade alerting (DEPLOYMENT.md §2 item 2)."
+  ]
+}

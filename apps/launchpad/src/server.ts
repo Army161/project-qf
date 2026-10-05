@@ -41,6 +41,18 @@ export interface LaunchpadOptions {
   profile?: ServerProfile;
   /** latest startup checks of the chain this server reads (mainnet: quote mint and programs, two providers) */
   chainChecks?: () => ChainChecks | null;
+  /** Behind a hosting proxy every request comes from the proxy, so per-client rate limits need the header the proxy sets
+   *  (Fly.io: fly-client-ip; X-Forwarded-For: the rightmost entry, the one the proxy added). Unset: the socket address. */
+  clientIpHeader?: string;
+}
+/** The client address used for rate limits. Only the named header is trusted, and only because the host's proxy sets it. */
+export function clientIp(req: Pick<IncomingMessage, 'headers' | 'socket'>, header?: string): string {
+  if (header) {
+    const raw = req.headers[header.toLowerCase()];
+    const v = (Array.isArray(raw) ? raw[raw.length - 1] : raw)?.split(',').map((x) => x.trim()).filter(Boolean).at(-1);
+    if (v && v.length <= 64) return v;
+  }
+  return req.socket.remoteAddress ?? 'local';
 }
 /** The part of the cluster profile the HTTP layer needs (see cluster.ts). */
 export type ServerProfile = Pick<ClusterProfile, 'cluster' | 'mode' | 'writes' | 'faucet' | 'label' | 'writesLockedBecause' | 'quote'>;
@@ -323,7 +335,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
 
   async function api(req: IncomingMessage, res: ServerResponse, path: string, query: URLSearchParams) {
     const method = req.method ?? 'GET';
-    const ip = req.socket.remoteAddress ?? 'local';
+    const ip = clientIp(req, o.clientIpHeader);
     if (path === '/api/lp/healthz' && method === 'GET') return send(res, 200, { ok: true, apiVersion: LP_API_VERSION, cluster: profile.cluster, mode: profile.mode });
     // one gate for everything that builds, sends or moves tokens: nothing below runs while writes are locked
     if (WRITE_ROUTES.has(`${method} ${path}`)) {
