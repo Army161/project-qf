@@ -8,9 +8,9 @@ import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { economicsDigest } from '@project-qf/policy';
 import { decodeTransactionBytes, squads, verifyWireSignatures, PROGRAM_IDS, SQUADS_IDL_SUBSET } from '@project-qf/tx';
-import { buildTreasuryApprove, buildTreasuryExecute, buildTreasuryProposeAt, partnerCurveClaim, vaultDammClaim, type ProposalState } from '@project-qf/adapter-meteora-dbc/treasury';
+import { buildTreasuryApprove, buildTreasuryExecute, buildTreasuryProposeAt, partnerCurveClaim, rewardsTransferInner, vaultDammClaim, type ProposalState } from '@project-qf/adapter-meteora-dbc/treasury';
 import { storedVaultTransaction } from '../../../../packages/adapter-meteora-dbc/test/support/treasury.ts';
-import { buildCreatePool, buildCreatorCurveClaim, buildDammClaim, buildDammSwap, buildSwap, quoteDammSwap, quoteSwap, readDammPool, readPool } from '@project-qf/adapter-meteora-dbc/launchpad';
+import { buildCreatePool, buildCreatorCurveClaim, buildDammClaim, buildDammSwap, buildSwap, common, quoteDammSwap, quoteSwap, readDammPool, readPool } from '@project-qf/adapter-meteora-dbc/launchpad';
 import { createQuoteSimulator } from '@project-qf/adapter-meteora-dbc';
 import { accountsForPool, fixtures, K, thresholdRecord } from '../../../../packages/adapter-meteora-dbc/test/support/fixtures.ts';
 import { createMockConnection } from '../../../../packages/adapter-meteora-dbc/test/support/mockRpc.ts';
@@ -53,6 +53,7 @@ export async function harness(opts: { profile?: ServerProfile } = {}) {
   const conn = await mockConn();
   const sent: Uint8Array[] = [];
   const faucetCalls: unknown[] = [];
+  const quoteAccountCalls: string[][] = [];
   // TEST_ONLY Squads double: proposals advance when the recorder "sends" a member transaction, as the program would.
   const tre = { multisig: '', vault: '', members: [] as string[], threshold: 2, nextIndex: 1n, proposals: new Map<string, NonNullable<ProposalState> & { stored: Uint8Array }>() };
   const squadsOp = (dataHex: string) => SQUADS_IDL_SUBSET.instructions.find((i) => i.discriminator.every((b, k) => parseInt(dataHex.slice(2 * k, 2 * k + 2), 16) === b))?.name;
@@ -110,12 +111,15 @@ export async function harness(opts: { profile?: ServerProfile } = {}) {
     balances: async () => ({ lamports: '0', tokens: {} }),
     lamports: async () => 0n,
     faucet: async (...a) => { faucetCalls.push(a); return 'faucet-sig'; },
+    ensureQuoteAccounts: async (owners) => { quoteAccountCalls.push(owners); return { created: [], signature: null }; },
+    finalizedSlot: async () => holders.slot,
     migrate: async () => 'migrate-sig',
     dammPoolFor: async () => K.pool.toBase58(),
     readTreasury: async (m) => ({ multisig: m, vault: tre.vault, threshold: tre.threshold, timeLock: 0, configAuthority: null, members: tre.members.map((key) => ({ key, mask: 7 })),
       transactionIndex: tre.nextIndex - 1n, staleTransactionIndex: 0n }),
     buildTreasuryPropose: async (multisig, vault, member, c) => {
-      const claim = c.venue === 'CURVE' ? await partnerCurveClaim(conn, c.pool, vault) : await vaultDammClaim(conn, c.pool, vault, c.nftMint, c.amounts);
+      const claim = c.venue === 'REWARDS' ? rewardsTransferInner({ ...common(c.inner.from), ...c.inner } as Parameters<typeof rewardsTransferInner>[0])
+        : c.venue === 'CURVE' ? await partnerCurveClaim(conn, c.pool, vault) : await vaultDammClaim(conn, c.pool, vault, c.nftMint, c.amounts);
       return { ...(await buildTreasuryProposeAt(conn, { multisig, member, transactionIndex: tre.nextIndex, claim })), amounts: claim.amounts };
     },
     buildTreasuryApprove: (multisig, member, transactionIndex) => buildTreasuryApprove(conn, { multisig, member, transactionIndex }),
@@ -135,7 +139,7 @@ export async function harness(opts: { profile?: ServerProfile } = {}) {
     const r = await fetch(base + path, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     return { status: r.status, body: await r.json().catch(() => null) as any, headers: r.headers };
   };
-  return { conn, store, dbPath, platform, call, sent, faucetCalls, chain, app, tre, holders, tick: (ms: number) => { clock += ms; }, now: () => new Date(clock) };
+  return { conn, store, dbPath, platform, call, sent, faucetCalls, quoteAccountCalls, chain, app, tre, holders, tick: (ms: number) => { clock += ms; }, now: () => new Date(clock) };
 }
 
 /** Records the fixture coin (mint K.baseMint on pool K.pool) as LIVE, and optionally graduated to the fixture DAMM v2 pool. */

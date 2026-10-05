@@ -9,7 +9,7 @@ export function storedVaultTransaction(createIx: { data: Buffer | Uint8Array } |
   const [args] = sq.generated.vaultTransactionCreateStruct.deserialize(Buffer.from(createIx.data));
   const m = squads.decodeCompactMessage(new Uint8Array(args.args.transactionMessage));
   const acct = sq.generated.VaultTransaction.fromArgs({ multisig: new PublicKey(o.multisig), creator: new PublicKey(o.creator), index: new BN(o.index.toString()), bump: 255,
-    vaultIndex: o.vaultIndex ?? 0, vaultBump: 254, ephemeralSignerBumps: Uint8Array.from(o.bumps ?? []),
+    vaultIndex: o.vaultIndex ?? args.args.vaultIndex, vaultBump: 254, ephemeralSignerBumps: Uint8Array.from(o.bumps ?? []),
     message: { numSigners: m.numSigners, numWritableSigners: m.numWritableSigners, numWritableNonSigners: m.numWritableNonSigners, accountKeys: m.accountKeys.map((k) => new PublicKey(k)),
       instructions: m.instructions.map((ix) => ({ programIdIndex: ix.programIdIndex, accountIndexes: Uint8Array.from(ix.accountIndexes), data: Buffer.from(ix.dataHex, 'hex') })), addressTableLookups: [] } });
   return new Uint8Array(acct.serialize()[0]);

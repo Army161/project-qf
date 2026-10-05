@@ -7,6 +7,8 @@ import type { LaunchpadChain, LiveDammPool, LivePool, TxSummary } from './chain.
 import { feesFromSummary, unknownFees, type TradeFees } from './fees.ts';
 import type { LaunchRow, LaunchpadStore, TradeRow } from './store.ts';
 import { syncAllHolders } from './holders.ts';
+import { syncRewardsVault } from './rewards-vault.ts';
+import type { PlatformRecord } from './platform.ts';
 
 /** The pool a trade is read against: its vaults; and, to read its fees, its address and (curve) the creator's fee share. */
 type TradePool = Pick<LivePool, 'baseVault' | 'quoteVault'> & { pool?: string; creatorTradingFeePct?: number };
@@ -207,7 +209,11 @@ export function startBackground(d: IndexerDeps, intervalMs = 15_000, holdersEver
       }
       await crankMigrations(d);
       await fillTradeFees(d).catch((e) => d.log?.(`trade fees: ${(e as Error).message.slice(0, 200)}`));
-      if (passes++ % holdersEvery === 0) await syncAllHolders(d);
+      if (passes++ % holdersEvery === 0) {
+        await syncAllHolders(d);
+        const p = d.store.getPlatform<PlatformRecord>('platform');
+        if (p) await syncRewardsVault(d, p).catch((e) => d.log?.(`rewards vault: ${(e as Error).message.slice(0, 200)}`));
+      }
     } catch (e) {
       d.log?.(`background pass failed: ${(e as Error).message.slice(0, 200)}`);
     } finally { running = false; }

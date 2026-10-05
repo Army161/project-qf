@@ -644,7 +644,9 @@ export async function getMintSupply(conn: Connection, mint: string): Promise<{ s
 export interface TokenBalanceChanges { signature: string; slot: number; blockTime: number | null; err: boolean;
   /** every token account whose balance the transaction lists, before and after; an account created in it has no
    *  before (0), one closed in it has no after (0). `owner` is the owner after, or before when it was closed. */
-  balances: { account: string; mint: string; owner: string; preRaw: bigint; postRaw: bigint }[] }
+  balances: { account: string; mint: string; owner: string; preRaw: bigint; postRaw: bigint }[];
+  /** SPL Memo texts in the transaction, top level and inner (a memo run inside a multisig vault transaction is inner) */
+  memos?: string[] }
 /** A finalized transaction's token balances, before and after, per token account. */
 export async function getTokenBalanceChanges(conn: Connection, signature: string): Promise<TokenBalanceChanges | null> {
   const t = await busyRetry(() => conn.getParsedTransaction(signature, { commitment: 'finalized', maxSupportedTransactionVersion: 0 }));
@@ -656,8 +658,14 @@ export async function getTokenBalanceChanges(conn: Connection, signature: string
     const e = m.get(b.accountIndex);
     m.set(b.accountIndex, { mint: b.mint, owner: b.owner ?? e?.owner ?? '', preRaw: e?.preRaw ?? 0n, postRaw: BigInt(b.uiTokenAmount.amount) });
   }
+  const memos: string[] = [];
+  for (const ix of [...t.transaction.message.instructions, ...(t.meta.innerInstructions ?? []).flatMap((x) => x.instructions)]) {
+    if (ix.programId.toBase58() !== PROGRAM_IDS.MEMO) continue;
+    if ('parsed' in ix && typeof ix.parsed === 'string') memos.push(ix.parsed);
+    else if ('data' in ix) memos.push(Buffer.from(decodeBase58(ix.data)).toString('utf8'));
+  }
   return { signature, slot: t.slot, blockTime: t.blockTime ?? null, err: t.meta.err !== null,
-    balances: [...m].sort(([a], [b]) => a - b).map(([i, v]) => ({ account: keys[i]!, ...v })) };
+    balances: [...m].sort(([a], [b]) => a - b).map(([i, v]) => ({ account: keys[i]!, ...v })), memos };
 }
 
 /** The first finalized slot with a block whose time is at or after `unixSec`, or null when the chain has not reached

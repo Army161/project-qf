@@ -32,11 +32,27 @@ export type ApprovedTerms =
   // it, and execute it. Members sign for themselves only; nothing here is signed by the server.
   | (Common & TreasuryRef & { kind: 'TREASURY_PROPOSE'; vault: string; vaultIndex: number; creator: string; rentPayer: string; approve: boolean; inner: TreasuryInnerTerms })
   | (Common & TreasuryRef & { kind: 'TREASURY_APPROVE'; member: string })
-  | (Common & TreasuryRef & { kind: 'TREASURY_EXECUTE'; vault: string; vaultIndex: number; member: string; inner: TreasuryInnerTerms });
+  | (Common & TreasuryRef & { kind: 'TREASURY_EXECUTE'; vault: string; vaultIndex: number; member: string; inner: TreasuryInnerTerms })
+  // Holder rewards (devnet, EPOCH_PROPORTIONAL settled DIRECT): only ever run inside a treasury proposal.
+  //   REWARDS_DEPOSIT: the treasury vault (index 0) moves quote tokens into the rewards vault (index 1) for one coin's epoch.
+  //   REWARDS_PAYOUT: the rewards vault pays one final epoch's allocation, recipient by recipient, as frozen in its record.
+  // Each carries a memo naming the coin and epoch, so the deposit or payout can be read back from its own transaction.
+  | (Common & RewardsRef & { kind: 'REWARDS_DEPOSIT'; to: string; amountRaw: string })
+  | (Common & RewardsRef & { kind: 'REWARDS_PAYOUT'; artifactHash: string; payouts: { owner: string; amountRaw: string }[] });
 interface TreasuryRef { multisig: string; transactionIndex: string }
-/** What a treasury vault may be asked to sign in V0: claiming platform fees into its own accounts, nothing else. */
-export type TreasuryInnerTerms = Extract<ApprovedTerms, { kind: 'CLAIM_PARTNER_TRADING_FEE' | 'DAMM_CLAIM_POSITION_FEE' }>;
-export const TREASURY_INNER_KINDS: readonly string[] = ['CLAIM_PARTNER_TRADING_FEE', 'DAMM_CLAIM_POSITION_FEE'];
+interface RewardsRef { from: string; quoteMint: string; quoteDecimals: number; quoteTokenProgram: string; launchMint: string; epochId: string }
+/** What a treasury vault may be asked to sign: claiming platform fees into its own accounts, a holder-rewards deposit
+ *  into the rewards vault, or a holder-rewards payout from the rewards vault. Nothing else. */
+export type TreasuryInnerTerms = Extract<ApprovedTerms, { kind: 'CLAIM_PARTNER_TRADING_FEE' | 'DAMM_CLAIM_POSITION_FEE' | 'REWARDS_DEPOSIT' | 'REWARDS_PAYOUT' }>;
+export type RewardsInnerTerms = Extract<ApprovedTerms, { kind: 'REWARDS_DEPOSIT' | 'REWARDS_PAYOUT' }>;
+export const TREASURY_INNER_KINDS: readonly string[] = ['CLAIM_PARTNER_TRADING_FEE', 'DAMM_CLAIM_POSITION_FEE', 'REWARDS_DEPOSIT', 'REWARDS_PAYOUT'];
+/** The vault that signs an inner transaction: the rewards vault (index 1) pays rewards; the treasury vault (index 0) does the rest. */
+export const vaultIndexFor = (inner: { kind: string }) => (inner.kind === 'REWARDS_PAYOUT' ? 1 : 0);
+/** Most recipients one payout proposal pays (keeps the execute transaction within the size limit). */
+export const MAX_REWARD_PAYOUTS_PER_TX = 8;
+/** The memo a rewards transfer carries (exact text; the binding and the vault reader both use it). */
+export const rewardsMemo = (t: { kind: 'REWARDS_DEPOSIT' | 'REWARDS_PAYOUT'; launchMint: string; epochId: string; artifactHash?: string }) =>
+  t.kind === 'REWARDS_DEPOSIT' ? `qf-rewards-deposit@1 mint=${t.launchMint} epoch=${t.epochId}` : `qf-rewards-payout@1 mint=${t.launchMint} epoch=${t.epochId} artifact=${t.artifactHash}`;
 
 /** What was consented to. The blockhash is deliberately absent: a refreshed blockhash is not a change of terms. */
 export interface ConsentRecord {
@@ -63,6 +79,8 @@ const KIND_FIELDS: Record<ApprovedTerms['kind'], { addrs: string[]; u64: string[
   TREASURY_PROPOSE: { addrs: ['multisig', 'vault', 'creator', 'rentPayer'], u64: ['transactionIndex'], positive: ['transactionIndex'] },
   TREASURY_APPROVE: { addrs: ['multisig', 'member'], u64: ['transactionIndex'], positive: ['transactionIndex'] },
   TREASURY_EXECUTE: { addrs: ['multisig', 'vault', 'member'], u64: ['transactionIndex'], positive: ['transactionIndex'] },
+  REWARDS_DEPOSIT: { addrs: ['from', 'to', 'quoteMint', 'quoteTokenProgram', 'launchMint'], u64: ['amountRaw'], positive: ['amountRaw'] },
+  REWARDS_PAYOUT: { addrs: ['from', 'quoteMint', 'quoteTokenProgram', 'launchMint'], u64: [], positive: [] },
 };
 
 /** Runtime validation of terms. Returns violations; empty means structurally valid V0 terms. */
@@ -95,20 +113,47 @@ export function validateTerms(t: unknown): string[] {
   if ((o.kind === 'MIGRATE_DAMM_V2' || o.kind === 'DAMM_SWAP' || o.kind === 'DAMM_CLAIM_POSITION_FEE') && o.dammConfig !== DAMM_V2_CUSTOMIZABLE_CONFIG) v.push('TERMS_DAMM_CONFIG_NOT_V0_TEMPLATE');
   if (o.kind === 'TREASURY_PROPOSE' || o.kind === 'TREASURY_EXECUTE') v.push(...treasuryInnerViolations(o));
   if (o.kind === 'TREASURY_PROPOSE' && typeof o.approve !== 'boolean') v.push('TERMS_BAD_FLAG approve');
+  if (o.kind === 'REWARDS_DEPOSIT' || o.kind === 'REWARDS_PAYOUT') v.push(...rewardsViolations(o));
+  return v;
+}
+
+const EPOCH_ID = /^\d{4}-\d{2}-\d{2}$/;
+/** The vault pays its own way and is the only authority; amounts are positive whole units; recipients are distinct wallets. */
+function rewardsViolations(o: Record<string, unknown>): string[] {
+  const v: string[] = [];
+  if (o.feePayer !== o.from) v.push('TERMS_REWARDS_FEE_PAYER_NOT_SOURCE_VAULT');
+  if (!Number.isInteger(o.quoteDecimals) || (o.quoteDecimals as number) < 0 || (o.quoteDecimals as number) > 18) v.push('TERMS_BAD_DECIMALS quoteDecimals');
+  if (typeof o.epochId !== 'string' || !EPOCH_ID.test(o.epochId) || new Date(`${o.epochId}T00:00:00Z`).toISOString().slice(0, 10) !== o.epochId) v.push('TERMS_BAD_EPOCH epochId');
+  if (o.launchMint === o.quoteMint) v.push('TERMS_REWARDS_LAUNCH_IS_QUOTE');
+  if (o.kind === 'REWARDS_DEPOSIT' && o.to === o.from) v.push('TERMS_REWARDS_DEPOSIT_TO_ITSELF');
+  if (o.kind === 'REWARDS_PAYOUT') {
+    if (typeof o.artifactHash !== 'string' || !HEX32.test(o.artifactHash)) v.push('TERMS_BAD_DIGEST artifactHash');
+    const ps = o.payouts as { owner: unknown; amountRaw: unknown }[] | undefined;
+    if (!Array.isArray(ps) || ps.length === 0 || ps.length > MAX_REWARD_PAYOUTS_PER_TX) return [...v, `TERMS_REWARDS_PAYOUT_COUNT 1..${MAX_REWARD_PAYOUTS_PER_TX}`];
+    const seen = new Set<string>();
+    for (const [k, p] of ps.entries()) {
+      if (typeof p?.owner !== 'string' || !isAddress(p.owner)) v.push(`TERMS_BAD_ADDRESS payouts[${k}].owner`);
+      else if (seen.has(p.owner)) v.push(`TERMS_REWARDS_DUPLICATE_RECIPIENT ${p.owner}`);
+      else seen.add(p.owner);
+      if (p?.owner === o.from) v.push('TERMS_REWARDS_PAYS_ITSELF');
+      if (typeof p?.amountRaw !== 'string' || !/^[1-9]\d*$/.test(p.amountRaw) || BigInt(p.amountRaw) > U64_MAX) v.push(`TERMS_BAD_AMOUNT payouts[${k}].amountRaw`);
+    }
+  }
   return v;
 }
 
 /** The vault pays for, signs and receives everything inside a treasury claim; no member or outside account does. */
 function treasuryInnerViolations(o: Record<string, unknown>): string[] {
   const v: string[] = [];
-  if (o.vaultIndex !== 0) v.push('TERMS_TREASURY_VAULT_INDEX must be 0 in V0');
+  const inner0 = o.inner as Record<string, unknown> | undefined;
+  if (o.vaultIndex !== vaultIndexFor({ kind: String(inner0?.kind) })) v.push(`TERMS_TREASURY_VAULT_INDEX must be ${vaultIndexFor({ kind: String(inner0?.kind) })} for ${String(inner0?.kind)}`);
   const signer = o.kind === 'TREASURY_PROPOSE' ? o.creator : o.member;
   if (signer === o.vault) v.push('TERMS_TREASURY_MEMBER_IS_VAULT');
   const inner = o.inner as Record<string, unknown> | undefined;
   if (!inner || typeof inner !== 'object' || !TREASURY_INNER_KINDS.includes(inner.kind as string)) return [...v, `TERMS_TREASURY_INNER_KIND ${String(inner?.kind)}`];
   v.push(...validateTerms(inner).map((x) => `INNER_${x}`));
   if (inner.cluster !== o.cluster) v.push('TERMS_TREASURY_INNER_CLUSTER');
-  const vaultFields = inner.kind === 'CLAIM_PARTNER_TRADING_FEE' ? ['feePayer', 'feeClaimer', 'receiver'] : ['feePayer', 'owner'];
+  const vaultFields = inner.kind === 'CLAIM_PARTNER_TRADING_FEE' ? ['feePayer', 'feeClaimer', 'receiver'] : inner.kind === 'REWARDS_DEPOSIT' || inner.kind === 'REWARDS_PAYOUT' ? ['feePayer', 'from'] : ['feePayer', 'owner'];
   for (const k of vaultFields) if (inner[k] !== o.vault) v.push(`TERMS_TREASURY_INNER_NOT_VAULT ${k}`);
   return v;
 }

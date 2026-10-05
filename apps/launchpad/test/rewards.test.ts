@@ -41,7 +41,7 @@ test('[TEST_ONLY] rewards: a direct transfer counts, the pool is excluded, and a
   await syncAllHolders(d);
   const r = await h.call('/api/lp/rewards?fresh=1');
   assert.equal(r.status, 200);
-  assert.equal(r.body.rules.settlement.devnet, 'NOT_AUTHORIZED');
+  assert.equal(r.body.rules.settlement.devnet, 'ONE_TEST_ROUND');
   assert.equal(r.body.rules.settlement.mainnet, false);
   const c = r.body.coins[0];
   assert.equal(c.coverage.status, 'COMPLETE', JSON.stringify(c.coverage.checks));
@@ -111,7 +111,7 @@ test('[TEST_ONLY] rewards: deposits are allocated by time-weighted balance, cons
   const base = { launch: s.h.store.getLaunch(s.mint)!, cluster: 'devnet', changes: toBalanceChanges(s.h.store.holderChanges(s.mint)), trades: s.h.store.listTrades(s.mint),
     named: namedExclusions(s.h.platform), coverage, carryIn: {}, poolCarryInRaw: 0n, previousFinal: true,
     window: { epochId: s.epochId(0), startSec: s.d0, endSec: s.d0 + DAY, startSlot: s.d0, nextStartSlot: s.d0 + DAY } };
-  const e = computeRewardEpoch({ ...base, deposits: [{ sig: 'deposit-1', amountRaw: 1_000_000n }] });
+  const e = computeRewardEpoch({ ...base, deposits: [{ sig: 'deposit-1', amountRaw: 1_000_000n, slot: s.d0 + 5 }] });
   assert.equal(e.status, 'FINAL');
   const paid = e.result!.payouts.reduce((t, p) => t + p.amountRaw, 0n);
   assert.equal(paid + e.result!.poolRollForwardRaw + e.result!.holderCarryOutTotalRaw, 1_000_000n);
@@ -120,8 +120,8 @@ test('[TEST_ONLY] rewards: deposits are allocated by time-weighted balance, cons
   for (const p of e.result!.payouts) assert.ok(verifyProof(e.result!.merkle.leaves.get(p.owner)!, e.result!.merkle.proofs.get(p.owner)!, e.result!.merkle.root));
   assert.equal(e.funding.fundedRaw, '1000000');
   // the same inputs give the same artifact; a different deposit gives a different one
-  assert.equal(computeRewardEpoch({ ...base, deposits: [{ sig: 'deposit-1', amountRaw: 1_000_000n }] }).artifactHash, e.artifactHash);
-  assert.notEqual(computeRewardEpoch({ ...base, deposits: [{ sig: 'deposit-1', amountRaw: 999_999n }] }).artifactHash, e.artifactHash);
+  assert.equal(computeRewardEpoch({ ...base, deposits: [{ sig: 'deposit-1', amountRaw: 1_000_000n, slot: s.d0 + 5 }] }).artifactHash, e.artifactHash);
+  assert.notEqual(computeRewardEpoch({ ...base, deposits: [{ sig: 'deposit-1', amountRaw: 999_999n, slot: s.d0 + 5 }] }).artifactHash, e.artifactHash);
   // the platform's own accounts are excluded by name
   assert.deepEqual(namedExclusions(s.h.platform).map((n) => n.reason).slice(0, 1), ['QF_OPERATOR']);
 });

@@ -14,7 +14,7 @@ import { DynamicBondingCurveClient } from '@meteora-ag/dynamic-bonding-curve-sdk
 import {
   ComputeBudgetProgram, Connection, Keypair, PublicKey, Transaction, TransactionInstruction, TransactionMessage, type Commitment,
 } from '@solana/web3.js';
-import { PROGRAM_IDS, squads, type ApprovedTerms, type TreasuryInnerTerms } from '@project-qf/tx';
+import { PROGRAM_IDS, rewardsMemo, rewardsTransfers, squads, vaultIndexFor, type ApprovedTerms, type RewardsInnerTerms, type TreasuryInnerTerms } from '@project-qf/tx';
 import { common, dammClaimTransaction, finish, operatorSend, type BuiltTx, type LiveDammPool, type LivePool } from './launchpad.ts';
 
 const COMMITMENT: Commitment = 'confirmed';
@@ -29,7 +29,9 @@ export interface TreasuryState {
 }
 export interface TreasuryRecord { multisig: string; vault: string; createKey: string; threshold: number; members: string[]; signature: string; createdAt: string; label: 'DEVNET_STAND_IN' }
 
-const vaultOf = (multisig: PublicKey) => sq.getVaultPda({ multisigPda: multisig, index: 0 })[0];
+const vaultOf = (multisig: PublicKey, index = 0) => sq.getVaultPda({ multisigPda: multisig, index })[0];
+/** The rewards vault: the same multisig's vault index 1. Holder rewards are deposited here and paid from here. */
+export const rewardsVaultOf = (multisig: string) => vaultOf(new PublicKey(multisig), 1).toBase58();
 
 /** Reads the multisig and fails closed if it is not the stand-in this milestone describes. */
 export async function readTreasury(conn: Connection, multisig: string): Promise<TreasuryState> {
@@ -82,6 +84,39 @@ export async function vaultDammClaim(conn: Connection, p: LiveDammPool, vault: s
   return { instructions: tx.instructions, terms: terms as TreasuryInnerTerms, amounts };
 }
 
+// ------------------------------------------------------------------ holder rewards (what the vaults sign)
+
+const TOKEN = new PublicKey(PROGRAM_IDS.TOKEN), ATA = new PublicKey(PROGRAM_IDS.ASSOCIATED_TOKEN), MEMO = new PublicKey(PROGRAM_IDS.MEMO);
+const ataOf = (owner: PublicKey, mint: PublicKey) => PublicKey.findProgramAddressSync([owner.toBuffer(), TOKEN.toBuffer(), mint.toBuffer()], ATA)[0];
+export const quoteAccountOf = (owner: string, mint: string) => ataOf(new PublicKey(owner), new PublicKey(mint)).toBase58();
+
+/** A deposit into the rewards vault or a payout from it: TransferChecked from the vault's own quote account, then the memo. */
+export function rewardsTransferInner(terms: RewardsInnerTerms): InnerClaim {
+  const from = new PublicKey(terms.from), mint = new PublicKey(terms.quoteMint), src = ataOf(from, mint);
+  const instructions = rewardsTransfers(terms).map((w) => {
+    const data = Buffer.alloc(10);
+    data[0] = 12; data.writeBigUInt64LE(BigInt(w.amountRaw), 1); data[9] = terms.quoteDecimals;
+    return new TransactionInstruction({ programId: TOKEN, data, keys: [{ pubkey: src, isSigner: false, isWritable: true }, { pubkey: mint, isSigner: false, isWritable: false },
+      { pubkey: ataOf(new PublicKey(w.owner), mint), isSigner: false, isWritable: true }, { pubkey: from, isSigner: true, isWritable: false }] });
+  });
+  instructions.push(new TransactionInstruction({ programId: MEMO, keys: [], data: Buffer.from(rewardsMemo(terms), 'utf8') }));
+  const total = rewardsTransfers(terms).reduce((x, w) => x + BigInt(w.amountRaw), 0n);
+  return { instructions, terms, amounts: { baseRaw: '0', quoteRaw: total.toString() } };
+}
+
+/** The operator pays the rent for any missing quote account of these owners (create-idempotent; moves no tokens). */
+export async function ensureQuoteAccounts(conn: Connection, operator: Keypair, owners: string[], quoteMint: string): Promise<{ created: string[]; signature: string | null }> {
+  const mint = new PublicKey(quoteMint);
+  const want = owners.map((o) => ({ owner: new PublicKey(o), ata: ataOf(new PublicKey(o), mint) }));
+  const infos = await conn.getMultipleAccountsInfo(want.map((w) => w.ata), COMMITMENT);
+  const missing = want.filter((_, i) => !infos[i]);
+  if (!missing.length) return { created: [], signature: null };
+  const tx = new Transaction().add(...missing.map((m) => new TransactionInstruction({ programId: ATA, data: Buffer.from([1]), keys: [
+    { pubkey: operator.publicKey, isSigner: true, isWritable: true }, { pubkey: m.ata, isSigner: false, isWritable: true }, { pubkey: m.owner, isSigner: false, isWritable: false },
+    { pubkey: mint, isSigner: false, isWritable: false }, { pubkey: new PublicKey(PROGRAM_IDS.SYSTEM), isSigner: false, isWritable: false }, { pubkey: TOKEN, isSigner: false, isWritable: false }] })));
+  return { created: missing.map((m) => m.owner.toBase58()), signature: await operatorSend(conn, tx, [operator]) };
+}
+
 // ------------------------------------------------------------------ member transactions (unsigned)
 
 const pdas = (multisig: PublicKey, index: bigint) => ({
@@ -90,16 +125,17 @@ const pdas = (multisig: PublicKey, index: bigint) => ({
 /** vault_transaction_create + proposal_create + the creating member's own approval, in one transaction the member signs. */
 export function proposeTransaction(r: { multisig: string; member: string; transactionIndex: bigint; claim: InnerClaim }): { tx: Transaction; terms: ApprovedTerms } {
   const ms = new PublicKey(r.multisig), member = new PublicKey(r.member), index = r.transactionIndex;
-  const vault = vaultOf(ms);
+  const vaultIndex = vaultIndexFor(r.claim.terms);
+  const vault = vaultOf(ms, vaultIndex);
   if (vault.toBase58() !== r.claim.terms.feePayer) throw new Error('CLAIM_NOT_FOR_THIS_VAULT');
   // the blockhash inside a vault message is never used by the program; the outer transaction carries the real one
   const message = new TransactionMessage({ payerKey: vault, recentBlockhash: PublicKey.default.toBase58(), instructions: r.claim.instructions.filter((ix) => !ix.programId.equals(ComputeBudgetProgram.programId)) });
   const tx = new Transaction().add(
-    sq.instructions.vaultTransactionCreate({ multisigPda: ms, transactionIndex: index, creator: member, rentPayer: member, vaultIndex: 0, ephemeralSigners: 0, transactionMessage: message }),
+    sq.instructions.vaultTransactionCreate({ multisigPda: ms, transactionIndex: index, creator: member, rentPayer: member, vaultIndex, ephemeralSigners: 0, transactionMessage: message }),
     sq.instructions.proposalCreate({ multisigPda: ms, transactionIndex: index, creator: member, rentPayer: member }),
     sq.instructions.proposalApprove({ multisigPda: ms, transactionIndex: index, member }),
   );
-  const terms: ApprovedTerms = { ...common(r.member), kind: 'TREASURY_PROPOSE', multisig: r.multisig, transactionIndex: index.toString(), vault: vault.toBase58(), vaultIndex: 0,
+  const terms: ApprovedTerms = { ...common(r.member), kind: 'TREASURY_PROPOSE', multisig: r.multisig, transactionIndex: index.toString(), vault: vault.toBase58(), vaultIndex,
     creator: r.member, rentPayer: r.member, approve: true, inner: r.claim.terms };
   return { tx, terms };
 }
@@ -149,7 +185,7 @@ export function executeTransaction(r: { multisig: string; member: string; transa
   const ix = sq.generated.createVaultTransactionExecuteInstruction({ multisig: ms, proposal, transaction, member,
     anchorRemainingAccounts: m.accountKeys.map((k, i) => ({ pubkey: new PublicKey(k), isSigner: false, isWritable: squads.isWritableIndex(m, i) })) });
   const tx = new Transaction().add(ComputeBudgetProgram.setComputeUnitLimit({ units: EXECUTE_COMPUTE_UNITS }), ix);
-  return { tx, terms: { ...common(r.member), kind: 'TREASURY_EXECUTE', multisig: r.multisig, transactionIndex: r.transactionIndex, vault: r.vault, vaultIndex: 0, member: r.member, inner: r.inner } };
+  return { tx, terms: { ...common(r.member), kind: 'TREASURY_EXECUTE', multisig: r.multisig, transactionIndex: r.transactionIndex, vault: r.vault, vaultIndex: vaultIndexFor(r.inner), member: r.member, inner: r.inner } };
 }
 export async function buildTreasuryExecute(conn: Connection, r: Parameters<typeof executeTransaction>[0]): Promise<BuiltTx> {
   const { tx, terms } = executeTransaction(r);

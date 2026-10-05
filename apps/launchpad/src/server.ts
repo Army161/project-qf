@@ -12,7 +12,7 @@ import { economicsDigest } from '@project-qf/policy';
 import { READINESS } from '@project-qf/core';
 import {
   bindStoredVaultTransaction, bindTransactionToTerms, decodeTransactionBytes, fromBase64, parseWire, sameMessage, toBase64, toHex, validateIntent, verifyWireSignatures,
-  type ApprovedTerms, type BindingContext, type TreasuryInnerTerms, type TxIntent,
+  MAX_REWARD_PAYOUTS_PER_TX, PROGRAM_IDS, vaultIndexFor, type ApprovedTerms, type BindingContext, type TreasuryInnerTerms, type TxIntent,
 } from '@project-qf/tx';
 import type { LaunchpadChain, LiveDammPool, LivePool } from './chain.ts';
 import { PoolCache, syncLaunch, tradeFromSummary, DammCache } from './indexer.ts';
@@ -21,7 +21,8 @@ import type { ChainChecks, ClusterProfile } from './cluster.ts';
 import { claimIdentity, claimReceipt, resolveClaims } from './receipts.ts';
 import { explainLpResidual, type LpResidualProof } from './lp-residual.ts';
 import { storedCoverage, toBalanceChanges } from './holders.ts';
-import { coinRewards, epochDetail, rewardsOverview, type CoinRewards } from './rewards.ts';
+import { coinRewards, DEVNET_TEST_PAYOUT_ROUNDS, epochDetail, rewardsOverview, type CoinRewards, type RewardsVaultView } from './rewards.ts';
+import { depositsFor, payoutsFor, rewardsVaultOf, storedVaultCoverage } from './rewards-vault.ts';
 import { sumFees, type ClaimRow, type FeeTotals, type LaunchRow, type LaunchpadStore, type StoredTrade } from './store.ts';
 
 export const LP_API_VERSION = 'lp-api/1';
@@ -63,7 +64,7 @@ export const DEVNET_PROFILE: ServerProfile = Object.freeze({ cluster: 'devnet', 
   writesLockedBecause: [], quote: null });
 /** Requests that build a transaction for someone to sign, send one, or move tokens. All refused while writes are locked. */
 const WRITE_ROUTES = new Set(['POST /api/lp/launch', 'POST /api/lp/swap', 'POST /api/lp/submit', 'POST /api/lp/claim', 'POST /api/lp/treasury/propose',
-  'POST /api/lp/treasury/approve', 'POST /api/lp/treasury/execute', 'POST /api/lp/faucet']);
+  'POST /api/lp/treasury/approve', 'POST /api/lp/treasury/execute', 'POST /api/lp/faucet', 'POST /api/lp/rewards/deposit', 'POST /api/lp/rewards/payout']);
 
 class HttpError extends Error {
   status: number; code: string; details: string[] | undefined;
@@ -262,9 +263,15 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
   const rewardCoins = async (fresh: boolean): Promise<CoinRewards[]> => {
     if (rewards && !fresh && now().getTime() - rewards.at < REWARDS_TTL_MS) return rewards.coins;
     const p = platform(), coins: CoinRewards[] = [];
+    const rv = await rewardsVaultOf(p), vcov = storedVaultCoverage(o);
+    const vrows = rv ? o.store.listRewardVaultTxs(rv.quoteAccount) : [];
     for (const l of o.store.listLaunches(['LIVE', 'MIGRATED'])) {
+      const deps = depositsFor(vrows, l.mint);
       coins.push(await coinRewards({ store: o.store, chain: o.chain, platform: p, cluster: profile.cluster, nowSec: Math.floor(now().getTime() / 1000),
-        coverage: storedCoverage(o.store, l.mint), changes: toBalanceChanges(o.store.holderChanges(l.mint)) }, l));
+        coverage: storedCoverage(o.store, l.mint), changes: toBalanceChanges(o.store.holderChanges(l.mint)), rewardsVault: rv?.vault ?? null,
+        deposits: (epochId) => deps.filter((x) => x.epochId === epochId), payouts: (epochId) => payoutsFor(vrows, l.mint, epochId),
+        // with a rewards vault, an epoch is final only once the vault's history is read past its end
+        ...(rv ? { depositsProvenToSlot: vcov?.account === rv.quoteAccount ? vcov.checkedToSlot : 0 } : {}) }, l));
     }
     coins.sort((a, b) => a.symbol.localeCompare(b.symbol));
     rewards = { at: now().getTime(), coins };
@@ -311,7 +318,8 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
   // ---------------------------------------------------------------- platform treasury helpers
   const treasuryView = (p: PlatformRecord) => ({ multisig: p.treasury!.multisig, vault: p.treasury!.vault, threshold: p.treasury!.threshold, members: p.treasury!.members,
     label: p.treasury!.label, signers: 'ONE_OPERATOR_TEST_KEYS' as const, separationOfControl: false, note: TREASURY_SIGNERS_NOTE });
-  const innerVenue = (inner: TreasuryInnerTerms): 'CURVE' | 'DAMM_V2' => (inner.kind === 'CLAIM_PARTNER_TRADING_FEE' ? 'CURVE' : 'DAMM_V2');
+  const innerVenue = (inner: TreasuryInnerTerms): 'CURVE' | 'DAMM_V2' | 'REWARDS_DEPOSIT' | 'REWARDS_PAYOUT' =>
+    (inner.kind === 'CLAIM_PARTNER_TRADING_FEE' ? 'CURVE' : inner.kind === 'DAMM_CLAIM_POSITION_FEE' ? 'DAMM_V2' : inner.kind);
   /** What reached the treasury vault through executed proposals (proven receipts only), what is still waiting, and whether
    *  the vault's own balance equals those receipts. The receipts are part of "claimed through the app"; they are not added again. */
   async function treasuryEarnings(p: PlatformRecord, claims: (ClaimRow & { byTreasury: boolean })[]) {
@@ -340,12 +348,14 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       return;
     }
     o.store.updateTreasuryProposal(terms.multisig, terms.transactionIndex, { status: chainState?.status ?? 'Executed', approvals: chainState?.approved ?? row.approvals, executeSig: signature, executedBy: user });
+    // a rewards deposit or payout is read back from the rewards vault's own history (rewards-vault.ts), not recorded here
+    if (terms.inner.kind === 'REWARDS_DEPOSIT' || terms.inner.kind === 'REWARDS_PAYOUT') { rewards = null; return; }
     const l = o.store.getLaunch(row.mint);
     if (!l) return;
     if (terms.inner.kind === 'CLAIM_PARTNER_TRADING_FEE') pools.invalidate(l.pool); else if (l.dammPool) damms.invalidate(l.dammPool);
     // the receipt is the vault's: what left this claim's own pool vaults in the executing transaction, nothing else
     const id = await claimIdentity(terms.inner, l);
-    o.store.insertClaim({ sig: signature, mint: l.mint, venue: innerVenue(terms.inner), claimer: terms.inner.feePayer, at: now().toISOString(), ...(id ?? {}) });
+    o.store.insertClaim({ sig: signature, mint: l.mint, venue: terms.inner.kind === 'CLAIM_PARTNER_TRADING_FEE' ? 'CURVE' : 'DAMM_V2', claimer: terms.inner.feePayer, at: now().toISOString(), ...(id ?? {}) });
     if (id) o.store.setClaimEvidence(signature, claimReceipt(id, await o.chain.txSummary(signature).catch(() => null)));
     earnings = null;
   }
@@ -405,7 +415,14 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
     // ledger, deposits, allocation, artifact). Read-only: nothing here builds or sends a payout.
     if (path === '/api/lp/rewards' && method === 'GET') {
       limit(`rewards:${ip}`, 30);
-      return send(res, 200, rewardsOverview(profile.cluster, await rewardCoins(query.get('fresh') === '1')));
+      const coins = await rewardCoins(query.get('fresh') === '1');
+      const p = platform(), rv = await rewardsVaultOf(p), vcov = storedVaultCoverage(o);
+      const view: RewardsVaultView | null = rv && p.treasury ? { multisig: rv.multisig, vault: rv.vault, quoteAccount: rv.quoteAccount,
+        balanceRaw: await o.chain.balances(rv.vault, [rv.quoteMint]).then((b) => b.tokens[rv.quoteMint] ?? '0').catch(() => null),
+        checkedToSlot: vcov?.account === rv.quoteAccount ? vcov.checkedToSlot : null, caughtUp: vcov?.account === rv.quoteAccount && vcov.caughtUp,
+        untagged: o.store.listRewardVaultTxs(rv.quoteAccount).filter((r) => r.kind === 'UNTAGGED').map((r) => ({ sig: r.sig, deltaRaw: r.deltaRaw! })),
+        threshold: p.treasury.threshold, members: p.treasury.members.length, signers: 'ONE_OPERATOR_TEST_KEYS' } : null;
+      return send(res, 200, rewardsOverview(profile.cluster, coins, view));
     }
     const rm = /^\/api\/lp\/rewards\/([1-9A-HJ-NP-Za-km-z]{32,44})\/(\d{4}-\d{2}-\d{2})(\/artifact\.json)?$/.exec(path);
     if (rm && method === 'GET') {
@@ -730,14 +747,72 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
         if (st.status !== 'Approved') throw new HttpError(409, 'NOT_APPROVED', `the proposal is ${st.status}; it needs ${t.threshold} approvals before it can run`);
         const stored = await o.chain.vaultTransaction(t.multisig, index);
         if (!stored) throw new HttpError(502, 'PROPOSAL_UNAVAILABLE', 'could not read the stored vault transaction');
-        const chk = await bindStoredVaultTransaction(stored, { multisig: t.multisig, transactionIndex: index, vaultIndex: 0, inner });
+        const chk = await bindStoredVaultTransaction(stored, { multisig: t.multisig, transactionIndex: index, vaultIndex: vaultIndexFor(inner), inner });
         if (chk.violations.length) throw new HttpError(409, 'STORED_TRANSACTION_MISMATCH', 'what the multisig stored is not the claim this app proposed', chk.violations);
         memberIntent('TREASURY_EXECUTE', m);
-        const built = await o.chain.buildTreasuryExecute({ multisig: t.multisig, vault: t.vault, member: m, transactionIndex: index, inner, stored });
+        const runVault = inner.kind === 'REWARDS_PAYOUT' ? (await rewardsVaultOf(p))!.vault : t.vault;
+        const built = await o.chain.buildTreasuryExecute({ multisig: t.multisig, vault: runVault, member: m, transactionIndex: index, inner, stored });
         const intent = await storeBuilt('TREASURY_EXECUTE', row.mint, m, built, { vaultTransactionAccount: stored });
         return send(res, 201, { intentId: intent.id, expiresAt: intent.expiresAt, transaction: toBase64(built.bytes), terms: built.terms, inner, proposal: st });
       }
       throw new HttpError(404, 'NOT_FOUND', 'no such route');
+    }
+
+    // ---------------------------------------------------------------- holder rewards: deposit and payout (devnet test round)
+    // Both are treasury proposals: the server builds them unsigned for a member to check and sign, and two of three
+    // members must approve before either runs. A deposit moves quote tokens from the treasury vault into the rewards vault
+    // for one coin's running epoch, up to that epoch's earmark. A payout pays one final epoch exactly as its frozen record
+    // allocates. What counts is read back from the rewards vault's own transactions, not from these routes.
+    if ((path === '/api/lp/rewards/deposit' || path === '/api/lp/rewards/payout') && method === 'POST') {
+      const p = platform();
+      if (!p.treasury) throw new HttpError(409, 'NO_TREASURY', 'the platform treasury has not been set up');
+      const t = p.treasury, rv = (await rewardsVaultOf(p))!;
+      limit(`build:${ip}`, BUILDS_PER_MINUTE);
+      const b = await readJson(req, BODY_LIMIT_BYTES);
+      onlyKeys(b, path.endsWith('deposit') ? ['member', 'mint', 'epochId', 'amountRaw'] : ['member', 'mint', 'epochId']);
+      const m = addr(b, 'member');
+      if (!t.members.includes(m)) throw new HttpError(403, 'NOT_A_MEMBER', 'that wallet is not a member of the platform treasury');
+      const l = o.store.getLaunch(addr(b, 'mint'));
+      if (!l || (l.status !== 'LIVE' && l.status !== 'MIGRATED')) throw new HttpError(404, 'NOT_FOUND', 'token not found');
+      const epochId = typeof b.epochId === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(b.epochId) ? b.epochId : (() => { throw new HttpError(400, 'INVALID_REQUEST', 'epochId must be YYYY-MM-DD'); })();
+      const c = (await rewardCoins(true)).find((x) => x.mint === l.mint);
+      const e = c?.epochs.find((x) => x.epochId === epochId);
+      if (!e) throw new HttpError(404, 'NOT_FOUND', 'no such epoch for this coin');
+      const open = o.store.listTreasuryProposals(t.multisig).filter((r) => r.status !== 'Rejected' && r.status !== 'Cancelled');
+      const tagged = (venue: string) => open.filter((r) => r.venue === venue).map((r) => ({ r, inner: JSON.parse(r.innerJson) as { launchMint: string; epochId: string; amountRaw?: string } }));
+      const base = { quoteMint: p.quote.mint, quoteDecimals: p.quote.decimals, quoteTokenProgram: PROGRAM_IDS.TOKEN, launchMint: l.mint, epochId };
+      let inner;
+      if (path.endsWith('deposit')) {
+        const amountRaw = typeof b.amountRaw === 'string' && /^[1-9]\d{0,18}$/.test(b.amountRaw) ? b.amountRaw : (() => { throw new HttpError(400, 'INVALID_REQUEST', 'amountRaw must be a positive integer string'); })();
+        if (epochId !== now().toISOString().slice(0, 10) || e.status !== 'OPEN') throw new HttpError(409, 'EPOCH_NOT_RUNNING', 'a deposit can only fund the epoch that is running now (it counts only if it lands before the epoch ends)');
+        const deposited = e.funding.deposits.reduce((s, d) => s + BigInt(d.amountRaw), 0n);
+        const pending = tagged('REWARDS_DEPOSIT').filter((x) => x.r.status !== 'Executed' && x.inner.launchMint === l.mint && x.inner.epochId === epochId).reduce((s, x) => s + BigInt(x.inner.amountRaw ?? '0'), 0n);
+        const room = BigInt(e.funding.earmarkedRaw) - deposited - pending;
+        if (BigInt(amountRaw) > room) throw new HttpError(409, 'OVER_EARMARK', `a deposit may not exceed the epoch's earmark: ${room > 0n ? room : 0n} raw left (earmark ${e.funding.earmarkedRaw}, deposited ${deposited}, proposed ${pending})`);
+        const held = BigInt((await o.chain.balances(t.vault, [p.quote.mint])).tokens[p.quote.mint] ?? '0');
+        if (BigInt(amountRaw) > held) throw new HttpError(409, 'TREASURY_SHORT', `the treasury vault holds ${held} raw`);
+        inner = { ...base, kind: 'REWARDS_DEPOSIT' as const, from: t.vault, to: rv.vault, amountRaw };
+      } else {
+        const payouts = e.result?.payouts ?? [];
+        if (e.status !== 'FINAL' || !e.frozen?.reproduced) throw new HttpError(409, 'EPOCH_NOT_FINAL', 'only a final epoch whose frozen record recomputes identically can be paid');
+        if (!payouts.length) throw new HttpError(409, 'NOTHING_TO_PAY', 'this epoch allocates nothing (nothing was deposited for it)');
+        if (e.settlement.status !== 'NOT_PAID') throw new HttpError(409, 'ALREADY_PAID', `settlement is ${e.settlement.status}`);
+        const rounds = new Set([...tagged('REWARDS_PAYOUT').map((x) => `${x.inner.launchMint}:${x.inner.epochId}`)]);
+        if (rounds.has(`${l.mint}:${epochId}`)) throw new HttpError(409, 'ALREADY_PROPOSED', 'a payout for this epoch is already proposed');
+        if (rounds.size >= DEVNET_TEST_PAYOUT_ROUNDS) throw new HttpError(409, 'ROUND_LIMIT', `the owner approved ${DEVNET_TEST_PAYOUT_ROUNDS} devnet test round; another needs the owner's word`);
+        if (payouts.length > MAX_REWARD_PAYOUTS_PER_TX) throw new HttpError(409, 'TOO_MANY_RECIPIENTS', `one payout proposal pays at most ${MAX_REWARD_PAYOUTS_PER_TX} holders`);
+        const total = payouts.reduce((s, x) => s + x.amountRaw, 0n);
+        const held = BigInt((await o.chain.balances(rv.vault, [p.quote.mint])).tokens[p.quote.mint] ?? '0');
+        if (total > held) throw new HttpError(409, 'REWARDS_VAULT_SHORT', `the rewards vault holds ${held} raw, the payout is ${total}`);
+        inner = { ...base, kind: 'REWARDS_PAYOUT' as const, from: rv.vault, artifactHash: e.frozen.hash, payouts: payouts.map((x) => ({ owner: x.owner, amountRaw: x.amountRaw.toString() })) };
+      }
+      // the operator pays rent for any missing quote account (the rewards vault's, or a recipient's); no tokens move
+      const accounts = await o.chain.ensureQuoteAccounts(inner.kind === 'REWARDS_DEPOSIT' ? [rv.vault] : inner.payouts.map((x) => x.owner), p.quote.mint);
+      intentCheck({ kind: 'TREASURY_PROPOSE', signer: { role: 'TREASURY_MEMBER', address: m, serverHeld: false }, feePayer: m });
+      const built = await o.chain.buildTreasuryPropose(t.multisig, inner.from, m, { venue: 'REWARDS', inner });
+      const intent = await storeBuilt('TREASURY_PROPOSE', l.mint, m, built);
+      return send(res, 201, { intentId: intent.id, expiresAt: intent.expiresAt, transaction: toBase64(built.bytes), terms: built.terms, transactionIndex: built.transactionIndex,
+        amounts: built.amounts, rewardsVault: rv.vault, accountsCreated: accounts });
     }
 
     // ---------------------------------------------------------------- earnings (read-only)

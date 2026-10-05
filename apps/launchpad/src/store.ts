@@ -80,6 +80,11 @@ export const STORE_MIGRATIONS: readonly string[] = [
    CREATE TABLE epoch_slots (start_sec INTEGER PRIMARY KEY, slot INTEGER NOT NULL, block_time INTEGER NOT NULL);
    CREATE TABLE reward_epochs (mint TEXT NOT NULL REFERENCES launches(mint), epoch_id TEXT NOT NULL, artifact_json TEXT NOT NULL, artifact_hash TEXT NOT NULL,
      finalized_at TEXT NOT NULL, PRIMARY KEY (mint, epoch_id));`,
+  // (8) the rewards vault's own history: every finalized transaction that changed its quote balance, classified from that
+  // transaction's balances and memo (a deposit for one coin's epoch, a payout of one epoch, or untagged).
+  `CREATE TABLE reward_vault_txs (sig TEXT PRIMARY KEY, account TEXT NOT NULL, slot INTEGER, block_time INTEGER, status TEXT NOT NULL, kind TEXT,
+     mint TEXT, epoch_id TEXT, artifact_hash TEXT, delta_raw TEXT, transfers_json TEXT, memo TEXT, attempts INTEGER NOT NULL, updated_at TEXT NOT NULL);
+   CREATE INDEX reward_vault_txs_epoch ON reward_vault_txs(mint, epoch_id);`,
 ];
 
 export type LaunchStatus = 'PENDING' | 'LIVE' | 'MIGRATED' | 'FAILED';
@@ -102,7 +107,7 @@ export interface BackfillRow { sig: string; venue: 'CURVE' | 'DAMM_V2'; mint: st
   nextTry: string; outcome: 'TRADE' | 'NOT_A_TRADE' | 'FAILED_TX' | null; resolvedAt: string | null }
 /** ACTIVE: proposed, waiting for approvals. APPROVED: threshold reached. EXECUTED: the vault's claim ran. Mirrors the
  *  on-chain proposal status the app last observed; anything else seen on chain (rejected, cancelled) is recorded as is. */
-export interface TreasuryProposalRow { multisig: string; txIndex: string; mint: string; venue: 'CURVE' | 'DAMM_V2'; innerJson: string; proposer: string;
+export interface TreasuryProposalRow { multisig: string; txIndex: string; mint: string; venue: 'CURVE' | 'DAMM_V2' | 'REWARDS_DEPOSIT' | 'REWARDS_PAYOUT'; innerJson: string; proposer: string;
   proposeSig: string; approvals: string[]; status: string; executeSig: string | null; executedBy: string | null; createdAt: string; updatedAt: string }
 export interface TradeRow { sig: string; mint: string; trader: string; side: 'BUY' | 'SELL'; quoteRaw: string; baseRaw: string; slot: number; blockTime: number | null; source: string;
   /** what this trade paid in fees; absent or null when not read yet */
@@ -393,6 +398,23 @@ export class LaunchpadStore {
     const r = this.db.prepare('SELECT artifact_json, artifact_hash, finalized_at FROM reward_epochs WHERE mint = ? AND epoch_id = ?').get(mint, epochId) as Record<string, unknown> | undefined;
     return r ? (camel(r) as unknown as { artifactJson: string; artifactHash: string; finalizedAt: string }) : null;
   }
+  rewardVaultTx(sig: string): RewardVaultTxRow | null {
+    const r = this.db.prepare('SELECT * FROM reward_vault_txs WHERE sig = ?').get(sig) as Record<string, unknown> | undefined;
+    return r ? (camel(r) as unknown as RewardVaultTxRow) : null;
+  }
+  /** Records one rewards-vault transaction; a DONE row is final (a later read never changes it). */
+  recordRewardVaultTx(r: Omit<RewardVaultTxRow, 'attempts'>): void {
+    const prev = this.rewardVaultTx(r.sig);
+    if (prev?.status === 'DONE') return;
+    this.db.prepare(`INSERT INTO reward_vault_txs (sig, account, slot, block_time, status, kind, mint, epoch_id, artifact_hash, delta_raw, transfers_json, memo, attempts, updated_at)
+      VALUES (@sig, @account, @slot, @blockTime, @status, @kind, @mint, @epochId, @artifactHash, @deltaRaw, @transfersJson, @memo, 1, @updatedAt)
+      ON CONFLICT(sig) DO UPDATE SET slot = excluded.slot, block_time = excluded.block_time, status = excluded.status, kind = excluded.kind, mint = excluded.mint,
+        epoch_id = excluded.epoch_id, artifact_hash = excluded.artifact_hash, delta_raw = excluded.delta_raw, transfers_json = excluded.transfers_json, memo = excluded.memo,
+        attempts = reward_vault_txs.attempts + 1, updated_at = excluded.updated_at`).run(r);
+  }
+  listRewardVaultTxs(account: string): RewardVaultTxRow[] {
+    return (this.db.prepare('SELECT * FROM reward_vault_txs WHERE account = ? ORDER BY slot, sig').all(account) as Record<string, unknown>[]).map((r) => camel(r) as unknown as RewardVaultTxRow);
+  }
   /** Freezes a final epoch's artifact; a second save of the same epoch is ignored (the first one stands). */
   saveRewardEpoch(mint: string, epochId: string, artifactJson: string, artifactHash: string, at: string): boolean {
     return Number(this.db.prepare('INSERT OR IGNORE INTO reward_epochs (mint, epoch_id, artifact_json, artifact_hash, finalized_at) VALUES (?, ?, ?, ?, ?)')
@@ -400,5 +422,10 @@ export class LaunchpadStore {
   }
 }
 
+/** A rewards-vault transaction. kind: DEPOSIT (tagged for mint+epoch, balance up), PAYOUT (tagged, balance down, with the
+ *  recipients' receipts), UNTAGGED (balance moved without a valid rewards memo), NONE (no balance change). */
+export interface RewardVaultTxRow { sig: string; account: string; slot: number | null; blockTime: number | null; status: 'DONE' | 'PENDING' | 'FAILED_TX';
+  kind: 'DEPOSIT' | 'PAYOUT' | 'UNTAGGED' | 'NONE' | null; mint: string | null; epochId: string | null; artifactHash: string | null; deltaRaw: string | null;
+  transfersJson: string | null; memo: string | null; attempts: number; updatedAt: string }
 export interface HolderTxRow { mint: string; sig: string; slot: number | null; status: 'DONE' | 'PENDING' | 'FAILED_TX'; attempts: number; updatedAt: string }
 export interface HolderChangeRow { sig: string; slot: number; blockTime: number | null; account: string; owner: string; preRaw: string; postRaw: string }

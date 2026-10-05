@@ -22,6 +22,12 @@ const P = PROGRAM_IDS;
 const fromHex = (h: string) => Uint8Array.from(h.match(/../g) ?? [], (x) => parseInt(x, 16));
 const OPS = Object.fromEntries(SQUADS_IDL_SUBSET.instructions.map((i) => [i.name, i])) as Record<string, IdlInstruction>;
 
+/** A rewards deposit goes from this multisig's treasury vault to this multisig's rewards vault (index 1), nowhere else. */
+async function rewardsVaultViolations(multisig: string, inner: TreasuryInnerTerms): Promise<string[]> {
+  if (inner.kind !== 'REWARDS_DEPOSIT') return [];
+  return inner.to === await squadsVault(multisig, 1) ? [] : ['TERMS_REWARDS_DEPOSIT_NOT_TO_REWARDS_VAULT'];
+}
+
 interface Step { op: IdlInstruction; accounts: Record<string, string>; check: (a: Record<string, Decoded>) => Promise<string[]> }
 
 /** The vault message must be exactly the approved claim, run by the vault and nothing else. */
@@ -45,6 +51,7 @@ export async function bindStoredVaultTransaction(accountData: Uint8Array,
   if (s.index !== BigInt(t.transactionIndex)) v.push('STORED_TX_INDEX_MISMATCH');
   if (s.vaultIndex !== t.vaultIndex) v.push('STORED_TX_VAULT_INDEX_MISMATCH');
   if (s.ephemeralSignerBumps.length) v.push('STORED_TX_EPHEMERAL_SIGNERS');
+  v.push(...await rewardsVaultViolations(t.multisig, t.inner));
   v.push(...(await bindVaultMessage(s.message, t.inner)).map((x) => `STORED_${x}`));
   return { violations: v, message: s.message };
 }
@@ -65,6 +72,7 @@ export async function bindTreasury(d: DecodedTransaction, t: TreasuryTerms, ctx:
   const index = BigInt(t.transactionIndex);
   const transaction = await squadsTransaction(t.multisig, index), proposal = await squadsProposal(t.multisig, index);
   if (t.kind !== 'TREASURY_APPROVE' && t.vault !== await squadsVault(t.multisig, t.vaultIndex)) v.push('TERMS_VAULT_NOT_DERIVED_FROM_MULTISIG');
+  if (t.kind !== 'TREASURY_APPROVE') v.push(...await rewardsVaultViolations(t.multisig, t.inner));
   const memoNone = (a: Record<string, Decoded>) => (a.args as Record<string, Decoded>).memo === null ? [] : ['ARG_POLICY memo must be empty'];
 
   const steps: Step[] = [];

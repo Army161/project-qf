@@ -9,6 +9,8 @@ export const PROGRAM_IDS = Object.freeze({
   TOKEN_2022: 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
   ASSOCIATED_TOKEN: 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
   COMPUTE_BUDGET: 'ComputeBudget111111111111111111111111111111',
+  // SPL Memo v2: tags a holder-rewards deposit or payout inside a treasury vault transaction with its coin and epoch
+  MEMO: 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr',
   // referenced as instruction accounts only (never top-level programs in a QF transaction)
   METAPLEX_METADATA: 'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
 } as const);

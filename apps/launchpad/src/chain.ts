@@ -4,19 +4,22 @@
 import {
   buildCreatePool, buildCreatorCurveClaim, buildDammClaim, buildDammSwap, dammPositionsOf, readDammFeeAccounting, buildSwap, dammCurrentPoint, dammV2PoolFor, quoteDammSwap, readDammPool, getNewSignatures, getTxSummary, getWalletBalances, getLamports, quoteSwap, readPool,
   firstSlotAtOrAfter, getMintSupply, getMintTokenAccounts, getTokenBalanceChanges,
-  runMigration, sendFromTreasury, sendSignedTransaction, publicKeyOf,
+  common, runMigration, sendFromTreasury, sendSignedTransaction, publicKeyOf,
   type BuiltTx, type CreatePoolRequest, type DammFeeAccounting, type DammPosition, type DevnetConnection, type DevnetSigner, type Direction, type LiveDammPool, type LivePool, type SwapQuote, type SwapRequest,
   type TokenBalanceChanges, type TxSummary,
 } from '@project-qf/adapter-meteora-dbc/launchpad';
 import {
-  buildTreasuryApprove, buildTreasuryExecute, buildTreasuryPropose, partnerCurveClaim, readProposal, readTreasury, readVaultTransactionAccount, vaultDammClaim,
+  buildTreasuryApprove, buildTreasuryExecute, buildTreasuryPropose, ensureQuoteAccounts, partnerCurveClaim, readProposal, readTreasury, readVaultTransactionAccount, rewardsTransferInner, vaultDammClaim,
   type ProposalState, type TreasuryState,
 } from '@project-qf/adapter-meteora-dbc/treasury';
-import type { TreasuryInnerTerms } from '@project-qf/tx';
+import type { RewardsInnerTerms, TreasuryInnerTerms } from '@project-qf/tx';
 
 export type { ProposalState, TreasuryState };
 /** What a treasury proposal asks the vault to claim: the partner share of a curve's fees, or a vault-held DAMM v2 position's fees. */
-export type TreasuryClaimRequest = { venue: 'CURVE'; pool: LivePool } | { venue: 'DAMM_V2'; pool: LiveDammPool; nftMint: string; amounts: { baseRaw: string; quoteRaw: string } };
+export type TreasuryClaimRequest = { venue: 'CURVE'; pool: LivePool } | { venue: 'DAMM_V2'; pool: LiveDammPool; nftMint: string; amounts: { baseRaw: string; quoteRaw: string } }
+  | { venue: 'REWARDS'; inner: RewardsRequest };
+/** A rewards deposit or payout as the server asks for it; the adapter adds the binding fields (cluster, policy, fee payer, compute caps). */
+export type RewardsRequest = RewardsInnerTerms extends infer T ? T extends unknown ? Omit<T, 'cluster' | 'policyVersion' | 'feePayer' | 'compute'> : never : never;
 export type { BuiltTx, CreatePoolRequest, DammPosition, Direction, LiveDammPool, LivePool, SwapQuote, SwapRequest, TokenBalanceChanges, TxSummary };
 
 export interface LaunchpadChain {
@@ -48,6 +51,7 @@ export interface LaunchpadChain {
   finalizedSignatures(address: string, until: string | null): Promise<{ signature: string; slot: number; err: boolean }[]>;
   tokenBalanceChanges(signature: string): Promise<TokenBalanceChanges | null>;
   firstSlotAtOrAfter(unixSec: number): Promise<{ slot: number; blockTime: number } | null>;
+  finalizedSlot(): Promise<number>;
   /** Platform treasury (Squads multisig): reads, and UNSIGNED transactions for a member to check and sign. The server holds
    *  no member key, so none of these can approve or execute anything by themselves. */
   readTreasury(multisig: string): Promise<TreasuryState>;
@@ -57,6 +61,8 @@ export interface LaunchpadChain {
   vaultTransaction(multisig: string, transactionIndex: string): Promise<Uint8Array | null>;
   proposal(multisig: string, transactionIndex: string): Promise<ProposalState>;
   /** operator-only */
+  /** creates any missing quote token account of these owners; the operator pays the rent, no tokens move */
+  ensureQuoteAccounts(owners: string[], quoteMint: string): Promise<{ created: string[]; signature: string | null }>;
   faucet(quoteMint: string, to: string, quoteRaw: bigint, lamports: bigint): Promise<string>;
   migrate(pool: string): Promise<string>;
   dammPoolFor(baseMint: string, quoteMint: string): Promise<string>;
@@ -88,9 +94,10 @@ export function realChain(conn: DevnetConnection, operator: DevnetSigner | null,
     finalizedSignatures: (a, u) => getNewSignatures(conn, a, u, { commitment: 'finalized', ...(log ? { onTruncated: log } : {}) }),
     tokenBalanceChanges: (s) => getTokenBalanceChanges(conn, s),
     firstSlotAtOrAfter: (t) => firstSlotAtOrAfter(conn, t),
+    finalizedSlot: () => conn.getSlot('finalized'),
     readTreasury: (m) => readTreasury(conn, m),
     buildTreasuryPropose: async (multisig, vault, member, c) => {
-      const claim = c.venue === 'CURVE' ? await partnerCurveClaim(conn, c.pool, vault) : await vaultDammClaim(conn, c.pool, vault, c.nftMint, c.amounts);
+      const claim = c.venue === 'REWARDS' ? rewardsTransferInner({ ...common(c.inner.from), ...c.inner } as RewardsInnerTerms) : c.venue === 'CURVE' ? await partnerCurveClaim(conn, c.pool, vault) : await vaultDammClaim(conn, c.pool, vault, c.nftMint, c.amounts);
       return { ...(await buildTreasuryPropose(conn, { multisig, member, claim })), amounts: claim.amounts };
     },
     buildTreasuryApprove: (multisig, member, transactionIndex) => buildTreasuryApprove(conn, { multisig, member, transactionIndex }),
@@ -98,6 +105,7 @@ export function realChain(conn: DevnetConnection, operator: DevnetSigner | null,
     vaultTransaction: (m, i) => readVaultTransactionAccount(conn, m, i),
     proposal: (m, i) => readProposal(conn, m, i),
     faucet: (q, to, raw, lamports) => sendFromTreasury(conn, needOperator(), q, to, raw, lamports),
+    ensureQuoteAccounts: (owners, q) => ensureQuoteAccounts(conn, needOperator(), owners, q),
     migrate: (pool) => runMigration(conn, needOperator(), pool),
     dammPoolFor: (b, q) => dammV2PoolFor(b, q),
   };
