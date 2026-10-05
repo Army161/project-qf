@@ -89,6 +89,9 @@ export async function harness(opts: { profile?: ServerProfile } = {}) {
     // The MOCK RPC has no getProgramAccounts: the creator holds one locked position (TEST_ONLY numbers), nobody else holds any.
     dammPositions: async (_p, owner) => owner === K.creator.toBase58()
       ? [{ position: 'pos', nftMint: K.positionNft.toBase58(), feeBaseRaw: '0', feeQuoteRaw: '500000', permanentlyLocked: true }] : [],
+    // TEST_ONLY: one position holding all the liquidity; tests override this to model residuals
+    dammFeeAccounting: async (p) => ({ pool: p.pool, collectFeeMode: 1, liquidity: '1', feePerLiquidityQuote: '0', totalLpQuoteRaw: '0', totalLpBaseRaw: '0', totalPositions: '1',
+      positions: [{ position: 'pos', nftMint: K.positionNft.toBase58(), liquidity: '1', checkpointQuote: '0', pendingQuoteRaw: '0', claimedQuoteRaw: '0', claimedBaseRaw: '0' }] }),
     buildDammClaim: (p, owner, nft) => buildDammClaim(conn, p, owner, nft),
     send: async (b) => { sent.push(b); await applySquads(b); return (await verifyWireSignatures(b)).firstSignature; },
     txSummary: async () => null,

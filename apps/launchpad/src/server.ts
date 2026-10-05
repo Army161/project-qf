@@ -19,6 +19,7 @@ import { PoolCache, syncLaunch, tradeFromSummary, DammCache } from './indexer.ts
 import { feeClaimerFor, isTreasuryConfig, type PlatformRecord } from './platform.ts';
 import type { ChainChecks, ClusterProfile } from './cluster.ts';
 import { claimIdentity, claimReceipt, resolveClaims } from './receipts.ts';
+import { explainLpResidual, type LpResidualProof } from './lp-residual.ts';
 import { sumFees, type ClaimRow, type FeeTotals, type LaunchRow, type LaunchpadStore, type StoredTrade } from './store.ts';
 
 export const LP_API_VERSION = 'lp-api/1';
@@ -191,12 +192,12 @@ export function tradeView(t: StoredTrade) {
  *    LP (after graduation): LP fees from trades = the positions' unclaimed fees + proven claims.
  *  MATCH only on an exact match. On the LP side the trades may say a few raw units more than the positions hold (the
  *  program rounds down when it shares a fee out to positions): such a difference, up to `residualBound`, is RESIDUAL, kept
- *  explicit with its amount, and its origin is NOT_PROVEN until evidence from the pool's fee accumulator explains it. A
- *  small difference is never relabelled as a match. Anything else is MISMATCH; missing inputs make it INCOMPLETE with the
+ *  explicit with its amount. Its origin is NOT_PROVEN until the pool's own fee accounting explains it (lp-residual.ts);
+ *  then it is PROVEN_ROUNDING, with the proof attached. A small difference is never relabelled as a match. Anything else is MISMATCH; missing inputs make it INCOMPLETE with the
  *  reasons. A claim made outside this app is not in the receipts and shows as a MISMATCH. */
 export type CheckStatus = 'MATCH' | 'RESIDUAL' | 'MISMATCH' | 'INCOMPLETE';
 export interface FeeCheck { fromTradesRaw: string; onChainRaw: string | null; claimedRaw: string; differenceRaw: string | null; status: CheckStatus; reasons: string[];
-  residual?: { raw: string; boundRaw: string; origin: 'NOT_PROVEN'; note: string } }
+  residual?: { raw: string; boundRaw: string; origin: 'NOT_PROVEN' | 'PROVEN_ROUNDING'; note: string; proof?: LpResidualProof } }
 /** Largest LP residual per DAMM v2 trade that is reported as RESIDUAL rather than MISMATCH. */
 export const LP_RESIDUAL_BOUND_PER_TRADE = 2n;
 export function feeCheck(fromTrades: bigint, unclaimed: string | null, claimed: bigint, reasons: string[], residualBound = 0n): FeeCheck {
@@ -717,9 +718,11 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       const launches = o.store.listLaunches(['LIVE', 'MIGRATED']);
       const sumQuote = (ps: { feeQuoteRaw: string }[] | null) => (ps === null ? null : ps.reduce((a, x) => a + BigInt(x.feeQuoteRaw), 0n).toString());
       const coins: EarningsCoin[] = [];
+      const dammOf = new Map<string, LiveDammPool>();
       for (const l of launches) {
         const pool = await pools.get(l.pool).catch(() => null);
         const dp = l.status === 'MIGRATED' ? await damms.get(l).catch(() => null) : null;
+        if (dp) dammOf.set(l.mint, dp);
         const positions = async (owner: string) => (dp ? await o.chain.dammPositions(dp, owner).catch(() => null) : null);
         // each coin's platform share belongs to the fee claimer of the config it launched on: the operator for earlier
         // coins, the treasury vault for coins launched since the treasury config
@@ -756,6 +759,22 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
           lp: l.status !== 'MIGRATED' ? null : feeCheck(BigInt(ft.lpRaw), lp && lp.creatorQuoteRaw !== null && lp.platformQuoteRaw !== null
             ? (BigInt(lp.creatorQuoteRaw) + BigInt(lp.platformQuoteRaw)).toString() : null, claimed('DAMM_V2', () => true), reasons('DAMM_V2'), LP_RESIDUAL_BOUND_PER_TRADE * dammTrades),
         };
+        // an LP residual: try to prove where it comes from, from the pool's own fee accounting (one snapshot read)
+        const r = c.checks.lp?.residual, dp = dammOf.get(c.mint);
+        if (r && dp) {
+          const accounting = await o.chain.dammFeeAccounting(dp).catch(() => null);
+          const lpClaims = mine.filter((x) => x.venue === 'DAMM_V2' && x.status === 'RESOLVED');
+          const proof = accounting && explainLpResidual({ ledgerLpRaw: BigInt(ft.lpRaw), dammTrades: Number(dammTrades), accounting,
+            claimsRaw: lpClaims.reduce((a, x) => a + BigInt(x.quoteRaw!), 0n), claims: lpClaims.length });
+          if (proof && proof.residualRaw === r.raw) {
+            r.proof = proof;
+            if (proof.status === 'PROVEN_ROUNDING') {
+              r.origin = 'PROVEN_ROUNDING';
+              r.note = `${r.raw} raw unit(s) are rounding in the DAMM v2 program's own fee math: positions are paid whole units and each settlement drops the fraction `
+                + `(${proof.parts.settlementRaw} raw), and the fee accumulator keeps a little less than the fees (${proof.parts.accumulatorRaw} raw). Recomputed from the pool's accounting; every check passed.`;
+            } else r.note += ` Proof attempted: ${proof.checks.filter((x) => !x.ok).map((x) => x.id).join(', ')} did not pass.`;
+          } else if (proof) r.note += ` The pool's accounting snapshot gives ${proof.residualRaw} raw instead (it moved between reads); the proof is tried again on the next refresh.`;
+        }
       }
       const add = (pick: (c: EarningsCoin) => string | null | undefined) => coins.reduce((a, c) => a + BigInt(pick(c) ?? '0'), 0n).toString();
       const lpOf = lpOfCoin;

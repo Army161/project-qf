@@ -2,9 +2,9 @@
 // implementation delegates to the server-only Meteora adapter (the only package allowed to use web3.js), and tests
 // substitute an in-process fake.
 import {
-  buildCreatePool, buildCreatorCurveClaim, buildDammClaim, buildDammSwap, dammPositionsOf, buildSwap, dammCurrentPoint, dammV2PoolFor, quoteDammSwap, readDammPool, getNewSignatures, getTxSummary, getWalletBalances, getLamports, quoteSwap, readPool,
+  buildCreatePool, buildCreatorCurveClaim, buildDammClaim, buildDammSwap, dammPositionsOf, readDammFeeAccounting, buildSwap, dammCurrentPoint, dammV2PoolFor, quoteDammSwap, readDammPool, getNewSignatures, getTxSummary, getWalletBalances, getLamports, quoteSwap, readPool,
   runMigration, sendFromTreasury, sendSignedTransaction, publicKeyOf,
-  type BuiltTx, type CreatePoolRequest, type DammPosition, type DevnetConnection, type DevnetSigner, type Direction, type LiveDammPool, type LivePool, type SwapQuote, type SwapRequest,
+  type BuiltTx, type CreatePoolRequest, type DammFeeAccounting, type DammPosition, type DevnetConnection, type DevnetSigner, type Direction, type LiveDammPool, type LivePool, type SwapQuote, type SwapRequest,
   type TxSummary,
 } from '@project-qf/adapter-meteora-dbc/launchpad';
 import {
@@ -32,6 +32,8 @@ export interface LaunchpadChain {
   /** Creator fees: the curve's creator share (DBC), and after graduation the fees of DAMM v2 positions whose NFT the wallet holds. */
   buildCreatorCurveClaim(pool: LivePool, creator: string): Promise<BuiltTx & { maxBaseAmount: string; maxQuoteAmount: string }>;
   dammPositions(pool: LiveDammPool, owner: string): Promise<DammPosition[]>;
+  /** The pool's own fee accounting (accumulator, LP fee total, every position), read as one snapshot: explains LP residuals. */
+  dammFeeAccounting(pool: LiveDammPool): Promise<DammFeeAccounting>;
   buildDammClaim(pool: LiveDammPool, owner: string, nftMint: string): Promise<BuiltTx>;
   send(bytes: Uint8Array, blockhash: string, lastValidBlockHeight: number): Promise<string>;
   txSummary(signature: string): Promise<TxSummary | null>;
@@ -66,6 +68,7 @@ export function realChain(conn: DevnetConnection, operator: DevnetSigner | null,
     buildDammSwap: (p, r, now) => buildDammSwap(conn, p, r, now),
     buildCreatorCurveClaim: (p, c) => buildCreatorCurveClaim(conn, p, c),
     dammPositions: (p, owner) => dammPositionsOf(conn, p, owner),
+    dammFeeAccounting: (p) => readDammFeeAccounting(conn, p),
     buildDammClaim: (p, owner, nft) => buildDammClaim(conn, p, owner, nft),
     send: (b, bh, h) => sendSignedTransaction(conn, b, bh, h),
     txSummary: (s) => getTxSummary(conn, s),

@@ -767,7 +767,8 @@ function checksCard(e: Earnings, decimals: number, symbol: string) {
   const cell = (c: FeeCheck | null | undefined) => {
     if (!c) return h('td', { class: 'num dim' }, 'not graduated');
     const label = c.status === 'MATCH' ? h('span', { class: 'check-ok' }, 'adds up')
-      : c.status === 'RESIDUAL' ? h('span', { class: 'check-residual', title: c.residual?.note ?? '' }, `${c.differenceRaw} raw residual, origin not proven yet`)
+      : c.status === 'RESIDUAL' ? h('span', { class: 'check-residual', title: c.residual?.note ?? '' }, c.residual?.origin === 'PROVEN_ROUNDING'
+        ? `${c.differenceRaw} raw residual: the pool's own rounding, proven` : `${c.differenceRaw} raw residual, origin not proven yet`)
       : c.status === 'MISMATCH' ? h('span', { class: 'check-bad' }, `off by ${fee(c.differenceRaw)}`) : h('span', { class: 'dim' }, 'not checkable yet');
     return h('td', { class: 'num', title: c.reasons.join('; ') }, h('span', {}, `${fee(c.fromTradesRaw)} from trades`), h('span', { class: 'dim small reason' }, label));
   };
@@ -775,7 +776,7 @@ function checksCard(e: Earnings, decimals: number, symbol: string) {
     cell(c.checks!.creatorCurve), cell(c.checks!.platformCurve), cell(c.checks!.lp)));
   if (!rows.length) return null;
   return h('div', { class: 'card' }, h('h3', {}, 'Do the trade fees add up?'),
-    h('p', { class: 'dim small', style: { margin: '0 0 12px' } }, 'Each trade\'s fee is read from its own transaction (see ', h('a', { href: '#/fees' }, 'Fees'), '). Here the per-trade shares are added up and compared with what the pool still holds plus what was claimed through the app. A claim made outside the app would show as a difference. A residual is a few raw units of LP fees that are in no position; it stays listed with its amount until its origin is proven.'),
+    h('p', { class: 'dim small', style: { margin: '0 0 12px' } }, 'Each trade\'s fee is read from its own transaction (see ', h('a', { href: '#/fees' }, 'Fees'), '). Here the per-trade shares are added up and compared with what the pool still holds plus what was claimed through the app. A claim made outside the app would show as a difference. A residual is a few raw units of LP fees that are in no position. It stays listed with its amount. Once the pool\'s own fee accounting shows it is the program rounding each position\'s share down to whole units, it is marked proven (hover for the numbers).'),
     h('div', { class: 'scroll' }, h('table', { class: 'trades' }, h('thead', {}, h('tr', {}, ...[['Coin', ''], ['Creator · curve', 'num'], ['Platform · curve', 'num'], ['LP positions', 'num']].map(([x, cls]) => h('th', { class: cls }, x)))),
       h('tbody', {}, ...rows))));
 }

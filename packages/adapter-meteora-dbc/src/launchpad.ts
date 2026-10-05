@@ -452,6 +452,34 @@ export async function dammPositionsOf(conn: Connection, p: LiveDammPool, owner: 
   });
 }
 
+/** The DAMM v2 program's own fee accounting for one pool, quote side (token B): the fee-per-liquidity accumulator, the
+ *  program's running LP fee total, and every position in the pool with its liquidity, checkpoint, settled-but-unclaimed
+ *  and claimed fees. Read as one snapshot: the pool is read before and after the positions, and the read is repeated if
+ *  a trade or claim landed in between. Used to explain an LP residual (apps/launchpad/src/lp-residual.ts). */
+export interface DammFeeAccounting {
+  pool: string; collectFeeMode: number; liquidity: string; feePerLiquidityQuote: string; totalLpQuoteRaw: string; totalLpBaseRaw: string; totalPositions: string;
+  positions: { position: string; nftMint: string; liquidity: string; checkpointQuote: string; pendingQuoteRaw: string; claimedQuoteRaw: string; claimedBaseRaw: string }[];
+}
+const u256le = (a: ArrayLike<number>) => { let v = 0n; for (let i = a.length - 1; i >= 0; i--) v = (v << 8n) | BigInt(a[i]!); return v; };
+export async function readDammFeeAccounting(conn: Connection, p: LiveDammPool, attempts = 3): Promise<DammFeeAccounting> {
+  const cp = new CpAmm(conn), pool = new PublicKey(p.pool);
+  const head = (ps: any) => `${u256le(ps.feeBPerLiquidity)}:${big(ps.metrics.totalLpBFee)}:${big(ps.liquidity)}:${big(ps.metrics.totalPosition)}`;
+  for (let k = 0; k < attempts; k++) {
+    const before: any = await cp.fetchPoolState(pool);
+    const rows: any[] = await cp.getAllPositionsByPool(pool);
+    const after: any = await cp.fetchPoolState(pool);
+    if (head(before) !== head(after)) continue; // a trade or position change landed between the reads
+    if (after.tokenAMint.toBase58() !== p.baseMint || after.tokenBMint.toBase58() !== p.quoteMint) throw new Error(`DAMM_POOL_MISMATCH pool ${p.pool}`);
+    return { pool: p.pool, collectFeeMode: Number(after.collectFeeMode), liquidity: big(after.liquidity).toString(), feePerLiquidityQuote: u256le(after.feeBPerLiquidity).toString(),
+      totalLpQuoteRaw: big(after.metrics.totalLpBFee).toString(), totalLpBaseRaw: big(after.metrics.totalLpAFee).toString(), totalPositions: big(after.metrics.totalPosition).toString(),
+      positions: rows.map((r) => { const s = r.account;
+        return { position: r.publicKey.toBase58(), nftMint: s.nftMint.toBase58(), liquidity: (big(s.unlockedLiquidity) + big(s.vestedLiquidity) + big(s.permanentLockedLiquidity)).toString(),
+          checkpointQuote: u256le(s.feeBPerTokenCheckpoint).toString(), pendingQuoteRaw: big(s.feeBPending).toString(), claimedQuoteRaw: big(s.metrics.totalClaimedBFee).toString(),
+          claimedBaseRaw: big(s.metrics.totalClaimedAFee).toString() }; }).sort((x, y) => (x.position < y.position ? -1 : 1)) };
+  }
+  throw new Error(`DAMM_ACCOUNTING_MOVING pool ${p.pool} changed during ${attempts} reads`);
+}
+
 /** Unsigned claim of a DAMM v2 position's fees into the owner's own token accounts (the program checks the owner holds the NFT). */
 export async function buildDammClaim(conn: Connection, p: LiveDammPool, owner: string, nftMint: string): Promise<BuiltTx> {
   const { tx, terms } = await dammClaimTransaction(conn, p, owner, nftMint);
