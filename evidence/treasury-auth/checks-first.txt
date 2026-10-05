@@ -1,0 +1,5 @@
+# checks run before the devnet treasury run (secret-free wrapper: env -i PATH HOME HTTPS_PROXY HTTP_PROXY NODE_EXTRA_CA_CERTS)
+2026-10-05T20:49:28Z license:check exit=0 }
+2026-10-05T20:49:29Z deps:chain exit=0
+2026-10-05T20:49:47Z verifier-test exit=0 # pass 55
+2026-10-05T20:49:53Z program-verify exit=0 (live read-only, public mainnet + devnet RPC, single provider)

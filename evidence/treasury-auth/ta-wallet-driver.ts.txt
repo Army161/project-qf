@@ -1,0 +1,63 @@
+// DEVNET evidence driver (milestone 7): a throwaway wallet that lives only in this process's memory (non-extractable
+// WebCrypto keys, never written anywhere) uses the launchpad API exactly as the web app does: build, decode and bind
+// the transaction to its terms, sign, submit. TEST_ONLY devnet tokens with no value.
+//   node --use-env-proxy m7-wallet-driver.ts launch <SYMBOL> <name> <buyQuoteUi>
+//   node --use-env-proxy m7-wallet-driver.ts trade <mint> buy|sell <amountUi> [times]
+import { addSignature, bindTransactionToTerms, decodeTransactionBytes, fromBase64, generateMintKey, toBase64 } from '@project-qf/tx';
+
+const base = process.env.QF_LP_URL ?? 'http://127.0.0.1:8788';
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+async function call(path: string, body?: unknown): Promise<any> {
+  for (let i = 0; ; i++) {
+    const r = await fetch(base + path, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (r.status === 503 && i < 6) { await sleep(3000 * (i + 1)); continue; }
+    if (!r.ok) throw new Error(`${path} ${r.status} ${JSON.stringify(j.error)}`);
+    return j;
+  }
+}
+async function signSubmit(built: any, signers: { address: string; privateKey: CryptoKey }[]) {
+  const v = await bindTransactionToTerms(decodeTransactionBytes(fromBase64(built.transaction)), built.terms);
+  if (v.length) throw new Error(`binding failed: ${v.join('; ')}`);
+  let bytes: Uint8Array = fromBase64(built.transaction);
+  for (const s of signers) bytes = await addSignature(bytes, s.address, s.privateKey);
+  return call('/api/lp/submit', { intentId: built.intentId, signedTransaction: toBase64(bytes) });
+}
+const raw = (ui: string) => (BigInt(Math.round(Number(ui) * 1e6))).toString();
+
+const [cmd, ...a] = process.argv.slice(2);
+const wallet = await generateMintKey();
+const funded = await call('/api/lp/faucet', { wallet: wallet.address });
+console.log(JSON.stringify({ wallet: wallet.address, faucet: funded.signature }));
+await sleep(2000);
+
+async function trade(mint: string, side: 'buy' | 'sell', amountRaw: string) {
+  const built = await call('/api/lp/swap', { mint, user: wallet.address, side, amountIn: amountRaw, slippageBps: 1000 });
+  const r = await signSubmit(built, [wallet]);
+  console.log(JSON.stringify({ trade: side, amountRaw, venue: built.terms.kind, signature: r.signature }));
+  return r;
+}
+
+if (cmd === 'launch') {
+  const [symbol, name, buyUi] = a as [string, string, string];
+  const p = await call('/api/lp/platform');
+  const mintKey = await generateMintKey();
+  const built = await call('/api/lp/launch', { creator: wallet.address, baseMint: mintKey.address, name, symbol, description: 'Treasury authorization run (devnet) test coin. TEST_ONLY, no value.',
+    economicsDigest: p.platform.launchEconomicsDigest });
+  if (built.terms.config !== p.platform.config) throw new Error('launch is not on the current config');
+  const r = await signSubmit(built, [mintKey, wallet]);
+  console.log(JSON.stringify({ launched: symbol, mint: mintKey.address, pool: built.pool, config: built.terms.config, signature: r.signature }));
+  await sleep(3000);
+  if (Number(buyUi) > 0) await trade(mintKey.address, 'buy', raw(buyUi));
+} else if (cmd === 'trade') {
+  const [mint, side, amountUi, times] = a as [string, 'buy' | 'sell', string, string | undefined];
+  for (let k = 0; k < Number(times ?? 1); k++) {
+    if (side === 'sell') {
+      const bal = await call(`/api/lp/wallet/${wallet.address}?mint=${mint}`);
+      const have = BigInt(bal.tokens[mint] ?? '0');
+      if (have === 0n) { await trade(mint, 'buy', raw(amountUi)); await sleep(2000); continue; }
+      await trade(mint, 'sell', (have / 2n).toString());
+    } else await trade(mint, 'buy', raw(amountUi));
+    await sleep(2000);
+  }
+} else throw new Error('usage: launch <SYMBOL> <name> <buyQuoteUi> | trade <mint> buy|sell <amountUi> [times]');

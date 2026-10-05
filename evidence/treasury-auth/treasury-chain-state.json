@@ -1,0 +1,50 @@
+{
+ "readAt": "2026-10-05T21:01:35.584Z",
+ "commitment": "finalized",
+ "treasury": {
+  "multisig": "6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd",
+  "vault": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+  "threshold": 2,
+  "timeLock": 0,
+  "configAuthority": null,
+  "members": [
+   {
+    "key": "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+    "mask": 7
+   },
+   {
+    "key": "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww",
+    "mask": 7
+   },
+   {
+    "key": "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ",
+    "mask": 7
+   }
+  ],
+  "transactionIndex": "4",
+  "staleTransactionIndex": "0",
+  "memberPermissions": [
+   {
+    "key": "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+    "mask": 7,
+    "initiate": true,
+    "vote": true,
+    "execute": true
+   },
+   {
+    "key": "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww",
+    "mask": 7,
+    "initiate": true,
+    "vote": true,
+    "execute": true
+   },
+   {
+    "key": "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ",
+    "mask": 7,
+    "initiate": true,
+    "vote": true,
+    "execute": true
+   }
+  ]
+ }
+}

@@ -672,13 +672,16 @@ interface Earnings {
   totals: { unclaimed: { creatorCurve: string; platformCurve: string; creatorLp: string; platformLp: string }; claimedThroughApp: string; incomplete: boolean;
     coverage: { unclaimedComplete: boolean; claimsComplete: boolean; unresolvedClaims: number } };
   coins: { mint: string; symbol: string; name: string; status: string; creator: string; curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null;
-    platformWallet: string; treasury: boolean; checks?: { creatorCurve: FeeCheck; platformCurve: FeeCheck; lp: FeeCheck | null } }[];
+    platformWallet: string; treasury: boolean; configRole?: 'CURRENT' | 'LEGACY'; checks?: { creatorCurve: FeeCheck; platformCurve: FeeCheck; lp: FeeCheck | null } }[];
   claims: { sig: string; mint: string; symbol: string; venue: 'CURVE' | 'DAMM_V2'; claimer: string; byCreator: boolean; byTreasury: boolean; quoteRaw: string | null; at: string;
     status: 'UNKNOWN' | 'RESOLVED' | 'FAILED_TX'; evidence: string | null }[];
-  treasury: { multisig: string; vault: string; threshold: number; members: string[]; label: string; paidToTreasuryQuoteRaw: string; unresolvedReceipts: number; openProposals: number } | null;
+  treasury: { multisig: string; vault: string; threshold: number; members: string[]; label: string; note: string; separationOfControl: boolean; paidToTreasuryQuoteRaw: string;
+    unresolvedReceipts: number; openProposals: number;
+    vaultCheck: { status: 'MATCH' | 'MISMATCH' | 'INCOMPLETE'; vaultQuoteRaw: string | null; receiptsRaw: string; differenceRaw: string | null; reasons: string[] } } | null;
 }
 /** Fees recorded trade by trade versus what the pool still holds plus what was claimed (lp-api earnings checks). */
-interface FeeCheck { fromTradesRaw: string; onChainRaw: string | null; claimedRaw: string; differenceRaw: string | null; status: 'MATCH' | 'MISMATCH' | 'INCOMPLETE'; reasons: string[] }
+interface FeeCheck { fromTradesRaw: string; onChainRaw: string | null; claimedRaw: string; differenceRaw: string | null; status: 'MATCH' | 'RESIDUAL' | 'MISMATCH' | 'INCOMPLETE'; reasons: string[];
+  residual?: { raw: string; boundRaw: string; origin: string; note: string } }
 /** Why a receipt's amount is not known yet, in words. */
 const EVIDENCE: Record<string, string> = {
   NO_TX_DETAILS: 'the RPC has not returned its transaction yet',
@@ -704,7 +707,8 @@ async function renderEarnings(fresh = false) {
     : c.lp === 'UNAVAILABLE' ? h('td', { class: 'num dim' }, 'pool unreadable') : h('td', { class: 'num' }, amt(c.lp[who]));
   const rows = e.coins.map((c) => h('tr', {},
     h('td', {}, h('a', { href: `#/t/${c.mint}` }, `$${c.symbol}`), h('span', { class: 'dim small' }, c.status === 'MIGRATED' ? ' graduated' : ' bonding'),
-      c.treasury ? h('span', { class: 'chip grad pay-to', title: 'Platform fees of this coin go to the treasury vault' }, 'treasury') : null),
+      c.treasury ? h('span', { class: 'chip grad pay-to', title: 'Platform fees of this coin go to the treasury vault' }, 'treasury')
+        : c.configRole === 'LEGACY' ? h('span', { class: 'chip legacy pay-to', title: 'Launched on the earlier config. Its platform fees still go to the operator wallet, unchanged.' }, 'legacy config') : null),
     h('td', { class: 'num' }, amt(c.curve?.creatorQuoteRaw)), lpCell(c, 'creatorQuoteRaw'),
     h('td', { class: 'num' }, amt(c.curve?.platformQuoteRaw)), lpCell(c, 'platformQuoteRaw')));
   const paid = (c: Earnings['claims'][number]) => c.status === 'RESOLVED' ? h('td', { class: 'num' }, amt(c.quoteRaw))
@@ -741,7 +745,7 @@ async function renderEarnings(fresh = false) {
         h('li', {}, 'Under the current test policy, half of the platform share is earmarked for holder rewards. Earmarked means counted, not moved: nothing is transferred or distributed, because holder rewards are not built.'),
         h('li', {}, 'Curve fees are the creator and platform counters in each bonding-curve pool. LP fees are what the locked DAMM v2 positions held by the creator and by the platform fee claimer have earned since their last claim.'),
         e.treasury
-          ? h('li', {}, h('span', {}, 'Coins marked treasury pay their platform fees to the treasury vault. Earlier coins keep paying the operator wallet ',
+          ? h('li', {}, h('span', {}, 'Coins marked treasury pay their platform fees to the treasury vault. Coins marked legacy config launched on the earlier config and keep paying the operator wallet ',
             ext(explorer('address', e.platformWallet === e.treasury.vault ? (e.coins.find((c) => !c.treasury)?.platformWallet ?? e.platformWallet) : e.platformWallet), 'here'),
             ': a coin keeps the config it launched on, and a config\'s fee claimer cannot be changed.'))
           : h('li', {}, h('span', {}, 'Platform fees can only be claimed by the platform fee claimer ', ext(explorer('address', e.platformWallet), short(e.platformWallet)), '. Before mainnet that must be a multisig, so this page has no claim button.')),
@@ -753,7 +757,8 @@ function checksCard(e: Earnings, decimals: number, symbol: string) {
   const fee = (raw: string | null) => (raw == null ? '—' : `${units(raw, decimals, 6)} ${symbol}`);
   const cell = (c: FeeCheck | null | undefined) => {
     if (!c) return h('td', { class: 'num dim' }, 'not graduated');
-    const label = c.status === 'MATCH' ? h('span', { class: 'check-ok' }, BigInt(c.differenceRaw ?? '0') > 0n ? `adds up (${c.differenceRaw} raw rounding)` : 'adds up')
+    const label = c.status === 'MATCH' ? h('span', { class: 'check-ok' }, 'adds up')
+      : c.status === 'RESIDUAL' ? h('span', { class: 'check-residual', title: c.residual?.note ?? '' }, `${c.differenceRaw} raw residual, origin not proven yet`)
       : c.status === 'MISMATCH' ? h('span', { class: 'check-bad' }, `off by ${fee(c.differenceRaw)}`) : h('span', { class: 'dim' }, 'not checkable yet');
     return h('td', { class: 'num', title: c.reasons.join('; ') }, h('span', {}, `${fee(c.fromTradesRaw)} from trades`), h('span', { class: 'dim small reason' }, label));
   };
@@ -761,23 +766,30 @@ function checksCard(e: Earnings, decimals: number, symbol: string) {
     cell(c.checks!.creatorCurve), cell(c.checks!.platformCurve), cell(c.checks!.lp)));
   if (!rows.length) return null;
   return h('div', { class: 'card' }, h('h3', {}, 'Do the trade fees add up?'),
-    h('p', { class: 'dim small', style: { margin: '0 0 12px' } }, 'Each trade\'s fee is read from its own transaction (see ', h('a', { href: '#/fees' }, 'Fees'), '). Here the per-trade shares are added up and compared with what the pool still holds plus what was claimed through the app. A claim made outside the app would show as a difference.'),
+    h('p', { class: 'dim small', style: { margin: '0 0 12px' } }, 'Each trade\'s fee is read from its own transaction (see ', h('a', { href: '#/fees' }, 'Fees'), '). Here the per-trade shares are added up and compared with what the pool still holds plus what was claimed through the app. A claim made outside the app would show as a difference. A residual is a few raw units of LP fees that are in no position; it stays listed with its amount until its origin is proven.'),
     h('div', { class: 'scroll' }, h('table', { class: 'trades' }, h('thead', {}, h('tr', {}, ...[['Coin', ''], ['Creator · curve', 'num'], ['Platform · curve', 'num'], ['LP positions', 'num']].map(([x, cls]) => h('th', { class: cls }, x)))),
       h('tbody', {}, ...rows))));
 }
 
 /** The platform treasury: what reached its vault through executed proposals, and how it is controlled. Read-only. */
-function treasuryCard(t: NonNullable<Earnings['treasury']>, amt: (raw: string) => string) {
-  const stat = (k: string, v: string | HTMLElement, sub: string) => h('div', {}, h('span', { class: 'k' }, k), h('span', { class: 'v' }, v), h('span', { class: 'dim small' }, sub));
+function treasuryCard(t: NonNullable<Earnings['treasury']>, amt: (raw: string | null) => string) {
+  const stat = (k: string, v: string | HTMLElement, sub: string | HTMLElement) => h('div', {}, h('span', { class: 'k' }, k), h('span', { class: 'v' }, v), h('span', { class: 'dim small' }, sub));
+  const vc = t.vaultCheck;
+  const vcLabel = vc.status === 'MATCH' ? h('span', { class: 'check-ok' }, 'equals the receipts')
+    : vc.status === 'MISMATCH' ? h('span', { class: 'check-bad', title: vc.reasons.join('; ') }, `off by ${amt(vc.differenceRaw)}`)
+    : h('span', { title: vc.reasons.join('; ') }, 'not checkable yet');
   return h('div', { class: 'card treasury' },
-    h('div', { class: 'tr-head' }, h('h3', {}, 'Platform treasury'), h('span', { class: 'chip warn' }, 'devnet stand-in')),
+    h('div', { class: 'tr-head' }, h('h3', {}, 'Platform treasury'), h('span', { class: 'chip warn' }, 'devnet stand-in'),
+      t.separationOfControl ? null : h('span', { class: 'chip warn', title: t.note }, 'test signers, one operator')),
     h('div', { class: 'kpis' },
-      stat('Paid to treasury', amt(t.paidToTreasuryQuoteRaw), t.unresolvedReceipts ? `${t.unresolvedReceipts} not confirmed yet` : 'confirmed from each transaction'),
+      stat('Paid to treasury', amt(t.paidToTreasuryQuoteRaw), t.unresolvedReceipts ? `${t.unresolvedReceipts} not confirmed yet` : 'part of "Claimed in the app", not added again'),
+      stat('Vault holds', amt(vc.vaultQuoteRaw), vcLabel),
       stat('Approvals to move funds', `${t.threshold} of ${t.members.length}`, 'members sign for themselves'),
       stat('Open proposals', String(t.openProposals), 'waiting for approvals or to run'),
       stat('Vault', h('span', { class: 'mono' }, ext(explorer('address', t.vault), short(t.vault))), 'Squads v4 vault, receives platform fees')),
     h('p', { class: 'dim small', style: { margin: '12px 0 0' } },
-      'Platform fees of coins launched since the treasury are claimed into this vault by a multisig proposal. Two of three members must approve before it runs. The server builds the transactions but holds no member key, so it cannot approve, run or spend anything. The members here are throwaway devnet keys; the real signers, threshold and any time lock are decided before mainnet.'));
+      'Platform fees of coins launched since the treasury are claimed into this vault by a multisig proposal. Two of three members must approve before it runs. The server builds the transactions but holds no member key, so it cannot approve, run or spend anything.'),
+    h('p', { class: 'err small', style: { margin: '8px 0 0' } }, t.note));
 }
 
 // ------------------------------------------------------------------ trading fees (read-only)

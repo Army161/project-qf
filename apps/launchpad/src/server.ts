@@ -164,19 +164,28 @@ export function tradeView(t: StoredTrade) {
 
 /** Per-coin check that the fees recorded trade by trade add up to what the chain holds and what was claimed:
  *    curve: creator and platform shares from trades = the pool's unclaimed counter + proven claims through the app;
- *    LP (after graduation): LP fees from trades = the positions' unclaimed fees + proven claims, less rounding dust the
- *    DAMM v2 program leaves in the pool (it rounds each position's share down; at most a few raw units per trade).
- *  MATCH or MISMATCH only when every input is known; otherwise INCOMPLETE with the reasons. A claim made outside this app
- *  is not in the receipts and shows as a MISMATCH (the trades say more was earned than the chain still holds plus claims). */
-export type CheckStatus = 'MATCH' | 'MISMATCH' | 'INCOMPLETE';
-export interface FeeCheck { fromTradesRaw: string; onChainRaw: string | null; claimedRaw: string; differenceRaw: string | null; status: CheckStatus; reasons: string[] }
-export const LP_DUST_PER_TRADE = 2n;
-function feeCheck(fromTrades: bigint, unclaimed: string | null, claimed: bigint, reasons: string[], dustAllowed = 0n): FeeCheck {
+ *    LP (after graduation): LP fees from trades = the positions' unclaimed fees + proven claims.
+ *  MATCH only on an exact match. On the LP side the trades may say a few raw units more than the positions hold (the
+ *  program rounds down when it shares a fee out to positions): such a difference, up to `residualBound`, is RESIDUAL, kept
+ *  explicit with its amount, and its origin is NOT_PROVEN until evidence from the pool's fee accumulator explains it. A
+ *  small difference is never relabelled as a match. Anything else is MISMATCH; missing inputs make it INCOMPLETE with the
+ *  reasons. A claim made outside this app is not in the receipts and shows as a MISMATCH. */
+export type CheckStatus = 'MATCH' | 'RESIDUAL' | 'MISMATCH' | 'INCOMPLETE';
+export interface FeeCheck { fromTradesRaw: string; onChainRaw: string | null; claimedRaw: string; differenceRaw: string | null; status: CheckStatus; reasons: string[];
+  residual?: { raw: string; boundRaw: string; origin: 'NOT_PROVEN'; note: string } }
+/** Largest LP residual per DAMM v2 trade that is reported as RESIDUAL rather than MISMATCH. */
+export const LP_RESIDUAL_BOUND_PER_TRADE = 2n;
+export function feeCheck(fromTrades: bigint, unclaimed: string | null, claimed: bigint, reasons: string[], residualBound = 0n): FeeCheck {
   const onChain = unclaimed === null ? null : BigInt(unclaimed) + claimed;
   const diff = onChain === null ? null : fromTrades - onChain;
   const why = [...reasons, ...(onChain === null ? ['the pool or positions could not be read'] : [])];
-  return { fromTradesRaw: fromTrades.toString(), onChainRaw: onChain === null ? null : onChain.toString(), claimedRaw: claimed.toString(), differenceRaw: diff === null ? null : diff.toString(),
-    status: why.length ? 'INCOMPLETE' : diff! >= 0n && diff! <= dustAllowed ? 'MATCH' : 'MISMATCH', reasons: why };
+  const base = { fromTradesRaw: fromTrades.toString(), onChainRaw: onChain === null ? null : onChain.toString(), claimedRaw: claimed.toString(), differenceRaw: diff === null ? null : diff.toString() };
+  if (why.length) return { ...base, status: 'INCOMPLETE', reasons: why };
+  if (diff === 0n) return { ...base, status: 'MATCH', reasons: [] };
+  if (diff! > 0n && diff! <= residualBound) return { ...base, status: 'RESIDUAL', reasons: [],
+    residual: { raw: diff!.toString(), boundRaw: residualBound.toString(), origin: 'NOT_PROVEN',
+      note: `${diff} raw unit(s) recorded in trades are in no known position or claim. Kept as an explicit residual; its origin is not yet proven from the pool's fee accumulator.` } };
+  return { ...base, status: 'MISMATCH', reasons: [] };
 }
 
 const lpOfCoin = (c: EarningsCoin) => (c.lp && c.lp !== 'UNAVAILABLE' ? c.lp : null);
@@ -186,9 +195,29 @@ export const RECEIPT_CHECKS_PER_REQUEST = 5;
 type Unclaimed = { creatorQuoteRaw: string | null; platformQuoteRaw: string | null };
 interface EarningsCoin { mint: string; symbol: string; name: string; status: LaunchRow['status']; creator: string;
   curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null; platformWallet: string; treasury: boolean;
+  /** the config the coin launched on: CURRENT, or LEGACY (an earlier config, kept unchanged so its coins' fee entitlements hold) */
+  configRole: ConfigRole;
   /** fees recorded trade by trade for this coin, and whether they add up to the chain (see feeCheck) */
   fromTrades?: FeeTotals; checks?: { creatorCurve: FeeCheck; platformCurve: FeeCheck; lp: FeeCheck | null } }
 const TX_INDEX = /^[1-9]\d{0,18}$/;
+type ConfigRole = 'CURRENT' | 'LEGACY';
+const configRole = (p: PlatformRecord, config: string): ConfigRole => (config === p.config.config ? 'CURRENT' : 'LEGACY');
+/** What the devnet treasury's signers are. Shown wherever the treasury is, so the test setup is never read as production control. */
+export const TREASURY_SIGNERS_NOTE = 'Devnet stand-in. All three member keys are throwaway test keys held by one operator in one container, so this '
+  + 'demonstrates the approval flow, not separation of control. The real signers, threshold and time lock are decided before mainnet.';
+/** The vault's quote balance on chain against the proven treasury receipts: each receipt is counted once, in both places. */
+export interface VaultCheck { status: 'MATCH' | 'MISMATCH' | 'INCOMPLETE'; vaultQuoteRaw: string | null; receiptsRaw: string; differenceRaw: string | null; reasons: string[] }
+export function vaultCheck(vaultQuoteRaw: bigint | null, receiptsRaw: bigint, unresolvedReceipts: number): VaultCheck {
+  const reasons = [...(vaultQuoteRaw === null ? ['the vault balance could not be read'] : []),
+    ...(unresolvedReceipts ? [`${unresolvedReceipts} treasury receipt(s) not proven yet`] : [])];
+  const base = { vaultQuoteRaw: vaultQuoteRaw?.toString() ?? null, receiptsRaw: receiptsRaw.toString() };
+  if (reasons.length) return { status: 'INCOMPLETE', ...base, differenceRaw: null, reasons };
+  const d = vaultQuoteRaw! - receiptsRaw;
+  if (d === 0n) return { status: 'MATCH', ...base, differenceRaw: '0', reasons: [] };
+  return { status: 'MISMATCH', ...base, differenceRaw: (d < 0n ? -d : d).toString(), reasons: [d > 0n
+    ? 'the vault holds more than the proven receipts: tokens reached it outside a claim made in this app'
+    : 'the vault holds less than the proven receipts: tokens left it (this app has no route that moves funds out of the vault)'] };
+}
 const TREASURY_REFRESH_PER_REQUEST = 5;
 const FINAL_PROPOSAL = new Set(['Executed', 'Rejected', 'Cancelled']);
 
@@ -235,8 +264,19 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
 
   // ---------------------------------------------------------------- platform treasury helpers
   const treasuryView = (p: PlatformRecord) => ({ multisig: p.treasury!.multisig, vault: p.treasury!.vault, threshold: p.treasury!.threshold, members: p.treasury!.members,
-    label: p.treasury!.label, note: 'Devnet stand-in: three throwaway member keys. Real signers, threshold and time lock are decided before mainnet.' });
+    label: p.treasury!.label, signers: 'ONE_OPERATOR_TEST_KEYS' as const, separationOfControl: false, note: TREASURY_SIGNERS_NOTE });
   const innerVenue = (inner: TreasuryInnerTerms): 'CURVE' | 'DAMM_V2' => (inner.kind === 'CLAIM_PARTNER_TRADING_FEE' ? 'CURVE' : 'DAMM_V2');
+  /** What reached the treasury vault through executed proposals (proven receipts only), what is still waiting, and whether
+   *  the vault's own balance equals those receipts. The receipts are part of "claimed through the app"; they are not added again. */
+  async function treasuryEarnings(p: PlatformRecord, claims: (ClaimRow & { byTreasury: boolean })[]) {
+    const mine = claims.filter((c) => c.byTreasury);
+    const paid = mine.filter((c) => c.status === 'RESOLVED').reduce((a, c) => a + BigInt(c.quoteRaw!), 0n);
+    const unresolvedReceipts = mine.filter((c) => c.status === 'UNKNOWN').length;
+    const held = await o.chain.balances(p.treasury!.vault, [p.quote.mint]).then((b) => BigInt(b.tokens[p.quote.mint] ?? '0')).catch(() => null);
+    return { ...treasuryView(p), paidToTreasuryQuoteRaw: paid.toString(), includedIn: 'claimedThroughApp' as const, unresolvedReceipts,
+      openProposals: o.store.listTreasuryProposals(p.treasury!.multisig).filter((r) => !FINAL_PROPOSAL.has(r.status)).length,
+      vaultCheck: vaultCheck(held, paid, unresolvedReceipts) };
+  }
   /** After a member's treasury transaction confirms: the app's record of the proposal, and for an execution the claim receipt. */
   async function recordTreasury(terms: Extract<ApprovedTerms, { kind: `TREASURY_${string}` }>, user: string, mint: string | null, signature: string) {
     const p = platform();
@@ -274,7 +314,10 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       return send(res, 200, { apiVersion: LP_API_VERSION, cluster: 'devnet', ready: !!p, readiness: { DEVNET_INTEGRATION: READINESS.DEVNET_INTEGRATION.status, MAINNET: READINESS.MAINNET.status },
         operator: o.chain.operatorAddress, platform: p && { quote: p.quote, config: p.config.config, threshold: p.threshold, launchEconomics: p.launchEconomics,
           launchEconomicsDigest: p.launchEconomicsDigest, economicsVersion: p.economicsVersion, templateVersion: p.templateVersion,
-          configs: [p.config, ...(p.legacyConfigs ?? [])].map((c) => ({ config: c.config, feeClaimer: c.feeClaimer, current: c.config === p.config.config, treasury: isTreasuryConfig(p, c.config) })),
+          configs: [p.config, ...(p.legacyConfigs ?? [])].map((c) => ({ config: c.config, feeClaimer: c.feeClaimer, current: c.config === p.config.config,
+            role: configRole(p, c.config), treasury: isTreasuryConfig(p, c.config),
+            label: configRole(p, c.config) === 'LEGACY' ? 'Legacy config: coins launched on it keep it, and their platform fees still go to its fee claimer, unchanged'
+              : isTreasuryConfig(p, c.config) ? 'Current config: platform fees go to the treasury vault' : 'Current config' })),
           treasury: p.treasury ? treasuryView(p) : null },
         faucet: { quoteUi: FAUCET.quoteUi.toString(), lamports: FAUCET.lamports.toString(), claimsPerDay: FAUCET.claimsPerDay } });
     }
@@ -645,7 +688,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
         // each coin's platform share belongs to the fee claimer of the config it launched on: the operator for earlier
         // coins, the treasury vault for coins launched since the treasury config
         const claimer = feeClaimerFor(p, l.config) ?? platformWallet;
-        coins.push({ mint: l.mint, symbol: l.symbol, name: l.name, status: l.status, creator: l.creator, platformWallet: claimer, treasury: claimer === vault,
+        coins.push({ mint: l.mint, symbol: l.symbol, name: l.name, status: l.status, creator: l.creator, platformWallet: claimer, treasury: claimer === vault, configRole: configRole(p, l.config),
           curve: pool ? { creatorQuoteRaw: pool.creatorQuoteFee, platformQuoteRaw: pool.partnerQuoteFee } : null,
           lp: l.status !== 'MIGRATED' ? null : dp ? { creatorQuoteRaw: sumQuote(await positions(l.creator)), platformQuoteRaw: sumQuote(await positions(claimer)) } : 'UNAVAILABLE' });
       }
@@ -675,7 +718,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
           creatorCurve: feeCheck(BigInt(ft.creatorRaw), c.curve?.creatorQuoteRaw ?? null, claimed('CURVE', (x) => x.claimer === l.creator), reasons('CURVE')),
           platformCurve: feeCheck(BigInt(ft.platformRaw), c.curve?.platformQuoteRaw ?? null, claimed('CURVE', (x) => x.claimer === c.platformWallet), reasons('CURVE')),
           lp: l.status !== 'MIGRATED' ? null : feeCheck(BigInt(ft.lpRaw), lp && lp.creatorQuoteRaw !== null && lp.platformQuoteRaw !== null
-            ? (BigInt(lp.creatorQuoteRaw) + BigInt(lp.platformQuoteRaw)).toString() : null, claimed('DAMM_V2', () => true), reasons('DAMM_V2'), LP_DUST_PER_TRADE * dammTrades),
+            ? (BigInt(lp.creatorQuoteRaw) + BigInt(lp.platformQuoteRaw)).toString() : null, claimed('DAMM_V2', () => true), reasons('DAMM_V2'), LP_RESIDUAL_BOUND_PER_TRADE * dammTrades),
         };
       }
       const add = (pick: (c: EarningsCoin) => string | null | undefined) => coins.reduce((a, c) => a + BigInt(pick(c) ?? '0'), 0n).toString();
@@ -690,11 +733,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
           claimedThroughApp: claims.reduce((a, c) => a + (c.status === 'UNKNOWN' ? 0n : BigInt(c.quoteRaw!)), 0n).toString(),
           coverage: { unclaimedComplete, claimsComplete: unresolvedClaims === 0, unresolvedClaims },
           incomplete: !unclaimedComplete || unresolvedClaims > 0 },
-        // what reached the treasury vault through executed proposals (proven receipts only), and what is still waiting
-        treasury: p.treasury ? { ...treasuryView(p),
-          paidToTreasuryQuoteRaw: claims.filter((c) => c.byTreasury && c.status === 'RESOLVED').reduce((a, c) => a + BigInt(c.quoteRaw!), 0n).toString(),
-          unresolvedReceipts: claims.filter((c) => c.byTreasury && c.status === 'UNKNOWN').length,
-          openProposals: o.store.listTreasuryProposals(p.treasury.multisig).filter((r) => !FINAL_PROPOSAL.has(r.status)).length } : null,
+        treasury: p.treasury ? await treasuryEarnings(p, claims) : null,
         coins, claims };
       earnings = { at: now().getTime(), body };
       return send(res, 200, body);

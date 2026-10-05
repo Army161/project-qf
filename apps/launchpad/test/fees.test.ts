@@ -10,6 +10,7 @@ import type { TxSummary } from '../src/chain.ts';
 import { feesFromSummary } from '../src/fees.ts';
 import { FEES, fillTradeFees, PoolCache, syncLaunch } from '../src/indexer.ts';
 import { harness, seedLaunch } from './support/harness.ts';
+import { feeCheck } from '../src/server.ts';
 
 const fx = JSON.parse(readFileSync(new URL('../../../packages/adapter-meteora-dbc/test/fixtures/swap-events-devnet.json', import.meta.url), 'utf8')) as {
   transactions: { signature: string; feePayer: string; innerInstructions: { programId: string; dataHex: string }[] }[] };
@@ -139,3 +140,16 @@ test('[TEST_ONLY] earnings check: fees from trades must add up to the pool\'s un
   assert.equal(e.checks.platformCurve.status, 'INCOMPLETE');
   assert.match(e.checks.platformCurve.reasons[0], /1 trade\(s\) whose fees are not read yet/);
 });
+
+test('an LP difference is never relabelled a match: exact is MATCH, a few raw units are an explicit RESIDUAL, more is MISMATCH', () => {
+  assert.equal(feeCheck(100n, '60', 40n, [], 4n).status, 'MATCH');
+  const r = feeCheck(102n, '60', 40n, [], 4n);
+  assert.deepEqual([r.status, r.differenceRaw, r.residual?.raw, r.residual?.boundRaw, r.residual?.origin], ['RESIDUAL', '2', '2', '4', 'NOT_PROVEN']);
+  assert.doesNotMatch(r.residual!.note, /rounding/);
+  assert.equal(feeCheck(105n, '60', 40n, [], 4n).status, 'MISMATCH', 'beyond the bound');
+  assert.equal(feeCheck(99n, '60', 40n, [], 4n).status, 'MISMATCH', 'the chain holding more than the trades say is never a residual');
+  assert.equal(feeCheck(101n, '60', 40n, [], 0n).status, 'MISMATCH', 'the curve has no residual bound');
+  assert.equal(feeCheck(100n, null, 40n, [], 4n).status, 'INCOMPLETE');
+  assert.equal(feeCheck(100n, '60', 40n, ['a claim receipt is not proven yet'], 4n).status, 'INCOMPLETE');
+});
+

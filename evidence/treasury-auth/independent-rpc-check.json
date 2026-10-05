@@ -1,0 +1,22 @@
+{
+ "vaultQusdFinalized": [
+  {
+   "ata": "DNoFBxxFH7fRpGZQkxcvaE7sFtZDWsTcQdAw3b5CKdEN",
+   "amount": "6060434",
+   "owner": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB"
+  }
+ ],
+ "executeTx": {
+  "slot": 507858105,
+  "err": null,
+  "signers": [
+   "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ"
+  ],
+  "tokenDeltas": {
+   "6LzTRgrDoXDcdqFPMq3rdvApBrPok1H6LebfZHw6GHmD": "-420030",
+   "DNoFBxxFH7fRpGZQkxcvaE7sFtZDWsTcQdAw3b5CKdEN": "420030",
+   "DuKuQMq5ghfkEWcarU9Vmyh79kdMPCm1YRnsH44LwhbT": "0",
+   "Ff9mBAYH7Ps4nkyYoUs1Q9Zd7jwExprkByQCNkrqTUn2": "0"
+  }
+ }
+}

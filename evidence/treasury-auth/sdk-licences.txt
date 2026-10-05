@@ -1,0 +1,4 @@
+@meteora-ag/dynamic-bonding-curve-sdk@1.5.13 license=MIT
+@meteora-ag/cp-amm-sdk@1.4.10 license=MIT
+@sqds/multisig@2.1.4 license=MIT
+@solana/web3.js@1.99.0 license=MIT

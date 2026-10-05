@@ -1,0 +1,348 @@
+{
+ "label": "TEST_ONLY devnet run, valueless test tokens. Treasury authorization run (Jeremy 2026-10-05 20:40Z).",
+ "cluster": "devnet",
+ "authority": "Jeremy Gephart 2026-10-05T20:40:01Z: build and test the platform treasury on devnet only (test multisig, new config for new coins, legacy label, licence and program checks first, one-operator caveat, no double counting).",
+ "checksFirst": [
+  "2026-10-05T20:49:28Z license:check exit=0 }",
+  "2026-10-05T20:49:29Z deps:chain exit=0",
+  "2026-10-05T20:49:47Z verifier-test exit=0 # pass 55",
+  "2026-10-05T20:49:53Z program-verify exit=0 (live read-only, public mainnet + devnet RPC, single provider)"
+ ],
+ "multisig": {
+  "address": "6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd",
+  "vault": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+  "threshold": 2,
+  "timeLock": 0,
+  "configAuthority": null,
+  "members": [
+   {
+    "key": "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+    "mask": 7,
+    "initiate": true,
+    "vote": true,
+    "execute": true
+   },
+   {
+    "key": "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww",
+    "mask": 7,
+    "initiate": true,
+    "vote": true,
+    "execute": true
+   },
+   {
+    "key": "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ",
+    "mask": 7,
+    "initiate": true,
+    "vote": true,
+    "execute": true
+   }
+  ],
+  "readAt": "2026-10-05T21:01:35.584Z",
+  "signers": "ONE_OPERATOR_TEST_KEYS",
+  "separationOfControl": false
+ },
+ "configs": [
+  {
+   "config": "7Jcu6GtNEqgfvYNTk9XNEWrWq6duuFFdSXjhNE6nU5UE",
+   "feeClaimer": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+   "current": true,
+   "role": "CURRENT",
+   "treasury": true,
+   "label": "Current config: platform fees go to the treasury vault"
+  },
+  {
+   "config": "5EEfERmwCSGaDy7YEnieF13ohbZXzQytAaM3Kg4SKXaC",
+   "feeClaimer": "4eup3PdJfMjbPXA9g6Qy43HPmiC7EMD4PvC74DGVPArX",
+   "current": false,
+   "role": "LEGACY",
+   "treasury": false,
+   "label": "Legacy config: coins launched on it keep it, and their platform fees still go to its fee claimer, unchanged"
+  }
+ ],
+ "coin": {
+  "symbol": "TRSY",
+  "mint": "2d66yf3bjcXp2sLDAmBV7BvDhKgVpSTeEUkJYiMNgMqX",
+  "pool": "Ecqo6oGeg6ByKQo6Yogsa5r6hpxFxmgiMGXtTgQMBjBC",
+  "config": "7Jcu6GtNEqgfvYNTk9XNEWrWq6duuFFdSXjhNE6nU5UE",
+  "launchSig": "47gubQXyXW7L7Qdh3c1ucLTjRxJjW94Pbyx9ePZ2Kk1Y4xUFiT5ySXhgB8czRUqSeE6ixqzNkREPejyHsRr4Nvit",
+  "creator": "5hRMa224wFQ4UdiVqEEAy3DFgo1gzvMQpq7fskBBYtSa"
+ },
+ "accrual": {
+  "trades": [
+   {
+    "wallet": "5hRMa224wFQ4UdiVqEEAy3DFgo1gzvMQpq7fskBBYtSa",
+    "side": "BUY",
+    "sig": "49j3EFwF4Un21Vtm7TA7LKrk7xf3ts6sxhrb36WVaN42STVqzzjoPWHkyPDKgXjdtgBY8ebA9M1Vpw23voj5i7QC",
+    "quoteRaw": "40000000",
+    "fee": {
+     "status": "RESOLVED",
+     "evidence": "SWAP_EVENT",
+     "totalRaw": "400000",
+     "creatorRaw": "160000",
+     "platformRaw": "160000",
+     "protocolRaw": "80000"
+    }
+   },
+   {
+    "wallet": "F77mcrJorEvnpAWd2g25mKqQW6RA6zpPSQFBjw4ENpaQ",
+    "side": "BUY",
+    "sig": "35nKiVCNypEs9fmxssr5d4c9qQ51ncHrHqKVgUkTEfM2CC9Tq1Xqo6u3uVHEeVdMM4JdHWNsnT1HKAE9Gix2saLV",
+    "quoteRaw": "25000000",
+    "fee": {
+     "status": "RESOLVED",
+     "evidence": "SWAP_EVENT",
+     "totalRaw": "250000",
+     "creatorRaw": "100000",
+     "platformRaw": "100000",
+     "protocolRaw": "50000"
+    }
+   },
+   {
+    "wallet": "F77mcrJorEvnpAWd2g25mKqQW6RA6zpPSQFBjw4ENpaQ",
+    "side": "BUY",
+    "sig": "36bCVf5yDon9eUznRnfcwGMZQqJmFAXkcSRKfGfSJaicdaoq2rPd2TetQbDtuQTJwYHCkmVbEA5EX8Zeeg3n83ZS",
+    "quoteRaw": "25000000",
+    "fee": {
+     "status": "RESOLVED",
+     "evidence": "SWAP_EVENT",
+     "totalRaw": "250000",
+     "creatorRaw": "100000",
+     "platformRaw": "100000",
+     "protocolRaw": "50000"
+    }
+   },
+   {
+    "wallet": "13W5KXwToNEUJwuKRKTykYSNRUmuqCWwhZjMjyDGtMUv",
+    "side": "SELL",
+    "sig": "2n42wvjWH4ZxSAowpjPR2K7wsTja4fLT3SjPdGTgDjdQLXH8kv38SUeDYq6ximHZ8JCGUFL2k2sCuEzqzgNqgBhH",
+    "quoteRaw": "4957257",
+    "fee": {
+     "status": "RESOLVED",
+     "evidence": "SWAP_EVENT",
+     "totalRaw": "50074",
+     "creatorRaw": "20030",
+     "platformRaw": "20030",
+     "protocolRaw": "10014"
+    }
+   },
+   {
+    "wallet": "13W5KXwToNEUJwuKRKTykYSNRUmuqCWwhZjMjyDGtMUv",
+    "side": "BUY",
+    "sig": "2AtsuCHaaf7qEhs9fgRHHbkj1WCgsX3oPJvfGpY2NnfQoubHNW7ovFRuqyJmXRDenbCp3xZ1TnsaLnqWmKYqTQJ2",
+    "quoteRaw": "10000000",
+    "fee": {
+     "status": "RESOLVED",
+     "evidence": "SWAP_EVENT",
+     "totalRaw": "100000",
+     "creatorRaw": "40000",
+     "platformRaw": "40000",
+     "protocolRaw": "20000"
+    }
+   }
+  ],
+  "fromTrades": {
+   "mint": "2d66yf3bjcXp2sLDAmBV7BvDhKgVpSTeEUkJYiMNgMqX",
+   "trades": 5,
+   "volumeQuoteRaw": "104957257",
+   "feesRaw": "1050074",
+   "creatorRaw": "420030",
+   "platformRaw": "420030",
+   "lpRaw": "0",
+   "protocolRaw": "210014",
+   "referralRaw": "0",
+   "compoundingRaw": "0",
+   "unknownTrades": 0
+  },
+  "poolCountersBeforeClaim": {
+   "creatorQuoteRaw": "420030",
+   "platformQuoteRaw": "420030"
+  },
+  "checksBeforeClaim": {
+   "creatorCurve": {
+    "fromTradesRaw": "420030",
+    "onChainRaw": "420030",
+    "claimedRaw": "0",
+    "differenceRaw": "0",
+    "status": "MATCH",
+    "reasons": []
+   },
+   "platformCurve": {
+    "fromTradesRaw": "420030",
+    "onChainRaw": "420030",
+    "claimedRaw": "0",
+    "differenceRaw": "0",
+    "status": "MATCH",
+    "reasons": []
+   },
+   "lp": null
+  }
+ },
+ "approvals": {
+  "proposal": "4",
+  "claim": {
+   "transactionIndex": "4",
+   "claim": "CLAIM_PARTNER_TRADING_FEE",
+   "pool": "Ecqo6oGeg6ByKQo6Yogsa5r6hpxFxmgiMGXtTgQMBjBC",
+   "amounts": {
+    "baseRaw": "0",
+    "quoteRaw": "420030"
+   },
+   "paidTo": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB"
+  },
+  "propose": {
+   "member": "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz (member 1, approves on create)",
+   "sig": "4SaPsKNRLMuaUwYqnccb6tdS5xQeBi5tU6xLKzHUuYEXduomU7AuL3MSmbACNQSbrvtpkuvEyE3HVrYcwMYf1GF4"
+  },
+  "approve": {
+   "member": "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww (member 3)",
+   "sig": "CE68nEcq1KnHW8aEHeKUC5PY48K8QcjAKsNPm2Ay5SED1x7o9xqaGeLZMSp3EuxTrodo95Q2CesZykJ9Fxbk8ZH",
+   "stateBefore": "Active"
+  },
+  "execute": {
+   "member": "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ (member 2)",
+   "sig": "7DsBcUn3WfKumKyQmKve7GwXdZrXxBokgdo7ucWCEZn82exv6uophzNZcxxLd5ssH26XYUpiRpXgyJ4zp3U75Fh",
+   "stateBefore": "Approved",
+   "approvedBy": [
+    "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+    "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww"
+   ]
+  }
+ },
+ "refusedLive": {
+  "executeWithOneApproval": "NOT_APPROVED",
+  "proposerApprovesAgain": "ALREADY_APPROVED",
+  "traderProposes": "NOT_A_MEMBER",
+  "operatorProposes": "NOT_A_MEMBER"
+ },
+ "receipt": {
+  "claimsForCoin": [
+   {
+    "sig": "7DsBcUn3WfKumKyQmKve7GwXdZrXxBokgdo7ucWCEZn82exv6uophzNZcxxLd5ssH26XYUpiRpXgyJ4zp3U75Fh",
+    "status": "RESOLVED",
+    "quoteRaw": "420030",
+    "byTreasury": true,
+    "evidence": "TX_VAULT_DELTAS"
+   }
+  ],
+  "independentRpc": {
+   "vaultQusdFinalized": [
+    {
+     "ata": "DNoFBxxFH7fRpGZQkxcvaE7sFtZDWsTcQdAw3b5CKdEN",
+     "amount": "6060434",
+     "owner": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB"
+    }
+   ],
+   "executeTx": {
+    "slot": 507858105,
+    "err": null,
+    "signers": [
+     "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ"
+    ],
+    "tokenDeltas": {
+     "6LzTRgrDoXDcdqFPMq3rdvApBrPok1H6LebfZHw6GHmD": "-420030",
+     "DNoFBxxFH7fRpGZQkxcvaE7sFtZDWsTcQdAw3b5CKdEN": "420030",
+     "DuKuQMq5ghfkEWcarU9Vmyh79kdMPCm1YRnsH44LwhbT": "0",
+     "Ff9mBAYH7Ps4nkyYoUs1Q9Zd7jwExprkByQCNkrqTUn2": "0"
+    }
+   }
+  }
+ },
+ "countedOnce": {
+  "claimedThroughApp": {
+   "before": "13439408",
+   "after": "13859438"
+  },
+  "paidToTreasury": {
+   "before": "5640404",
+   "after": "6060434",
+   "includedIn": "claimedThroughApp"
+  },
+  "vaultCheckBefore": {
+   "status": "MATCH",
+   "vaultQuoteRaw": "5640404",
+   "receiptsRaw": "5640404",
+   "differenceRaw": "0",
+   "reasons": []
+  },
+  "vaultCheckAfter": {
+   "status": "MATCH",
+   "vaultQuoteRaw": "6060434",
+   "receiptsRaw": "6060434",
+   "differenceRaw": "0",
+   "reasons": []
+  },
+  "platformCurveAfter": {
+   "fromTradesRaw": "420030",
+   "onChainRaw": "420030",
+   "claimedRaw": "420030",
+   "differenceRaw": "0",
+   "status": "MATCH",
+   "reasons": []
+  },
+  "poolCountersAfter": {
+   "creatorQuoteRaw": "420030",
+   "platformQuoteRaw": "0"
+  }
+ },
+ "allCoinChecksAfter": {
+  "TRSY": {
+   "config": "CURRENT",
+   "creatorCurve": "MATCH",
+   "platformCurve": "MATCH",
+   "lp": null
+  },
+  "VAULT": {
+   "config": "CURRENT",
+   "creatorCurve": "MATCH",
+   "platformCurve": "MATCH",
+   "lp": {
+    "status": "RESIDUAL",
+    "residualRaw": "2"
+   }
+  },
+  "CASH": {
+   "config": "LEGACY",
+   "creatorCurve": "MATCH",
+   "platformCurve": "MATCH",
+   "lp": {
+    "status": "RESIDUAL",
+    "residualRaw": "1"
+   }
+  },
+  "TIPJAR": {
+   "config": "LEGACY",
+   "creatorCurve": "MATCH",
+   "platformCurve": "MATCH",
+   "lp": null
+  },
+  "PAYDAY": {
+   "config": "LEGACY",
+   "creatorCurve": "MATCH",
+   "platformCurve": "MATCH",
+   "lp": {
+    "status": "MATCH",
+    "residualRaw": null
+   }
+  },
+  "FROG": {
+   "config": "LEGACY",
+   "creatorCurve": "MATCH",
+   "platformCurve": "MATCH",
+   "lp": null
+  },
+  "MCAT": {
+   "config": "LEGACY",
+   "creatorCurve": "MATCH",
+   "platformCurve": "MATCH",
+   "lp": {
+    "status": "RESIDUAL",
+    "residualRaw": "1"
+   }
+  }
+ },
+ "coverageAfter": {
+  "unclaimedComplete": true,
+  "claimsComplete": true,
+  "unresolvedClaims": 0
+ }
+}

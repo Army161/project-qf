@@ -1,0 +1,7 @@
+// read-only: the treasury multisig and both DBC configs as the chain holds them now (finalized)
+import { connectDevnet } from '@project-qf/adapter-meteora-dbc/launchpad';
+import { readTreasury } from '@project-qf/adapter-meteora-dbc/treasury';
+const conn = await connectDevnet('https://api.devnet.solana.com');
+const t = await readTreasury(conn, '6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd');
+console.log(JSON.stringify({ readAt: new Date().toISOString(), commitment: 'finalized', treasury: { ...t, transactionIndex: t.transactionIndex.toString(), staleTransactionIndex: t.staleTransactionIndex.toString(),
+  memberPermissions: t.members.map((m) => ({ key: m.key, mask: m.mask, initiate: !!(m.mask & 1), vote: !!(m.mask & 2), execute: !!(m.mask & 4) })) } }, null, 1));

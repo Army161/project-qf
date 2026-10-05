@@ -344,8 +344,10 @@ ul.checks li.bad { color: var(--sell); } ul.checks li.bad::before { content: "âœ
 
 /* platform treasury (milestone 7) */
 .chip.pay-to { margin-left: 8px; vertical-align: 1px; font-size: 10px; padding: 2px 7px; }
-.card.treasury .tr-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.card.treasury .tr-head h3 { margin: 0; }
+.chip.legacy { background: var(--surface2); color: var(--dim); border: 1px solid var(--line); }
+.card.treasury .tr-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 12px; }
+.card.treasury .tr-head h3 { margin: 0 auto 0 0; }
+.card.treasury .kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .card.treasury .kpis > div { background: transparent; }
 
 /* trading fees (fee ledger) */
@@ -354,3 +356,4 @@ ul.checks li.bad { color: var(--sell); } ul.checks li.bad::before { content: "âœ
 .fee-lookup .btn { height: 44px; }
 .check-ok { color: var(--buy, #b6f35c); font-weight: 600; }
 .check-bad { color: var(--sell, #ff8a3d); font-weight: 600; }
+.check-residual { color: var(--devnet); font-weight: 600; }
