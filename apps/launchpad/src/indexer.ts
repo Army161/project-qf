@@ -19,31 +19,61 @@ export function tradeFromSummary(launch: Pick<LaunchRow, 'mint'>, pool: Pick<Liv
 
 export interface IndexerDeps { store: LaunchpadStore; chain: LaunchpadChain; poolCache: PoolCache; dammCache?: DammCache; log?: (m: string) => void; now?: () => Date }
 
-/** Passes in which a signature's transaction details were not available yet (an RPC can list a signature before it
- *  serves the transaction). Bounded so one transaction the RPC never returns cannot stall a coin's history forever. */
-const missingSummary = new Map<string, number>();
-export const MAX_SUMMARY_RETRIES = 5;
+/** Retry schedule for transactions the RPC listed but did not serve. The first `fastAttempts` lookups happen on
+ *  consecutive passes (an RPC usually serves a new transaction within seconds); after that the delay doubles up to
+ *  `maxDelayMs`. After `maxAttempts` the transaction is marked UNAVAILABLE: still counted as missing history and still
+ *  retried, every `unavailableRetryMs`. Nothing is ever dropped silently. */
+export const BACKFILL = Object.freeze({ fastAttempts: 5, baseDelayMs: 15_000, maxDelayMs: 3_600_000, maxAttempts: 20, unavailableRetryMs: 6 * 3_600_000, perPass: 10 });
+type Venue = 'CURVE' | 'DAMM_V2';
+const nowOf = (d: IndexerDeps) => (d.now ?? (() => new Date()))();
 
-/** Records trades for signatures in order. The cursor only moves past a signature once it has been read (or has
- *  failed on chain), so a transaction whose details are not served yet is retried on the next pass, not skipped. */
-async function walk(d: IndexerDeps, launch: LaunchRow, pool: Pick<LivePool, 'baseVault' | 'quoteVault'>,
+function recordTrade(d: IndexerDeps, launch: LaunchRow, pool: Pick<LivePool, 'baseVault' | 'quoteVault'>, sum: TxSummary): { outcome: 'TRADE' | 'NOT_A_TRADE' | 'FAILED_TX'; inserted: boolean } {
+  if (sum.err) return { outcome: 'FAILED_TX', inserted: false };
+  const t = tradeFromSummary(launch, pool, sum, 'indexer');
+  return t ? { outcome: 'TRADE', inserted: d.store.insertTrade(t) } : { outcome: 'NOT_A_TRADE', inserted: false };
+}
+
+/** Records trades for new signatures in order and moves the cursor past each one. A signature whose details the RPC
+ *  does not serve yet goes into the durable backfill queue, so newer trades keep indexing and nothing is lost. */
+async function walk(d: IndexerDeps, launch: LaunchRow, venue: Venue, pool: Pick<LivePool, 'baseVault' | 'quoteVault'>,
   sigs: { signature: string; err: boolean }[], setCursor: (sig: string) => void): Promise<number> {
   let trades = 0;
   for (const s of sigs) {
     if (!s.err) {
       const sum = await d.chain.txSummary(s.signature);
-      if (!sum) {
-        const n = (missingSummary.get(s.signature) ?? 0) + 1;
-        if (n < MAX_SUMMARY_RETRIES) { missingSummary.set(s.signature, n); break; }
-        missingSummary.delete(s.signature);
-        d.log?.(`index ${launch.symbol}: no transaction details for ${s.signature} after ${n} passes; moving on`);
-      } else {
-        missingSummary.delete(s.signature);
-        const t = tradeFromSummary(launch, pool, sum, 'indexer');
-        if (t && d.store.insertTrade(t)) trades++;
-      }
+      if (!sum) d.store.queueBackfill({ sig: s.signature, venue, mint: launch.mint, at: nowOf(d).toISOString() });
+      else if (recordTrade(d, launch, pool, sum).inserted) trades++;
     }
     setCursor(s.signature);
+  }
+  return trades;
+}
+
+/** Retries this coin's queued transactions that are due. Returns the trades recovered. */
+async function retryBackfill(d: IndexerDeps, launch: LaunchRow, venue: Venue): Promise<number> {
+  const now = nowOf(d);
+  const due = d.store.dueBackfill(launch.mint, venue, now.toISOString(), BACKFILL.perPass);
+  if (!due.length) return 0;
+  const pool = venue === 'CURVE' ? await d.poolCache.get(launch.pool) : d.dammCache ? await d.dammCache.get(launch) : null;
+  if (!pool) return 0; // without the pool's vaults a transaction cannot be classified; try again next pass
+  let trades = 0;
+  for (const b of due) {
+    const sum = await d.chain.txSummary(b.sig);
+    if (sum) {
+      const r = recordTrade(d, launch, pool, sum);
+      d.store.resolveBackfill(b.sig, venue, r.outcome, now.toISOString());
+      if (r.inserted) trades++;
+      if (b.attempts >= BACKFILL.fastAttempts) d.log?.(`index ${launch.symbol}: recovered ${b.sig} after ${b.attempts} attempts (${r.outcome})`);
+      continue;
+    }
+    const attempts = b.attempts + 1;
+    const unavailable = attempts >= BACKFILL.maxAttempts;
+    const delay = unavailable ? BACKFILL.unavailableRetryMs
+      : attempts < BACKFILL.fastAttempts ? 0 : Math.min(BACKFILL.baseDelayMs * 2 ** (attempts - BACKFILL.fastAttempts), BACKFILL.maxDelayMs);
+    d.store.backfillMissed(b.sig, venue, { status: unavailable ? 'UNAVAILABLE' : 'PENDING', attempts, at: now.toISOString(), nextTry: new Date(now.getTime() + delay).toISOString() });
+    if (unavailable && b.status !== 'UNAVAILABLE') {
+      d.log?.(`index ${launch.symbol}: transaction ${b.sig} still not served after ${attempts} attempts; marked unavailable (trade history shows it as missing; retried every ${BACKFILL.unavailableRetryMs / 3_600_000} h)`);
+    }
   }
   return trades;
 }
@@ -52,12 +82,14 @@ async function walk(d: IndexerDeps, launch: LaunchRow, pool: Pick<LivePool, 'bas
 export async function syncLaunch(d: IndexerDeps, launch: LaunchRow): Promise<{ trades: number }> {
   const pool = await d.poolCache.get(launch.pool, true);
   if (!pool) return { trades: 0 };
+  // queued transactions first, so one queued in this pass waits for the next
+  const recovered = await retryBackfill(d, launch, 'CURVE');
   const sigs = await d.chain.newSignatures(launch.pool, launch.lastIndexedSig);
-  const trades = await walk(d, launch, pool, sigs, (sig) => d.store.setLastIndexed(launch.mint, sig));
+  const trades = await walk(d, launch, 'CURVE', pool, sigs, (sig) => d.store.setLastIndexed(launch.mint, sig));
   if (pool.isMigrated && launch.status !== 'MIGRATED') {
-    d.store.markLaunchMigrated(launch.mint, null, await d.chain.dammPoolFor(launch.mint, launch.quoteMint), (d.now ?? (() => new Date()))().toISOString());
+    d.store.markLaunchMigrated(launch.mint, null, await d.chain.dammPoolFor(launch.mint, launch.quoteMint), nowOf(d).toISOString());
   }
-  return { trades };
+  return { trades: recovered + trades };
 }
 
 /** After graduation: pulls new DAMM v2 pool signatures and records trades from that pool's vault deltas. */
@@ -65,9 +97,15 @@ export async function syncDamm(d: IndexerDeps, launch: LaunchRow): Promise<{ tra
   if (!launch.dammPool || !d.dammCache) return { trades: 0 };
   const pool = await d.dammCache.get(launch, true);
   if (!pool) return { trades: 0 };
+  const recovered = await retryBackfill(d, launch, 'DAMM_V2');
   const sigs = await d.chain.newSignatures(launch.dammPool, launch.lastDammIndexedSig);
-  const trades = await walk(d, launch, pool, sigs, (sig) => d.store.setLastDammIndexed(launch.mint, sig));
-  return { trades };
+  const trades = await walk(d, launch, 'DAMM_V2', pool, sigs, (sig) => d.store.setLastDammIndexed(launch.mint, sig));
+  return { trades: recovered + trades };
+}
+
+/** A graduated coin's finished curve gets no new trades, but transactions queued before graduation are still retried. */
+export async function backfillCurve(d: IndexerDeps, launch: LaunchRow): Promise<{ trades: number }> {
+  return { trades: await retryBackfill(d, launch, 'CURVE') };
 }
 
 /** Migrates every LIVE launch whose curve is complete. Returns the migrations it sent. */
@@ -81,7 +119,7 @@ export async function crankMigrations(d: IndexerDeps): Promise<{ mint: string; s
     try {
       d.log?.(`migrating ${launch.symbol} (${launch.mint}) to DAMM v2`);
       const signature = await d.chain.migrate(launch.pool);
-      d.store.markLaunchMigrated(launch.mint, signature, await d.chain.dammPoolFor(launch.mint, launch.quoteMint), (d.now ?? (() => new Date()))().toISOString());
+      d.store.markLaunchMigrated(launch.mint, signature, await d.chain.dammPoolFor(launch.mint, launch.quoteMint), nowOf(d).toISOString());
       d.poolCache.invalidate(launch.pool);
       out.push({ mint: launch.mint, signature });
     } catch (e) {
@@ -131,7 +169,7 @@ export function startBackground(d: IndexerDeps, intervalMs = 15_000): () => void
     try {
       for (const l of d.store.listLaunches(['LIVE', 'MIGRATED'])) {
         if (l.status === 'MIGRATED' && l.dammPool) await syncDamm(d, l).catch((e) => d.log?.(`index damm ${l.mint}: ${(e as Error).message.slice(0, 200)}`));
-        if (l.status === 'MIGRATED' && l.lastIndexedSig) continue;
+        if (l.status === 'MIGRATED' && l.lastIndexedSig) { await backfillCurve(d, l).catch((e) => d.log?.(`backfill ${l.mint}: ${(e as Error).message.slice(0, 200)}`)); continue; }
         await syncLaunch(d, l).catch((e) => d.log?.(`index ${l.mint}: ${(e as Error).message.slice(0, 200)}`));
       }
       await crankMigrations(d);

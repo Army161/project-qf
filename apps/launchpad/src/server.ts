@@ -17,8 +17,8 @@ import {
 import type { LaunchpadChain, LiveDammPool, LivePool } from './chain.ts';
 import { PoolCache, syncLaunch, tradeFromSummary, DammCache } from './indexer.ts';
 import type { PlatformRecord } from './platform.ts';
+import { claimIdentity, claimReceipt, resolveClaims } from './receipts.ts';
 import type { ClaimRow, LaunchRow, LaunchpadStore } from './store.ts';
-import type { TxSummary } from './chain.ts';
 
 export const LP_API_VERSION = 'lp-api/1';
 export const BODY_LIMIT_BYTES = 16 * 1024;
@@ -140,6 +140,9 @@ export interface TokenView {
     /** where the price comes from and where a trade goes: the bonding curve, or the DAMM v2 pool after graduation */
     venue: 'CURVE' | 'DAMM_V2' };
   stats: { count: number; volumeQuoteRaw: string; traders: number };
+  /** whether the trade list holds every transaction the pool's signature list showed: `pending` are still being read,
+   *  `unavailable` could not be read after repeated tries (both are retried; neither is counted as complete) */
+  history: { complete: boolean; pending: number; unavailable: number };
 }
 const liveView = (p: LivePool | null, migrated: boolean, damm: LiveDammPool | null): TokenView['live'] => p && {
   priceQuotePerBase: migrated ? damm?.priceQuotePerBase ?? null : p.priceQuotePerBase,
@@ -152,12 +155,9 @@ const liveView = (p: LivePool | null, migrated: boolean, damm: LiveDammPool | nu
   venue: migrated ? 'DAMM_V2' : 'CURVE',
 };
 
-/** What a confirmed claim paid out: the amounts that left the pool's vaults in that transaction. */
-export function claimPayout(sum: TxSummary, vaults: { quote: string[]; base: string[] }): { quoteRaw: string; baseRaw: string } {
-  const out = (vs: string[]) => vs.reduce((a, v) => { const d = sum.tokenDeltas[v] ?? 0n; return d < 0n ? a - d : a; }, 0n).toString();
-  return { quoteRaw: out(vaults.quote), baseRaw: out(vaults.base) };
-}
 export const EARNINGS_TTL_MS = 30_000;
+/** Unresolved claim receipts checked against their transactions per uncached earnings request (the RPC is shared). */
+export const RECEIPT_CHECKS_PER_REQUEST = 5;
 type Unclaimed = { creatorQuoteRaw: string | null; platformQuoteRaw: string | null };
 interface EarningsCoin { mint: string; symbol: string; name: string; status: LaunchRow['status']; creator: string;
   curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null }
@@ -185,6 +185,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
     createdAt: l.createdAt, liveAt: l.liveAt, website: l.website, twitter: l.twitter, telegram: l.telegram, metadataUri: l.metadataUri,
     createSig: l.createSig, migrationSig: l.migrationSig, dammPool: l.dammPool,
     live: liveView(await pools.get(l.pool, fresh).catch(() => null), l.status === 'MIGRATED', l.status === 'MIGRATED' ? await damms.get(l, fresh).catch(() => null) : null), stats: o.store.tradeStats(l.mint),
+    history: (({ pending, unavailable }) => ({ complete: pending === 0 && unavailable === 0, pending, unavailable }))(o.store.backfillCounts(l.mint)),
   });
   const intentCheck = (i: Omit<TxIntent, 'intentId' | 'createdAt' | 'expiresAt' | 'cluster' | 'mock'>, approvedEconomicsDigest?: string) => {
     const t = now();
@@ -376,10 +377,12 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       if ((intent.kind === 'CLAIM_CREATOR_TRADING_FEE' || intent.kind === 'DAMM_CLAIM_POSITION_FEE') && l) {
         const curve = intent.kind === 'CLAIM_CREATOR_TRADING_FEE';
         if (curve) pools.invalidate(l.pool); else if (l.dammPool) damms.invalidate(l.dammPool);
-        const v = curve ? await pools.get(l.pool, true).catch(() => null) : await damms.get(l, true).catch(() => null);
-        const sum = v && await o.chain.txSummary(signature).catch(() => null);
-        const paid = sum && v ? claimPayout(sum, { quote: [v.quoteVault], base: [v.baseVault] }) : null;
-        o.store.insertClaim({ sig: signature, mint: l.mint, venue: curve ? 'CURVE' : 'DAMM_V2', claimer: intent.user, quoteRaw: paid?.quoteRaw ?? null, baseRaw: paid?.baseRaw ?? null, at: now().toISOString() });
+        // The receipt keeps the pool and vaults this transaction was bound to; its amount comes only from this
+        // transaction's own balance changes on those vaults, now or on a later earnings request.
+        const id = await claimIdentity(terms, l);
+        o.store.insertClaim({ sig: signature, mint: l.mint, venue: curve ? 'CURVE' : 'DAMM_V2', claimer: intent.user, at: now().toISOString(), ...(id ?? {}) });
+        if (id) o.store.setClaimEvidence(signature, claimReceipt(id, await o.chain.txSummary(signature).catch(() => null)));
+        else o.log?.(`claim ${signature}: its terms do not match ${l.symbol}'s ${curve ? 'curve' : 'DAMM v2'} pool; receipt left unknown`);
         earnings = null;
       }
       return send(res, 200, { signature, kind: intent.kind, mint: intent.mint, trade });
@@ -450,38 +453,35 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       if (earnings && now().getTime() - earnings.at < EARNINGS_TTL_MS && query.get('fresh') !== '1') return send(res, 200, earnings.body);
       const platformWallet = p.config.feeClaimer;
       const launches = o.store.listLaunches(['LIVE', 'MIGRATED']);
-      const vaults = { quote: [] as string[], base: [] as string[] };
       const sumQuote = (ps: { feeQuoteRaw: string }[] | null) => (ps === null ? null : ps.reduce((a, x) => a + BigInt(x.feeQuoteRaw), 0n).toString());
       const coins: EarningsCoin[] = [];
       for (const l of launches) {
         const pool = await pools.get(l.pool).catch(() => null);
         const dp = l.status === 'MIGRATED' ? await damms.get(l).catch(() => null) : null;
-        if (pool) vaults.quote.push(pool.quoteVault), vaults.base.push(pool.baseVault);
-        if (dp) vaults.quote.push(dp.quoteVault), vaults.base.push(dp.baseVault);
         const positions = async (owner: string) => (dp ? await o.chain.dammPositions(dp, owner).catch(() => null) : null);
         coins.push({ mint: l.mint, symbol: l.symbol, name: l.name, status: l.status, creator: l.creator,
           curve: pool ? { creatorQuoteRaw: pool.creatorQuoteFee, platformQuoteRaw: pool.partnerQuoteFee } : null,
           lp: l.status !== 'MIGRATED' ? null : dp ? { creatorQuoteRaw: sumQuote(await positions(l.creator)), platformQuoteRaw: sumQuote(await positions(platformWallet)) } : 'UNAVAILABLE' });
       }
-      // receipts: fill in amounts for claims recorded before amounts were kept (a few per request; the RPC is shared)
-      let budget = 5;
-      for (const c of o.store.listClaims()) {
-        if (c.quoteRaw !== null || budget-- <= 0) continue;
-        const sum = await o.chain.txSummary(c.sig).catch(() => null);
-        if (sum) { const paid = claimPayout(sum, vaults); o.store.setClaimAmounts(c.sig, paid.quoteRaw, paid.baseRaw); }
-      }
+      // receipts still waiting for evidence: each is checked against its own transaction and vaults (a few per request)
+      await resolveClaims(o, RECEIPT_CHECKS_PER_REQUEST);
       const claims: (ClaimRow & { symbol: string; byCreator: boolean })[] = o.store.listClaims().map((c) => {
-        const l = launches.find((x) => x.mint === c.mint);
+        const l = launches.find((x) => x.mint === c.mint) ?? o.store.getLaunch(c.mint);
         return { ...c, symbol: l?.symbol ?? '?', byCreator: l?.creator === c.claimer };
       });
+      const unresolvedClaims = claims.filter((c) => c.status === 'UNKNOWN').length;
       const add = (pick: (c: EarningsCoin) => string | null | undefined) => coins.reduce((a, c) => a + BigInt(pick(c) ?? '0'), 0n).toString();
       const lpOf = (c: EarningsCoin) => (c.lp && c.lp !== 'UNAVAILABLE' ? c.lp : null);
+      // two separate questions: were all pools and positions read (unclaimed), and is every receipt proven (claims)
+      const unclaimedComplete = !coins.some((c) => !c.curve || c.lp === 'UNAVAILABLE' || (lpOf(c) && (lpOf(c)!.creatorQuoteRaw === null || lpOf(c)!.platformQuoteRaw === null)));
       const body = { cluster: 'devnet', label: 'TEST_ONLY devnet tokens with no value', quote: p.quote, platformWallet, asOf: now().toISOString(),
         totals: {
           unclaimed: { creatorCurve: add((c) => c.curve?.creatorQuoteRaw), platformCurve: add((c) => c.curve?.platformQuoteRaw),
             creatorLp: add((c) => lpOf(c)?.creatorQuoteRaw), platformLp: add((c) => lpOf(c)?.platformQuoteRaw) },
-          claimedThroughApp: claims.reduce((a, c) => a + BigInt(c.quoteRaw ?? '0'), 0n).toString(),
-          incomplete: coins.some((c) => !c.curve || c.lp === 'UNAVAILABLE' || (lpOf(c) && (lpOf(c)!.creatorQuoteRaw === null || lpOf(c)!.platformQuoteRaw === null))) },
+          // only receipts proven from their transaction count; unresolved ones are reported in coverage, not added as 0
+          claimedThroughApp: claims.reduce((a, c) => a + (c.status === 'UNKNOWN' ? 0n : BigInt(c.quoteRaw!)), 0n).toString(),
+          coverage: { unclaimedComplete, claimsComplete: unresolvedClaims === 0, unresolvedClaims },
+          incomplete: !unclaimedComplete || unresolvedClaims > 0 },
         coins, claims };
       earnings = { at: now().getTime(), body };
       return send(res, 200, body);

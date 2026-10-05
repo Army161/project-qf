@@ -460,10 +460,26 @@ export async function getTxSummary(conn: Connection, signature: string): Promise
     logMessages: t.meta.logMessages ?? [] };
 }
 
-/** Signatures touching `address`, oldest first, stopping at `until` (exclusive). */
-export async function getNewSignatures(conn: Connection, address: string, until: string | null, limit = 100): Promise<{ signature: string; slot: number; err: boolean }[]> {
-  const list = await conn.getSignaturesForAddress(new PublicKey(address), { limit, ...(until ? { until } : {}) }, 'confirmed');
-  return list.map((s) => ({ signature: s.signature, slot: s.slot, err: s.err !== null })).reverse();
+/** Signatures touching `address` since `until` (exclusive), oldest first. The RPC returns at most one page, newest
+ *  first, so a single call would drop everything older than the newest `pageSize` when more than a page arrived since
+ *  the last pass. This pages back with `before` until it reaches `until`. Bounded by `maxPages`: past that, the older
+ *  part of the window is not returned and `onTruncated` is told (the caller logs it; nothing is skipped silently). */
+export async function getNewSignatures(conn: Connection, address: string, until: string | null,
+  o: { pageSize?: number; maxPages?: number; onTruncated?: (m: string) => void } = {}): Promise<{ signature: string; slot: number; err: boolean }[]> {
+  const pageSize = o.pageSize ?? 100, maxPages = o.maxPages ?? 50;
+  const out: { signature: string; slot: number; err: boolean }[] = [];
+  let before: string | undefined;
+  for (let page = 0; ; page++) {
+    const list = await conn.getSignaturesForAddress(new PublicKey(address), { limit: pageSize, ...(until ? { until } : {}), ...(before ? { before } : {}) }, 'confirmed');
+    out.push(...list.map((s) => ({ signature: s.signature, slot: s.slot, err: s.err !== null })));
+    if (list.length < pageSize) break;
+    if (page + 1 >= maxPages) {
+      o.onTruncated?.(`signature list for ${address} stopped at ${maxPages * pageSize} transactions${until ? ` since ${until}` : ''}; transactions older than ${list.at(-1)!.signature} in that window are not indexed`);
+      break;
+    }
+    before = list.at(-1)!.signature;
+  }
+  return out.reverse();
 }
 
 export async function getWalletBalances(conn: Connection, owner: string, mints: string[]): Promise<{ lamports: string; tokens: Record<string, string> }> {

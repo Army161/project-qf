@@ -333,3 +333,11 @@ ul.checks li.bad { color: var(--sell); } ul.checks li.bad::before { content: "âœ
 .earn-head p { margin: 0; }
 .earnings .kpis > div { display: flex; flex-direction: column; gap: 2px; }
 .earnings .notes { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; color: var(--dim); }
+.earn-head .asof { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.btn.sm { height: 34px; padding: 0 12px; font-size: 14px; border-radius: 10px; }
+.scroll-hint { display: none; margin: 0 0 8px; }
+.earnings td .reason { display: block; font-size: 12px; white-space: normal; min-width: 160px; max-width: 240px; margin-left: auto; }
+.hist-note { margin: 0 0 12px; }
+@media (max-width: 720px) { .scroll-hint { display: block; } }
+.cov-notes { display: flex; flex-direction: column; gap: 6px; }
+.cov-notes p { margin: 0; }

@@ -17,7 +17,9 @@ interface Live { priceQuotePerBase: string | null; marketCapQuoteRaw: string | n
   curveComplete: boolean; isMigrated: boolean; baseDecimals: number; quoteDecimals: number; totalSupplyRaw: string; creatorQuoteFee: string; venue?: 'CURVE' | 'DAMM_V2' }
 interface Token { mint: string; pool: string; name: string; symbol: string; description: string; imageUrl: string | null; creator: string; status: string;
   createdAt: string; liveAt: string | null; website: string | null; twitter: string | null; telegram: string | null; createSig: string | null;
-  migrationSig: string | null; dammPool: string | null; live: Live | null; stats: { count: number; volumeQuoteRaw: string; traders: number } }
+  migrationSig: string | null; dammPool: string | null; live: Live | null; stats: { count: number; volumeQuoteRaw: string; traders: number };
+  /** transactions the indexer has listed but not read yet (pending) or could not read after many tries (unavailable) */
+  history?: { complete: boolean; pending: number; unavailable: number } }
 interface Fees { isCreator: boolean; curve: { quoteRaw: string; baseRaw: string } | null;
   positions: { position: string; nftMint: string; feeBaseRaw: string; feeQuoteRaw: string; permanentlyLocked: boolean }[] }
 interface Trade { sig: string; trader: string; side: 'BUY' | 'SELL'; quoteRaw: string; baseRaw: string; slot: number; blockTime: number | null }
@@ -618,7 +620,7 @@ async function renderToken(mint: string) {
           progressBar(l.progressBps, l.curveComplete || l.isMigrated, true),
           h('p', { class: 'dim small' }, graduated ? `Graduated to Meteora DAMM v2.${lockedText(l) ? ` ${lockedText(l)} of the pool's liquidity is permanently locked (read from the pool account). Locked liquidity cannot be withdrawn; it does not fix the price.` : ''}`
             : `${units(l.quoteReserve, q.decimals, 0)} of ${units(l.migrationQuoteThreshold, q.decimals, 0)} ${q.symbol} raised. At ${units(l.migrationQuoteThreshold, q.decimals, 0)} the coin moves to a Meteora DAMM v2 pool and its liquidity is locked forever.${toGo > 0n ? ` About ${units(toGo, q.decimals, 0)} ${q.symbol} of buying to go.` : ''}`)) : null,
-        h('div', { class: 'card' }, h('h3', {}, 'Trades'), trades.length ? h('div', { class: 'scroll' }, h('table', { class: 'trades' },
+        h('div', { class: 'card' }, h('h3', {}, 'Trades'), historyNote(t), trades.length ? h('div', { class: 'scroll' }, h('table', { class: 'trades' },
           h('thead', {}, h('tr', {}, ...[['Side', ''], ['Trader', ''], [q.symbol, 'num'], [`$${t.symbol}`, 'num'], ['When', ''], ['Tx', '']].map(([c, cls]) => h('th', { class: cls }, c)))), h('tbody', {}, ...tradeRows))) : h('p', { class: 'dim', style: { margin: '0' } }, 'No trades yet. Be the first.'))),
       h('aside', {}, panel, feesCard,
         h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'About'), t.description ? h('p', {}, t.description) : null,
@@ -629,7 +631,8 @@ async function renderToken(mint: string) {
             ...(t.migrationSig ? [h('dt', {}, 'Graduation tx'), h('dd', { class: 'num' }, ext(explorer('tx', t.migrationSig), short(t.migrationSig, 4)))] : []),
             h('dt', {}, 'Launch tx'), h('dd', { class: 'num' }, t.createSig ? ext(explorer('tx', t.createSig), short(t.createSig, 4)) : '—'),
             ...(lockedText(l) ? [h('dt', {}, 'Liquidity locked'), h('dd', { class: 'num', title: 'permanentLockLiquidity / liquidity, read from the DAMM v2 pool account' }, lockedText(l)!)] : []),
-            h('dt', {}, 'Creator curve fees, unclaimed'), h('dd', { class: 'num' }, l ? `${units(l.creatorQuoteFee, q.decimals, 2)} ${q.symbol}` : '—'))))),
+            h('dt', {}, 'Creator curve fees, unclaimed'), h('dd', { class: 'num' }, l ? `${units(l.creatorQuoteFee, q.decimals, 2)} ${q.symbol}` : '—'),
+            ...(t.history ? [h('dt', {}, 'Trade history'), h('dd', {}, historyText(t.history))] : []))))),
     ...(mobileBar ? [mobileBar] : []));
   clearInterval(tokenTimer);
   // Keep the page honest without a reload: index new trades, and when the coin changes phase (curve full -> graduated,
@@ -644,20 +647,47 @@ async function renderToken(mint: string) {
   }, l?.curveComplete && !graduated ? 6_000 : 20_000);
 }
 
+function historyText(x: NonNullable<Token['history']>): string {
+  if (x.complete) return 'Complete';
+  return [x.pending ? `${x.pending} ${x.pending === 1 ? 'transaction' : 'transactions'} still being read` : '',
+    x.unavailable ? `${x.unavailable} could not be read` : ''].filter(Boolean).join(', ');
+}
+/** Said above the trade list when the indexer has transactions it has not been able to read yet. */
+function historyNote(t: Token): HTMLElement | null {
+  const x = t.history;
+  if (!x || x.complete) return null;
+  return h('p', { class: 'dim small hist-note' }, x.unavailable
+    ? `${historyText(x)}. The RPC has not returned ${x.unavailable === 1 ? 'that transaction' : 'those transactions'} after many tries, so trades, volume and the chart may be missing some. They are still retried every few hours.`
+    : `${historyText(x)}. Trades, volume and the chart may be missing ${x.pending === 1 ? 'it' : 'them'} for now; this fills in by itself.`);
+}
+
 // ------------------------------------------------------------------ earnings (read-only)
 interface Unclaimed { creatorQuoteRaw: string | null; platformQuoteRaw: string | null }
 interface Earnings {
   label: string; platformWallet: string; asOf: string;
-  totals: { unclaimed: { creatorCurve: string; platformCurve: string; creatorLp: string; platformLp: string }; claimedThroughApp: string; incomplete: boolean };
+  totals: { unclaimed: { creatorCurve: string; platformCurve: string; creatorLp: string; platformLp: string }; claimedThroughApp: string; incomplete: boolean;
+    coverage: { unclaimedComplete: boolean; claimsComplete: boolean; unresolvedClaims: number } };
   coins: { mint: string; symbol: string; name: string; status: string; creator: string; curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null }[];
-  claims: { sig: string; mint: string; symbol: string; venue: 'CURVE' | 'DAMM_V2'; claimer: string; byCreator: boolean; quoteRaw: string | null; at: string }[];
+  claims: { sig: string; mint: string; symbol: string; venue: 'CURVE' | 'DAMM_V2'; claimer: string; byCreator: boolean; quoteRaw: string | null; at: string;
+    status: 'UNKNOWN' | 'RESOLVED' | 'FAILED_TX'; evidence: string | null }[];
 }
-async function renderEarnings() {
+/** Why a receipt's amount is not known yet, in words. */
+const EVIDENCE: Record<string, string> = {
+  NO_TX_DETAILS: 'the RPC has not returned its transaction yet',
+  VAULT_NOT_IN_TX: "its transaction does not touch this claim's pool vaults",
+  NO_BALANCE_OBSERVATION: 'no balance reading for the pool vaults in its transaction',
+  VAULT_INFLOW: 'the pool vaults received funds, which a claim never does',
+  NO_VAULT_IDENTITY: 'no record of which pool this claim was bound to',
+  RECHECK_LEGACY: 'recorded before receipts were checked; being re-checked',
+};
+async function renderEarnings(fresh = false) {
   const main = $('#view');
   const q = Q();
-  main.replaceChildren(h('div', { class: 'empty' }, 'Loading…'));
+  if (!fresh) main.replaceChildren(h('div', { class: 'empty' }, 'Loading…'));
   let e: Earnings;
-  try { e = await api<Earnings>('/api/lp/earnings'); } catch (err) { main.replaceChildren(h('div', { class: 'empty err' }, `Earnings unavailable (${(err as Error).message}).`)); return; }
+  try { e = await api<Earnings>(`/api/lp/earnings${fresh ? '?fresh=1' : ''}`); }
+  catch (err) { if (!fresh) main.replaceChildren(h('div', { class: 'empty err' }, `Earnings unavailable (${(err as Error).message}).`)); else toast(`Refresh failed: ${(err as Error).message}`, 'err'); return; }
+  if (location.hash !== '#/earnings') return;
   const amt = (raw: string | null | undefined) => (raw == null ? '—' : `${units(raw, q.decimals, 2)} ${q.symbol}`);
   const u = e.totals.unclaimed;
   const plat = BigInt(u.platformCurve) + BigInt(u.platformLp), crea = BigInt(u.creatorCurve) + BigInt(u.creatorLp);
@@ -668,29 +698,39 @@ async function renderEarnings() {
     h('td', {}, h('a', { href: `#/t/${c.mint}` }, `$${c.symbol}`), h('span', { class: 'dim small' }, c.status === 'MIGRATED' ? ' graduated' : ' bonding')),
     h('td', { class: 'num' }, amt(c.curve?.creatorQuoteRaw)), lpCell(c, 'creatorQuoteRaw'),
     h('td', { class: 'num' }, amt(c.curve?.platformQuoteRaw)), lpCell(c, 'platformQuoteRaw')));
+  const paid = (c: Earnings['claims'][number]) => c.status === 'RESOLVED' ? h('td', { class: 'num' }, amt(c.quoteRaw))
+    : c.status === 'FAILED_TX' ? h('td', { class: 'num dim' }, 'failed, nothing paid')
+    : h('td', { class: 'num' }, h('span', {}, 'unknown'), h('span', { class: 'dim small reason' }, EVIDENCE[c.evidence ?? ''] ?? 'not checked yet'));
   const claimRows = e.claims.map((c) => h('tr', {},
     h('td', {}, h('a', { href: `#/t/${c.mint}` }, `$${c.symbol}`)), h('td', {}, c.venue === 'CURVE' ? 'Curve fees' : 'LP position fees'),
-    h('td', {}, c.byCreator ? 'Creator' : short(c.claimer)), h('td', { class: 'num' }, amt(c.quoteRaw)),
+    h('td', {}, c.byCreator ? 'Creator' : short(c.claimer)), paid(c),
     h('td', { class: 'dim' }, ago(Math.floor(Date.parse(c.at) / 1000))), h('td', { class: 'mono' }, ext(explorer('tx', c.sig), short(c.sig, 4)))));
   const table = (head: [string, string][], body: HTMLElement[], empty: string) => body.length
-    ? h('div', { class: 'scroll' }, h('table', { class: 'trades' }, h('thead', {}, h('tr', {}, ...head.map(([c, cls]) => h('th', { class: cls }, c)))), h('tbody', {}, ...body)))
+    ? h('div', {}, h('p', { class: 'scroll-hint dim small' }, 'Swipe the table sideways to see every column.'),
+      h('div', { class: 'scroll' }, h('table', { class: 'trades' }, h('thead', {}, h('tr', {}, ...head.map(([c, cls]) => h('th', { class: cls }, c)))), h('tbody', {}, ...body))))
     : h('p', { class: 'dim', style: { margin: '0' } }, empty);
+  const cov = e.totals.coverage, n = cov.unresolvedClaims;
+  const refresh = h('button', { class: 'btn ghost sm', onclick: async () => { refresh.setAttribute('disabled', ''); await renderEarnings(true); } }, 'Refresh');
   main.replaceChildren(h('section', { class: 'earnings' },
-    h('div', { class: 'earn-head' }, h('h1', {}, 'Earnings'), h('p', { class: 'dim' }, `Fees earned on every coin, read from the pools on devnet. ${e.label}. Read-only: nothing on this page can move funds.`)),
+    h('div', { class: 'earn-head' }, h('h1', {}, 'Earnings'), h('p', { class: 'dim' }, `Fees earned on every coin, read from the pools on devnet. ${e.label}. Read-only: nothing on this page can move funds.`),
+      h('div', { class: 'asof' }, h('span', { class: 'dim small' }, `Read from the pools at ${new Date(e.asOf).toLocaleTimeString()} (${ago(e.asOf)}). Figures are kept for up to 30 seconds.`), refresh)),
     h('div', { class: 'kpis' },
       kpi('Platform, unclaimed', amt(plat.toString()), 'curve fees + locked LP fees'),
       kpi('Creators, unclaimed', amt(crea.toString()), 'curve fees + locked LP fees'),
-      kpi('Claimed in the app', amt(e.totals.claimedThroughApp), `${e.claims.length} ${e.claims.length === 1 ? 'claim' : 'claims'}`),
+      kpi('Claimed in the app', amt(e.totals.claimedThroughApp), n ? `${e.claims.length - n} of ${e.claims.length} claims confirmed` : `${e.claims.length} ${e.claims.length === 1 ? 'claim' : 'claims'}`),
       kpi('Coins', String(e.coins.length), `${e.coins.filter((c) => c.status === 'MIGRATED').length} graduated`)),
-    e.totals.incomplete ? h('p', { class: 'err small' }, 'Some pools could not be read just now, so these totals are incomplete. Reload in a moment.') : null,
+    cov.unclaimedComplete && !n ? null : h('div', { class: 'cov-notes' },
+      cov.unclaimedComplete ? null : h('p', { class: 'err small' }, 'Some pools or positions could not be read just now, so the unclaimed totals are incomplete. Refresh in a moment.'),
+      n ? h('p', { class: 'err small' }, `${n} claim ${n === 1 ? 'receipt is' : 'receipts are'} not confirmed from ${n === 1 ? 'its' : 'their'} transaction yet, so "Claimed in the app" leaves ${n === 1 ? 'it' : 'them'} out. Each refresh checks again.`) : null),
     h('div', { class: 'card' }, h('h3', {}, 'Unclaimed, per coin'), table([['Coin', ''], ['Creator · curve', 'num'], ['Creator · LP', 'num'], ['Platform · curve', 'num'], ['Platform · LP', 'num']], rows, 'No coins yet.')),
     h('div', { class: 'card' }, h('h3', {}, 'Claims made in the app'), table([['Coin', ''], ['What', ''], ['By', ''], ['Paid out', 'num'], ['When', ''], ['Tx', '']], claimRows, 'No claims yet.')),
     h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'How to read this'),
       h('ul', { class: 'notes' },
-        h('li', {}, 'Accrued is not claimed, and claimed is not kept revenue. Under the current test settings half of the platform share is set aside for holder rewards (not built yet).'),
+        h('li', {}, 'Accrued is not claimed, and claimed is not kept revenue.'),
+        h('li', {}, 'Under the current test policy, half of the platform share is earmarked for holder rewards. Earmarked means counted, not moved: nothing is transferred or distributed, because holder rewards are not built.'),
         h('li', {}, 'Curve fees are the creator and platform counters in each bonding-curve pool. LP fees are what the locked DAMM v2 positions held by the creator and by the platform fee claimer have earned since their last claim.'),
         h('li', {}, h('span', {}, 'Platform fees can only be claimed by the platform fee claimer ', ext(explorer('address', e.platformWallet), short(e.platformWallet)), '. Before mainnet that must be a multisig, so this page has no claim button.')),
-        h('li', {}, 'Claims made outside this app are not listed.')))));
+        h('li', {}, 'Claims made outside this app are not listed. A claim\'s amount is what left that coin\'s own pool vaults in its own transaction; until that is confirmed it shows as unknown.')))));
 }
 
 // ------------------------------------------------------------------ router + boot

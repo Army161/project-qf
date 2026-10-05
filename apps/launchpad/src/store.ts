@@ -1,9 +1,10 @@
 // Launchpad persistence on node:sqlite: the platform record (test quote + DBC config), launches with their metadata and
-// image, indexed trades, built-transaction intents (exact message bytes the browser must sign) and faucet claims.
+// image, indexed trades and the queue of transactions still to be read, built-transaction intents (exact message bytes
+// the browser must sign), fee-claim receipts and faucet claims.
 import { randomBytes } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 
-const MIGRATIONS: readonly string[] = [
+export const STORE_MIGRATIONS: readonly string[] = [
   `CREATE TABLE platform (k TEXT PRIMARY KEY, v TEXT NOT NULL, updated_at TEXT NOT NULL);
    CREATE TABLE launches (mint TEXT PRIMARY KEY, pool TEXT NOT NULL UNIQUE, config TEXT NOT NULL, quote_mint TEXT NOT NULL, creator TEXT NOT NULL,
      name TEXT NOT NULL, symbol TEXT NOT NULL, description TEXT NOT NULL, website TEXT, twitter TEXT, telegram TEXT,
@@ -26,6 +27,23 @@ const MIGRATIONS: readonly string[] = [
    INSERT OR IGNORE INTO claims (sig, mint, venue, claimer, quote_raw, base_raw, at)
      SELECT signature, mint, CASE kind WHEN 'DAMM_CLAIM_POSITION_FEE' THEN 'DAMM_V2' ELSE 'CURVE' END, user, NULL, NULL, created_at
      FROM intents WHERE status = 'CONFIRMED' AND signature IS NOT NULL AND mint IS NOT NULL AND kind IN ('CLAIM_CREATOR_TRADING_FEE', 'DAMM_CLAIM_POSITION_FEE');`,
+  // (4) transactions the RPC listed but did not serve yet: kept until read, so history is never silently dropped; and
+  // each claim receipt's own pool and vaults, with an evidence status. Earlier amounts were computed against whichever
+  // pools happened to be readable, so they are kept for the record and every receipt is re-read from its transaction.
+  `CREATE TABLE trade_backfill (sig TEXT NOT NULL, venue TEXT NOT NULL, mint TEXT NOT NULL REFERENCES launches(mint), status TEXT NOT NULL,
+     attempts INTEGER NOT NULL, first_seen TEXT NOT NULL, last_tried TEXT NOT NULL, next_try TEXT NOT NULL, outcome TEXT, resolved_at TEXT,
+     PRIMARY KEY (sig, venue));
+   CREATE INDEX trade_backfill_due ON trade_backfill(status, next_try);
+   CREATE INDEX trade_backfill_mint ON trade_backfill(mint, status);
+   ALTER TABLE claims ADD COLUMN pool TEXT;
+   ALTER TABLE claims ADD COLUMN quote_vault TEXT;
+   ALTER TABLE claims ADD COLUMN base_vault TEXT;
+   ALTER TABLE claims ADD COLUMN status TEXT NOT NULL DEFAULT 'UNKNOWN';
+   ALTER TABLE claims ADD COLUMN evidence TEXT;
+   ALTER TABLE claims ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0;
+   ALTER TABLE claims ADD COLUMN legacy_quote_raw TEXT;
+   ALTER TABLE claims ADD COLUMN legacy_base_raw TEXT;
+   UPDATE claims SET legacy_quote_raw = quote_raw, legacy_base_raw = base_raw, quote_raw = NULL, base_raw = NULL, status = 'UNKNOWN', evidence = 'RECHECK_LEGACY';`,
 ];
 
 export type LaunchStatus = 'PENDING' | 'LIVE' | 'MIGRATED' | 'FAILED';
@@ -35,7 +53,17 @@ export interface LaunchRow {
   createSig: string | null; createdAt: string; liveAt: string | null; migrationSig: string | null; dammPool: string | null; migratedAt: string | null;
   lastIndexedSig: string | null; lastDammIndexedSig: string | null;
 }
-export interface ClaimRow { sig: string; mint: string; venue: 'CURVE' | 'DAMM_V2'; claimer: string; quoteRaw: string | null; baseRaw: string | null; at: string }
+/** A fee claim made through the app. `quoteRaw`/`baseRaw` are set only from complete evidence (status RESOLVED or
+ *  FAILED_TX); while status is UNKNOWN they are null and `evidence` says what is missing. */
+export type ClaimStatus = 'UNKNOWN' | 'RESOLVED' | 'FAILED_TX';
+export interface ClaimRow { sig: string; mint: string; venue: 'CURVE' | 'DAMM_V2'; claimer: string; quoteRaw: string | null; baseRaw: string | null; at: string;
+  pool: string | null; quoteVault: string | null; baseVault: string | null; status: ClaimStatus; evidence: string | null; attempts: number;
+  legacyQuoteRaw: string | null; legacyBaseRaw: string | null }
+/** A new receipt always starts UNKNOWN: amounts come only from its transaction (setClaimEvidence), never from the caller. */
+export type NewClaim = Pick<ClaimRow, 'sig' | 'mint' | 'venue' | 'claimer' | 'at'> & Partial<Pick<ClaimRow, 'pool' | 'quoteVault' | 'baseVault'>> & { quoteRaw?: null; baseRaw?: null };
+export type BackfillStatus = 'PENDING' | 'UNAVAILABLE' | 'RESOLVED';
+export interface BackfillRow { sig: string; venue: 'CURVE' | 'DAMM_V2'; mint: string; status: BackfillStatus; attempts: number; firstSeen: string; lastTried: string;
+  nextTry: string; outcome: 'TRADE' | 'NOT_A_TRADE' | 'FAILED_TX' | null; resolvedAt: string | null }
 export interface TradeRow { sig: string; mint: string; trader: string; side: 'BUY' | 'SELL'; quoteRaw: string; baseRaw: string; slot: number; blockTime: number | null; source: string }
 export interface IntentRow { id: string; kind: string; mint: string | null; user: string; createdAt: string; expiresAt: string; messageHex: string;
   termsJson: string; lastValidBlockHeight: number; status: 'BUILT' | 'SUBMITTED' | 'CONFIRMED' | 'FAILED'; signature: string | null; error: string | null }
@@ -49,11 +77,11 @@ export class LaunchpadStore {
     this.db.exec('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 2000;');
     this.db.exec('CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)');
     const current = (this.db.prepare('SELECT MAX(version) AS v FROM schema_migrations').get() as { v: number | null }).v ?? 0;
-    if (current > MIGRATIONS.length) throw new Error(`database schema ${current} is newer than this build (${MIGRATIONS.length})`);
-    for (let v = current + 1; v <= MIGRATIONS.length; v++) {
+    if (current > STORE_MIGRATIONS.length) throw new Error(`database schema ${current} is newer than this build (${STORE_MIGRATIONS.length})`);
+    for (let v = current + 1; v <= STORE_MIGRATIONS.length; v++) {
       this.db.exec('BEGIN');
       try {
-        this.db.exec(MIGRATIONS[v - 1]!);
+        this.db.exec(STORE_MIGRATIONS[v - 1]!);
         this.db.prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)').run(v, new Date().toISOString());
         this.db.exec('COMMIT');
       } catch (e) { this.db.exec('ROLLBACK'); throw e; }
@@ -100,12 +128,58 @@ export class LaunchpadStore {
     return (this.db.prepare(q).all(...statuses, limit) as Record<string, unknown>[]).map((r) => camel(r) as unknown as LaunchRow);
   }
 
-  insertClaim(c: ClaimRow) {
-    this.db.prepare('INSERT OR IGNORE INTO claims (sig, mint, venue, claimer, quote_raw, base_raw, at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(c.sig, c.mint, c.venue, c.claimer, c.quoteRaw, c.baseRaw, c.at);
+  insertClaim(c: NewClaim) {
+    this.db.prepare(`INSERT OR IGNORE INTO claims (sig, mint, venue, claimer, quote_raw, base_raw, at, pool, quote_vault, base_vault, status)
+      VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?, 'UNKNOWN')`).run(c.sig, c.mint, c.venue, c.claimer, c.at, c.pool ?? null, c.quoteVault ?? null, c.baseVault ?? null);
   }
-  setClaimAmounts(sig: string, quoteRaw: string, baseRaw: string) { this.db.prepare('UPDATE claims SET quote_raw = ?, base_raw = ? WHERE sig = ?').run(quoteRaw, baseRaw, sig); }
+  setClaimIdentity(sig: string, id: { pool: string; quoteVault: string; baseVault: string }) {
+    this.db.prepare('UPDATE claims SET pool = ?, quote_vault = ?, base_vault = ? WHERE sig = ? AND pool IS NULL').run(id.pool, id.quoteVault, id.baseVault, sig);
+  }
+  /** Records one evidence check. Amounts are written only for RESOLVED/FAILED_TX; an UNKNOWN result never overwrites them. */
+  setClaimEvidence(sig: string, r: { status: ClaimStatus; evidence: string; quoteRaw: string | null; baseRaw: string | null }) {
+    if (r.status === 'UNKNOWN') this.db.prepare("UPDATE claims SET evidence = ?, attempts = attempts + 1 WHERE sig = ? AND status = 'UNKNOWN'").run(r.evidence, sig);
+    else this.db.prepare('UPDATE claims SET status = ?, evidence = ?, quote_raw = ?, base_raw = ?, attempts = attempts + 1 WHERE sig = ?').run(r.status, r.evidence, r.quoteRaw, r.baseRaw, sig);
+  }
+  getClaim(sig: string): ClaimRow | null {
+    const r = this.db.prepare('SELECT * FROM claims WHERE sig = ?').get(sig) as Record<string, unknown> | undefined;
+    return r ? (camel(r) as unknown as ClaimRow) : null;
+  }
   listClaims(): ClaimRow[] { return this.db.prepare('SELECT * FROM claims ORDER BY at DESC').all().map((r) => camel(r as Record<string, unknown>) as unknown as ClaimRow); }
+  /** Receipts still waiting for evidence, least-tried first. */
+  unresolvedClaims(limit: number): ClaimRow[] {
+    return this.db.prepare("SELECT * FROM claims WHERE status = 'UNKNOWN' ORDER BY attempts, at DESC LIMIT ?").all(limit).map((r) => camel(r as Record<string, unknown>) as unknown as ClaimRow);
+  }
+  /** The confirmed intent a receipt came from, which carries the terms its transaction was bound to. */
+  confirmedIntentBySignature(sig: string): IntentRow | null {
+    const r = this.db.prepare("SELECT * FROM intents WHERE signature = ? AND status = 'CONFIRMED'").get(sig) as Record<string, unknown> | undefined;
+    return r ? (camel(r) as unknown as IntentRow) : null;
+  }
+
+  // ---- transactions listed by the RPC whose details were not served yet (see indexer.ts)
+  queueBackfill(b: { sig: string; venue: BackfillRow['venue']; mint: string; at: string }) {
+    this.db.prepare(`INSERT OR IGNORE INTO trade_backfill (sig, venue, mint, status, attempts, first_seen, last_tried, next_try) VALUES (?, ?, ?, 'PENDING', 1, ?, ?, ?)`)
+      .run(b.sig, b.venue, b.mint, b.at, b.at, b.at);
+  }
+  dueBackfill(mint: string, venue: BackfillRow['venue'], nowIso: string, limit: number): BackfillRow[] {
+    return (this.db.prepare(`SELECT * FROM trade_backfill WHERE mint = ? AND venue = ? AND status IN ('PENDING', 'UNAVAILABLE') AND next_try <= ?
+      ORDER BY next_try, first_seen LIMIT ?`).all(mint, venue, nowIso, limit) as Record<string, unknown>[]).map((r) => camel(r) as unknown as BackfillRow);
+  }
+  backfillMissed(sig: string, venue: BackfillRow['venue'], r: { status: 'PENDING' | 'UNAVAILABLE'; attempts: number; at: string; nextTry: string }) {
+    this.db.prepare('UPDATE trade_backfill SET status = ?, attempts = ?, last_tried = ?, next_try = ? WHERE sig = ? AND venue = ?').run(r.status, r.attempts, r.at, r.nextTry, sig, venue);
+  }
+  resolveBackfill(sig: string, venue: BackfillRow['venue'], outcome: NonNullable<BackfillRow['outcome']>, at: string) {
+    this.db.prepare("UPDATE trade_backfill SET status = 'RESOLVED', outcome = ?, resolved_at = ?, last_tried = ?, attempts = attempts + 1 WHERE sig = ? AND venue = ?")
+      .run(outcome, at, at, sig, venue);
+  }
+  listBackfill(mint?: string): BackfillRow[] {
+    const rows = mint ? this.db.prepare('SELECT * FROM trade_backfill WHERE mint = ? ORDER BY first_seen, sig').all(mint) : this.db.prepare('SELECT * FROM trade_backfill ORDER BY first_seen, sig').all();
+    return (rows as Record<string, unknown>[]).map((r) => camel(r) as unknown as BackfillRow);
+  }
+  /** Transactions of this coin that the trade history does not include yet (PENDING) or could not read (UNAVAILABLE). */
+  backfillCounts(mint: string): { pending: number; unavailable: number } {
+    const r = this.db.prepare(`SELECT SUM(status = 'PENDING') AS p, SUM(status = 'UNAVAILABLE') AS u FROM trade_backfill WHERE mint = ?`).get(mint) as { p: number | null; u: number | null };
+    return { pending: r.p ?? 0, unavailable: r.u ?? 0 };
+  }
   insertTrade(t: TradeRow): boolean {
     const r = this.db.prepare(`INSERT OR IGNORE INTO trades (sig, mint, trader, side, quote_raw, base_raw, slot, block_time, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .run(t.sig, t.mint, t.trader, t.side, t.quoteRaw, t.baseRaw, t.slot, t.blockTime, t.source);

@@ -1,97 +1,21 @@
-// Launchpad API over HTTP with an in-process chain double. Transactions are built by the real adapter against the
-// MOCK RPC fixtures (synthetic accounts, nothing live), signed in-process with WebCrypto keys, and "sent" to a
-// recorder. No network, no real keys.
-import { test, after } from 'node:test';
+// Launchpad API over HTTP with an in-process chain double (test/support/harness.ts). Transactions are built by the real
+// adapter against the MOCK RPC fixtures (synthetic accounts, nothing live), signed in-process with WebCrypto keys, and
+// "sent" to a recorder. No network, no real keys.
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import type { AddressInfo } from 'node:net';
 import { economicsDigest } from '@project-qf/policy';
 import { READINESS } from '@project-qf/core';
-import { addSignature, fromBase64, generateMintKey, parseWire, toBase64, toHex, verifyWireSignatures, type ApprovedTerms } from '@project-qf/tx';
-import { buildCreatePool, buildCreatorCurveClaim, buildDammClaim, buildDammSwap, buildSwap, quoteDammSwap, quoteSwap, readDammPool, readPool, summarisePool } from '@project-qf/adapter-meteora-dbc/launchpad';
+import { addSignature, fromBase64, generateMintKey, parseWire, toBase64, toHex, type ApprovedTerms } from '@project-qf/tx';
+import { buildCreatePool, buildSwap, readPool, summarisePool } from '@project-qf/adapter-meteora-dbc/launchpad';
 import { createQuoteSimulator } from '@project-qf/adapter-meteora-dbc';
-import { accountsForPool, fixtures, K, thresholdRecord } from '../../../packages/adapter-meteora-dbc/test/support/fixtures.ts';
-import { createMockConnection } from '../../../packages/adapter-meteora-dbc/test/support/mockRpc.ts';
+import { fixtures, K } from '../../../packages/adapter-meteora-dbc/test/support/fixtures.ts';
 import { checkBuiltTransaction } from '../../web/src/launchpad/txcheck.ts';
 import type { LaunchpadChain } from '../src/chain.ts';
-import { crankMigrations, MAX_SUMMARY_RETRIES, PoolCache, syncLaunch, tradeFromSummary } from '../src/indexer.ts';
-import { launchEconomicsFor, type PlatformRecord } from '../src/platform.ts';
-import { claimPayout, createLaunchpadApp, FAUCET, sniffImage } from '../src/server.ts';
-import { LaunchpadStore } from '../src/store.ts';
+import { BACKFILL, crankMigrations, PoolCache, syncLaunch, tradeFromSummary } from '../src/indexer.ts';
+import { FAUCET, sniffImage } from '../src/server.ts';
+import { BLOCKHASH, harness, mockConn } from './support/harness.ts';
 
-const dir = mkdtempSync(join(tmpdir(), 'qf-lp-test-'));
-after(() => rmSync(dir, { recursive: true, force: true }));
-const BLOCKHASH = 'GfVcyD4kkTrj4bKc7WA9sZCin9JDbdT4Zkd3EittNR1W';
 const PNG = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
-
-async function mockConn() {
-  const { accounts } = await accountsForPool(false);
-  const { connection } = createMockConnection(accounts);
-  Object.assign(connection, { getLatestBlockhash: async () => ({ blockhash: BLOCKHASH, lastValidBlockHeight: 1_000 }) });
-  return connection;
-}
-
-function platformRecord(): PlatformRecord {
-  const threshold = thresholdRecord();
-  const quote = { mint: K.quoteMint.toBase58(), decimals: 6 };
-  const launchEconomics = launchEconomicsFor(K.config.toBase58(), quote, threshold);
-  return { cluster: 'devnet', operator: K.partner.toBase58(), quote: { ...quote, supplyRaw: '1', signature: 'x', label: 'TEST_ONLY', symbol: 'qUSD' }, threshold,
-    config: { config: K.config.toBase58(), quoteMint: quote.mint, feeClaimer: K.partner.toBase58(), leftoverReceiver: K.leftover.toBase58(), signature: 'x' },
-    economicsVersion: 'e', templateVersion: 't', launchEconomics, launchEconomicsDigest: economicsDigest(launchEconomics), createdAt: new Date().toISOString() };
-}
-
-// The adapter fixture config predates migrationSqrtPrice; fill it from the same curve simulator the adapter tests use.
-function withMigrationPrice<T extends { raw: { config: unknown } } | null>(pool: T): T {
-  if (!pool) return pool;
-  const { cfgParams } = fixtures();
-  const BNc = (cfgParams.migrationQuoteThreshold as unknown as { constructor: new (s: string) => unknown }).constructor;
-  (pool.raw.config as Record<string, unknown>).migrationSqrtPrice = new BNc(createQuoteSimulator(cfgParams).migrationSqrtPrice.toString());
-  return pool;
-}
-
-async function harness() {
-  const conn = await mockConn();
-  const sent: Uint8Array[] = [];
-  const faucetCalls: unknown[] = [];
-  const chain: LaunchpadChain = {
-    operatorAddress: K.partner.toBase58(),
-    readPool: async (p) => withMigrationPrice(await readPool(conn, p)),
-    buildCreatePool: (r) => buildCreatePool(conn, r),
-    buildSwap: (pool, r, now) => buildSwap(conn, pool, r, now),
-    quoteSwap,
-    readDammPool: (p, e) => readDammPool(conn, p, e),
-    dammNow: async () => 1_790_000_000n,
-    quoteDammSwap,
-    buildDammSwap: (p, r, now) => buildDammSwap(conn, p, r, now),
-    buildCreatorCurveClaim: (p, c) => buildCreatorCurveClaim(conn, p, c),
-    // The MOCK RPC has no getProgramAccounts: the creator holds one locked position (TEST_ONLY numbers), nobody else holds any.
-    dammPositions: async (_p, owner) => owner === K.creator.toBase58()
-      ? [{ position: 'pos', nftMint: K.positionNft.toBase58(), feeBaseRaw: '0', feeQuoteRaw: '500000', permanentlyLocked: true }] : [],
-    buildDammClaim: (p, owner, nft) => buildDammClaim(conn, p, owner, nft),
-    send: async (b) => { sent.push(b); return (await verifyWireSignatures(b)).firstSignature; },
-    txSummary: async () => null,
-    newSignatures: async () => [],
-    balances: async () => ({ lamports: '0', tokens: {} }),
-    lamports: async () => 0n,
-    faucet: async (...a) => { faucetCalls.push(a); return 'faucet-sig'; },
-    migrate: async () => 'migrate-sig',
-    dammPoolFor: async () => K.pool.toBase58(),
-  };
-  const store = new LaunchpadStore(join(dir, `lp-${Math.random().toString(36).slice(2)}.sqlite`));
-  const platform = platformRecord();
-  let clock = Date.now();
-  const app = createLaunchpadApp({ store, chain, platform: () => platform, staticDir: null, publicBaseUrl: 'http://127.0.0.1:8788', now: () => new Date(clock) });
-  await new Promise<void>((r) => app.listen(0, '127.0.0.1', r));
-  after(() => { app.close(); store.close(); });
-  const base = `http://127.0.0.1:${(app.address() as AddressInfo).port}`;
-  const call = async (path: string, body?: unknown) => {
-    const r = await fetch(base + path, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-    return { status: r.status, body: await r.json().catch(() => null) as any, headers: r.headers };
-  };
-  return { conn, store, platform, call, sent, faucetCalls, chain, tick: (ms: number) => { clock += ms; } };
-}
 
 test('the launchpad reports the current readiness gate and platform', async () => {
   const { call, platform } = await harness();
@@ -346,8 +270,8 @@ test('creators claim their curve fees and, after graduation, their locked positi
   assert.equal((await checkBuiltTransaction(fromBase64(d.body.transaction), d.body.terms, { kind: 'CLAIM_CREATOR_TRADING_FEE', wallet: creator, shown: {}, fields: {} })).ok, false);
 });
 
-test('the indexer retries a trade whose details the RPC has not served yet, instead of skipping past it', async () => {
-  const { store, platform, chain } = await harness();
+test('the indexer queues a trade whose details the RPC has not served yet, keeps indexing newer ones, and picks it up next pass', async () => {
+  const { store, platform, chain, now, tick } = await harness();
   const t = new Date().toISOString(), mint = K.baseMint.toBase58();
   store.insertPendingLaunch({ mint, pool: K.pool.toBase58(), config: platform.config.config, quoteMint: platform.quote.mint, creator: K.creator.toBase58(),
     name: 'MOCK', symbol: 'MOCK', description: '', website: null, twitter: null, telegram: null, imageType: null, metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: t }, null);
@@ -359,16 +283,15 @@ test('the indexer retries a trade whose details the RPC has not served yet, inst
   const c = { ...chain,
     newSignatures: async (_a: string, until: string | null) => order.slice(until ? order.indexOf(until) + 1 : 0).map((signature) => ({ signature, slot: 1, err: false })),
     txSummary: async (sig: string) => (served.has(sig) ? sum(sig) : null) };
-  const deps = { store, chain: c, poolCache: new PoolCache(c) };
-  const pass = () => syncLaunch(deps, store.getLaunch(mint)!);
-  assert.deepEqual(await pass(), { trades: 0 }, '"a" is not served yet: stop before it');
-  assert.equal(store.getLaunch(mint)!.lastIndexedSig, null);
+  const deps = { store, chain: c, poolCache: new PoolCache(c), now };
+  const pass = () => { tick(BACKFILL.maxDelayMs); return syncLaunch(deps, store.getLaunch(mint)!); };
+  assert.deepEqual(await pass(), { trades: 1 }, '"a" is not served yet: it is queued and "b" is still indexed');
+  assert.equal(store.getLaunch(mint)!.lastIndexedSig, 'never');
+  assert.deepEqual(store.backfillCounts(mint), { pending: 2, unavailable: 0 });
   served.add('a');
-  assert.deepEqual(await pass(), { trades: 2 }, 'next pass picks up "a" and "b"');
-  assert.equal(store.getLaunch(mint)!.lastIndexedSig, 'b');
-  for (let k = 2; k < MAX_SUMMARY_RETRIES; k++) { await pass(); assert.equal(store.getLaunch(mint)!.lastIndexedSig, 'b'); }
-  await pass();
-  assert.equal(store.getLaunch(mint)!.lastIndexedSig, 'never', 'a transaction that is never served stops blocking after the retry limit');
+  assert.deepEqual(await pass(), { trades: 1 }, 'next pass picks up "a" from the queue');
+  for (let k = 2; k < BACKFILL.maxAttempts; k++) await pass();
+  assert.deepEqual(store.backfillCounts(mint), { pending: 0, unavailable: 1 }, 'a transaction that is never served is marked unavailable, not dropped');
   assert.equal(store.listTrades(mint).length, 2);
 });
 
@@ -392,7 +315,7 @@ test('after graduation an unreadable DAMM v2 pool shows the price as unavailable
 });
 
 test('the earnings view separates creator and platform, curve and LP, and claim receipts count what left the vaults', async () => {
-  const { call, store, platform } = await harness();
+  const { call, store, platform, chain } = await harness();
   const t = new Date().toISOString(), mint = K.baseMint.toBase58();
   store.insertPendingLaunch({ mint, pool: K.pool.toBase58(), config: platform.config.config, quoteMint: platform.quote.mint, creator: K.creator.toBase58(),
     name: 'MOCK', symbol: 'MOCK', description: '', website: null, twitter: null, telegram: null, imageType: null, metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: t }, null);
@@ -401,13 +324,15 @@ test('the earnings view separates creator and platform, curve and LP, and claim 
   assert.deepEqual(e.coins[0].curve, { creatorQuoteRaw: '1000000', platformQuoteRaw: '1000000' });
   assert.equal(e.coins[0].lp, null, 'not graduated: no LP positions yet');
   store.markLaunchMigrated(mint, 'mig', K.dammPool.toBase58(), t);
-  store.insertClaim({ sig: 'claim-1', mint, venue: 'DAMM_V2', claimer: K.creator.toBase58(), quoteRaw: '250000', baseRaw: '0', at: t });
+  store.insertClaim({ sig: 'claim-1', mint, venue: 'DAMM_V2', claimer: K.creator.toBase58(), at: t, pool: K.dammPool.toBase58(),
+    quoteVault: K.dammQuoteVault.toBase58(), baseVault: K.dammBaseVault.toBase58() });
+  chain.txSummary = async (signature) => ({ signature, slot: 1, blockTime: 1, err: false, feePayer: 'x', logMessages: [],
+    accountKeys: [K.dammQuoteVault.toBase58(), K.dammBaseVault.toBase58()], tokenDeltas: { [K.dammQuoteVault.toBase58()]: -250_000n, [K.dammBaseVault.toBase58()]: 0n } });
   e = (await call('/api/lp/earnings?fresh=1')).body;
   assert.deepEqual(e.coins[0].lp, { creatorQuoteRaw: '500000', platformQuoteRaw: '0' });
   assert.deepEqual(e.totals.unclaimed, { creatorCurve: '1000000', platformCurve: '1000000', creatorLp: '500000', platformLp: '0' });
   assert.equal(e.totals.claimedThroughApp, '250000');
   assert.deepEqual(e.claims.map((c: any) => [c.sig, c.byCreator, c.venue]), [['claim-1', true, 'DAMM_V2']]);
+  assert.deepEqual(e.totals.coverage, { unclaimedComplete: true, claimsComplete: true, unresolvedClaims: 0 });
   assert.equal(e.platformWallet, platform.config.feeClaimer);
-  const sum = { signature: 's', slot: 1, blockTime: 1, err: false, feePayer: 'x', accountKeys: [], logMessages: [], tokenDeltas: { QV: -1_400_000n, BV: 0n, USER: 1_400_000n } };
-  assert.deepEqual(claimPayout(sum, { quote: ['QV'], base: ['BV'] }), { quoteRaw: '1400000', baseRaw: '0' });
 });

@@ -42,7 +42,7 @@ if (cmd === 'operator') {
   process.on('unhandledRejection', (e) => log(`unhandled rejection (kept running): ${((e as Error)?.stack ?? String(e)).slice(0, 600)}`));
   const store = new LaunchpadStore(resolve(env.QF_LP_DB ?? 'qf-launchpad.sqlite'));
   const port = Number(env.QF_LP_PORT ?? 8788);
-  const chain = realChain(conn, operator);
+  const chain = realChain(conn, operator, log);
   const app = createLaunchpadApp({ store, chain, platform: () => store.getPlatform<PlatformRecord>('platform'), log,
     staticDir: resolve(env.QF_STATIC_DIR ?? join(here, '..', '..', 'web', 'dist')), publicBaseUrl: env.QF_PUBLIC_BASE_URL ?? `http://127.0.0.1:${port}` });
   app.listen(port, '127.0.0.1', () => log(JSON.stringify({ listening: `http://127.0.0.1:${port}`, operator: chain.operatorAddress, ready: !!store.getPlatform('platform') })));

@@ -36,7 +36,7 @@ export interface LaunchpadChain {
   dammPoolFor(baseMint: string, quoteMint: string): Promise<string>;
 }
 
-export function realChain(conn: DevnetConnection, operator: DevnetSigner | null): LaunchpadChain {
+export function realChain(conn: DevnetConnection, operator: DevnetSigner | null, log?: (m: string) => void): LaunchpadChain {
   const needOperator = () => { if (!operator) throw new Error('OPERATOR_KEY_UNAVAILABLE'); return operator; };
   return {
     operatorAddress: operator ? publicKeyOf(operator) : null,
@@ -53,7 +53,7 @@ export function realChain(conn: DevnetConnection, operator: DevnetSigner | null)
     buildDammClaim: (p, owner, nft) => buildDammClaim(conn, p, owner, nft),
     send: (b, bh, h) => sendSignedTransaction(conn, b, bh, h),
     txSummary: (s) => getTxSummary(conn, s),
-    newSignatures: (a, u) => getNewSignatures(conn, a, u),
+    newSignatures: (a, u) => getNewSignatures(conn, a, u, { ...(log ? { onTruncated: log } : {}) }),
     balances: (o, m) => getWalletBalances(conn, o, m),
     lamports: (o) => getLamports(conn, o),
     faucet: (q, to, raw, lamports) => sendFromTreasury(conn, needOperator(), q, to, raw, lamports),
