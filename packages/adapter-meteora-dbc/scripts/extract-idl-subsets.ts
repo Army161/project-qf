@@ -34,6 +34,15 @@ function closure(idl: Idl, roots: IdlType[]) {
   return Object.fromEntries([...seen.entries()].sort(([a], [b]) => a.localeCompare(b)));
 }
 
+/** Self-CPI events (Anchor emit_cpi) the indexer reads to learn each swap's exact fees: discriminator and fields. */
+function eventsOf(idl: Idl & { events?: { name: string; discriminator: number[] }[] }, names: string[]) {
+  return Object.fromEntries(names.map((n) => {
+    const e = idl.events?.find((x) => x.name === n), t = idl.types.find((x) => x.name === n);
+    if (!e || !t) throw new Error(`missing event ${n}`);
+    return [n, { discriminator: e.discriminator, fields: t.type.fields }];
+  }));
+}
+
 export function dbcSubset() {
   const pkg = '@meteora-ag/dynamic-bonding-curve-sdk';
   const idl = require(pkg).DynamicBondingCurveIdl as Idl;
@@ -44,10 +53,10 @@ export function dbcSubset() {
     return { name: n, discriminator: ix.discriminator, accounts: ix.accounts.map((a: any) => ({ name: a.name, writable: !!a.writable, signer: !!a.signer, optional: !!a.optional, address: a.address ?? null })), args: ix.args };
   });
   return { provenance: { package: `${pkg}@${version}`, license: 'MIT (SDK package; the on-chain program is separately licensed and was not used)', idlName: idl.metadata.name, idlVersion: idl.metadata.version, programId: idl.address, fullIdlSha256: createHash('sha256').update(canonicalJson(idl)).digest('hex') },
-    instructions, types: closure(idl, instructions.flatMap((i) => i.args.map((a: any) => a.type))) };
+    instructions, types: closure(idl, [...instructions.flatMap((i) => i.args.map((a: any) => a.type)), { defined: { name: 'EvtSwap2' } }]), events: eventsOf(idl, ['EvtSwap2']) };
 }
 
-/** The DAMM v2 instructions a launchpad user signs after graduation: swaps, and claiming a position's fees. */
+/** The DAMM v2 instructions a launchpad user signs after graduation: swaps, and claiming a position's fees; and the swap event. */
 export function dammUserSubset() {
   const pkg = '@meteora-ag/cp-amm-sdk';
   const mod = require(pkg);
@@ -58,7 +67,7 @@ export function dammUserSubset() {
     return { name: n, discriminator: ix.discriminator, accounts: ix.accounts.map((a: any) => ({ name: a.name, writable: !!a.writable, signer: !!a.signer, optional: !!a.optional, address: a.address ?? null })), args: ix.args };
   });
   return { provenance: { package: `${pkg}@${version}`, license: 'MIT (SDK package; the on-chain program is separately licensed and was not used)', idlName: idl.metadata.name, idlVersion: idl.metadata.version, programId: idl.address, fullIdlSha256: createHash('sha256').update(canonicalJson(idl)).digest('hex') },
-    instructions, types: closure(idl, instructions.flatMap((i) => i.args.map((a: any) => a.type))) };
+    instructions, types: closure(idl, [...instructions.flatMap((i) => i.args.map((a: any) => a.type)), { defined: { name: 'EvtSwap2' } }]), events: eventsOf(idl, ['EvtSwap2']) };
 }
 
 export function dammConfigSubset() {

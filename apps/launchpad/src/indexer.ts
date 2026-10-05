@@ -1,11 +1,16 @@
 // Trade indexer and migration crank. Trades are derived from the pool's own vault balance deltas in each confirmed
-// transaction (program-agnostic: a trade made outside this app is indexed the same way). The crank migrates a
+// transaction (program-agnostic: a trade made outside this app is indexed the same way), and their fees from the
+// swap event in that same transaction (fees.ts). The crank migrates a
 // completed curve to DAMM v2 with the operator key; on-chain, migration is permissionless and the DBC program itself
 // refuses an incomplete curve, so the crank's read is not a safety decision.
 import type { LaunchpadChain, LiveDammPool, LivePool, TxSummary } from './chain.ts';
+import { feesFromSummary, unknownFees, type TradeFees } from './fees.ts';
 import type { LaunchRow, LaunchpadStore, TradeRow } from './store.ts';
 
-export function tradeFromSummary(launch: Pick<LaunchRow, 'mint'>, pool: Pick<LivePool, 'baseVault' | 'quoteVault'>, s: TxSummary, source: string): TradeRow | null {
+/** The pool a trade is read against: its vaults; and, to read its fees, its address and (curve) the creator's fee share. */
+type TradePool = Pick<LivePool, 'baseVault' | 'quoteVault'> & { pool?: string; creatorTradingFeePct?: number };
+
+export function tradeFromSummary(launch: Pick<LaunchRow, 'mint'>, pool: TradePool, s: TxSummary, source: string): TradeRow | null {
   if (s.err) return null;
   const dq = s.tokenDeltas[pool.quoteVault] ?? 0n, db = s.tokenDeltas[pool.baseVault] ?? 0n;
   let side: TradeRow['side'];
@@ -14,7 +19,7 @@ export function tradeFromSummary(launch: Pick<LaunchRow, 'mint'>, pool: Pick<Liv
   else return null; // pool creation, migration, fee claims: not trades
   const abs = (x: bigint) => (x < 0n ? -x : x);
   return { sig: s.signature, mint: launch.mint, trader: s.feePayer, side, quoteRaw: abs(dq).toString(), baseRaw: abs(db).toString(), slot: s.slot,
-    blockTime: s.blockTime, source };
+    blockTime: s.blockTime, source, ...(pool.pool ? { fees: feesFromSummary(s, pool.pool, pool.creatorTradingFeePct ?? null) } : {}) };
 }
 
 export interface IndexerDeps { store: LaunchpadStore; chain: LaunchpadChain; poolCache: PoolCache; dammCache?: DammCache; log?: (m: string) => void; now?: () => Date }
@@ -27,15 +32,41 @@ export const BACKFILL = Object.freeze({ fastAttempts: 5, baseDelayMs: 15_000, ma
 type Venue = 'CURVE' | 'DAMM_V2';
 const nowOf = (d: IndexerDeps) => (d.now ?? (() => new Date()))();
 
-function recordTrade(d: IndexerDeps, launch: LaunchRow, pool: Pick<LivePool, 'baseVault' | 'quoteVault'>, sum: TxSummary): { outcome: 'TRADE' | 'NOT_A_TRADE' | 'FAILED_TX'; inserted: boolean } {
+function recordTrade(d: IndexerDeps, launch: LaunchRow, pool: TradePool, sum: TxSummary): { outcome: 'TRADE' | 'NOT_A_TRADE' | 'FAILED_TX'; inserted: boolean } {
   if (sum.err) return { outcome: 'FAILED_TX', inserted: false };
   const t = tradeFromSummary(launch, pool, sum, 'indexer');
-  return t ? { outcome: 'TRADE', inserted: d.store.insertTrade(t) } : { outcome: 'NOT_A_TRADE', inserted: false };
+  if (!t) return { outcome: 'NOT_A_TRADE', inserted: false };
+  const inserted = d.store.insertTrade(t);
+  if (!inserted && t.fees) d.store.setTradeFees(t.sig, t.fees); // recorded earlier (by the app) without its fees
+  return { outcome: 'TRADE', inserted };
+}
+
+/** Trades whose fees are not proven yet (recorded before the fee ledger, or whose transaction was served without its
+ *  inner instructions) are read again, a few per pass. A trade stays UNKNOWN, and is reported as such, never as 0. */
+export const FEES = Object.freeze({ perPass: 10, maxAttempts: 20 });
+export async function fillTradeFees(d: IndexerDeps): Promise<{ resolved: number }> {
+  let resolved = 0;
+  for (const t of d.store.tradesNeedingFees(FEES.perPass, FEES.maxAttempts)) {
+    const launch = d.store.getLaunch(t.mint);
+    if (!launch) continue;
+    const sum = await d.chain.txSummary(t.sig).catch(() => null);
+    let f: TradeFees;
+    if (!sum) f = unknownFees('NO_TX_DETAILS');
+    else {
+      const curve = await d.poolCache.get(launch.pool).catch(() => null);
+      f = feesFromSummary(sum, launch.pool, curve?.creatorTradingFeePct ?? null);
+      if (f.evidence === 'NO_SWAP_EVENT' && launch.dammPool) f = feesFromSummary(sum, launch.dammPool, null);
+    }
+    d.store.setTradeFees(t.sig, f);
+    if (f.status === 'RESOLVED') resolved++;
+    else if (t.feeAttempts + 1 >= FEES.maxAttempts) d.log?.(`fees of trade ${t.sig} (${launch.symbol}) not readable after ${FEES.maxAttempts} attempts (${f.evidence}); reported as unknown`);
+  }
+  return { resolved };
 }
 
 /** Records trades for new signatures in order and moves the cursor past each one. A signature whose details the RPC
  *  does not serve yet goes into the durable backfill queue, so newer trades keep indexing and nothing is lost. */
-async function walk(d: IndexerDeps, launch: LaunchRow, venue: Venue, pool: Pick<LivePool, 'baseVault' | 'quoteVault'>,
+async function walk(d: IndexerDeps, launch: LaunchRow, venue: Venue, pool: TradePool,
   sigs: { signature: string; err: boolean }[], setCursor: (sig: string) => void): Promise<number> {
   let trades = 0;
   for (const s of sigs) {
@@ -173,6 +204,7 @@ export function startBackground(d: IndexerDeps, intervalMs = 15_000): () => void
         await syncLaunch(d, l).catch((e) => d.log?.(`index ${l.mint}: ${(e as Error).message.slice(0, 200)}`));
       }
       await crankMigrations(d);
+      await fillTradeFees(d).catch((e) => d.log?.(`trade fees: ${(e as Error).message.slice(0, 200)}`));
     } catch (e) {
       d.log?.(`background pass failed: ${(e as Error).message.slice(0, 200)}`);
     } finally { running = false; }

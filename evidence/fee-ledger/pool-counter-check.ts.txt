@@ -1,0 +1,32 @@
+// TEMPORARY read-only check: decode each indexed trade's swap event and compare fee sums with the pools' own counters.
+import { connectDevnet, getTxSummary, readPool } from '@project-qf/adapter-meteora-dbc/launchpad';
+import { decodeSwapEvent } from '@project-qf/tx';
+const conn = await connectDevnet('https://api.devnet.solana.com');
+const base = 'http://127.0.0.1:8788';
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const tokens = (await (await fetch(`${base}/api/lp/tokens`)).json()).tokens as any[];
+const earn = await (await fetch(`${base}/api/lp/earnings`)).json();
+for (const t of tokens) {
+  const { trades } = await (await fetch(`${base}/api/lp/tokens/${t.mint}`)).json();
+  let curveTrading = 0n, curveProt = 0n, curveRef = 0n, lp = 0n, comp = 0n, dprot = 0n, missing = 0, n = 0, perTrade: string[] = [];
+  for (const tr of trades) {
+    let s = null; for (let i = 0; i < 4 && !s; i++) { s = await getTxSummary(conn, tr.sig).catch(() => null); if (!s) await sleep(1500); }
+    if (!s) { missing++; continue; }
+    const evs = (s.programEvents ?? []).map((e) => decodeSwapEvent(e.programId, e.data)).filter((e) => e);
+    if (!evs.length) { missing++; perTrade.push(`${tr.sig.slice(0, 6)} NO_EVENT`); continue; }
+    n++;
+    for (const e of evs) { if (e!.venue === 'CURVE') { curveTrading += e!.tradingFee; curveProt += e!.protocolFee; curveRef += e!.referralFee; } else { lp += e!.lpFee; comp += e!.compoundingFee; dprot += e!.protocolFee; } }
+    perTrade.push(`${tr.sig.slice(0, 6)} ${tr.side} q=${tr.quoteRaw} ${evs.map((e) => `${e!.venue} dir=${e!.tradeDirection} cfm=${e!.collectFeeMode} t=${e!.tradingFee} lp=${e!.lpFee} c=${e!.compoundingFee} p=${e!.protocolFee} r=${e!.referralFee}`).join(' | ')}`);
+    await sleep(400);
+  }
+  let pool = null; for (let i = 0; i < 4 && !pool; i++) { pool = await readPool(conn, t.pool).catch(() => null); if (!pool) await sleep(2000); }
+  const claims = earn.claims.filter((c: any) => c.mint === t.mint);
+  const claimed = (venue: string, by: (c: any) => boolean) => claims.filter((c: any) => c.venue === venue && by(c)).reduce((a: bigint, c: any) => a + BigInt(c.quoteRaw ?? 0), 0n);
+  const pct = BigInt(pool?.creatorTradingFeePct ?? 0);
+  console.log(JSON.stringify({ symbol: t.symbol, trades: trades.length, decoded: n, missing, pct: pool?.creatorTradingFeePct,
+    curve: { tradingFeeSum: curveTrading.toString(), protocol: curveProt.toString(), referral: curveRef.toString(),
+      creatorFromTrades_floorEach: 'see below', poolCreatorUnclaimed: pool?.creatorQuoteFee, poolPartnerUnclaimed: pool?.partnerQuoteFee,
+      creatorClaimed: claimed('CURVE', (c) => c.byCreator).toString(), partnerClaimed: claimed('CURVE', (c) => c.byTreasury).toString() },
+    damm: { lpFeeSum: lp.toString(), compounding: comp.toString(), protocol: dprot.toString(), lpClaimed: claimed('DAMM_V2', () => true).toString() } }));
+  for (const l of perTrade) console.log('   ', l);
+}

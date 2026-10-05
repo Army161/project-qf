@@ -15,7 +15,7 @@ import {
   Connection, Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction,
   type Commitment,
 } from '@solana/web3.js';
-import { CAPABILITY_FLAGS } from '@project-qf/core';
+import { CAPABILITY_FLAGS, decodeBase58 } from '@project-qf/core';
 import { PROGRAM_IDS, TX_BINDING_POLICY_VERSION, type ApprovedTerms } from '@project-qf/tx';
 import { DAMM_V2_CUSTOMIZABLE_CONFIG, createBoundedFetch } from './index.ts';
 
@@ -221,6 +221,8 @@ export interface LivePool {
   baseDecimals: number; quoteDecimals: number; migrationProgress: number; isMigrated: boolean; curveComplete: boolean;
   /** quote raw per 1 base UI unit, 18-decimal fixed point string */
   priceQuotePerBase: string; marketCapQuoteRaw: string; progressBps: number; creatorQuoteFee: string; creatorBaseFee: string; partnerQuoteFee: string; partnerBaseFee: string;
+  /** the config's creator share of the curve's trading fee, percent (the rest is the platform's) */
+  creatorTradingFeePct: number;
   /** the curve's starting price (config sqrtStartPrice), same fixed point as priceQuotePerBase: a stable "since launch" reference */
   launchPriceQuotePerBase: string;
   raw: { virtualPool: unknown; config: unknown };
@@ -248,7 +250,7 @@ export function summarisePool(pool: string, vp: any, cfg: any): LivePool {
     baseReserve: big(s.baseReserve).toString(), migrationQuoteThreshold: threshold.toString(), totalSupplyRaw: totalSupplyRaw.toString(),
     baseDecimals, quoteDecimals, migrationProgress: Number(s.migrationProgress), isMigrated: Number(s.isMigrated) === 1,
     curveComplete: quoteReserve >= threshold, priceQuotePerBase: priceFp.toString(), marketCapQuoteRaw: mcapRaw.toString(), progressBps,
-    creatorQuoteFee: big(s.creatorQuoteFee).toString(), creatorBaseFee: big(s.creatorBaseFee ?? 0).toString(), partnerQuoteFee: big(s.partnerQuoteFee).toString(), partnerBaseFee: big(s.partnerBaseFee ?? 0).toString(), launchPriceQuotePerBase: launchFp.toString(), raw: { virtualPool: vp, config: cfg },
+    creatorQuoteFee: big(s.creatorQuoteFee).toString(), creatorBaseFee: big(s.creatorBaseFee ?? 0).toString(), partnerQuoteFee: big(s.partnerQuoteFee).toString(), partnerBaseFee: big(s.partnerBaseFee ?? 0).toString(), creatorTradingFeePct: Number(cfg.creatorTradingFeePercentage), launchPriceQuotePerBase: launchFp.toString(), raw: { virtualPool: vp, config: cfg },
   };
 }
 
@@ -452,7 +454,9 @@ export async function operatorSend(conn: Connection, tx: Transaction, signers: K
 }
 
 export interface TxSummary { signature: string; slot: number; blockTime: number | null; err: boolean; feePayer: string; accountKeys: string[];
-  tokenDeltas: Record<string, bigint>; logMessages: string[] }
+  tokenDeltas: Record<string, bigint>; logMessages: string[];
+  /** inner instructions of DBC and DAMM v2 (their emit_cpi swap events); absent when not read */
+  programEvents?: { programId: string; data: Uint8Array }[] }
 /** Parsed transaction reduced to what the indexer needs: fee payer and per-token-account balance deltas. */
 export async function getTxSummary(conn: Connection, signature: string): Promise<TxSummary | null> {
   const t = await conn.getParsedTransaction(signature, { commitment: 'confirmed', maxSupportedTransactionVersion: 0 });
@@ -464,8 +468,14 @@ export async function getTxSummary(conn: Connection, signature: string): Promise
   };
   add(t.meta.preTokenBalances, -1n);
   add(t.meta.postTokenBalances, 1n);
+  // inner instructions of the two Meteora programs: their swap events carry each swap's exact fees
+  const programEvents: { programId: string; data: Uint8Array }[] = [];
+  for (const group of t.meta.innerInstructions ?? []) for (const ix of group.instructions) {
+    const programId = ix.programId.toBase58();
+    if ((programId === PROGRAM_IDS.DBC || programId === PROGRAM_IDS.DAMM_V2) && 'data' in ix) programEvents.push({ programId, data: decodeBase58(ix.data) });
+  }
   return { signature, slot: t.slot, blockTime: t.blockTime ?? null, err: t.meta.err !== null, feePayer: keys[0]!, accountKeys: keys, tokenDeltas: deltas,
-    logMessages: t.meta.logMessages ?? [] };
+    logMessages: t.meta.logMessages ?? [], programEvents };
 }
 
 /** Signatures touching `address` since `until` (exclusive), oldest first. The RPC returns at most one page, newest

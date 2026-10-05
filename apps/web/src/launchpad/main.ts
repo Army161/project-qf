@@ -22,7 +22,10 @@ interface Token { mint: string; pool: string; name: string; symbol: string; desc
   history?: { complete: boolean; pending: number; unavailable: number } }
 interface Fees { isCreator: boolean; curve: { quoteRaw: string; baseRaw: string } | null;
   positions: { position: string; nftMint: string; feeBaseRaw: string; feeQuoteRaw: string; permanentlyLocked: boolean }[] }
-interface Trade { sig: string; trader: string; side: 'BUY' | 'SELL'; quoteRaw: string; baseRaw: string; slot: number; blockTime: number | null }
+/** What a trade paid in fees, from the swap event in its own transaction (PENDING = not read yet, UNKNOWN = could not be proven). */
+interface TradeFee { status: 'RESOLVED' | 'UNKNOWN' | 'PENDING'; evidence: string | null; totalRaw: string | null; creatorRaw: string | null; platformRaw: string | null;
+  lpRaw: string | null; protocolRaw: string | null; referralRaw: string | null; compoundingRaw: string | null }
+interface Trade { sig: string; trader: string; side: 'BUY' | 'SELL'; quoteRaw: string; baseRaw: string; slot: number; blockTime: number | null; venue?: 'CURVE' | 'DAMM_V2' | null; fees?: TradeFee }
 
 class ApiError extends Error { code: string; details: string[]; constructor(code: string, m: string, d: string[] = []) { super(m); this.code = code; this.details = d; } }
 async function api<T>(path: string, body?: unknown): Promise<T> {
@@ -589,6 +592,7 @@ async function renderToken(mint: string) {
     h('td', { class: 'mono' }, ext(explorer('address', x.trader), short(x.trader))),
     h('td', { class: 'num' }, units(x.quoteRaw, q.decimals, 2)),
     h('td', { class: 'num' }, compact(x.baseRaw, bd)),
+    feeCell(x.fees, q.decimals),
     h('td', { class: 'dim' }, x.blockTime ? ago(x.blockTime) : `slot ${x.slot}`),
     h('td', { class: 'mono' }, ext(explorer('tx', x.sig), short(x.sig, 4)))));
   const kpi = (k: string, v: string) => h('div', {}, h('span', { class: 'k' }, k), h('span', { class: 'v' }, v));
@@ -621,7 +625,7 @@ async function renderToken(mint: string) {
           h('p', { class: 'dim small' }, graduated ? `Graduated to Meteora DAMM v2.${lockedText(l) ? ` ${lockedText(l)} of the pool's liquidity is permanently locked (read from the pool account). Locked liquidity cannot be withdrawn; it does not fix the price.` : ''}`
             : `${units(l.quoteReserve, q.decimals, 0)} of ${units(l.migrationQuoteThreshold, q.decimals, 0)} ${q.symbol} raised. At ${units(l.migrationQuoteThreshold, q.decimals, 0)} the coin moves to a Meteora DAMM v2 pool and its liquidity is locked forever.${toGo > 0n ? ` About ${units(toGo, q.decimals, 0)} ${q.symbol} of buying to go.` : ''}`)) : null,
         h('div', { class: 'card' }, h('h3', {}, 'Trades'), historyNote(t), trades.length ? h('div', { class: 'scroll' }, h('table', { class: 'trades' },
-          h('thead', {}, h('tr', {}, ...[['Side', ''], ['Trader', ''], [q.symbol, 'num'], [`$${t.symbol}`, 'num'], ['When', ''], ['Tx', '']].map(([c, cls]) => h('th', { class: cls }, c)))), h('tbody', {}, ...tradeRows))) : h('p', { class: 'dim', style: { margin: '0' } }, 'No trades yet. Be the first.'))),
+          h('thead', {}, h('tr', {}, ...[['Side', ''], ['Trader', ''], [q.symbol, 'num'], [`$${t.symbol}`, 'num'], ['Fee paid', 'num'], ['When', ''], ['Tx', '']].map(([c, cls]) => h('th', { class: cls }, c)))), h('tbody', {}, ...tradeRows))) : h('p', { class: 'dim', style: { margin: '0' } }, 'No trades yet. Be the first.'))),
       h('aside', {}, panel, feesCard,
         h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'About'), t.description ? h('p', {}, t.description) : null,
           h('dl', { class: 'facts' },
@@ -668,11 +672,13 @@ interface Earnings {
   totals: { unclaimed: { creatorCurve: string; platformCurve: string; creatorLp: string; platformLp: string }; claimedThroughApp: string; incomplete: boolean;
     coverage: { unclaimedComplete: boolean; claimsComplete: boolean; unresolvedClaims: number } };
   coins: { mint: string; symbol: string; name: string; status: string; creator: string; curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null;
-    platformWallet: string; treasury: boolean }[];
+    platformWallet: string; treasury: boolean; checks?: { creatorCurve: FeeCheck; platformCurve: FeeCheck; lp: FeeCheck | null } }[];
   claims: { sig: string; mint: string; symbol: string; venue: 'CURVE' | 'DAMM_V2'; claimer: string; byCreator: boolean; byTreasury: boolean; quoteRaw: string | null; at: string;
     status: 'UNKNOWN' | 'RESOLVED' | 'FAILED_TX'; evidence: string | null }[];
   treasury: { multisig: string; vault: string; threshold: number; members: string[]; label: string; paidToTreasuryQuoteRaw: string; unresolvedReceipts: number; openProposals: number } | null;
 }
+/** Fees recorded trade by trade versus what the pool still holds plus what was claimed (lp-api earnings checks). */
+interface FeeCheck { fromTradesRaw: string; onChainRaw: string | null; claimedRaw: string; differenceRaw: string | null; status: 'MATCH' | 'MISMATCH' | 'INCOMPLETE'; reasons: string[] }
 /** Why a receipt's amount is not known yet, in words. */
 const EVIDENCE: Record<string, string> = {
   NO_TX_DETAILS: 'the RPC has not returned its transaction yet',
@@ -727,6 +733,7 @@ async function renderEarnings(fresh = false) {
       n ? h('p', { class: 'err small' }, `${n} claim ${n === 1 ? 'receipt is' : 'receipts are'} not confirmed from ${n === 1 ? 'its' : 'their'} transaction yet, so "Claimed in the app" leaves ${n === 1 ? 'it' : 'them'} out. Each refresh checks again.`) : null),
     h('div', { class: 'card' }, h('h3', {}, 'Unclaimed, per coin'), table([['Coin', ''], ['Creator · curve', 'num'], ['Creator · LP', 'num'], ['Platform · curve', 'num'], ['Platform · LP', 'num']], rows, 'No coins yet.')),
     e.treasury ? treasuryCard(e.treasury, amt) : null,
+    checksCard(e, q.decimals, q.symbol),
     h('div', { class: 'card' }, h('h3', {}, 'Claims made in the app'), table([['Coin', ''], ['What', ''], ['By', ''], ['Paid out', 'num'], ['When', ''], ['Tx', '']], claimRows, 'No claims yet.')),
     h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'How to read this'),
       h('ul', { class: 'notes' },
@@ -739,6 +746,24 @@ async function renderEarnings(fresh = false) {
             ': a coin keeps the config it launched on, and a config\'s fee claimer cannot be changed.'))
           : h('li', {}, h('span', {}, 'Platform fees can only be claimed by the platform fee claimer ', ext(explorer('address', e.platformWallet), short(e.platformWallet)), '. Before mainnet that must be a multisig, so this page has no claim button.')),
         h('li', {}, 'Claims made outside this app are not listed. A claim\'s amount is what left that coin\'s own pool vaults in its own transaction; until that is confirmed it shows as unknown.')))));
+}
+
+/** Per coin: do the fees recorded trade by trade add up to what the pool still holds plus what was claimed? */
+function checksCard(e: Earnings, decimals: number, symbol: string) {
+  const fee = (raw: string | null) => (raw == null ? '—' : `${units(raw, decimals, 6)} ${symbol}`);
+  const cell = (c: FeeCheck | null | undefined) => {
+    if (!c) return h('td', { class: 'num dim' }, 'not graduated');
+    const label = c.status === 'MATCH' ? h('span', { class: 'check-ok' }, BigInt(c.differenceRaw ?? '0') > 0n ? `adds up (${c.differenceRaw} raw rounding)` : 'adds up')
+      : c.status === 'MISMATCH' ? h('span', { class: 'check-bad' }, `off by ${fee(c.differenceRaw)}`) : h('span', { class: 'dim' }, 'not checkable yet');
+    return h('td', { class: 'num', title: c.reasons.join('; ') }, h('span', {}, `${fee(c.fromTradesRaw)} from trades`), h('span', { class: 'dim small reason' }, label));
+  };
+  const rows = e.coins.filter((c) => c.checks).map((c) => h('tr', {}, h('td', {}, h('a', { href: `#/t/${c.mint}` }, `$${c.symbol}`)),
+    cell(c.checks!.creatorCurve), cell(c.checks!.platformCurve), cell(c.checks!.lp)));
+  if (!rows.length) return null;
+  return h('div', { class: 'card' }, h('h3', {}, 'Do the trade fees add up?'),
+    h('p', { class: 'dim small', style: { margin: '0 0 12px' } }, 'Each trade\'s fee is read from its own transaction (see ', h('a', { href: '#/fees' }, 'Fees'), '). Here the per-trade shares are added up and compared with what the pool still holds plus what was claimed through the app. A claim made outside the app would show as a difference.'),
+    h('div', { class: 'scroll' }, h('table', { class: 'trades' }, h('thead', {}, h('tr', {}, ...[['Coin', ''], ['Creator · curve', 'num'], ['Platform · curve', 'num'], ['LP positions', 'num']].map(([x, cls]) => h('th', { class: cls }, x)))),
+      h('tbody', {}, ...rows))));
 }
 
 /** The platform treasury: what reached its vault through executed proposals, and how it is controlled. Read-only. */
@@ -755,14 +780,103 @@ function treasuryCard(t: NonNullable<Earnings['treasury']>, amt: (raw: string) =
       'Platform fees of coins launched since the treasury are claimed into this vault by a multisig proposal. Two of three members must approve before it runs. The server builds the transactions but holds no member key, so it cannot approve, run or spend anything. The members here are throwaway devnet keys; the real signers, threshold and any time lock are decided before mainnet.'));
 }
 
+// ------------------------------------------------------------------ trading fees (read-only)
+const FEE_EVIDENCE: Record<string, string> = {
+  NO_TX_DETAILS: 'the RPC has not returned its transaction yet',
+  NO_SWAP_EVENT: 'its transaction has no swap record for this pool',
+  EVENT_DECODE_FAILED: 'its swap record could not be read exactly',
+  FEE_NOT_IN_QUOTE: 'the pool took this fee in the coin, not in the quote token',
+  NO_CREATOR_SHARE: "the curve's creator share could not be read",
+};
+/** A trade's fee, with where it went in the tooltip; never shown as 0 when it is not proven. */
+function feeCell(f: TradeFee | undefined, decimals: number) {
+  if (!f || f.status === 'PENDING') return h('td', { class: 'num dim' }, 'reading…');
+  if (f.status !== 'RESOLVED') return h('td', { class: 'num dim', title: FEE_EVIDENCE[f.evidence ?? ''] ?? '' }, 'unknown');
+  const u = (r: string | null) => units(r ?? '0', decimals, 6);
+  const where = f.lpRaw !== null ? `LPs ${u(f.lpRaw)} · protocol ${u(f.protocolRaw)}` : `creator ${u(f.creatorRaw)} · platform ${u(f.platformRaw)} · protocol ${u(f.protocolRaw)}`;
+  return h('td', { class: 'num', title: where }, u(f.totalRaw));
+}
+interface FeeTotals { trades: number; volumeQuoteRaw: string; feesRaw: string; creatorRaw: string; platformRaw: string; lpRaw: string; protocolRaw: string;
+  referralRaw: string; compoundingRaw: string; unknownTrades: number }
+interface WalletFees { wallet: string; totals: FeeTotals; notYetRead: number; coins: (FeeTotals & { mint: string; symbol: string })[];
+  trades: (Trade & { mint: string; symbol: string })[] }
+interface AllFees { totals: FeeTotals; coins: (FeeTotals & { mint: string; symbol: string })[]; wallets: (FeeTotals & { trader: string })[]; walletCount: number }
+/** #/fees (everyone) or #/fees/<wallet>; undefined on any other page. */
+const feesWallet = () => { const x = /^#\/fees(?:\/([1-9A-HJ-NP-Za-km-z]{32,44}))?$/.exec(location.hash); return x ? x[1] ?? null : undefined; };
+
+async function renderFees(wallet: string | null) {
+  const main = $('#view');
+  const q = Q();
+  main.replaceChildren(h('div', { class: 'empty' }, 'Loading…'));
+  let w: WalletFees | null = null, all: AllFees | null = null;
+  try { if (wallet) w = await api<WalletFees>(`/api/lp/fees?wallet=${wallet}`); else all = await api<AllFees>('/api/lp/fees'); }
+  catch (err) { main.replaceChildren(h('div', { class: 'empty err' }, `Fees unavailable (${(err as Error).message}).`)); return; }
+  if (feesWallet() !== wallet) return;
+  const fee = (raw: string | null | undefined) => (raw == null ? '—' : `${units(raw, q.decimals, 6)} ${q.symbol}`);
+  const vol = (raw: string) => `${units(raw, q.decimals, 2)} ${q.symbol}`;
+  const t = (w ?? all)!.totals;
+  const kpi = (k: string, v: string, sub: string) => h('div', {}, h('span', { class: 'k' }, k), h('span', { class: 'v' }, v), h('span', { class: 'dim small' }, sub));
+  const table = (head: [string, string][], body: HTMLElement[], empty: string) => body.length
+    ? h('div', {}, h('p', { class: 'scroll-hint dim small' }, 'Swipe the table sideways to see every column.'),
+      h('div', { class: 'scroll' }, h('table', { class: 'trades' }, h('thead', {}, h('tr', {}, ...head.map(([c, cls]) => h('th', { class: cls }, c)))), h('tbody', {}, ...body))))
+    : h('p', { class: 'dim', style: { margin: '0' } }, empty);
+  const unknownNote = (n: number) => n ? h('p', { class: 'err small' }, `${n} ${n === 1 ? 'trade has' : 'trades have'} fees not confirmed from ${n === 1 ? 'its' : 'their'} transaction yet. They are left out of the totals, not counted as zero, and are read again automatically.`) : null;
+  const coinRow = (c: FeeTotals & { mint: string; symbol: string }) => h('tr', {},
+    h('td', {}, h('a', { href: `#/t/${c.mint}` }, `$${c.symbol}`)), h('td', { class: 'num' }, String(c.trades)), h('td', { class: 'num' }, vol(c.volumeQuoteRaw)),
+    h('td', { class: 'num' }, fee(c.feesRaw)), h('td', { class: 'num' }, fee(c.creatorRaw)), h('td', { class: 'num' }, fee(c.platformRaw)), h('td', { class: 'num' }, fee(c.lpRaw)),
+    h('td', { class: 'num' }, fee(c.protocolRaw)), h('td', { class: 'num' }, c.unknownTrades ? String(c.unknownTrades) : '—'));
+  const coinHead: [string, string][] = [['Coin', ''], ['Trades', 'num'], ['Volume', 'num'], ['Fees paid', 'num'], ['To creator', 'num'], ['To platform', 'num'], ['To LPs', 'num'], ['To Meteora', 'num'], ['Unconfirmed', 'num']];
+  const input = h('input', { type: 'text', placeholder: 'Wallet address', value: wallet ?? state.wallet?.account.address ?? '', 'aria-label': 'Wallet address', spellcheck: 'false', autocomplete: 'off' }) as HTMLInputElement;
+  const go = (e: Event) => { e.preventDefault(); const v = input.value.trim(); if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(v)) location.hash = `#/fees/${v}`; else toast('That is not a wallet address.', 'err'); };
+  const lookup = h('form', { class: 'fee-lookup', onsubmit: go }, input, h('button', { class: 'btn primary', type: 'submit' }, 'Look up'), wallet ? h('a', { class: 'btn ghost', href: '#/fees' }, 'All traders') : null);
+  const head = h('div', { class: 'earn-head' }, h('h1', {}, wallet ? 'Fees paid by a wallet' : 'Trading fees'),
+    h('p', { class: 'dim' }, 'Every fee is read from the swap record the pool program wrote in that trade\'s own transaction, so each figure links to a transaction anyone can check. Devnet test tokens with no value. Read-only.'), lookup);
+  const notes = h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'How to read this'), h('ul', { class: 'notes' },
+    h('li', {}, 'A fee is what a trader paid on a trade. On the bonding curve it is split between the coin\'s creator and the platform by the coin\'s fee settings, plus Meteora\'s protocol share. After graduation it goes to the pool\'s liquidity positions (the creator\'s and the platform\'s locked positions) plus Meteora\'s share.'),
+    h('li', {}, 'Fees paid are not owed back. Holder rewards, the next milestone, will pay out from this record, wallet by wallet, and stay off on mainnet until reviewed.'),
+    h('li', {}, 'Earnings checks that these per-trade figures add up to what the pools hold plus what was claimed.')));
+  if (w) {
+    const rows = w.trades.map((x) => h('tr', {},
+      h('td', {}, h('a', { href: `#/t/${x.mint}` }, `$${x.symbol}`)), h('td', { class: x.side === 'BUY' ? 'buy' : 'sell' }, x.side === 'BUY' ? 'Buy' : 'Sell'),
+      h('td', {}, x.venue === 'DAMM_V2' ? 'DAMM v2' : x.venue === 'CURVE' ? 'Curve' : '—'), h('td', { class: 'num' }, vol(x.quoteRaw)), feeCell(x.fees, q.decimals),
+      h('td', { class: 'dim' }, x.blockTime ? ago(x.blockTime) : `slot ${x.slot}`), h('td', { class: 'mono' }, ext(explorer('tx', x.sig), short(x.sig, 4)))));
+    main.replaceChildren(h('section', { class: 'earnings' }, head,
+      h('p', { class: 'mono small' }, ext(explorer('address', w.wallet), w.wallet)),
+      h('div', { class: 'kpis' }, kpi('Fees paid', fee(t.feesRaw), `${t.trades} ${t.trades === 1 ? 'trade' : 'trades'}, ${vol(t.volumeQuoteRaw)}`),
+        kpi('To creators', fee(t.creatorRaw), 'bonding-curve share'), kpi('To the platform', fee(t.platformRaw), 'bonding-curve share'),
+        kpi('To liquidity positions', fee(t.lpRaw), 'after graduation')),
+      unknownNote(t.unknownTrades),
+      h('div', { class: 'card' }, h('h3', {}, 'Per coin'), table(coinHead, w.coins.map(coinRow), 'This wallet has no trades on the launchpad.')),
+      h('div', { class: 'card' }, h('h3', {}, 'Every trade'), table([['Coin', ''], ['Side', ''], ['Venue', ''], ['Amount', 'num'], ['Fee paid', 'num'], ['When', ''], ['Tx', '']], rows, 'No trades.')),
+      notes));
+    return;
+  }
+  const a = all!;
+  const walletRows = a.wallets.map((x) => h('tr', {}, h('td', { class: 'mono' }, h('a', { href: `#/fees/${x.trader}` }, short(x.trader))),
+    h('td', { class: 'num' }, String(x.trades)), h('td', { class: 'num' }, vol(x.volumeQuoteRaw)), h('td', { class: 'num' }, fee(x.feesRaw)),
+    h('td', { class: 'num' }, x.unknownTrades ? String(x.unknownTrades) : '—')));
+  main.replaceChildren(h('section', { class: 'earnings' }, head,
+    h('div', { class: 'kpis' }, kpi('Fees paid by all traders', fee(t.feesRaw), `${t.trades} trades by ${a.walletCount} ${a.walletCount === 1 ? 'wallet' : 'wallets'}`),
+      kpi('To creators', fee(t.creatorRaw), 'bonding-curve share'), kpi('To the platform', fee(t.platformRaw), 'bonding-curve share'),
+      kpi('To liquidity positions', fee(t.lpRaw), 'after graduation')),
+    unknownNote(t.unknownTrades),
+    h('div', { class: 'card' }, h('h3', {}, 'Per coin'), table(coinHead, a.coins.map(coinRow), 'No trades yet.')),
+    h('div', { class: 'card' }, h('h3', {}, a.walletCount > a.wallets.length ? `Per wallet (top ${a.wallets.length} of ${a.walletCount})` : 'Per wallet'),
+      table([['Wallet', ''], ['Trades', 'num'], ['Volume', 'num'], ['Fees paid', 'num'], ['Unconfirmed', 'num']], walletRows, 'No trades yet.')),
+    notes));
+}
+
 // ------------------------------------------------------------------ router + boot
 async function route() {
   clearInterval(tokenTimer);
   if ($('.sheet .x')) closeModal(); // a finished or idle dialog never follows you to another page; a running signing flow has no close button
   const m = currentMint();
   document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === (m ? '' : location.hash || '#/')));
-  if (m || location.hash === '#/create' || location.hash === '#/earnings') $('#tape').hidden = true;
+  const fw = feesWallet();
+  if (fw !== undefined) document.querySelector('nav a[href="#/fees"]')?.classList.add('on');
+  if (m || fw !== undefined || location.hash === '#/create' || location.hash === '#/earnings') $('#tape').hidden = true;
   if (m) await renderToken(m);
+  else if (fw !== undefined) await renderFees(fw);
   else if (location.hash === '#/create') renderCreate();
   else if (location.hash === '#/earnings') await renderEarnings();
   else await renderHome();

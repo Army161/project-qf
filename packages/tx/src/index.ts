@@ -12,3 +12,4 @@ export { checkComputeBudget, type BindingContext } from './semantic.ts';
 export { bindStoredVaultTransaction, bindVaultMessage } from './treasury.ts';
 export { SQUADS_IDL_SUBSET } from './engine/squads-idl-subset.ts';
 export * as squads from './engine/squads.ts';
+export { decodeSwapEvent, EVENT_IX_TAG, type SwapEvent } from './events.ts';

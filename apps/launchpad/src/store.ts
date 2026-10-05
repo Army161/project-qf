@@ -1,8 +1,9 @@
 // Launchpad persistence on node:sqlite: the platform record (test quote + DBC config), launches with their metadata and
-// image, indexed trades and the queue of transactions still to be read, built-transaction intents (exact message bytes
+// image, indexed trades with the fees each paid and the queue of transactions still to be read, built-transaction intents (exact message bytes
 // the browser must sign), fee-claim receipts and faucet claims.
 import { randomBytes } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
+import type { FeeEvidence, FeeStatus, TradeFees } from './fees.ts';
 
 export const STORE_MIGRATIONS: readonly string[] = [
   `CREATE TABLE platform (k TEXT PRIMARY KEY, v TEXT NOT NULL, updated_at TEXT NOT NULL);
@@ -50,6 +51,21 @@ export const STORE_MIGRATIONS: readonly string[] = [
      inner_json TEXT NOT NULL, proposer TEXT NOT NULL, propose_sig TEXT NOT NULL, approvals_json TEXT NOT NULL, status TEXT NOT NULL,
      execute_sig TEXT, executed_by TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, PRIMARY KEY (multisig, tx_index));
    CREATE INDEX treasury_proposals_status ON treasury_proposals(status, created_at);`,
+  // (6) each trade's fees, from the swap event in its own transaction: who paid what, and where it went. Trades
+  // recorded before this have fee_status NULL and are read again by the indexer (a few per pass).
+  `ALTER TABLE trades ADD COLUMN venue TEXT;
+   ALTER TABLE trades ADD COLUMN fee_status TEXT;
+   ALTER TABLE trades ADD COLUMN fee_evidence TEXT;
+   ALTER TABLE trades ADD COLUMN fee_attempts INTEGER NOT NULL DEFAULT 0;
+   ALTER TABLE trades ADD COLUMN fee_total_raw TEXT;
+   ALTER TABLE trades ADD COLUMN fee_protocol_raw TEXT;
+   ALTER TABLE trades ADD COLUMN fee_referral_raw TEXT;
+   ALTER TABLE trades ADD COLUMN fee_creator_raw TEXT;
+   ALTER TABLE trades ADD COLUMN fee_platform_raw TEXT;
+   ALTER TABLE trades ADD COLUMN fee_lp_raw TEXT;
+   ALTER TABLE trades ADD COLUMN fee_compounding_raw TEXT;
+   CREATE INDEX trades_trader ON trades(trader, slot);
+   CREATE INDEX trades_fee_status ON trades(fee_status);`,
 ];
 
 export type LaunchStatus = 'PENDING' | 'LIVE' | 'MIGRATED' | 'FAILED';
@@ -74,7 +90,17 @@ export interface BackfillRow { sig: string; venue: 'CURVE' | 'DAMM_V2'; mint: st
  *  on-chain proposal status the app last observed; anything else seen on chain (rejected, cancelled) is recorded as is. */
 export interface TreasuryProposalRow { multisig: string; txIndex: string; mint: string; venue: 'CURVE' | 'DAMM_V2'; innerJson: string; proposer: string;
   proposeSig: string; approvals: string[]; status: string; executeSig: string | null; executedBy: string | null; createdAt: string; updatedAt: string }
-export interface TradeRow { sig: string; mint: string; trader: string; side: 'BUY' | 'SELL'; quoteRaw: string; baseRaw: string; slot: number; blockTime: number | null; source: string }
+export interface TradeRow { sig: string; mint: string; trader: string; side: 'BUY' | 'SELL'; quoteRaw: string; baseRaw: string; slot: number; blockTime: number | null; source: string;
+  /** what this trade paid in fees; absent or null when not read yet */
+  fees?: TradeFees | null }
+/** A stored trade: its fee columns flattened (fee_status NULL = not read yet). */
+export interface StoredTrade extends Omit<TradeRow, 'fees'> {
+  venue: TradeFees['venue']; feeStatus: FeeStatus | null; feeEvidence: FeeEvidence | null; feeAttempts: number; feeTotalRaw: string | null; feeProtocolRaw: string | null;
+  feeReferralRaw: string | null; feeCreatorRaw: string | null; feePlatformRaw: string | null; feeLpRaw: string | null; feeCompoundingRaw: string | null }
+/** Fee totals of a group of trades (a wallet, a coin, or a wallet on one coin), quote raw. Only RESOLVED fees are added;
+ *  `unknownTrades` counts the trades whose fees are not proven yet, which are never added as 0. */
+export interface FeeTotals { trades: number; volumeQuoteRaw: string; feesRaw: string; creatorRaw: string; platformRaw: string; lpRaw: string; protocolRaw: string;
+  referralRaw: string; compoundingRaw: string; unknownTrades: number }
 export interface IntentRow { id: string; kind: string; mint: string | null; user: string; createdAt: string; expiresAt: string; messageHex: string;
   termsJson: string; lastValidBlockHeight: number; status: 'BUILT' | 'SUBMITTED' | 'CONFIRMED' | 'FAILED'; signature: string | null; error: string | null }
 
@@ -82,6 +108,13 @@ const treasuryRow = (r: Record<string, unknown>): TreasuryProposalRow => {
   const { approvalsJson, ...rest } = camel(r) as Record<string, unknown>;
   return { ...rest, approvals: JSON.parse(String(approvalsJson)) as string[] } as unknown as TreasuryProposalRow;
 };
+export function sumFees(ts: StoredTrade[]): FeeTotals {
+  const ok = ts.filter((t) => t.feeStatus === 'RESOLVED');
+  const add = (f: (t: StoredTrade) => string | null) => ok.reduce((a, t) => a + BigInt(f(t) ?? '0'), 0n).toString();
+  return { trades: ts.length, volumeQuoteRaw: ts.reduce((a, t) => a + BigInt(t.quoteRaw), 0n).toString(), feesRaw: add((t) => t.feeTotalRaw),
+    creatorRaw: add((t) => t.feeCreatorRaw), platformRaw: add((t) => t.feePlatformRaw), lpRaw: add((t) => t.feeLpRaw), protocolRaw: add((t) => t.feeProtocolRaw),
+    referralRaw: add((t) => t.feeReferralRaw), compoundingRaw: add((t) => t.feeCompoundingRaw), unknownTrades: ts.length - ok.length };
+}
 const camel = (r: Record<string, unknown>) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase()), v]));
 
 export class LaunchpadStore {
@@ -197,11 +230,41 @@ export class LaunchpadStore {
   insertTrade(t: TradeRow): boolean {
     const r = this.db.prepare(`INSERT OR IGNORE INTO trades (sig, mint, trader, side, quote_raw, base_raw, slot, block_time, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .run(t.sig, t.mint, t.trader, t.side, t.quoteRaw, t.baseRaw, t.slot, t.blockTime, t.source);
+    if (t.fees) this.setTradeFees(t.sig, t.fees);
     return Number(r.changes) > 0;
   }
-  listTrades(mint: string, limit = 200): TradeRow[] {
+  /** Records a trade's fees. A RESOLVED record is final; an UNKNOWN one counts an attempt and is read again later. */
+  setTradeFees(sig: string, f: TradeFees) {
+    this.db.prepare(`UPDATE trades SET venue = COALESCE(?, venue), fee_status = ?, fee_evidence = ?, fee_attempts = fee_attempts + 1, fee_total_raw = ?, fee_protocol_raw = ?,
+      fee_referral_raw = ?, fee_creator_raw = ?, fee_platform_raw = ?, fee_lp_raw = ?, fee_compounding_raw = ? WHERE sig = ? AND (fee_status IS NULL OR fee_status <> 'RESOLVED')`)
+      .run(f.venue, f.status, f.evidence, f.totalRaw, f.protocolRaw, f.referralRaw, f.creatorRaw, f.platformRaw, f.lpRaw, f.compoundingRaw, sig);
+  }
+  /** Trades whose fees are not proven yet and are due another read (never read first, then the fewest attempts). */
+  tradesNeedingFees(limit: number, maxAttempts: number): StoredTrade[] {
+    return (this.db.prepare(`SELECT * FROM trades WHERE (fee_status IS NULL OR fee_status = 'UNKNOWN') AND fee_attempts < ? ORDER BY fee_attempts, slot LIMIT ?`)
+      .all(maxAttempts, limit) as Record<string, unknown>[]).map((r) => camel(r) as unknown as StoredTrade);
+  }
+  listTrades(mint: string, limit = 200): StoredTrade[] {
     return (this.db.prepare('SELECT * FROM trades WHERE mint = ? ORDER BY slot DESC, sig LIMIT ?').all(mint, limit) as Record<string, unknown>[])
-      .map((r) => camel(r) as unknown as TradeRow);
+      .map((r) => camel(r) as unknown as StoredTrade);
+  }
+  /** Every trade a wallet made (all coins), newest first. */
+  listWalletTrades(trader: string, limit = 500): (StoredTrade & { symbol: string })[] {
+    return (this.db.prepare(`SELECT t.*, l.symbol AS symbol FROM trades t JOIN launches l ON l.mint = t.mint WHERE t.trader = ? ORDER BY t.slot DESC, t.sig LIMIT ?`)
+      .all(trader, limit) as Record<string, unknown>[]).map((r) => camel(r) as unknown as StoredTrade & { symbol: string });
+  }
+  /** Fee totals grouped by `by` ('trader', 'mint' or both), from every stored trade. bigint sums in JS (SQLite has no u64 text sum). */
+  feeTotals(by: ('trader' | 'mint')[], where: { trader?: string; mint?: string } = {}): (FeeTotals & { trader?: string; mint?: string })[] {
+    const cond = [where.trader ? 'trader = ?' : null, where.mint ? 'mint = ?' : null].filter(Boolean);
+    const rows = this.db.prepare(`SELECT * FROM trades${cond.length ? ` WHERE ${cond.join(' AND ')}` : ''}`)
+      .all(...[where.trader, where.mint].filter((x): x is string => !!x)) as Record<string, unknown>[];
+    const groups = new Map<string, { key: Record<string, string>; t: StoredTrade[] }>();
+    for (const r of rows.map((x) => camel(x) as unknown as StoredTrade)) {
+      const key = Object.fromEntries(by.map((k) => [k, r[k]]));
+      const id = JSON.stringify(key);
+      (groups.get(id) ?? groups.set(id, { key, t: [] }).get(id)!).t.push(r);
+    }
+    return [...groups.values()].map((g) => ({ ...g.key, ...sumFees(g.t) }));
   }
   /** Latest trades across launches that are LIVE or MIGRATED, newest first, with the coin's symbol (for the trade tape). */
   listRecentTrades(limit = 30): (TradeRow & { symbol: string })[] {

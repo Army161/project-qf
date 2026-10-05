@@ -1018,6 +1018,55 @@ export const DBC_IDL_SUBSET: IdlSubset = {
     }
    ]
   },
+  "EvtSwap2": {
+   "kind": "struct",
+   "fields": [
+    {
+     "name": "pool",
+     "type": "pubkey"
+    },
+    {
+     "name": "config",
+     "type": "pubkey"
+    },
+    {
+     "name": "trade_direction",
+     "type": "u8"
+    },
+    {
+     "name": "has_referral",
+     "type": "bool"
+    },
+    {
+     "name": "swap_parameters",
+     "type": {
+      "defined": {
+       "name": "SwapParameters2"
+      }
+     }
+    },
+    {
+     "name": "swap_result",
+     "type": {
+      "defined": {
+       "name": "SwapResult2"
+      }
+     }
+    },
+    {
+     "name": "quote_reserve_amount",
+     "type": "u64"
+    },
+    {
+     "name": "migration_threshold",
+     "type": "u64"
+    },
+    {
+     "name": "current_timestamp",
+     "type": "u64"
+    }
+   ]
+  },
   "InitializePoolParameters": {
    "kind": "struct",
    "fields": [
@@ -1191,6 +1240,69 @@ export const DBC_IDL_SUBSET: IdlSubset = {
     }
    ]
   },
+  "SwapParameters2": {
+   "kind": "struct",
+   "fields": [
+    {
+     "name": "amount_0",
+     "docs": [
+      "When it's exact in, partial fill, this will be amount_in. When it's exact out, this will be amount_out"
+     ],
+     "type": "u64"
+    },
+    {
+     "name": "amount_1",
+     "docs": [
+      "When it's exact in, partial fill, this will be minimum_amount_out. When it's exact out, this will be maximum_amount_in"
+     ],
+     "type": "u64"
+    },
+    {
+     "name": "swap_mode",
+     "docs": [
+      "Swap mode, refer [SwapMode]"
+     ],
+     "type": "u8"
+    }
+   ]
+  },
+  "SwapResult2": {
+   "kind": "struct",
+   "fields": [
+    {
+     "name": "included_fee_input_amount",
+     "type": "u64"
+    },
+    {
+     "name": "excluded_fee_input_amount",
+     "type": "u64"
+    },
+    {
+     "name": "amount_left",
+     "type": "u64"
+    },
+    {
+     "name": "output_amount",
+     "type": "u64"
+    },
+    {
+     "name": "next_sqrt_price",
+     "type": "u128"
+    },
+    {
+     "name": "trading_fee",
+     "type": "u64"
+    },
+    {
+     "name": "protocol_fee",
+     "type": "u64"
+    },
+    {
+     "name": "referral_fee",
+     "type": "u64"
+    }
+   ]
+  },
   "TokenSupplyParams": {
    "kind": "struct",
    "fields": [
@@ -1208,6 +1320,66 @@ export const DBC_IDL_SUBSET: IdlSubset = {
       "because DBC allow user to swap over the migration quote threshold, so in extreme case user may swap more than allowed buffer on curve",
       "that result the total supply in post migration may be increased a bit (between pre_migration_token_supply and post_migration_token_supply)"
      ],
+     "type": "u64"
+    }
+   ]
+  }
+ },
+ "events": {
+  "EvtSwap2": {
+   "discriminator": [
+    189,
+    66,
+    51,
+    168,
+    38,
+    80,
+    117,
+    153
+   ],
+   "fields": [
+    {
+     "name": "pool",
+     "type": "pubkey"
+    },
+    {
+     "name": "config",
+     "type": "pubkey"
+    },
+    {
+     "name": "trade_direction",
+     "type": "u8"
+    },
+    {
+     "name": "has_referral",
+     "type": "bool"
+    },
+    {
+     "name": "swap_parameters",
+     "type": {
+      "defined": {
+       "name": "SwapParameters2"
+      }
+     }
+    },
+    {
+     "name": "swap_result",
+     "type": {
+      "defined": {
+       "name": "SwapResult2"
+      }
+     }
+    },
+    {
+     "name": "quote_reserve_amount",
+     "type": "u64"
+    },
+    {
+     "name": "migration_threshold",
+     "type": "u64"
+    },
+    {
+     "name": "current_timestamp",
      "type": "u64"
     }
    ]

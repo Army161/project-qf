@@ -10,4 +10,6 @@ export interface IdlSubset {
   types: Record<string, IdlTypeDef>;
   /** Account discriminators, for subsets that also decode program accounts (Squads). */
   accounts?: Record<string, number[]>;
+  /** Anchor self-CPI events (emit_cpi): discriminator and fields, for subsets the indexer reads events with (DBC, DAMM v2). */
+  events?: Record<string, { discriminator: number[]; fields: IdlField[] }>;
 }

@@ -18,7 +18,7 @@ import type { LaunchpadChain, LiveDammPool, LivePool } from './chain.ts';
 import { PoolCache, syncLaunch, tradeFromSummary, DammCache } from './indexer.ts';
 import { feeClaimerFor, isTreasuryConfig, type PlatformRecord } from './platform.ts';
 import { claimIdentity, claimReceipt, resolveClaims } from './receipts.ts';
-import type { ClaimRow, LaunchRow, LaunchpadStore } from './store.ts';
+import { sumFees, type ClaimRow, type FeeTotals, type LaunchRow, type LaunchpadStore, type StoredTrade } from './store.ts';
 
 export const LP_API_VERSION = 'lp-api/1';
 export const BODY_LIMIT_BYTES = 16 * 1024;
@@ -155,12 +155,39 @@ const liveView = (p: LivePool | null, migrated: boolean, damm: LiveDammPool | nu
   venue: migrated ? 'DAMM_V2' : 'CURVE',
 };
 
+/** A trade as the API shows it, with what it paid in fees (from its own swap event; `status` PENDING = not read yet). */
+export function tradeView(t: StoredTrade) {
+  return { sig: t.sig, mint: t.mint, trader: t.trader, side: t.side, quoteRaw: t.quoteRaw, baseRaw: t.baseRaw, slot: t.slot, blockTime: t.blockTime, source: t.source,
+    venue: t.venue, fees: { status: t.feeStatus ?? 'PENDING', evidence: t.feeEvidence, totalRaw: t.feeTotalRaw, creatorRaw: t.feeCreatorRaw, platformRaw: t.feePlatformRaw,
+      lpRaw: t.feeLpRaw, protocolRaw: t.feeProtocolRaw, referralRaw: t.feeReferralRaw, compoundingRaw: t.feeCompoundingRaw } };
+}
+
+/** Per-coin check that the fees recorded trade by trade add up to what the chain holds and what was claimed:
+ *    curve: creator and platform shares from trades = the pool's unclaimed counter + proven claims through the app;
+ *    LP (after graduation): LP fees from trades = the positions' unclaimed fees + proven claims, less rounding dust the
+ *    DAMM v2 program leaves in the pool (it rounds each position's share down; at most a few raw units per trade).
+ *  MATCH or MISMATCH only when every input is known; otherwise INCOMPLETE with the reasons. A claim made outside this app
+ *  is not in the receipts and shows as a MISMATCH (the trades say more was earned than the chain still holds plus claims). */
+export type CheckStatus = 'MATCH' | 'MISMATCH' | 'INCOMPLETE';
+export interface FeeCheck { fromTradesRaw: string; onChainRaw: string | null; claimedRaw: string; differenceRaw: string | null; status: CheckStatus; reasons: string[] }
+export const LP_DUST_PER_TRADE = 2n;
+function feeCheck(fromTrades: bigint, unclaimed: string | null, claimed: bigint, reasons: string[], dustAllowed = 0n): FeeCheck {
+  const onChain = unclaimed === null ? null : BigInt(unclaimed) + claimed;
+  const diff = onChain === null ? null : fromTrades - onChain;
+  const why = [...reasons, ...(onChain === null ? ['the pool or positions could not be read'] : [])];
+  return { fromTradesRaw: fromTrades.toString(), onChainRaw: onChain === null ? null : onChain.toString(), claimedRaw: claimed.toString(), differenceRaw: diff === null ? null : diff.toString(),
+    status: why.length ? 'INCOMPLETE' : diff! >= 0n && diff! <= dustAllowed ? 'MATCH' : 'MISMATCH', reasons: why };
+}
+
+const lpOfCoin = (c: EarningsCoin) => (c.lp && c.lp !== 'UNAVAILABLE' ? c.lp : null);
 export const EARNINGS_TTL_MS = 30_000;
 /** Unresolved claim receipts checked against their transactions per uncached earnings request (the RPC is shared). */
 export const RECEIPT_CHECKS_PER_REQUEST = 5;
 type Unclaimed = { creatorQuoteRaw: string | null; platformQuoteRaw: string | null };
 interface EarningsCoin { mint: string; symbol: string; name: string; status: LaunchRow['status']; creator: string;
-  curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null; platformWallet: string; treasury: boolean }
+  curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null; platformWallet: string; treasury: boolean;
+  /** fees recorded trade by trade for this coin, and whether they add up to the chain (see feeCheck) */
+  fromTrades?: FeeTotals; checks?: { creatorCurve: FeeCheck; platformCurve: FeeCheck; lp: FeeCheck | null } }
 const TX_INDEX = /^[1-9]\d{0,18}$/;
 const TREASURY_REFRESH_PER_REQUEST = 5;
 const FINAL_PROPOSAL = new Set(['Executed', 'Rejected', 'Cancelled']);
@@ -259,11 +286,30 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
     if (path === '/api/lp/trades/recent' && method === 'GET') {
       return send(res, 200, { trades: o.store.listRecentTrades(30).map((t) => ({ sig: t.sig, mint: t.mint, symbol: t.symbol, trader: t.trader, side: t.side, quoteRaw: t.quoteRaw, blockTime: t.blockTime })) });
     }
+    // Fees paid by traders, trade by trade, from each trade's own swap event. With ?wallet=: that wallet's trades and
+    // totals per coin. Without: totals per coin and per wallet. Read-only; every figure links back to a transaction.
+    if (path === '/api/lp/fees' && method === 'GET') {
+      limit(`fees:${ip}`, 60);
+      const wallet = query.get('wallet');
+      const symbols = new Map(o.store.listLaunches(['LIVE', 'MIGRATED']).map((l) => [l.mint, l.symbol]));
+      const coinRows = (rows: (FeeTotals & { mint?: string })[]) => rows.filter((r) => symbols.has(r.mint!)).map((r) => ({ ...r, symbol: symbols.get(r.mint!)! }))
+        .sort((a, b) => a.symbol.localeCompare(b.symbol));
+      const pending = (rows: StoredTrade[]) => rows.filter((t) => t.feeStatus === null).length;
+      if (wallet !== null) {
+        if (!B58.test(wallet)) throw new HttpError(400, 'INVALID_REQUEST', 'wallet must be an address');
+        const trades = o.store.listWalletTrades(wallet).filter((t) => symbols.has(t.mint));
+        return send(res, 200, { wallet, totals: sumFees(trades), notYetRead: pending(trades), coins: coinRows(o.store.feeTotals(['mint'], { trader: wallet })),
+          trades: trades.map((t) => ({ ...tradeView(t), symbol: t.symbol })) });
+      }
+      const wallets = o.store.feeTotals(['trader']).sort((a, b) => (BigInt(b.feesRaw) > BigInt(a.feesRaw) ? 1 : BigInt(b.feesRaw) < BigInt(a.feesRaw) ? -1 : a.trader!.localeCompare(b.trader!)));
+      const all = o.store.feeTotals([])[0] ?? sumFees([]);
+      return send(res, 200, { totals: all, coins: coinRows(o.store.feeTotals(['mint'])), wallets: wallets.slice(0, 200), walletCount: wallets.length });
+    }
     const tm = /^\/api\/lp\/tokens\/([1-9A-HJ-NP-Za-km-z]{32,44})$/.exec(path);
     if (tm && method === 'GET') {
       const l = o.store.getLaunch(tm[1]!);
       if (!l || l.status === 'PENDING' || l.status === 'FAILED') throw new HttpError(404, 'NOT_FOUND', 'token not found');
-      return send(res, 200, { token: await tokenView(l, query.get('fresh') === '1'), trades: o.store.listTrades(l.mint) });
+      return send(res, 200, { token: await tokenView(l, query.get('fresh') === '1'), trades: o.store.listTrades(l.mint).map(tradeView) });
     }
     const wm = /^\/api\/lp\/wallet\/([1-9A-HJ-NP-Za-km-z]{32,44})$/.exec(path);
     if (wm && method === 'GET') {
@@ -610,8 +656,30 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
         return { ...c, symbol: l?.symbol ?? '?', byCreator: l?.creator === c.claimer, byTreasury: c.claimer === vault };
       });
       const unresolvedClaims = claims.filter((c) => c.status === 'UNKNOWN').length;
+      for (const c of coins) {
+        const l = launches.find((x) => x.mint === c.mint)!;
+        const ft = o.store.feeTotals(['mint'], { mint: c.mint })[0] ?? sumFees([]);
+        const mine = claims.filter((x) => x.mint === c.mint);
+        const claimed = (venue: string, who: (x: (typeof claims)[number]) => boolean) =>
+          mine.filter((x) => x.venue === venue && x.status === 'RESOLVED' && who(x)).reduce((a, x) => a + BigInt(x.quoteRaw!), 0n);
+        const h = o.store.backfillCounts(c.mint);
+        const reasons = (venue: string) => [
+          ...(ft.unknownTrades ? [`${ft.unknownTrades} trade(s) whose fees are not read yet`] : []),
+          ...(h.pending || h.unavailable ? [`${h.pending + h.unavailable} transaction(s) still being read`] : []),
+          ...(mine.some((x) => x.venue === venue && x.status === 'UNKNOWN') ? ['a claim receipt is not proven yet'] : []),
+        ];
+        const lp = lpOfCoin(c);
+        const dammTrades = BigInt(o.store.listTrades(c.mint, 100_000).filter((t) => t.venue === 'DAMM_V2').length);
+        c.fromTrades = ft;
+        c.checks = {
+          creatorCurve: feeCheck(BigInt(ft.creatorRaw), c.curve?.creatorQuoteRaw ?? null, claimed('CURVE', (x) => x.claimer === l.creator), reasons('CURVE')),
+          platformCurve: feeCheck(BigInt(ft.platformRaw), c.curve?.platformQuoteRaw ?? null, claimed('CURVE', (x) => x.claimer === c.platformWallet), reasons('CURVE')),
+          lp: l.status !== 'MIGRATED' ? null : feeCheck(BigInt(ft.lpRaw), lp && lp.creatorQuoteRaw !== null && lp.platformQuoteRaw !== null
+            ? (BigInt(lp.creatorQuoteRaw) + BigInt(lp.platformQuoteRaw)).toString() : null, claimed('DAMM_V2', () => true), reasons('DAMM_V2'), LP_DUST_PER_TRADE * dammTrades),
+        };
+      }
       const add = (pick: (c: EarningsCoin) => string | null | undefined) => coins.reduce((a, c) => a + BigInt(pick(c) ?? '0'), 0n).toString();
-      const lpOf = (c: EarningsCoin) => (c.lp && c.lp !== 'UNAVAILABLE' ? c.lp : null);
+      const lpOf = lpOfCoin;
       // two separate questions: were all pools and positions read (unclaimed), and is every receipt proven (claims)
       const unclaimedComplete = !coins.some((c) => !c.curve || c.lp === 'UNAVAILABLE' || (lpOf(c) && (lpOf(c)!.creatorQuoteRaw === null || lpOf(c)!.platformQuoteRaw === null)));
       const body = { cluster: 'devnet', label: 'TEST_ONLY devnet tokens with no value', quote: p.quote, platformWallet, asOf: now().toISOString(),

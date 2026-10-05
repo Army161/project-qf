@@ -1,0 +1,33 @@
+{"symbol":"VAULT","trades":3,"decoded":3,"missing":0,"pct":50,"curve":{"tradingFeeSum":"8080809","protocol":"2020202","referral":"0","creatorFromTrades_floorEach":"see below","poolCreatorUnclaimed":"4040404","poolPartnerUnclaimed":"0","creatorClaimed":"0","partnerClaimed":"4040405"},"damm":{"lpFeeSum":"3200000","compounding":"0","protocol":"800000","lpClaimed":"1599999"}}
+    65BNQx BUY q=400000000 DAMM_V2 dir=1 cfm=1 t=0 lp=3200000 c=0 p=800000 r=0
+    5mPX3Y BUY q=710101012 CURVE dir=1 cfm=null t=5680809 lp=0 c=0 p=1420202 r=0
+    3L3hfv BUY q=300000000 CURVE dir=1 cfm=null t=2400000 lp=0 c=0 p=600000 r=0
+{"symbol":"CASH","trades":6,"decoded":6,"missing":0,"pct":50,"curve":{"tradingFeeSum":"8082087","protocol":"2020520","referral":"0","creatorFromTrades_floorEach":"see below","poolCreatorUnclaimed":"2640725","poolPartnerUnclaimed":"4041044","creatorClaimed":"1400318","partnerClaimed":"0"},"damm":{"lpFeeSum":"9996736","compounding":"0","protocol":"2499184","lpClaimed":"4998368"}}
+    34YEPY SELL q=940096036 DAMM_V2 dir=0 cfm=1 t=0 lp=7596736 c=0 p=1899184 r=0
+    LFJ1LV BUY q=300000000 DAMM_V2 dir=1 cfm=1 t=0 lp=2400000 c=0 p=600000 r=0
+    41aQ3a BUY q=660181203 CURVE dir=1 cfm=null t=5281451 lp=0 c=0 p=1320362 r=0
+    KtHwjk BUY q=150000000 CURVE dir=1 cfm=null t=1200000 lp=0 c=0 p=300000 r=0
+    TPRc4L SELL q=78595 CURVE dir=0 cfm=null t=636 lp=0 c=0 p=158 r=0
+    2MUsje BUY q=200000000 CURVE dir=1 cfm=null t=1600000 lp=0 c=0 p=400000 r=0
+{"symbol":"TIPJAR","trades":2,"decoded":2,"missing":0,"pct":50,"curve":{"tradingFeeSum":"1600636","protocol":"400158","referral":"0","creatorFromTrades_floorEach":"see below","poolCreatorUnclaimed":"800318","poolPartnerUnclaimed":"800318","creatorClaimed":"0","partnerClaimed":"0"},"damm":{"lpFeeSum":"0","compounding":"0","protocol":"0","lpClaimed":"0"}}
+    2Gh4Wc SELL q=78595 CURVE dir=0 cfm=null t=636 lp=0 c=0 p=158 r=0
+    scWqjN BUY q=200000000 CURVE dir=1 cfm=null t=1600000 lp=0 c=0 p=400000 r=0
+{"symbol":"PAYDAY","trades":4,"decoded":4,"missing":0,"pct":50,"curve":{"tradingFeeSum":"8082087","protocol":"2020520","referral":"0","creatorFromTrades_floorEach":"see below","poolCreatorUnclaimed":"2640725","poolPartnerUnclaimed":"4041044","creatorClaimed":"1400318","partnerClaimed":"0"},"damm":{"lpFeeSum":"0","compounding":"0","protocol":"0","lpClaimed":"0"}}
+    43TH2C BUY q=660181203 CURVE dir=1 cfm=null t=5281451 lp=0 c=0 p=1320362 r=0
+    2HU3Xa BUY q=150000000 CURVE dir=1 cfm=null t=1200000 lp=0 c=0 p=300000 r=0
+    64Yybf SELL q=78595 CURVE dir=0 cfm=null t=636 lp=0 c=0 p=158 r=0
+    4usrY6 BUY q=200000000 CURVE dir=1 cfm=null t=1600000 lp=0 c=0 p=400000 r=0
+{"symbol":"FROG","trades":2,"decoded":2,"missing":0,"pct":50,"curve":{"tradingFeeSum":"1880000","protocol":"470000","referral":"0","creatorFromTrades_floorEach":"see below","poolCreatorUnclaimed":"940000","poolPartnerUnclaimed":"940000","creatorClaimed":"0","partnerClaimed":"0"},"damm":{"lpFeeSum":"0","compounding":"0","protocol":"0","lpClaimed":"0"}}
+    2u1N56 BUY q=35000000 CURVE dir=1 cfm=null t=280000 lp=0 c=0 p=70000 r=0
+    2PtpDh BUY q=200000000 CURVE dir=1 cfm=null t=1600000 lp=0 c=0 p=400000 r=0
+{"symbol":"MCAT","trades":10,"decoded":10,"missing":0,"pct":50,"curve":{"tradingFeeSum":"8083143","protocol":"2020784","referral":"0","creatorFromTrades_floorEach":"see below","poolCreatorUnclaimed":"4041571","poolPartnerUnclaimed":"4041572","creatorClaimed":"0","partnerClaimed":"0"},"damm":{"lpFeeSum":"300213","compounding":"0","protocol":"75053","lpClaimed":"0"}}
+    KMT4QW SELL q=12401302 DAMM_V2 dir=0 cfm=1 t=0 lp=100213 c=0 p=25053 r=0
+    2373GZ BUY q=25000000 DAMM_V2 dir=1 cfm=1 t=0 lp=200000 c=0 p=50000 r=0
+    649rs8 BUY q=640247512 CURVE dir=1 cfm=null t=5121981 lp=0 c=0 p=1280495 r=0
+    4oGc7N BUY q=120000000 CURVE dir=1 cfm=null t=960000 lp=0 c=0 p=240000 r=0
+    resG2g SELL q=93903 CURVE dir=0 cfm=null t=760 lp=0 c=0 p=189 r=0
+    4vQfE9 BUY q=40000000 CURVE dir=1 cfm=null t=320000 lp=0 c=0 p=80000 r=0
+    yHQice BUY q=120000000 CURVE dir=1 cfm=null t=960000 lp=0 c=0 p=240000 r=0
+    31SnfN SELL q=49681 CURVE dir=0 cfm=null t=402 lp=0 c=0 p=100 r=0
+    54y3tT BUY q=40000000 CURVE dir=1 cfm=null t=320000 lp=0 c=0 p=80000 r=0
+    21woG2 BUY q=50000000 CURVE dir=1 cfm=null t=400000 lp=0 c=0 p=100000 r=0

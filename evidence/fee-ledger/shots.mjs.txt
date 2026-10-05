@@ -1,0 +1,36 @@
+import { createRequire } from 'node:module';
+const require = createRequire('/home/user/qf/apps/web/package.json');
+const { chromium } = require('playwright-core');
+const BASE = 'http://127.0.0.1:8788';
+const OUT = '/tmp/claude-0/fees/shots/';
+const W = '8RKJVqkE8EGWLfghbXUAe1JhgEN2Z9eEX4EJ8xXdnAYG';
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+const problems = [];
+const pages = [
+  ['fees-all', '#/fees', 'table.trades'],
+  ['fees-wallet', `#/fees/${W}`, 'table.trades'],
+  ['token-vault', '#/t/FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o', 'table.trades'],
+  ['earnings', '#/earnings', '.card.treasury'],
+];
+for (const [vp, viewport] of [['desktop', { width: 1280, height: 900 }], ['phone', { width: 390, height: 844 }]]) {
+  for (const [name, hash, sel] of pages) {
+    const ctx = await browser.newContext({ viewport, colorScheme: 'dark', deviceScaleFactor: 1 });
+    const page = await ctx.newPage();
+    const tag = `${name}-${vp}`;
+    page.on('console', (m) => { if (m.type() === 'error') problems.push(`${tag} console.error: ${m.text()}`); });
+    page.on('pageerror', (e) => problems.push(`${tag} pageerror: ${e.message}`));
+    await page.goto(`${BASE}/${hash}`);
+    await page.waitForSelector(sel, { timeout: 60000 });
+    await page.waitForTimeout(900);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    if (overflow > 0) problems.push(`${tag} horizontal overflow ${overflow}px`);
+    await page.screenshot({ path: `${OUT}${tag}.png`, fullPage: true });
+    if (name === 'earnings') {
+      const card = page.locator('.card', { hasText: 'Do the trade fees add up?' });
+      await card.screenshot({ path: `${OUT}earnings-checks-${vp}.png` });
+    }
+    await ctx.close();
+  }
+}
+await browser.close();
+console.log(JSON.stringify({ problems }));

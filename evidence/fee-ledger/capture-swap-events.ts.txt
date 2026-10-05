@@ -1,0 +1,17 @@
+import { connectDevnet, getTxSummary } from '@project-qf/adapter-meteora-dbc/launchpad';
+import { decodeSwapEvent, toHex } from '@project-qf/tx';
+const conn = await connectDevnet('https://api.devnet.solana.com');
+const want: Record<string, string> = {
+  '5mPX3YBh6DcWbUXgVDUVbDhgQDCvuA7KSyWLF9qAducX73v4tVbjYsSzsEVWGSgSeSaiwRAAcMEqLyjRmsa5tYwR': 'curve buy ($VAULT, fills the curve)',
+  'TPRc4L3gmk3P3ybhEeAQnbYWwyWNEaPQvEW9wig5jCDaJiF3DseFMXLKfHsisoZKTpoyjQtSzrRTnsohSqd8BP7': 'curve sell ($CASH)',
+  '65BNQxa9m4fJ7bb3ZFoR4yGTzVeeTeTTvdt9zUmupKEQ23RbPucoZ3FrWbDryBmUcLeu9w1vVzsEB6hZ5rCxQy9i': 'DAMM v2 buy ($VAULT)',
+  '34YEPYJon2C7ZAX1ASSxXg9YHxAY2XbKwd7tB985Mz79NNuUNCfNwEedNiFsqETxUwEb5DKSUJ4uehKLboejvv16': 'DAMM v2 sell ($CASH)',
+};
+const out = [];
+for (const [sig, note] of Object.entries(want)) {
+  const s = (await getTxSummary(conn, sig))!;
+  out.push({ signature: sig, note, slot: s.slot, feePayer: s.feePayer,
+    innerInstructions: s.programEvents!.map((e) => ({ programId: e.programId, dataHex: toHex(e.data), swapEvent: !!decodeSwapEvent(e.programId, e.data) })) });
+  await new Promise((r) => setTimeout(r, 800));
+}
+console.log(JSON.stringify({ label: 'TEST_ONLY: public devnet chain data (inner instructions of DBC / DAMM v2 in four real swap transactions, captured 2026-10-05). Valueless test tokens.', transactions: out }, null, 1));

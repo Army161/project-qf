@@ -258,6 +258,67 @@ export const DAMM_IDL_SUBSET: IdlSubset = {
   }
  ],
  "types": {
+  "EvtSwap2": {
+   "kind": "struct",
+   "fields": [
+    {
+     "name": "pool",
+     "type": "pubkey"
+    },
+    {
+     "name": "trade_direction",
+     "type": "u8"
+    },
+    {
+     "name": "collect_fee_mode",
+     "type": "u8"
+    },
+    {
+     "name": "has_referral",
+     "type": "bool"
+    },
+    {
+     "name": "params",
+     "type": {
+      "defined": {
+       "name": "SwapParameters2"
+      }
+     }
+    },
+    {
+     "name": "swap_result",
+     "type": {
+      "defined": {
+       "name": "SwapResult2"
+      }
+     }
+    },
+    {
+     "name": "included_transfer_fee_amount_in",
+     "type": "u64"
+    },
+    {
+     "name": "included_transfer_fee_amount_out",
+     "type": "u64"
+    },
+    {
+     "name": "excluded_transfer_fee_amount_out",
+     "type": "u64"
+    },
+    {
+     "name": "current_timestamp",
+     "type": "u64"
+    },
+    {
+     "name": "reserve_a_amount",
+     "type": "u64"
+    },
+    {
+     "name": "reserve_b_amount",
+     "type": "u64"
+    }
+   ]
+  },
   "SwapParameters": {
    "kind": "struct",
    "fields": [
@@ -267,6 +328,145 @@ export const DAMM_IDL_SUBSET: IdlSubset = {
     },
     {
      "name": "minimum_amount_out",
+     "type": "u64"
+    }
+   ]
+  },
+  "SwapParameters2": {
+   "kind": "struct",
+   "fields": [
+    {
+     "name": "amount_0",
+     "docs": [
+      "When it's exact in, partial fill, this will be amount_in. When it's exact out, this will be amount_out"
+     ],
+     "type": "u64"
+    },
+    {
+     "name": "amount_1",
+     "docs": [
+      "When it's exact in, partial fill, this will be minimum_amount_out. When it's exact out, this will be maximum_amount_in"
+     ],
+     "type": "u64"
+    },
+    {
+     "name": "swap_mode",
+     "docs": [
+      "Swap mode, refer [SwapMode]"
+     ],
+     "type": "u8"
+    }
+   ]
+  },
+  "SwapResult2": {
+   "kind": "struct",
+   "fields": [
+    {
+     "name": "included_fee_input_amount",
+     "type": "u64"
+    },
+    {
+     "name": "excluded_fee_input_amount",
+     "type": "u64"
+    },
+    {
+     "name": "amount_left",
+     "type": "u64"
+    },
+    {
+     "name": "output_amount",
+     "type": "u64"
+    },
+    {
+     "name": "next_sqrt_price",
+     "type": "u128"
+    },
+    {
+     "name": "claiming_fee",
+     "type": "u64"
+    },
+    {
+     "name": "protocol_fee",
+     "type": "u64"
+    },
+    {
+     "name": "compounding_fee",
+     "type": "u64"
+    },
+    {
+     "name": "referral_fee",
+     "type": "u64"
+    }
+   ]
+  }
+ },
+ "events": {
+  "EvtSwap2": {
+   "discriminator": [
+    189,
+    66,
+    51,
+    168,
+    38,
+    80,
+    117,
+    153
+   ],
+   "fields": [
+    {
+     "name": "pool",
+     "type": "pubkey"
+    },
+    {
+     "name": "trade_direction",
+     "type": "u8"
+    },
+    {
+     "name": "collect_fee_mode",
+     "type": "u8"
+    },
+    {
+     "name": "has_referral",
+     "type": "bool"
+    },
+    {
+     "name": "params",
+     "type": {
+      "defined": {
+       "name": "SwapParameters2"
+      }
+     }
+    },
+    {
+     "name": "swap_result",
+     "type": {
+      "defined": {
+       "name": "SwapResult2"
+      }
+     }
+    },
+    {
+     "name": "included_transfer_fee_amount_in",
+     "type": "u64"
+    },
+    {
+     "name": "included_transfer_fee_amount_out",
+     "type": "u64"
+    },
+    {
+     "name": "excluded_transfer_fee_amount_out",
+     "type": "u64"
+    },
+    {
+     "name": "current_timestamp",
+     "type": "u64"
+    },
+    {
+     "name": "reserve_a_amount",
+     "type": "u64"
+    },
+    {
+     "name": "reserve_b_amount",
      "type": "u64"
     }
    ]
