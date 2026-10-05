@@ -2,13 +2,13 @@
 // implementation delegates to the server-only Meteora adapter (the only package allowed to use web3.js), and tests
 // substitute an in-process fake.
 import {
-  buildCreatePool, buildDammSwap, buildSwap, dammCurrentPoint, dammV2PoolFor, quoteDammSwap, readDammPool, getNewSignatures, getTxSummary, getWalletBalances, getLamports, quoteSwap, readPool,
+  buildCreatePool, buildCreatorCurveClaim, buildDammClaim, buildDammSwap, dammPositionsOf, buildSwap, dammCurrentPoint, dammV2PoolFor, quoteDammSwap, readDammPool, getNewSignatures, getTxSummary, getWalletBalances, getLamports, quoteSwap, readPool,
   runMigration, sendFromTreasury, sendSignedTransaction, publicKeyOf,
-  type BuiltTx, type CreatePoolRequest, type DevnetConnection, type DevnetSigner, type Direction, type LiveDammPool, type LivePool, type SwapQuote, type SwapRequest,
+  type BuiltTx, type CreatePoolRequest, type DammPosition, type DevnetConnection, type DevnetSigner, type Direction, type LiveDammPool, type LivePool, type SwapQuote, type SwapRequest,
   type TxSummary,
 } from '@project-qf/adapter-meteora-dbc/launchpad';
 
-export type { BuiltTx, CreatePoolRequest, Direction, LiveDammPool, LivePool, SwapQuote, SwapRequest, TxSummary };
+export type { BuiltTx, CreatePoolRequest, DammPosition, Direction, LiveDammPool, LivePool, SwapQuote, SwapRequest, TxSummary };
 
 export interface LaunchpadChain {
   operatorAddress: string | null;
@@ -21,6 +21,10 @@ export interface LaunchpadChain {
   dammNow(pool: LiveDammPool): Promise<bigint>;
   quoteDammSwap(pool: LiveDammPool, direction: Direction, amountIn: bigint, slippageBps: number, currentPoint: bigint): SwapQuote;
   buildDammSwap(pool: LiveDammPool, r: SwapRequest, currentPoint: bigint): Promise<BuiltTx & { quote: SwapQuote }>;
+  /** Creator fees: the curve's creator share (DBC), and after graduation the fees of DAMM v2 positions whose NFT the wallet holds. */
+  buildCreatorCurveClaim(pool: LivePool, creator: string): Promise<BuiltTx & { maxBaseAmount: string; maxQuoteAmount: string }>;
+  dammPositions(pool: LiveDammPool, owner: string): Promise<DammPosition[]>;
+  buildDammClaim(pool: LiveDammPool, owner: string, nftMint: string): Promise<BuiltTx>;
   send(bytes: Uint8Array, blockhash: string, lastValidBlockHeight: number): Promise<string>;
   txSummary(signature: string): Promise<TxSummary | null>;
   newSignatures(address: string, until: string | null): Promise<{ signature: string; slot: number; err: boolean }[]>;
@@ -44,6 +48,9 @@ export function realChain(conn: DevnetConnection, operator: DevnetSigner | null)
     dammNow: (p) => dammCurrentPoint(conn, p),
     quoteDammSwap,
     buildDammSwap: (p, r, now) => buildDammSwap(conn, p, r, now),
+    buildCreatorCurveClaim: (p, c) => buildCreatorCurveClaim(conn, p, c),
+    dammPositions: (p, owner) => dammPositionsOf(conn, p, owner),
+    buildDammClaim: (p, owner, nft) => buildDammClaim(conn, p, owner, nft),
     send: (b, bh, h) => sendSignedTransaction(conn, b, bh, h),
     txSummary: (s) => getTxSummary(conn, s),
     newSignatures: (a, u) => getNewSignatures(conn, a, u),

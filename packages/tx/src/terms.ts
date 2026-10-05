@@ -23,6 +23,8 @@ export type ApprovedTerms =
   // A swap on the DAMM v2 pool a DBC launch graduated into (token A = base, token B = quote, V0 migration template config).
   | (Common & Mints & { kind: 'DAMM_SWAP'; dammConfig: string; pool: string; user: string; direction: 'QUOTE_TO_BASE' | 'BASE_TO_QUOTE';
       amountIn: string; minimumAmountOut: string })
+  // Claiming the trading fees a graduated launch's DAMM v2 position has earned, into the position owner's own token accounts.
+  | (Common & Mints & { kind: 'DAMM_CLAIM_POSITION_FEE'; dammConfig: string; pool: string; owner: string; positionNftMint: string })
   | (Common & Mints & { kind: 'CLAIM_PARTNER_TRADING_FEE'; config: string; pool: string; feeClaimer: string; receiver: string; maxBaseAmount: string; maxQuoteAmount: string })
   | (Common & Mints & { kind: 'CLAIM_CREATOR_TRADING_FEE'; config: string; pool: string; creator: string; receiver: string; maxBaseAmount: string; maxQuoteAmount: string });
 
@@ -44,6 +46,7 @@ const KIND_FIELDS: Record<ApprovedTerms['kind'], { addrs: string[]; u64: string[
   CREATE_POOL: { addrs: ['config', 'creator', 'payer', 'baseMint', 'quoteMint', 'quoteTokenProgram'], u64: [], positive: [] },
   SWAP: { addrs: ['config', 'pool', 'user', 'baseMint', 'quoteMint', 'baseTokenProgram', 'quoteTokenProgram'], u64: ['amountIn', 'minimumAmountOut'], positive: ['amountIn'] },
   MIGRATE_DAMM_V2: { addrs: ['config', 'pool', 'payer', 'dammConfig', 'baseMint', 'quoteMint', 'baseTokenProgram', 'quoteTokenProgram'], u64: [], positive: [] },
+  DAMM_CLAIM_POSITION_FEE: { addrs: ['dammConfig', 'pool', 'owner', 'positionNftMint', 'baseMint', 'quoteMint', 'baseTokenProgram', 'quoteTokenProgram'], u64: [], positive: [] },
   DAMM_SWAP: { addrs: ['dammConfig', 'pool', 'user', 'baseMint', 'quoteMint', 'baseTokenProgram', 'quoteTokenProgram'], u64: ['amountIn', 'minimumAmountOut'], positive: ['amountIn'] },
   CLAIM_PARTNER_TRADING_FEE: { addrs: ['config', 'pool', 'feeClaimer', 'receiver', 'baseMint', 'quoteMint', 'baseTokenProgram', 'quoteTokenProgram'], u64: ['maxBaseAmount', 'maxQuoteAmount'], positive: [] },
   CLAIM_CREATOR_TRADING_FEE: { addrs: ['config', 'pool', 'creator', 'receiver', 'baseMint', 'quoteMint', 'baseTokenProgram', 'quoteTokenProgram'], u64: ['maxBaseAmount', 'maxQuoteAmount'], positive: [] },
@@ -76,7 +79,7 @@ export function validateTerms(t: unknown): string[] {
   if (o.kind === 'SWAP' && typeof o.allowSysvarInstructions !== 'boolean') v.push('TERMS_BAD_FLAG allowSysvarInstructions');
   if (o.kind === 'CREATE_CONFIG' && (typeof o.configParametersDigest !== 'string' || !HEX32.test(o.configParametersDigest))) v.push('TERMS_BAD_DIGEST configParametersDigest');
   if (o.kind === 'CREATE_POOL') for (const k of ['name', 'symbol', 'uri']) if (typeof o[k] !== 'string' || (o[k] as string).length === 0 || (o[k] as string).length > 200) v.push(`TERMS_BAD_STRING ${k}`);
-  if ((o.kind === 'MIGRATE_DAMM_V2' || o.kind === 'DAMM_SWAP') && o.dammConfig !== DAMM_V2_CUSTOMIZABLE_CONFIG) v.push('TERMS_DAMM_CONFIG_NOT_V0_TEMPLATE');
+  if ((o.kind === 'MIGRATE_DAMM_V2' || o.kind === 'DAMM_SWAP' || o.kind === 'DAMM_CLAIM_POSITION_FEE') && o.dammConfig !== DAMM_V2_CUSTOMIZABLE_CONFIG) v.push('TERMS_DAMM_CONFIG_NOT_V0_TEMPLATE');
   return v;
 }
 const CLAIMS_CLUSTER = (c: unknown) => typeof c === 'string' && CLUSTERS.has(c);

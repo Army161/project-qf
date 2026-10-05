@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import BN from 'bn.js';
 import * as dbc from '@meteora-ag/dynamic-bonding-curve-sdk';
-import { CpAmm, cpAmmCoder, deriveTokenVaultAddress } from '@meteora-ag/cp-amm-sdk';
+import { CpAmm, cpAmmCoder, derivePositionAddress, derivePositionNftAccount, deriveTokenVaultAddress } from '@meteora-ag/cp-amm-sdk';
 import { readFileSync } from 'node:fs';
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { ECONOMICS_V0_TEST, STANDARD_V1_FLAT_V0_TEST, MIGRATION_POLICY_V0, proposeMigrationThreshold, type MigrationThresholdRecord } from '@project-qf/policy';
@@ -26,7 +26,8 @@ const base = { payer: mockKey('payer'), partner: mockKey('partner-fee-claimer'),
 const pool = dbc.deriveDbcPoolAddress(base.quoteMint, base.baseMint, base.config);
 const dammPool = dbc.deriveDammV2PoolAddress(DAMM_V2_CUSTOMIZABLE_CONFIG, base.baseMint, base.quoteMint);
 export const K = { ...base, pool, baseVault: dbc.deriveDbcTokenVaultAddress(pool, base.baseMint), quoteVault: dbc.deriveDbcTokenVaultAddress(pool, base.quoteMint),
-  dammPool, dammBaseVault: deriveTokenVaultAddress(base.baseMint, dammPool), dammQuoteVault: deriveTokenVaultAddress(base.quoteMint, dammPool) };
+  dammPool, dammBaseVault: deriveTokenVaultAddress(base.baseMint, dammPool), dammQuoteVault: deriveTokenVaultAddress(base.quoteMint, dammPool),
+  positionNft: mockKey('position-nft-mint') };
 
 /** TEST_ONLY: a graduated launch's DAMM v2 pool. The layout and curve values come from a public devnet pool account
  *  (test/fixtures/damm-v2-pool-devnet.json); its mints and vaults are re-keyed to the synthetic K addresses. */
@@ -115,6 +116,8 @@ export async function termsFor(kind: IntentKind, cfgParams?: dbc.ConfigParameter
       payer: s(K.crank), dammConfig: s(DAMM_V2_CUSTOMIZABLE_CONFIG) };
     case 'DAMM_SWAP': return { ...common, ...mints, kind, feePayer: s(K.creator), compute: compute(), dammConfig: s(DAMM_V2_CUSTOMIZABLE_CONFIG), pool: s(K.dammPool),
       user: s(K.creator), direction: 'QUOTE_TO_BASE', amountIn: '1000000', minimumAmountOut: '1' };
+    case 'DAMM_CLAIM_POSITION_FEE': return { ...common, ...mints, kind, feePayer: s(K.creator), compute: compute(), dammConfig: s(DAMM_V2_CUSTOMIZABLE_CONFIG),
+      pool: s(K.dammPool), owner: s(K.creator), positionNftMint: s(K.positionNft) };
     case 'CLAIM_PARTNER_TRADING_FEE': return { ...common, ...mints, kind, feePayer: s(K.partner), compute: compute(), config: s(K.config), pool: s(K.pool),
       feeClaimer: s(K.partner), receiver: s(K.partner), maxBaseAmount: '0', maxQuoteAmount: '1000000' };
     case 'CLAIM_CREATOR_TRADING_FEE': return { ...common, ...mints, kind, feePayer: s(K.creator), compute: compute(), config: s(K.config), pool: s(K.pool),
@@ -142,6 +145,9 @@ export async function buildFixtureTx(kind: IntentKind): Promise<{ tx: Transactio
     case 'DAMM_SWAP': return { tx: await new CpAmm(connection).swap({ payer: K.creator, pool: K.dammPool, inputTokenMint: K.quoteMint, outputTokenMint: K.baseMint,
       amountIn: new BN(1_000_000), minimumAmountOut: new BN(1), tokenAVault: K.dammBaseVault, tokenBVault: K.dammQuoteVault, tokenAMint: K.baseMint, tokenBMint: K.quoteMint,
       tokenAProgram: TOKEN, tokenBProgram: TOKEN, referralTokenAccount: null } as never), feePayer: K.creator, signer: K.creator, cfgParams, program, unsupported };
+    case 'DAMM_CLAIM_POSITION_FEE': return { tx: await new CpAmm(connection).claimPositionFee({ owner: K.creator, feePayer: K.creator, pool: K.dammPool,
+      position: derivePositionAddress(K.positionNft), positionNftAccount: derivePositionNftAccount(K.positionNft), tokenAVault: K.dammBaseVault, tokenBVault: K.dammQuoteVault,
+      tokenAMint: K.baseMint, tokenBMint: K.quoteMint, tokenAProgram: TOKEN, tokenBProgram: TOKEN } as never), feePayer: K.creator, signer: K.creator, cfgParams, program, unsupported };
     case 'MIGRATE_DAMM_V2': return { tx: (await c.migration.migrateToDammV2({ payer: K.crank, pool: K.pool, dammConfig: DAMM_V2_CUSTOMIZABLE_CONFIG })).transaction,
       feePayer: K.crank, signer: K.crank, cfgParams, program, unsupported };
     case 'CLAIM_PARTNER_TRADING_FEE': return { tx: await c.partner.claimPartnerTradingFee({ feeClaimer: K.partner, payer: K.partner, pool: K.pool,

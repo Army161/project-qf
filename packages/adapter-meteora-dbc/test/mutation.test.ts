@@ -34,7 +34,7 @@ const createSetAuthorityInstruction = (account: PublicKey, current: PublicKey, n
   keys: [{ pubkey: account, isSigner: false, isWritable: true }, { pubkey: current, isSigner: true, isWritable: false }] });
 
 test(`[${MOCK_RPC_LABEL}] baseline: every unmutated SDK transaction binds with zero violations`, async () => {
-  for (const k of ['CREATE_CONFIG', 'CREATE_POOL', 'SWAP', 'MIGRATE_DAMM_V2', 'CLAIM_PARTNER_TRADING_FEE', 'CLAIM_CREATOR_TRADING_FEE', 'DAMM_SWAP'] as const) {
+  for (const k of ['CREATE_CONFIG', 'CREATE_POOL', 'SWAP', 'MIGRATE_DAMM_V2', 'CLAIM_PARTNER_TRADING_FEE', 'CLAIM_CREATOR_TRADING_FEE', 'DAMM_SWAP', 'DAMM_CLAIM_POSITION_FEE'] as const) {
     assert.deepEqual(await preview(k, () => {}), [], k);
   }
 });
@@ -149,4 +149,21 @@ test(`[${MOCK_RPC_LABEL}] DAMM v2 swap: a curve swap, an extra transfer, or a DA
   const dbcSwap = (await buildFixtureTx('SWAP')).tx.instructions.find((i) => i.programId.toBase58() === PROGRAM_IDS.DBC)!;
   expectViolation(await preview('DAMM_SWAP', (b) => b.tx.add(dbcSwap)), /UNEXPECTED_PROGRAM dbcij/);
   expectViolation(await preview('DAMM_SWAP', () => {}, undefined, 'SWAP'), /UNEXPECTED_PROGRAM cpamd|NO_ENGINE_INSTRUCTION/);
+});
+
+// ---------- creator fees after graduation: claiming a DAMM v2 position's fees ----------
+test(`[${MOCK_RPC_LABEL}] DAMM v2 position fee claim: a foreign position, attacker payout account, other owner or other pool is rejected`, async () => {
+  expectViolation(await preview('DAMM_CLAIM_POSITION_FEE', () => {}, (t) => ({ ...t, positionNftMint: mockKey('someone-elses-position').toBase58() })), /ACCOUNT_MISMATCH position/);
+  expectViolation(await preview('DAMM_CLAIM_POSITION_FEE', (b) => { dammIx(b).keys[4]!.pubkey = getAssociatedTokenAddressSync(K.quoteMint, ATTACKER); }), /ACCOUNT_MISMATCH token_b_account|UNEXPECTED_WRITABLE/);
+  expectViolation(await preview('DAMM_CLAIM_POSITION_FEE', () => {}, (t) => ({ ...t, owner: ATTACKER.toBase58() })), /ACCOUNT_MISMATCH signer/);
+  expectViolation(await preview('DAMM_CLAIM_POSITION_FEE', () => {}, (t) => ({ ...t, pool: mockKey('other-damm-pool').toBase58() })), /TERMS_POOL_NOT_DERIVED_FROM_DAMM_CONFIG_AND_MINTS/);
+  expectViolation(await preview('DAMM_CLAIM_POSITION_FEE', () => {}, (t) => ({ ...t, dammConfig: mockKey('other-damm-config').toBase58() })), /TERMS_DAMM_CONFIG_NOT_V0_TEMPLATE/);
+});
+
+test(`[${MOCK_RPC_LABEL}] DAMM v2 position fee claim: an extra swap, a token transfer or a claim under swap terms is rejected`, async () => {
+  const swap = (await buildFixtureTx('DAMM_SWAP')).tx.instructions.find((i) => i.programId.toBase58() === PROGRAM_IDS.DAMM_V2)!;
+  expectViolation(await preview('DAMM_CLAIM_POSITION_FEE', (b) => b.tx.add(swap)), /MULTIPLE_ENGINE_INSTRUCTIONS/);
+  expectViolation(await preview('DAMM_CLAIM_POSITION_FEE', (b) => b.tx.add(createSetAuthorityInstruction(getAssociatedTokenAddressSync(K.quoteMint, K.creator), K.creator, ATTACKER))), /UNBOUND_INSTRUCTION/);
+  expectViolation(await preview('DAMM_CLAIM_POSITION_FEE', () => {}, undefined, 'DAMM_SWAP'), /WRONG_OPERATION claim_position_fee \(approved swap\)/);
+  expectViolation(await preview('DAMM_CLAIM_POSITION_FEE', () => {}, undefined, 'CLAIM_CREATOR_TRADING_FEE'), /UNEXPECTED_PROGRAM cpamd|NO_ENGINE_INSTRUCTION/);
 });

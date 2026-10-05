@@ -309,3 +309,12 @@ ul.checks li.bad { color: var(--sell); } ul.checks li.bad::before { content: "âœ
 /* Graduated coins: the trade panel names its venue. */
 .trade .venue { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--grad-tint); color: var(--grad-ink); font-size: 13px; font-weight: 600; }
 .trade .venue svg { flex: none; margin-top: 1px; }
+
+/* Creator earnings: curve fees and, after graduation, the locked LP position's fees. */
+.fees { display: flex; flex-direction: column; gap: 12px; }
+.fees[hidden] { display: none; }
+.fee-row { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 14px; background: var(--buy-tint); }
+.fee-row > div:first-child { display: flex; flex-direction: column; gap: 2px; }
+.fee-amt { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fee-amt .num { font-size: 18px; font-weight: 600; }
+.fee-amt .btn[disabled] { opacity: .45; cursor: default; }

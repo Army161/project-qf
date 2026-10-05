@@ -47,13 +47,13 @@ export function dbcSubset() {
     instructions, types: closure(idl, instructions.flatMap((i) => i.args.map((a: any) => a.type))) };
 }
 
-/** The DAMM v2 instructions a launchpad user signs after graduation (swap only). */
-export function dammSwapSubset() {
+/** The DAMM v2 instructions a launchpad user signs after graduation: swaps, and claiming a position's fees. */
+export function dammUserSubset() {
   const pkg = '@meteora-ag/cp-amm-sdk';
   const mod = require(pkg);
   const idl = (mod.CpAmmIdl ?? mod.idl ?? mod.IDL) as Idl;
   const version = versionOf(pkg);
-  const instructions = ['swap'].map((n) => {
+  const instructions = ['swap', 'claim_position_fee'].map((n) => {
     const ix = idl.instructions.find((i) => i.name === n);
     return { name: n, discriminator: ix.discriminator, accounts: ix.accounts.map((a: any) => ({ name: a.name, writable: !!a.writable, signer: !!a.signer, optional: !!a.optional, address: a.address ?? null })), args: ix.args };
   });
@@ -83,7 +83,7 @@ export function renderTsModule(subset: unknown, constName = 'DBC_IDL_SUBSET'): s
 if (import.meta.url === `file://${process.argv[1]}`) {
   const out = (p: string, v: unknown) => writeFileSync(new URL(p, import.meta.url), JSON.stringify(v, null, 1) + '\n');
   writeFileSync(new URL('../../tx/src/engine/dbc-idl-subset.ts', import.meta.url), renderTsModule(dbcSubset()));
-  writeFileSync(new URL('../../tx/src/engine/damm-idl-subset.ts', import.meta.url), renderTsModule(dammSwapSubset(), 'DAMM_IDL_SUBSET'));
+  writeFileSync(new URL('../../tx/src/engine/damm-idl-subset.ts', import.meta.url), renderTsModule(dammUserSubset(), 'DAMM_IDL_SUBSET'));
   out('../test/fixtures/damm-v2-config-layout.json', dammConfigSubset());
   console.log('wrote subsets');
 }

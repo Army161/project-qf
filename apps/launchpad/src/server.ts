@@ -351,7 +351,64 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
         trade = sum && p ? tradeFromSummary(l, p, sum, 'app') : null;
         if (trade) o.store.insertTrade(trade);
       }
+      if (intent.kind === 'CLAIM_CREATOR_TRADING_FEE' && l) pools.invalidate(l.pool);
+      if (intent.kind === 'DAMM_CLAIM_POSITION_FEE' && l?.dammPool) damms.invalidate(l.dammPool);
       return send(res, 200, { signature, kind: intent.kind, mint: intent.mint, trade });
+    }
+
+    // ---------------------------------------------------------------- creator fees
+    // Two places a creator earns: the creator share of curve trading fees (held in the DBC pool until claimed), and after
+    // graduation the fees of the creator's permanently locked DAMM v2 position (claimable by whoever holds its NFT).
+    // Both are claimed by the wallet itself; the server only builds the unsigned transaction.
+    const fm = /^\/api\/lp\/fees\/([1-9A-HJ-NP-Za-km-z]{32,44})$/.exec(path);
+    if (fm && method === 'GET') {
+      const l = o.store.getLaunch(fm[1]!);
+      if (!l || (l.status !== 'LIVE' && l.status !== 'MIGRATED')) throw new HttpError(404, 'NOT_FOUND', 'token not found');
+      const wallet = query.get('wallet');
+      if (!wallet || !B58.test(wallet)) throw new HttpError(400, 'INVALID_REQUEST', 'wallet must be an address');
+      limit(`fees:${ip}`, 60);
+      const fresh = query.get('fresh') === '1';
+      const isCreator = l.creator === wallet;
+      const pool = isCreator ? await pools.get(l.pool, fresh) : null;
+      const curve = pool ? { quoteRaw: pool.creatorQuoteFee, baseRaw: pool.creatorBaseFee } : null;
+      const dp = l.status === 'MIGRATED' && l.dammPool ? await damms.get(l, fresh) : null;
+      const positions = dp ? await o.chain.dammPositions(dp, wallet) : [];
+      return send(res, 200, { mint: l.mint, wallet, isCreator, curve, positions });
+    }
+    if (path === '/api/lp/claim' && method === 'POST') {
+      limit(`build:${ip}`, BUILDS_PER_MINUTE);
+      const b = await readJson(req, BODY_LIMIT_BYTES);
+      onlyKeys(b, ['mint', 'user', 'venue', 'nftMint']);
+      const l = o.store.getLaunch(addr(b, 'mint'));
+      if (!l || (l.status !== 'LIVE' && l.status !== 'MIGRATED')) throw new HttpError(404, 'NOT_FOUND', 'token not found');
+      const user = addr(b, 'user');
+      const nothing = (e: unknown) => /^NOTHING_TO_CLAIM/.test((e as Error).message) ? new HttpError(409, 'NOTHING_TO_CLAIM', 'there are no fees to claim yet') : e;
+      if (b.venue === 'curve') {
+        if (l.creator !== user) throw new HttpError(403, 'NOT_CREATOR', 'only the wallet that launched this coin can claim its curve fees');
+        const pool = await pools.get(l.pool, true);
+        if (!pool) throw new HttpError(502, 'POOL_UNAVAILABLE', 'could not read the pool');
+        intentCheck({ kind: 'CLAIM_CREATOR_TRADING_FEE', signer: { role: 'USER_WALLET', address: user, serverHeld: false }, feePayer: user });
+        let built;
+        try { built = await o.chain.buildCreatorCurveClaim(pool, user); } catch (e) { throw nothing(e); }
+        const intent = await storeBuilt('CLAIM_CREATOR_TRADING_FEE', l.mint, user, built);
+        return send(res, 201, { intentId: intent.id, expiresAt: intent.expiresAt, transaction: toBase64(built.bytes), terms: built.terms, venue: 'CURVE',
+          amounts: { baseRaw: built.maxBaseAmount, quoteRaw: built.maxQuoteAmount } });
+      }
+      if (b.venue === 'damm') {
+        if (l.status !== 'MIGRATED' || !l.dammPool) throw new HttpError(409, 'NOT_GRADUATED', 'this coin has not graduated to DAMM v2 yet');
+        const nftMint = addr(b, 'nftMint');
+        const dp = await damms.get(l, true);
+        if (!dp) throw new HttpError(502, 'POOL_UNAVAILABLE', 'could not read the DAMM v2 pool');
+        const pos = (await o.chain.dammPositions(dp, user)).find((x) => x.nftMint === nftMint);
+        if (!pos) throw new HttpError(403, 'NOT_POSITION_OWNER', 'this wallet does not hold that position in this pool');
+        if (BigInt(pos.feeBaseRaw) === 0n && BigInt(pos.feeQuoteRaw) === 0n) throw new HttpError(409, 'NOTHING_TO_CLAIM', 'there are no fees to claim yet');
+        intentCheck({ kind: 'DAMM_CLAIM_POSITION_FEE', signer: { role: 'USER_WALLET', address: user, serverHeld: false }, feePayer: user });
+        const built = await o.chain.buildDammClaim(dp, user, nftMint);
+        const intent = await storeBuilt('DAMM_CLAIM_POSITION_FEE', l.mint, user, built);
+        return send(res, 201, { intentId: intent.id, expiresAt: intent.expiresAt, transaction: toBase64(built.bytes), terms: built.terms, venue: 'DAMM_V2',
+          amounts: { baseRaw: pos.feeBaseRaw, quoteRaw: pos.feeQuoteRaw } });
+      }
+      throw new HttpError(400, 'INVALID_REQUEST', "venue must be 'curve' or 'damm'");
     }
 
     if (path === '/api/lp/faucet' && method === 'POST') {
@@ -423,7 +480,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       // The public devnet RPC rate-limits bursts; that is a retryable outage, not a server fault.
       const rpcBusy = !(e instanceof HttpError) && /\b429\b|Too Many Requests|rate limit/i.test((e as Error)?.message ?? '');
       const err = e instanceof HttpError ? e : rpcBusy ? new HttpError(503, 'RPC_BUSY', 'the devnet RPC is busy; try again in a few seconds') : new HttpError(500, 'INTERNAL', 'internal error');
-      if (!(e instanceof HttpError)) o.log?.(`internal error: ${(e as Error)?.stack?.slice(0, 800)}`);
+      if (!(e instanceof HttpError)) o.log?.(rpcBusy ? `rpc busy on ${path}` : `internal error: ${(e as Error)?.stack?.slice(0, 800)}`);
       send(res, err.status, { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } });
     }
   }) as Server & { poolCache: PoolCache; dammCache: DammCache };

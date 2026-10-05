@@ -18,6 +18,8 @@ interface Live { priceQuotePerBase: string; marketCapQuoteRaw: string; quoteRese
 interface Token { mint: string; pool: string; name: string; symbol: string; description: string; imageUrl: string | null; creator: string; status: string;
   createdAt: string; liveAt: string | null; website: string | null; twitter: string | null; telegram: string | null; createSig: string | null;
   migrationSig: string | null; dammPool: string | null; live: Live | null; stats: { count: number; volumeQuoteRaw: string; traders: number } }
+interface Fees { isCreator: boolean; curve: { quoteRaw: string; baseRaw: string } | null;
+  positions: { position: string; nftMint: string; feeBaseRaw: string; feeQuoteRaw: string; permanentlyLocked: boolean }[] }
 interface Trade { sig: string; trader: string; side: 'BUY' | 'SELL'; quoteRaw: string; baseRaw: string; slot: number; blockTime: number | null }
 
 class ApiError extends Error { code: string; details: string[]; constructor(code: string, m: string, d: string[] = []) { super(m); this.code = code; this.details = d; } }
@@ -499,8 +501,47 @@ async function renderToken(mint: string) {
     if (out) { toast('Trade confirmed', 'ok'); renderToken(t.mint); }
   });
   setSide('buy');
+  // "Your earnings": the creator's share of curve fees, and after graduation the fees of any DAMM v2 position this wallet
+  // holds (the creator's locked LP). Loaded for whichever wallet is connected; claimed by that wallet's own signature.
+  const feesCard = h('div', { class: 'card fees', hidden: true });
+  let feesFor: string | null = null;
+  const amountLabel = (quoteRaw: string, baseRaw: string) => [BigInt(quoteRaw) > 0n || BigInt(baseRaw) === 0n ? `${units(quoteRaw, q.decimals, 2)} ${q.symbol}` : null,
+    BigInt(baseRaw) > 0n ? `${units(baseRaw, bd, 2)} $${t.symbol}` : null].filter(Boolean).join(' + ');
+  const claim = async (title: string, body: Record<string, string>, expect: (w: Connected) => Pick<Expectation, 'kind' | 'fields'>) => {
+    const w = requireWallet();
+    if (!w) return;
+    const out = await runSigningFlow<{ signature: string }>(title, () => api<Built>('/api/lp/claim', { mint: t.mint, user: w.account.address, ...body }),
+      () => ({ ...expect(w), wallet: w.account.address, shown: { claim: body, mint: t.mint } }));
+    if (out) { toast('Fees claimed to your wallet', 'ok'); feesFor = null; await refreshBalances(t.mint); void paintFees(true); }
+  };
+  async function paintFees(fresh = false) {
+    const w = state.wallet;
+    if (!w) { feesCard.hidden = true; feesFor = null; return; }
+    if (feesFor === w.account.address && !fresh) return;
+    feesFor = w.account.address;
+    let f: Fees;
+    try { f = await api<Fees>(`/api/lp/fees/${t.mint}?wallet=${w.account.address}${fresh ? '&fresh=1' : ''}`); } catch { feesCard.hidden = true; feesFor = null; return; }
+    if (currentMint() !== t.mint || state.wallet?.account.address !== w.account.address) return;
+    const rows: HTMLElement[] = [];
+    const row = (label: string, sub: string, quoteRaw: string, baseRaw: string, onClaim: () => void) => {
+      const has = BigInt(quoteRaw) > 0n || BigInt(baseRaw) > 0n;
+      rows.push(h('div', { class: 'fee-row' }, h('div', {}, h('b', {}, label), h('span', { class: 'dim small' }, sub)),
+        h('div', { class: 'fee-amt' }, h('span', { class: 'num' }, amountLabel(quoteRaw, baseRaw)),
+          h('button', { class: 'btn primary', disabled: !has, onclick: onClaim }, has ? 'Claim' : 'Nothing yet'))));
+    };
+    if (f.curve) row('Bonding curve', 'Your share of every trade on the curve', f.curve.quoteRaw, f.curve.baseRaw,
+      () => claim(`Claim ${amountLabel(f.curve!.quoteRaw, f.curve!.baseRaw)}`, { venue: 'curve' },
+        (w) => ({ kind: 'CLAIM_CREATOR_TRADING_FEE', fields: { creator: w.account.address, receiver: w.account.address, pool: t.pool, baseMint: t.mint, quoteMint: q.mint } })));
+    for (const p of f.positions) row(p.permanentlyLocked ? 'Locked LP position' : 'LP position', 'Fees from trades on the DAMM v2 pool', p.feeQuoteRaw, p.feeBaseRaw,
+      () => claim(`Claim ${amountLabel(p.feeQuoteRaw, p.feeBaseRaw)}`, { venue: 'damm', nftMint: p.nftMint },
+        (w) => ({ kind: 'DAMM_CLAIM_POSITION_FEE', fields: { owner: w.account.address, pool: t.dammPool, positionNftMint: p.nftMint, baseMint: t.mint, quoteMint: q.mint } })));
+    feesCard.replaceChildren(h('span', { class: 'eyebrow' }, f.isCreator ? 'Your creator earnings' : 'Your LP fees'), ...rows,
+      h('p', { class: 'dim small', style: { margin: '0' } }, 'Claims pay this wallet directly. Your wallet signs; the server never holds your key.'));
+    feesCard.hidden = rows.length === 0;
+  }
   paintBalance = () => {
     if (state.balances) balanceLine.textContent = `Balance: ${units(state.balances.tokens[q.mint] ?? '0', q.decimals, 2)} ${q.symbol} · ${units(state.balances.tokens[t.mint] ?? '0', bd, 2)} $${t.symbol}`;
+    void paintFees();
   };
   paintBalance();
 
@@ -565,7 +606,7 @@ async function renderToken(mint: string) {
             : `${units(l.quoteReserve, q.decimals, 0)} of ${units(l.migrationQuoteThreshold, q.decimals, 0)} ${q.symbol} raised. At ${units(l.migrationQuoteThreshold, q.decimals, 0)} the coin moves to a Meteora DAMM v2 pool and its liquidity is locked forever.${toGo > 0n ? ` About ${units(toGo, q.decimals, 0)} ${q.symbol} of buying to go.` : ''}`)) : null,
         h('div', { class: 'card' }, h('h3', {}, 'Trades'), trades.length ? h('div', { class: 'scroll' }, h('table', { class: 'trades' },
           h('thead', {}, h('tr', {}, ...[['Side', ''], ['Trader', ''], [q.symbol, 'num'], [`$${t.symbol}`, 'num'], ['When', ''], ['Tx', '']].map(([c, cls]) => h('th', { class: cls }, c)))), h('tbody', {}, ...tradeRows))) : h('p', { class: 'dim', style: { margin: '0' } }, 'No trades yet. Be the first.'))),
-      h('aside', {}, panel,
+      h('aside', {}, panel, feesCard,
         h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'About'), t.description ? h('p', {}, t.description) : null,
           h('dl', { class: 'facts' },
             h('dt', {}, 'Engine'), h('dd', {}, onDamm ? 'Meteora DAMM v2' : graduated ? 'Graduated to DAMM v2' : 'Meteora bonding curve'),
@@ -573,10 +614,19 @@ async function renderToken(mint: string) {
             h('dt', {}, t.dammPool ? 'Curve pool' : 'Pool'), h('dd', { class: 'num' }, ext(explorer('address', t.pool), short(t.pool, 4))),
             ...(t.migrationSig ? [h('dt', {}, 'Graduation tx'), h('dd', { class: 'num' }, ext(explorer('tx', t.migrationSig), short(t.migrationSig, 4)))] : []),
             h('dt', {}, 'Launch tx'), h('dd', { class: 'num' }, t.createSig ? ext(explorer('tx', t.createSig), short(t.createSig, 4)) : '—'),
-            h('dt', {}, 'Creator fees'), h('dd', { class: 'num' }, l ? `${units(l.creatorQuoteFee, q.decimals, 2)} ${q.symbol}` : '—'))))),
+            h('dt', {}, 'Creator fees unclaimed'), h('dd', { class: 'num' }, l ? `${units(l.creatorQuoteFee, q.decimals, 2)} ${q.symbol}` : '—'))))),
     ...(mobileBar ? [mobileBar] : []));
   clearInterval(tokenTimer);
-  tokenTimer = window.setInterval(() => { if (currentMint() === mint && !document.hidden && $('#modal').hidden) void api('/api/lp/refresh', { mint }).catch(() => {}); }, 20_000);
+  // Keep the page honest without a reload: index new trades, and when the coin changes phase (curve full -> graduated,
+  // or its venue switches to DAMM v2) re-render, since the trade panel for the old phase is no longer valid.
+  const phase = (x: Token) => `${x.status}|${x.live?.venue}|${x.live?.curveComplete}|${x.live?.isMigrated}`;
+  const idle = () => currentMint() === mint && !document.hidden && $('#modal').hidden;
+  tokenTimer = window.setInterval(async () => {
+    if (!idle()) return;
+    await api('/api/lp/refresh', { mint }).catch(() => {});
+    const n = await api<{ token: Token }>(`/api/lp/tokens/${mint}`).catch(() => null);
+    if (n && phase(n.token) !== phase(t) && idle()) void renderToken(mint);
+  }, l?.curveComplete && !graduated ? 6_000 : 20_000);
 }
 
 // ------------------------------------------------------------------ router + boot

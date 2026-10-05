@@ -10,9 +10,9 @@ import BN from 'bn.js';
 import {
   DynamicBondingCurveClient, deriveDbcPoolAddress, deriveDbcTokenVaultAddress, swapQuoteExactIn, type ConfigParameters,
 } from '@meteora-ag/dynamic-bonding-curve-sdk';
-import { CpAmm, getCurrentPoint, swapQuoteExactInput } from '@meteora-ag/cp-amm-sdk';
+import { CpAmm, derivePositionAddress, derivePositionNftAccount, getCurrentPoint, getUnClaimLpFee, swapQuoteExactInput } from '@meteora-ag/cp-amm-sdk';
 import {
-  Connection, Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction, sendAndConfirmTransaction,
+  Connection, Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction,
   type Commitment,
 } from '@solana/web3.js';
 import { CAPABILITY_FLAGS } from '@project-qf/core';
@@ -117,7 +117,7 @@ export async function createTestQuoteMint(conn: Connection, operator: Keypair, s
     ixMintTo(mint.publicKey, ataAddress(operator.publicKey, mint.publicKey), operator.publicKey, supplyRaw),
     ixRevokeMintAuthority(mint.publicKey, operator.publicKey),
   );
-  const signature = await sendAndConfirmTransaction(conn, tx, [operator, mint], { commitment: COMMITMENT });
+  const signature = await operatorSend(conn, tx, [operator, mint]);
   return { mint: mint.publicKey.toBase58(), decimals, supplyRaw: supplyRaw.toString(), signature, label: 'TEST_ONLY' };
 }
 
@@ -128,7 +128,7 @@ export async function sendFromTreasury(conn: Connection, operator: Keypair, quot
   if (lamports > 0n) tx.add(SystemProgram.transfer({ fromPubkey: operator.publicKey, toPubkey: to, lamports }));
   if (quoteRaw > 0n) tx.add(ixCreateAtaIdempotent(operator.publicKey, to, quoteMint),
     ixTransfer(ataAddress(operator.publicKey, quoteMint), ataAddress(to, quoteMint), operator.publicKey, quoteRaw));
-  return sendAndConfirmTransaction(conn, tx, [operator], { commitment: COMMITMENT });
+  return operatorSend(conn, tx, [operator]);
 }
 
 // ------------------------------------------------------------------ platform config (operator)
@@ -142,7 +142,7 @@ export async function createPlatformConfig(conn: Connection, operator: Keypair, 
   const client = new DynamicBondingCurveClient(conn, COMMITMENT);
   const tx = await client.partner.createConfig({ ...(params as object), config: config.publicKey, feeClaimer: operator.publicKey,
     leftoverReceiver: operator.publicKey, quoteMint, payer: operator.publicKey } as never);
-  const signature = await sendAndConfirmTransaction(conn, tx, [operator, config], { commitment: COMMITMENT });
+  const signature = await operatorSend(conn, tx, [operator, config]);
   return { config: config.publicKey.toBase58(), quoteMint: quoteMint.toBase58(), feeClaimer: operator.publicKey.toBase58(),
     leftoverReceiver: operator.publicKey.toBase58(), signature };
 }
@@ -217,7 +217,7 @@ export interface LivePool {
   sqrtPrice: string; quoteReserve: string; baseReserve: string; migrationQuoteThreshold: string; totalSupplyRaw: string;
   baseDecimals: number; quoteDecimals: number; migrationProgress: number; isMigrated: boolean; curveComplete: boolean;
   /** quote raw per 1 base UI unit, 18-decimal fixed point string */
-  priceQuotePerBase: string; marketCapQuoteRaw: string; progressBps: number; creatorQuoteFee: string; partnerQuoteFee: string;
+  priceQuotePerBase: string; marketCapQuoteRaw: string; progressBps: number; creatorQuoteFee: string; creatorBaseFee: string; partnerQuoteFee: string;
   raw: { virtualPool: unknown; config: unknown };
 }
 
@@ -241,16 +241,22 @@ export function summarisePool(pool: string, vp: any, cfg: any): LivePool {
     baseReserve: big(s.baseReserve).toString(), migrationQuoteThreshold: threshold.toString(), totalSupplyRaw: totalSupplyRaw.toString(),
     baseDecimals, quoteDecimals, migrationProgress: Number(s.migrationProgress), isMigrated: Number(s.isMigrated) === 1,
     curveComplete: quoteReserve >= threshold, priceQuotePerBase: priceFp.toString(), marketCapQuoteRaw: mcapRaw.toString(), progressBps,
-    creatorQuoteFee: big(s.creatorQuoteFee).toString(), partnerQuoteFee: big(s.partnerQuoteFee).toString(), raw: { virtualPool: vp, config: cfg },
+    creatorQuoteFee: big(s.creatorQuoteFee).toString(), creatorBaseFee: big(s.creatorBaseFee ?? 0).toString(), partnerQuoteFee: big(s.partnerQuoteFee).toString(), raw: { virtualPool: vp, config: cfg },
   };
 }
 
 export async function readPool(conn: Connection, pool: string): Promise<LivePool | null> {
   const client = new DynamicBondingCurveClient(conn, COMMITMENT);
-  const vp = await client.state.getPool(pool);
+  // Diagnostics for the intermittent "Invalid account discriminator" seen on the public devnet RPC: say what came back.
+  const explain = async (what: string, addr: PublicKey | string, e: Error) => {
+    if (!/discriminator/i.test(e.message)) return e;
+    const a = await conn.getAccountInfo(new PublicKey(addr), COMMITMENT).catch(() => null);
+    return new Error(`${e.message} (${what} ${addr.toString()}: re-read owner=${a?.owner.toBase58() ?? 'none'} len=${a?.data.length ?? 0} head=${a ? Buffer.from(a.data.subarray(0, 8)).toString('hex') : '-'})`);
+  };
+  const vp = await client.state.getPool(pool).catch(async (e: Error) => { throw await explain('pool', pool, e); });
   if (!vp) return null;
   const s = (vp as any).poolState ?? vp;
-  const cfg = await client.state.getPoolConfig(s.config);
+  const cfg = await client.state.getPoolConfig(s.config).catch(async (e: Error) => { throw await explain('config', s.config, e); });
   if (!cfg) return null;
   return summarisePool(pool, vp, cfg);
 }
@@ -273,10 +279,7 @@ export async function buildMigration(conn: Connection, payer: PublicKey, pool: s
 
 export async function runMigration(conn: Connection, operator: Keypair, pool: string): Promise<string> {
   const { tx, signers } = await buildMigration(conn, operator.publicKey, pool);
-  const { blockhash } = await conn.getLatestBlockhash(COMMITMENT);
-  tx.feePayer = operator.publicKey;
-  tx.recentBlockhash = blockhash;
-  return sendAndConfirmTransaction(conn, tx, [operator, ...signers], { commitment: COMMITMENT });
+  return operatorSend(conn, tx, [operator, ...signers]);
 }
 
 // ------------------------------------------------------------------ after graduation: the DAMM v2 pool
@@ -338,6 +341,45 @@ export async function buildDammSwap(conn: Connection, p: LiveDammPool, r: SwapRe
   return { ...(await finish(conn, tx, user)), terms, quote };
 }
 
+// ------------------------------------------------------------------ creator fee claims (signed by the creator's own wallet)
+
+/** Unsigned claim of the creator's share of curve trading fees, paid to the creator's own token accounts. */
+export async function buildCreatorCurveClaim(conn: Connection, pool: LivePool, creator: string): Promise<BuiltTx & { maxBaseAmount: string; maxQuoteAmount: string }> {
+  if (pool.creator !== creator) throw new Error('NOT_CREATOR: only the coin creator can claim its curve fees');
+  const maxBaseAmount = pool.creatorBaseFee, maxQuoteAmount = pool.creatorQuoteFee;
+  if (BigInt(maxBaseAmount) === 0n && BigInt(maxQuoteAmount) === 0n) throw new Error('NOTHING_TO_CLAIM: no creator fees on the curve yet');
+  const client = new DynamicBondingCurveClient(conn, COMMITMENT);
+  const c = new PublicKey(creator);
+  const tx = await client.creator.claimCreatorTradingFee({ creator: c, payer: c, pool: new PublicKey(pool.pool), receiver: c,
+    maxBaseAmount: new BN(maxBaseAmount), maxQuoteAmount: new BN(maxQuoteAmount) } as never);
+  const terms: ApprovedTerms = { ...common(creator), kind: 'CLAIM_CREATOR_TRADING_FEE', config: pool.config, pool: pool.pool, creator, receiver: creator,
+    baseMint: pool.baseMint, quoteMint: pool.quoteMint, baseTokenProgram: PROGRAM_IDS.TOKEN, quoteTokenProgram: PROGRAM_IDS.TOKEN, maxBaseAmount, maxQuoteAmount };
+  return { ...(await finish(conn, tx, c)), terms, maxBaseAmount, maxQuoteAmount };
+}
+
+export interface DammPosition { position: string; nftMint: string; feeBaseRaw: string; feeQuoteRaw: string; permanentlyLocked: boolean }
+
+/** The DAMM v2 positions in this pool whose NFT the wallet holds, with the fees each has earned and not yet claimed. */
+export async function dammPositionsOf(conn: Connection, p: LiveDammPool, owner: string): Promise<DammPosition[]> {
+  const rows = await new CpAmm(conn).getUserPositionByPool(new PublicKey(p.pool), new PublicKey(owner));
+  return rows.map((r: any) => {
+    const fee = getUnClaimLpFee(p.raw.poolState as never, r.positionState);
+    return { position: r.position.toBase58(), nftMint: r.positionState.nftMint.toBase58(), feeBaseRaw: big(fee.feeTokenA).toString(), feeQuoteRaw: big(fee.feeTokenB).toString(),
+      permanentlyLocked: big(r.positionState.permanentLockedLiquidity) > 0n };
+  });
+}
+
+/** Unsigned claim of a DAMM v2 position's fees into the owner's own token accounts (the program checks the owner holds the NFT). */
+export async function buildDammClaim(conn: Connection, p: LiveDammPool, owner: string, nftMint: string): Promise<BuiltTx> {
+  const o = new PublicKey(owner), nft = new PublicKey(nftMint);
+  const tx = await new CpAmm(conn).claimPositionFee({ owner: o, feePayer: o, pool: new PublicKey(p.pool), position: derivePositionAddress(nft),
+    positionNftAccount: derivePositionNftAccount(nft), tokenAVault: new PublicKey(p.baseVault), tokenBVault: new PublicKey(p.quoteVault),
+    tokenAMint: new PublicKey(p.baseMint), tokenBMint: new PublicKey(p.quoteMint), tokenAProgram: TOKEN, tokenBProgram: TOKEN } as never);
+  const terms: ApprovedTerms = { ...common(owner), kind: 'DAMM_CLAIM_POSITION_FEE', dammConfig: DAMM_V2_CUSTOMIZABLE_CONFIG.toBase58(), pool: p.pool, owner,
+    positionNftMint: nftMint, baseMint: p.baseMint, quoteMint: p.quoteMint, baseTokenProgram: PROGRAM_IDS.TOKEN, quoteTokenProgram: PROGRAM_IDS.TOKEN };
+  return { ...(await finish(conn, tx, o)), terms };
+}
+
 export const dammV2PoolFor = async (baseMint: string, quoteMint: string) => {
   const { deriveDammV2PoolAddress } = await import('@meteora-ag/dynamic-bonding-curve-sdk');
   return deriveDammV2PoolAddress(DAMM_V2_CUSTOMIZABLE_CONFIG, new PublicKey(baseMint), new PublicKey(quoteMint)).toBase58();
@@ -355,10 +397,45 @@ export function isAddress(s: unknown): s is string {
 export const isOnCurveAddress = (s: string) => { try { return PublicKey.isOnCurve(new PublicKey(s).toBytes()); } catch { return false; } };
 
 /** Sends already-signed wire bytes (no preflight skip) and waits for `confirmed` within the blockhash lifetime. */
-export async function sendSignedTransaction(conn: Connection, bytes: Uint8Array, blockhash: string, lastValidBlockHeight: number): Promise<string> {
+export async function sendSignedTransaction(conn: Connection, bytes: Uint8Array, _blockhash: string, lastValidBlockHeight: number): Promise<string> {
   const signature = await conn.sendRawTransaction(bytes, { skipPreflight: false, preflightCommitment: COMMITMENT, maxRetries: 3 });
-  const r = await conn.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, COMMITMENT);
-  if (r.value.err) throw new Error(`TRANSACTION_FAILED ${JSON.stringify(r.value.err)}`);
+  await confirmSignature(conn, signature, lastValidBlockHeight);
+  return signature;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const rpcBusy = (e: unknown) => /\b429\b|Too Many Requests|rate limit|fetch failed|ECONNRESET|ETIMEDOUT/i.test((e as Error)?.message ?? '');
+
+/** Waits for `confirmed` by polling signature status until the blockhash expires. web3.js's confirmTransaction races a
+ *  websocket against polling and can leave an RPC call behind whose later rejection (e.g. a 429 from the public
+ *  endpoint) is unhandled and takes the whole server down. Every call here is awaited, and busy responses back off. */
+export async function confirmSignature(conn: Connection, signature: string, lastValidBlockHeight: number): Promise<void> {
+  let wait = 800;
+  for (let i = 0; ; i++) {
+    try {
+      const s = (await conn.getSignatureStatuses([signature])).value[0];
+      if (s?.err) throw new Error(`TRANSACTION_FAILED ${JSON.stringify(s.err)}`);
+      if (s && (s.confirmationStatus === 'confirmed' || s.confirmationStatus === 'finalized')) return;
+      if (i % 3 === 2 && (await conn.getBlockHeight(COMMITMENT)) > lastValidBlockHeight) {
+        throw new Error('TRANSACTION_EXPIRED: the blockhash expired before the transaction confirmed; nothing was charged, try again');
+      }
+      wait = 800;
+    } catch (e) {
+      if (!rpcBusy(e)) throw e;
+      wait = Math.min(wait * 2, 8_000);
+    }
+    await sleep(wait);
+  }
+}
+
+/** Operator-signed transaction (faucet, platform setup, migration crank) with a fresh blockhash and the same confirmation. */
+async function operatorSend(conn: Connection, tx: Transaction, signers: Keypair[]): Promise<string> {
+  const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash(COMMITMENT);
+  tx.feePayer = signers[0]!.publicKey;
+  tx.recentBlockhash = blockhash;
+  tx.sign(...signers);
+  const signature = await conn.sendRawTransaction(tx.serialize(), { skipPreflight: false, preflightCommitment: COMMITMENT, maxRetries: 3 });
+  await confirmSignature(conn, signature, lastValidBlockHeight);
   return signature;
 }
 

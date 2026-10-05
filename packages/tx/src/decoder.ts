@@ -56,7 +56,7 @@ const P = PROGRAM_IDS;
 const BASE = [P.COMPUTE_BUDGET, P.SYSTEM, P.ASSOCIATED_TOKEN, P.TOKEN, P.TOKEN_2022];
 /** Coarse first filter only. QF-SEC-01: an allowlist is never sufficient; bindTransactionToTerms decides. */
 export const TOP_LEVEL_ALLOWLIST: Record<IntentKind, readonly string[]> = {
-  CREATE_CONFIG: [...BASE, P.DBC], CREATE_POOL: [...BASE, P.DBC], SWAP: [...BASE, P.DBC], DAMM_SWAP: [...BASE, P.DAMM_V2],
+  CREATE_CONFIG: [...BASE, P.DBC], CREATE_POOL: [...BASE, P.DBC], SWAP: [...BASE, P.DBC], DAMM_SWAP: [...BASE, P.DAMM_V2], DAMM_CLAIM_POSITION_FEE: [...BASE, P.DAMM_V2],
   MIGRATE_DAMM_V2: [...BASE, P.DBC], CLAIM_PARTNER_TRADING_FEE: [...BASE, P.DBC], CLAIM_CREATOR_TRADING_FEE: [...BASE, P.DBC],
   CREATE_CONFIG_TRANSFER_FEE: [], CREATE_CONFIG_TRANSFER_HOOK: [],
 };

@@ -19,13 +19,13 @@ const fromHex = (h: string) => Uint8Array.from(h.match(/../g) ?? [], (x) => pars
 const OP_FOR_KIND: Record<ApprovedTerms['kind'], string> = {
   CREATE_CONFIG: 'create_config', CREATE_POOL: 'initialize_virtual_pool_with_spl_token', SWAP: 'swap',
   MIGRATE_DAMM_V2: 'migration_damm_v2', CLAIM_PARTNER_TRADING_FEE: 'claim_trading_fee', CLAIM_CREATOR_TRADING_FEE: 'claim_creator_trading_fee',
-  DAMM_SWAP: 'swap',
+  DAMM_SWAP: 'swap', DAMM_CLAIM_POSITION_FEE: 'claim_position_fee',
 };
 /** The one engine program a transaction of each kind may call, and the pinned format its instruction is decoded under. */
 interface Engine { program: string; label: string; subset: IdlSubset }
 const DBC_ENGINE: Engine = { program: P.DBC, label: 'DBC', subset: DBC_IDL_SUBSET };
 const DAMM_ENGINE: Engine = { program: P.DAMM_V2, label: 'DAMM', subset: DAMM_IDL_SUBSET };
-const engineFor = (kind: ApprovedTerms['kind']) => (kind === 'DAMM_SWAP' ? DAMM_ENGINE : DBC_ENGINE);
+const engineFor = (kind: ApprovedTerms['kind']) => (kind === 'DAMM_SWAP' || kind === 'DAMM_CLAIM_POSITION_FEE' ? DAMM_ENGINE : DBC_ENGINE);
 
 /** Digest of a ConfigParameters value in decoded (snake_case, bigint) form; the adapter computes the same via normalizeToIdl. */
 export const configParametersDigest = (value: Decoded) => sha256Hex(canonicalJson({ domain: 'QF-DBC-CONFIG-PARAMETERS', value }));
@@ -104,6 +104,19 @@ async function expectedFor(t: ApprovedTerms): Promise<{ e: Expected; termViolati
           if (BigInt(p.minimum_amount_out as bigint) < BigInt(t.minimumAmountOut)) v.push('ARG_BELOW_APPROVED minimum_amount_out');
           return v;
         } } };
+    }
+    case 'DAMM_CLAIM_POSITION_FEE': {
+      const pool = await D.dammPool(t.dammConfig, t.baseMint, t.quoteMint);
+      if (pool !== t.pool) tv.push('TERMS_POOL_NOT_DERIVED_FROM_DAMM_CONFIG_AND_MINTS');
+      const a = await D.ata(t.owner, t.baseMint, t.baseTokenProgram), b = await D.ata(t.owner, t.quoteMint, t.quoteTokenProgram);
+      return { termViolations: tv, e: { op, ephemeralSigners: 0, signers: new Set([t.feePayer, t.owner]), remaining: { required: [], optional: [] },
+        atas: [{ owner: t.owner, mint: t.baseMint, tokenProgram: t.baseTokenProgram, address: a }, { owner: t.owner, mint: t.quoteMint, tokenProgram: t.quoteTokenProgram, address: b }],
+        // fees go only to the position owner's own accounts; the program checks the owner holds the position NFT
+        accounts: { pool_authority: await D.dammPoolAuthority(), pool, position: await D.dammPosition(t.positionNftMint), token_a_account: a, token_b_account: b,
+          token_a_vault: await D.dammVault(t.baseMint, pool), token_b_vault: await D.dammVault(t.quoteMint, pool), token_a_mint: t.baseMint, token_b_mint: t.quoteMint,
+          position_nft_account: await D.dammPositionNftAccount(t.positionNftMint), signer: t.owner, token_a_program: t.baseTokenProgram, token_b_program: t.quoteTokenProgram,
+          event_authority: await D.dammEventAuthority(), program: P.DAMM_V2 },
+        checkArgs: async () => [] } };
     }
     case 'MIGRATE_DAMM_V2': {
       const pool = await D.dbcPool(t.config, t.baseMint, t.quoteMint);

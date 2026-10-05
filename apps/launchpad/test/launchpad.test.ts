@@ -10,7 +10,7 @@ import type { AddressInfo } from 'node:net';
 import { economicsDigest } from '@project-qf/policy';
 import { READINESS } from '@project-qf/core';
 import { addSignature, fromBase64, generateMintKey, parseWire, toBase64, toHex, verifyWireSignatures, type ApprovedTerms } from '@project-qf/tx';
-import { buildCreatePool, buildDammSwap, buildSwap, quoteDammSwap, quoteSwap, readDammPool, readPool, summarisePool } from '@project-qf/adapter-meteora-dbc/launchpad';
+import { buildCreatePool, buildCreatorCurveClaim, buildDammClaim, buildDammSwap, buildSwap, quoteDammSwap, quoteSwap, readDammPool, readPool, summarisePool } from '@project-qf/adapter-meteora-dbc/launchpad';
 import { createQuoteSimulator } from '@project-qf/adapter-meteora-dbc';
 import { accountsForPool, fixtures, K, thresholdRecord } from '../../../packages/adapter-meteora-dbc/test/support/fixtures.ts';
 import { createMockConnection } from '../../../packages/adapter-meteora-dbc/test/support/mockRpc.ts';
@@ -65,6 +65,11 @@ async function harness() {
     dammNow: async () => 1_790_000_000n,
     quoteDammSwap,
     buildDammSwap: (p, r, now) => buildDammSwap(conn, p, r, now),
+    buildCreatorCurveClaim: (p, c) => buildCreatorCurveClaim(conn, p, c),
+    // The MOCK RPC has no getProgramAccounts: the creator holds one locked position (TEST_ONLY numbers), nobody else holds any.
+    dammPositions: async (_p, owner) => owner === K.creator.toBase58()
+      ? [{ position: 'pos', nftMint: K.positionNft.toBase58(), feeBaseRaw: '0', feeQuoteRaw: '500000', permanentlyLocked: true }] : [],
+    buildDammClaim: (p, owner, nft) => buildDammClaim(conn, p, owner, nft),
     send: async (b) => { sent.push(b); return (await verifyWireSignatures(b)).firstSignature; },
     txSummary: async () => null,
     newSignatures: async () => [],
@@ -300,4 +305,43 @@ test('after graduation the coin is quoted, built and checked on its DAMM v2 pool
   }
   const v = await call(`/api/lp/tokens/${K.baseMint.toBase58()}`);
   assert.equal(v.body.token.live.venue, 'DAMM_V2');
+});
+
+test('creators claim their curve fees and, after graduation, their locked position fees; nobody else can', async () => {
+  const { call, store, platform } = await harness();
+  const t = new Date().toISOString(), mint = K.baseMint.toBase58(), creator = K.creator.toBase58(), stranger = K.attacker.toBase58();
+  store.insertPendingLaunch({ mint, pool: K.pool.toBase58(), config: platform.config.config, quoteMint: platform.quote.mint, creator,
+    name: 'MOCK', symbol: 'MOCK', description: '', website: null, twitter: null, telegram: null, imageType: null, metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: t }, null);
+  store.markLaunchLive(mint, 'sig', t);
+
+  const mine = await call(`/api/lp/fees/${mint}?wallet=${creator}`);
+  assert.equal(mine.status, 200, JSON.stringify(mine.body));
+  assert.deepEqual([mine.body.isCreator, mine.body.curve.quoteRaw, mine.body.positions.length], [true, '1000000', 0]);
+  const theirs = await call(`/api/lp/fees/${mint}?wallet=${stranger}`);
+  assert.deepEqual([theirs.body.isCreator, theirs.body.curve, theirs.body.positions], [false, null, []]);
+
+  assert.equal((await call('/api/lp/claim', { mint, user: stranger, venue: 'curve' })).body.error.code, 'NOT_CREATOR');
+  assert.equal((await call('/api/lp/claim', { mint, user: creator, venue: 'damm', nftMint: K.positionNft.toBase58() })).body.error.code, 'NOT_GRADUATED');
+  assert.equal((await call('/api/lp/claim', { mint, user: creator, venue: 'elsewhere' })).status, 400);
+  const c = await call('/api/lp/claim', { mint, user: creator, venue: 'curve' });
+  assert.equal(c.status, 201, JSON.stringify(c.body));
+  assert.deepEqual([c.body.terms.kind, c.body.terms.receiver, c.body.terms.maxQuoteAmount, c.body.amounts.quoteRaw], ['CLAIM_CREATOR_TRADING_FEE', creator, '1000000', '1000000']);
+  const cr = await checkBuiltTransaction(fromBase64(c.body.transaction), c.body.terms, { kind: 'CLAIM_CREATOR_TRADING_FEE', wallet: creator, shown: {},
+    fields: { creator, receiver: creator, pool: K.pool.toBase58(), baseMint: mint, quoteMint: platform.quote.mint } });
+  assert.ok(cr.ok, JSON.stringify(cr.checks.filter((x) => !x.ok)));
+
+  store.markLaunchMigrated(mint, 'mig', K.dammPool.toBase58(), t);
+  const after = await call(`/api/lp/fees/${mint}?wallet=${creator}`);
+  assert.deepEqual(after.body.positions.map((p: any) => [p.nftMint, p.feeQuoteRaw, p.permanentlyLocked]), [[K.positionNft.toBase58(), '500000', true]]);
+  assert.equal((await call('/api/lp/claim', { mint, user: stranger, venue: 'damm', nftMint: K.positionNft.toBase58() })).body.error.code, 'NOT_POSITION_OWNER');
+  assert.equal((await call('/api/lp/claim', { mint, user: creator, venue: 'damm', nftMint: stranger })).body.error.code, 'NOT_POSITION_OWNER');
+  const d = await call('/api/lp/claim', { mint, user: creator, venue: 'damm', nftMint: K.positionNft.toBase58() });
+  assert.equal(d.status, 201, JSON.stringify(d.body));
+  assert.deepEqual([d.body.terms.kind, d.body.terms.owner, d.body.terms.pool, d.body.amounts.quoteRaw], ['DAMM_CLAIM_POSITION_FEE', creator, K.dammPool.toBase58(), '500000']);
+  const dr = await checkBuiltTransaction(fromBase64(d.body.transaction), d.body.terms, { kind: 'DAMM_CLAIM_POSITION_FEE', wallet: creator, shown: {},
+    fields: { owner: creator, pool: K.dammPool.toBase58(), positionNftMint: K.positionNft.toBase58(), baseMint: mint, quoteMint: platform.quote.mint } });
+  assert.ok(dr.ok, JSON.stringify(dr.checks.filter((x) => !x.ok)));
+  assert.ok(dr.checks.some((x) => x.label === 'Only Meteora DAMM v2 and token programs are called' && x.ok));
+  // A browser that expected a curve claim refuses the DAMM bytes.
+  assert.equal((await checkBuiltTransaction(fromBase64(d.body.transaction), d.body.terms, { kind: 'CLAIM_CREATOR_TRADING_FEE', wallet: creator, shown: {}, fields: {} })).ok, false);
 });

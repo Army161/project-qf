@@ -134,6 +134,127 @@ export const DAMM_IDL_SUBSET: IdlSubset = {
      }
     }
    ]
+  },
+  {
+   "name": "claim_position_fee",
+   "discriminator": [
+    180,
+    38,
+    154,
+    17,
+    133,
+    33,
+    162,
+    211
+   ],
+   "accounts": [
+    {
+     "name": "pool_authority",
+     "writable": false,
+     "signer": false,
+     "optional": false,
+     "address": "HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC"
+    },
+    {
+     "name": "pool",
+     "writable": false,
+     "signer": false,
+     "optional": false,
+     "address": null
+    },
+    {
+     "name": "position",
+     "writable": true,
+     "signer": false,
+     "optional": false,
+     "address": null
+    },
+    {
+     "name": "token_a_account",
+     "writable": true,
+     "signer": false,
+     "optional": false,
+     "address": null
+    },
+    {
+     "name": "token_b_account",
+     "writable": true,
+     "signer": false,
+     "optional": false,
+     "address": null
+    },
+    {
+     "name": "token_a_vault",
+     "writable": true,
+     "signer": false,
+     "optional": false,
+     "address": null
+    },
+    {
+     "name": "token_b_vault",
+     "writable": true,
+     "signer": false,
+     "optional": false,
+     "address": null
+    },
+    {
+     "name": "token_a_mint",
+     "writable": false,
+     "signer": false,
+     "optional": false,
+     "address": null
+    },
+    {
+     "name": "token_b_mint",
+     "writable": false,
+     "signer": false,
+     "optional": false,
+     "address": null
+    },
+    {
+     "name": "position_nft_account",
+     "writable": false,
+     "signer": false,
+     "optional": false,
+     "address": null
+    },
+    {
+     "name": "signer",
+     "writable": false,
+     "signer": true,
+     "optional": false,
+     "address": null
+    },
+    {
+     "name": "token_a_program",
+     "writable": false,
+     "signer": false,
+     "optional": false,
+     "address": null
+    },
+    {
+     "name": "token_b_program",
+     "writable": false,
+     "signer": false,
+     "optional": false,
+     "address": null
+    },
+    {
+     "name": "event_authority",
+     "writable": false,
+     "signer": false,
+     "optional": false,
+     "address": null
+    },
+    {
+     "name": "program",
+     "writable": false,
+     "signer": false,
+     "optional": false,
+     "address": null
+    }
+   ],
+   "args": []
   }
  ],
  "types": {

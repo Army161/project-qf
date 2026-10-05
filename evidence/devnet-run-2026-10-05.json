@@ -1,0 +1,28 @@
+{
+  "label": "Public devnet chain data only. TEST_ONLY tokens with no value. Throwaway in-page wallets; no private keys recorded.",
+  "cluster": "devnet",
+  "date": "2026-10-05",
+  "purpose": "Creator fee claims: curve creator fees (DBC claim_creator_trading_fee) and the creator's locked DAMM v2 position fees (claim_position_fee), signed by the creator wallet through the real UI.",
+  "platform": { "operator": "4eup3PdJfMjbPXA9g6Qy43HPmiC7EMD4PvC74DGVPArX", "quoteMint": "GWjfymuG7NhkWm2aEKhCexJKkXvM8Fe6k3mQGB313Vez", "dbcConfig": "5EEfERmwCSGaDy7YEnieF13ohbZXzQytAaM3Kg4SKXaC" },
+  "proofRun": {
+    "coin": { "symbol": "CASH", "name": "Creator Cash", "mint": "6RxnQppWqqsRYeeRFUbrEjfoCMTdRyrCySsPSh1nNQE1", "curvePool": "BZBFH6JToZrubGgQWJtHMTJEqmpbH8rbaiULFVp9xbpE",
+      "dammPool": "Huy9yeqGsRGUZQRemKdhpbmngKDBBVa8FKcU3Xf4PSvS", "creator": "DgcJHwtDYiUAE8J7i8cdWChYa5JhqvwJTP49AzbUBxYo",
+      "creatorPosition": "AVuxaae6kWtVgiXYnWHBLCoc1gAXGJaTnfZEKeHVsCb2", "creatorPositionNft": "8behaAu8X5fX8pE7Kt2UjsQeCQhwhC2CA4kiq8WxtT8V" },
+    "transactions": [
+      { "kind": "CREATE_POOL", "signature": "2TbM8REqBKaxbX2NFK6TnC3zZ2hMs7dT9xttmed99R6pYvzVQoosUhceRWsaPRBFqKs5cJUNSnBxGnTmbzFTfxq" },
+      { "kind": "SWAP", "note": "buy 200 qUSD", "signature": "2MUsjesC2QrNvMWcybNxzVNKTCpcUso4dTdZPCoNx7wbcKXJGsTA1PuKEVGa25L9KvVasQRG6UvVLVZMSh2HiA23" },
+      { "kind": "SWAP", "note": "sell", "signature": "TPRc4L3gmk3P3ybhEeAQnbYWwyWNEaPQvEW9wig5jCDaJiF3DseFMXLKfHsisoZKTpoyjQtSzrRTnsohSqd8BP7" },
+      { "kind": "SWAP", "note": "buy 150 qUSD", "signature": "KtHwjkkpM3m74c7AAf1qVg2aUnBrJoyiLg5sgFpDw6ZthRt7xFhC5hfekTSHumXHaWiwt2AdE2uDwcCNNZLTjcv" },
+      { "kind": "CLAIM_CREATOR_TRADING_FEE", "note": "curve creator fees, 1.40 qUSD shown and claimed", "signature": "2egKXucfREhg9D8Ec64KaJ1aLAqpj9guMVCXQNxc4kRHokSUBrMogZxXTZFQ4nzS7PgbRMHfyZs1BdMQQbsZQ8dK" },
+      { "kind": "SWAP", "note": "buy the rest, 660.18 qUSD, fills the curve", "signature": "41aQ3aTSCz4qYYS5P8TeJS8nsTXZuhYAX6gM9D58gvuh2wZTdyp1UibEqj2wF5t8Lho3HtawWnpGuGk8rZHBLWyf" },
+      { "kind": "MIGRATE_DAMM_V2", "note": "operator crank", "signature": "3cAv59KGB6MH5hEZfKyagCyF9SvN1EQDxPdfCBcaefFYxuBZxR8o61Z8jsxA5p5wu8K1aECjuKjeyZo2tVfibF55" },
+      { "kind": "DAMM_SWAP", "note": "buy 300 qUSD", "signature": "LFJ1LVYQ8SNsMjUiw5kcLtBiFK37rZjAcFpLNatoF9gJL55FzKNCpwp3TMWJLCDokbXdks5odBVsbG6My9w66KR" },
+      { "kind": "DAMM_SWAP", "note": "sell 50%", "signature": "34YEPYJon2C7ZAX1ASSxXg9YHxAY2XbKwd7tB985Mz79NNuUNCfNwEedNiFsqETxUwEb5DKSUJ4uehKLboejvv16" },
+      { "kind": "DAMM_CLAIM_POSITION_FEE", "note": "locked LP position fees, 4.99 qUSD shown and claimed", "signature": "EtuZ5PrcrWmjdW159aFpmizpCqWUGyxEaKyhxLCMb7wNWuKdxPNp15kEj3eXHupfgN1SdY6bWx4FjZQ4SmBirHx" }
+    ]
+  },
+  "earlierAttempts": [
+    { "coin": "PAYDAY", "mint": "CNCbBAZm58ghSRqWtW5WQGo127NU5srFJYQh8tEzbESL", "result": "curve fee claim confirmed (1.40 qUSD); graduated; the open page did not switch to the DAMM panel (bug B1, fixed)" },
+    { "coin": "TIPJAR", "mint": "3WJU8EnqCQVHEdvwwGxvJuxyei72WXvnxNNZPSwtYkY6", "result": "server crashed on an unhandled RPC 429 while confirming a buy (bug B2, fixed); coin left bonding" }
+  ]
+}

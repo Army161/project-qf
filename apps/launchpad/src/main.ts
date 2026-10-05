@@ -37,6 +37,9 @@ if (cmd === 'operator') {
   console.log(JSON.stringify({ quote: p.quote, config: p.config, threshold: p.threshold.rawQuoteThreshold, launchEconomicsDigest: p.launchEconomicsDigest }, null, 2));
   store.close();
 } else if (cmd === 'serve') {
+  // A long-running server must not die because a dependency left a promise behind (seen on devnet: a 429 from the public
+  // RPC inside a library call nobody awaited). Log it and keep serving; every request path has its own error handling.
+  process.on('unhandledRejection', (e) => log(`unhandled rejection (kept running): ${((e as Error)?.stack ?? String(e)).slice(0, 600)}`));
   const store = new LaunchpadStore(resolve(env.QF_LP_DB ?? 'qf-launchpad.sqlite'));
   const port = Number(env.QF_LP_PORT ?? 8788);
   const chain = realChain(conn, operator);
