@@ -27,7 +27,8 @@ export const PROGRAMS = Object.freeze([
   { name: 'Meteora DAMM v2', id: 'cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG', required: true },
   { name: 'SF Rewards (candidate)', id: 'REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi', required: false },
   // devnet platform treasury stand-in (milestone 7); a mainnet treasury needs its own review before it is required
-  { name: 'Squads v4 multisig (treasury, devnet stand-in)', id: 'SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf', required: false },
+  { name: 'Squads v4 multisig (treasury, devnet stand-in)', id: 'SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf', required: false,
+    buildNote: 'no reproducible build attempted for Squads v4; only the OtterSec status is recorded (a mainnet treasury needs its own review, readiness TRE-1)' },
 ]);
 const DAMM_V2 = PROGRAMS[1].id;
 
@@ -353,7 +354,7 @@ async function inspectProgram(rpc, p, osec, { skipExternal = false } = {}) {
     : `${o.is_verified ? 'OtterSec reports a verified build' : 'not verified by OtterSec; this is not a demonstrated mismatch'}`
       + `${o.on_chain_hash ? `; OtterSec on-chain hash ${o.on_chain_hash}${execHash ? (o.on_chain_hash === execHash ? ' (equals the hash read here)' : ' (differs from the hash read here)') : ''}` : ''}`;
   add({ id: 'SOURCE_BUILD', status: 'NOT_ATTEMPTED', osec: osecText, raw: o.error ? undefined : { is_verified: o.is_verified ?? null, on_chain_hash: o.on_chain_hash ?? null, repo_url: o.repo_url ?? null, commit: o.commit ?? null },
-    note: 'no reproducible build attempted: building the Meteora program source for commercial evaluation awaits licence permission (LOCAL-1)' });
+    note: p.buildNote ?? 'no reproducible build attempted: building the Meteora program source for commercial evaluation awaits licence permission (LOCAL-1)' });
   add({ id: 'AUDIT_COVERAGE', status: 'NOT_EVALUATED', note: 'a source/build match is not a security audit; audit scope versus deployed code was not assessed' });
   return checks;
 }

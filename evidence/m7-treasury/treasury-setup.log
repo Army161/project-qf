@@ -1,0 +1,39 @@
+[launchpad 2026-10-05T18:49:38.156Z] creating the 2-of-3 treasury multisig (devnet stand-in; operator pays, is not a member)
+[launchpad 2026-10-05T18:49:39.446Z] funding 7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB with 100000000 devnet lamports
+[launchpad 2026-10-05T18:49:40.546Z] funding 68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz with 50000000 devnet lamports
+[launchpad 2026-10-05T18:49:41.625Z] funding AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ with 50000000 devnet lamports
+[launchpad 2026-10-05T18:49:42.711Z] funding AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww with 50000000 devnet lamports
+[launchpad 2026-10-05T18:49:43.759Z] creating the treasury DBC config (same economics; fee claimer and leftover receiver = treasury vault)
+{
+  "treasury": {
+    "multisig": "6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd",
+    "vault": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "createKey": "D4g8swkyJEGPjhmUWQpp3NoQrgJhHHb7tu3nwLeZuwm4",
+    "threshold": 2,
+    "members": [
+      "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+      "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ",
+      "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww"
+    ],
+    "signature": "5q3D5DowQFk3smUM767C6yC3TaSxkCXwRqX9pNM7W6mbNgZ7c7AK3xFLCzzsxTj2wfmuEoxAQ23xGvWUV6ZFAnd4",
+    "createdAt": "2026-10-05T18:49:39.389Z",
+    "label": "DEVNET_STAND_IN"
+  },
+  "config": {
+    "config": "7Jcu6GtNEqgfvYNTk9XNEWrWq6duuFFdSXjhNE6nU5UE",
+    "quoteMint": "GWjfymuG7NhkWm2aEKhCexJKkXvM8Fe6k3mQGB313Vez",
+    "feeClaimer": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "leftoverReceiver": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "signature": "5oj2MbA4HpsyPa28iXsyVACUBYswScghH8zb2zLcz8haSuAPnqMBqF7UmQKzahTrjuC2ZnEtVQDZxa6rXAkWbuVZ"
+  },
+  "legacyConfigs": [
+    {
+      "config": "5EEfERmwCSGaDy7YEnieF13ohbZXzQytAaM3Kg4SKXaC",
+      "quoteMint": "GWjfymuG7NhkWm2aEKhCexJKkXvM8Fe6k3mQGB313Vez",
+      "feeClaimer": "4eup3PdJfMjbPXA9g6Qy43HPmiC7EMD4PvC74DGVPArX",
+      "leftoverReceiver": "4eup3PdJfMjbPXA9g6Qy43HPmiC7EMD4PvC74DGVPArX",
+      "signature": "5hPvRgcmr1mYKeDdYAMuMapVYj4tLUWoBJLhEi27HEGBx7biE5vyBDi4fJ6zHtVFMttyfPAPoD85LSgXZ3RTMYsJ"
+    }
+  ],
+  "launchEconomicsDigest": "6abf23c1472b6740e0bac7eacc69a4231f4b74ae24448d48c7f256d2da034b82"
+}

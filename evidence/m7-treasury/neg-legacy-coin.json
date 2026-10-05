@@ -1,0 +1,1 @@
+{"error":{"code":"NOT_TREASURY_COIN","message":"this coin launched on an earlier config whose platform fees go to the operator wallet, not the treasury"}}

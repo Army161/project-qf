@@ -1,0 +1,162 @@
+{
+  "label": "Public devnet chain data only. TEST_ONLY tokens with no value. Throwaway member keys (DEVNET_STAND_IN); no private keys recorded.",
+  "cluster": "devnet",
+  "date": "2026-10-05",
+  "purpose": "Platform treasury: a 2-of-3 Squads v4 multisig whose vault is the fee claimer of a new DBC config. Platform fees are claimed only by multisig proposals (propose, second approval, execute) signed by member keys the server never loads.",
+  "squads": {
+    "program": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+    "multisig": "6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd",
+    "vault": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "vaultIndex": 0,
+    "threshold": 2,
+    "members": [
+      "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+      "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ",
+      "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww"
+    ],
+    "configAuthority": null,
+    "timeLock": 0,
+    "spendingLimits": [],
+    "createKey": "D4g8swkyJEGPjhmUWQpp3NoQrgJhHHb7tu3nwLeZuwm4",
+    "createSig": "5q3D5DowQFk3smUM767C6yC3TaSxkCXwRqX9pNM7W6mbNgZ7c7AK3xFLCzzsxTj2wfmuEoxAQ23xGvWUV6ZFAnd4",
+    "paidBy": "operator 4eup3PdJfMjbPXA9g6Qy43HPmiC7EMD4PvC74DGVPArX (not a member)"
+  },
+  "configs": {
+    "treasury": {
+      "config": "7Jcu6GtNEqgfvYNTk9XNEWrWq6duuFFdSXjhNE6nU5UE",
+      "feeClaimer": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+      "leftoverReceiver": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+      "signature": "5oj2MbA4HpsyPa28iXsyVACUBYswScghH8zb2zLcz8haSuAPnqMBqF7UmQKzahTrjuC2ZnEtVQDZxa6rXAkWbuVZ"
+    },
+    "legacy": {
+      "config": "5EEfERmwCSGaDy7YEnieF13ohbZXzQytAaM3Kg4SKXaC",
+      "feeClaimer": "4eup3PdJfMjbPXA9g6Qy43HPmiC7EMD4PvC74DGVPArX",
+      "note": "coins launched before milestone 7 keep this config; DBC has no instruction to change a config fee claimer"
+    }
+  },
+  "funding": {
+    "vaultLamports": "100000000",
+    "eachMemberLamports": "50000000",
+    "note": "devnet lamports from the operator; members pay their own fees and rent"
+  },
+  "coin": {
+    "symbol": "VAULT",
+    "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+    "curvePool": "6Nq2JLyXf2bZHEVweuorkbyzmjP9CAjXGP6TjqnuSgek",
+    "dammPool": "HDnxLVQzPBVFhnGszBA5d1tQJ4iwAC5n54rxuENk2u2U",
+    "vaultPartnerPosition": "57uwTdgpbbTs9cDY9SuWyfR68zEMFfsNzSgNPVCTahfb",
+    "vaultPartnerPositionNft": "8gEEEei7E1krQYR8GzgpoLUG2k1en3fFNu5udawR1Ri6",
+    "positionPermanentlyLocked": true
+  },
+  "transactions": [
+    {
+      "kind": "CREATE_POOL",
+      "note": "on the treasury config",
+      "signature": "4WJvYiSTyBiUpBeeWRWWSt9TQvceSj5wyLhhujAWKSeF8SBWHHEPU7p6P9uxMqtVBwgKUtdnEpcKwhLVnHBRy3Wr"
+    },
+    {
+      "kind": "SWAP",
+      "note": "buy 300 qUSD",
+      "signature": "3L3hfvVWwHWBpA7Q2RKsBAVC8HWLCtAgkn6uAVzz1Q9tHYh5ig7kWiVG2HE5UYp3dAhyvnWMFqaJrRWxmw2vnkM4"
+    },
+    {
+      "kind": "SWAP",
+      "note": "buy the rest, 710.101012 qUSD, fills the curve",
+      "signature": "5mPX3YBh6DcWbUXgVDUVbDhgQDCvuA7KSyWLF9qAducX73v4tVbjYsSzsEVWGSgSeSaiwRAAcMEqLyjRmsa5tYwR"
+    },
+    {
+      "kind": "MIGRATE_DAMM_V2",
+      "note": "operator crank; partner LP NFT minted to the vault",
+      "signature": "29ozx8xmaJJaCvGa9MChCuimGUhUvSTqBEoYg4b2XmzVS148LZwN3ygDgFXYX6ijnkDPRnh4gSqQRKhMwrHHpR1E"
+    },
+    {
+      "kind": "DAMM_SWAP",
+      "note": "buy, generates LP fees",
+      "signature": "65BNQxa9m4fJ7bb3ZFoR4yGTzVeeTeTTvdt9zUmupKEQ23RbPucoZ3FrWbDryBmUcLeu9w1vVzsEB6hZ5rCxQy9i"
+    }
+  ],
+  "proposals": [
+    {
+      "transactionIndex": "1",
+      "claim": "CLAIM_PARTNER_TRADING_FEE",
+      "venue": "CURVE",
+      "pool": "6Nq2JLyXf2bZHEVweuorkbyzmjP9CAjXGP6TjqnuSgek",
+      "maxQuoteRaw": "1200000",
+      "proposer": "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+      "approvals": [
+        "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+        "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ"
+      ],
+      "executedBy": "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww",
+      "proposeSig": "3Y7JHFJW8iBGDMWs8AYfo1UxLVgyUetJrfY5yR4eRNkx6vEXkPJ1zDU3teypKzE9zjWbcKirPLqrqKK249ZV9ZES",
+      "executeSig": "3YkaPFZHkWbyYw6BwhvEt9PmWzX2BhQ6kdH9bUiRDYdy5kGVYbhxtY6p8Vcsfw7UbxvPqUZvicdwWqcrzpeFopuv",
+      "status": "Executed",
+      "approveSig": "4iw192o6kALCgi6hU8im2NcNp58LUPinb9AQZdEciq1AEAAMShjoWuxvwtMAtCZMjGccfTnXyjqsb995ApHa7i9w"
+    },
+    {
+      "transactionIndex": "2",
+      "claim": "DAMM_CLAIM_POSITION_FEE",
+      "venue": "DAMM_V2",
+      "pool": "HDnxLVQzPBVFhnGszBA5d1tQJ4iwAC5n54rxuENk2u2U",
+      "maxQuoteRaw": null,
+      "proposer": "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww",
+      "approvals": [
+        "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+        "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww"
+      ],
+      "executedBy": "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ",
+      "proposeSig": "3732K58WezsxAGeb6tEp89CDtK46HDor7DLSoHZwPo3JNDJYMWHqYXtd1ehP7qTejpxh5NdcTva6hhSiphzq1NJS",
+      "executeSig": "4rumj3FWUXWtAekWVWpzWuueUfBWHKwgaN1JqhcABy8tgRFKg8MpXKs6ibF6vrRKaBqWYDwk6m79m73cxk4m13q4",
+      "status": "Executed",
+      "approveSig": "mrNyFjRjYnhab2U94vCPy1u2XhMTFqmtNbb5WCdm86m7u2BmqUMgmvCbNwKQ4kML2HZbMnKtW9dviUGcXkhecqF"
+    },
+    {
+      "transactionIndex": "3",
+      "claim": "CLAIM_PARTNER_TRADING_FEE",
+      "venue": "CURVE",
+      "pool": "6Nq2JLyXf2bZHEVweuorkbyzmjP9CAjXGP6TjqnuSgek",
+      "maxQuoteRaw": "2840405",
+      "proposer": "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ",
+      "approvals": [
+        "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww",
+        "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ"
+      ],
+      "executedBy": "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+      "proposeSig": "5sVZ2jnWiQ5nt713f4e7bJvVoAMuJXUnc4hH89mC5Xgj6kjVmKP9fHQHqC6UkipABifXAFXQxaQs4zAUn2BiGYtv",
+      "executeSig": "322BXcdshNjwbKKAXaB4iczq2r8aspNDSE6hgZRM51gh48zhhp8ecDi43ikqtxP4rCqhfyvYyCAozzvSayFAcCvt",
+      "status": "Executed",
+      "approveSig": "45zcbfBkAZgVQAv6aF9ckNhAEDCzPCVv4KQs6gJbBXXLHyEshJBicv76fghd1YA421J59WE9Qx3PiwDmXNkyDd7b"
+    }
+  ],
+  "result": {
+    "vaultQuoteRawBefore": "0",
+    "vaultQuoteRawAfter": "5640404",
+    "sumOfReceiptsQuoteRaw": "5640404",
+    "vaultLamportsBefore": "100000000",
+    "vaultLamportsAfter": "97023120",
+    "lamportsNote": "quote token account rent paid by the vault on the first claim",
+    "earningsTreasury": {
+      "paidToTreasuryQuoteRaw": "5640404",
+      "unresolvedReceipts": 0,
+      "openProposals": 0
+    }
+  },
+  "negativeChecks": [
+    {
+      "file": "neg-operator-propose.json",
+      "expect": "NOT_A_MEMBER"
+    },
+    {
+      "file": "neg-approve-executed.json",
+      "expect": "NOT_ACTIVE"
+    },
+    {
+      "file": "neg-legacy-coin.json",
+      "expect": "NOT_TREASURY_COIN"
+    },
+    {
+      "file": "operator-cannot-claim.json",
+      "expect": "DBC Unauthorized 6053 (simulated, not sent)"
+    }
+  ]
+}

@@ -1,0 +1,1545 @@
+{
+  "tool": "project-qf/program-verify",
+  "version": "0.4.0",
+  "schemaVersion": "qf-program-verify-report/3",
+  "generatedAt": "2026-10-05T18:59:42.316Z",
+  "readOnly": true,
+  "plan": [
+    {
+      "cluster": "mainnet-beta",
+      "crossCheck": false
+    },
+    {
+      "cluster": "devnet",
+      "crossCheck": false
+    }
+  ],
+  "clusters": [
+    {
+      "schemaVersion": "qf-program-verify-report/3",
+      "cluster": "mainnet-beta",
+      "endpoint": "https://api.mainnet-beta.solana.com",
+      "rpcLabel": "LIVE_RPC",
+      "commitment": "finalized",
+      "crossCheckRequested": false,
+      "startedAt": "2026-10-05T18:59:36.577Z",
+      "checks": [
+        {
+          "id": "CONNECTIVITY",
+          "subject": "mainnet-beta",
+          "status": "PASS",
+          "required": true
+        },
+        {
+          "id": "CLUSTER_IDENTITY",
+          "subject": "mainnet-beta",
+          "status": "PASS",
+          "required": true,
+          "value": {
+            "genesisHash": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+            "expected": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d"
+          },
+          "note": "genesis hash compared with the published value"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "PROGRAM_PRESENCE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 453666555,
+          "commitment": "finalized",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "LOADER_STATE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 453666555,
+          "commitment": "finalized",
+          "note": "owned by BPFLoaderUpgradeable and executable",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "PROGRAMDATA",
+          "status": "PASS",
+          "value": {
+            "address": "HUfnSSiJxgspQm6C1rkqv6L3XgVtn7AESApgCQpCXCYh",
+            "length": 2326622
+          },
+          "contextSlot": 453666556,
+          "commitment": "finalized",
+          "note": "ProgramData decoded (UpgradeableLoaderState::ProgramData)",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "UPGRADE_AUTHORITY",
+          "status": "RECORDED",
+          "value": "JADaUV8kvDpDbJr55wxXJHVaBS3VCj8thZZHjfeuCVLd",
+          "contextSlot": 453666556,
+          "commitment": "finalized",
+          "note": "upgradeable; identity of the holder is not established by this read",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "DEPLOY_SLOT",
+          "status": "RECORDED",
+          "value": "445503633",
+          "contextSlot": 453666556,
+          "commitment": "finalized",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "EXECUTABLE_HASH",
+          "status": "RECORDED",
+          "value": "b3f7b765e1b9a2e87e45c4663165974819d248f00c1beefe678af60e9dfe6c44",
+          "contextSlot": 453666556,
+          "commitment": "finalized",
+          "note": "sha256 of the trimmed executable; a hash alone does not identify a release (e.g. 0.2.1 vs 0.2.2)",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "INTERFACE",
+          "status": "RECORDED",
+          "value": {
+            "address": "B8daPXJqt9sv94r1s9GM13sNH6CSak6UtYHV2yyDGbtf",
+            "present": true,
+            "version": "0.1.10",
+            "instructionCount": 28,
+            "has_create_config2": false
+          },
+          "note": "on-chain Anchor IDL recorded; an IDL account can lag or differ from the deployed code, so this is an indicator only",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "SOURCE_BUILD",
+          "status": "NOT_ATTEMPTED",
+          "osec": "not verified by OtterSec; this is not a demonstrated mismatch; OtterSec on-chain hash b3f7b765e1b9a2e87e45c4663165974819d248f00c1beefe678af60e9dfe6c44 (equals the hash read here)",
+          "raw": {
+            "is_verified": false,
+            "on_chain_hash": "b3f7b765e1b9a2e87e45c4663165974819d248f00c1beefe678af60e9dfe6c44",
+            "repo_url": "",
+            "commit": ""
+          },
+          "note": "no reproducible build attempted: building the Meteora program source for commercial evaluation awaits licence permission (LOCAL-1)",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "AUDIT_COVERAGE",
+          "status": "NOT_EVALUATED",
+          "note": "a source/build match is not a security audit; audit scope versus deployed code was not assessed",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "PROGRAM_PRESENCE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 453666560,
+          "commitment": "finalized",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "LOADER_STATE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 453666560,
+          "commitment": "finalized",
+          "note": "owned by BPFLoaderUpgradeable and executable",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "PROGRAMDATA",
+          "status": "PASS",
+          "value": {
+            "address": "AUh8bm2XsMfex3KjYGcM3G4uBqUNSDw6HEhWaWMYnyPH",
+            "length": 2174397
+          },
+          "contextSlot": 453666560,
+          "commitment": "finalized",
+          "note": "ProgramData decoded (UpgradeableLoaderState::ProgramData)",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "UPGRADE_AUTHORITY",
+          "status": "RECORDED",
+          "value": "JADaUV8kvDpDbJr55wxXJHVaBS3VCj8thZZHjfeuCVLd",
+          "contextSlot": 453666560,
+          "commitment": "finalized",
+          "note": "upgradeable; identity of the holder is not established by this read",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "DEPLOY_SLOT",
+          "status": "RECORDED",
+          "value": "445230614",
+          "contextSlot": 453666560,
+          "commitment": "finalized",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "EXECUTABLE_HASH",
+          "status": "RECORDED",
+          "value": "7c479dd7de729ada87d141e9d422a572d42df79f4cc8947a751b5f15719d94e0",
+          "contextSlot": 453666560,
+          "commitment": "finalized",
+          "note": "sha256 of the trimmed executable; a hash alone does not identify a release (e.g. 0.2.1 vs 0.2.2)",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "INTERFACE",
+          "status": "RECORDED",
+          "value": {
+            "address": "F1hSvutXSc9iAvB9bQPmjNDwiN2tCXzazTEEvDgNCBMa",
+            "present": true,
+            "version": "0.2.0",
+            "instructionCount": 38
+          },
+          "note": "on-chain Anchor IDL recorded; an IDL account can lag or differ from the deployed code, so this is an indicator only",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "SOURCE_BUILD",
+          "status": "NOT_ATTEMPTED",
+          "osec": "not verified by OtterSec; this is not a demonstrated mismatch",
+          "raw": {
+            "is_verified": false,
+            "on_chain_hash": "",
+            "repo_url": "",
+            "commit": ""
+          },
+          "note": "no reproducible build attempted: building the Meteora program source for commercial evaluation awaits licence permission (LOCAL-1)",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "AUDIT_COVERAGE",
+          "status": "NOT_EVALUATED",
+          "note": "a source/build match is not a security audit; audit scope versus deployed code was not assessed",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "PROGRAM_PRESENCE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 453666561,
+          "commitment": "finalized",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "LOADER_STATE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 453666561,
+          "commitment": "finalized",
+          "note": "owned by BPFLoaderUpgradeable and executable",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "PROGRAMDATA",
+          "status": "PASS",
+          "value": {
+            "address": "BKRW5hPM4cMjNNr2EKdpScMS5kmK5bTxdELTH4LurZnu",
+            "length": 179861
+          },
+          "contextSlot": 453666561,
+          "commitment": "finalized",
+          "note": "ProgramData decoded (UpgradeableLoaderState::ProgramData)",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "UPGRADE_AUTHORITY",
+          "status": "RECORDED",
+          "value": "DXtFpbPjcn2hxPnw79x1Pfoj35vXh5AsWBkS37YnXMVv",
+          "contextSlot": 453666561,
+          "commitment": "finalized",
+          "note": "upgradeable; identity of the holder is not established by this read",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "DEPLOY_SLOT",
+          "status": "RECORDED",
+          "value": "422571636",
+          "contextSlot": 453666561,
+          "commitment": "finalized",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "EXECUTABLE_HASH",
+          "status": "RECORDED",
+          "value": "96a2835c4d2c0065882de9845faae7287332e84f4a5f19ef9b199c8c6034d88d",
+          "contextSlot": 453666561,
+          "commitment": "finalized",
+          "note": "sha256 of the trimmed executable; a hash alone does not identify a release (e.g. 0.2.1 vs 0.2.2)",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "INTERFACE",
+          "status": "UNKNOWN",
+          "value": {
+            "address": "B3d86vgLDjrvkNmhC51R9sw2mqE9rF7C2DgC7ybGoiqq",
+            "present": false,
+            "version": null,
+            "instructionCount": 0
+          },
+          "note": "no on-chain Anchor IDL account",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "SOURCE_BUILD",
+          "status": "NOT_ATTEMPTED",
+          "osec": "not verified by OtterSec; this is not a demonstrated mismatch; OtterSec on-chain hash 96a2835c4d2c0065882de9845faae7287332e84f4a5f19ef9b199c8c6034d88d (equals the hash read here)",
+          "raw": {
+            "is_verified": false,
+            "on_chain_hash": "96a2835c4d2c0065882de9845faae7287332e84f4a5f19ef9b199c8c6034d88d",
+            "repo_url": "",
+            "commit": ""
+          },
+          "note": "no reproducible build attempted: building the Meteora program source for commercial evaluation awaits licence permission (LOCAL-1)",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "AUDIT_COVERAGE",
+          "status": "NOT_EVALUATED",
+          "note": "a source/build match is not a security audit; audit scope versus deployed code was not assessed",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "PROGRAM_PRESENCE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 453666562,
+          "commitment": "finalized",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "LOADER_STATE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 453666562,
+          "commitment": "finalized",
+          "note": "owned by BPFLoaderUpgradeable and executable",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "PROGRAMDATA",
+          "status": "PASS",
+          "value": {
+            "address": "Fy3YMJCvwbAXUgUM5b91ucUVA3jYzwWLHL3MwBqKsh8n",
+            "length": 1470461
+          },
+          "contextSlot": 453666563,
+          "commitment": "finalized",
+          "note": "ProgramData decoded (UpgradeableLoaderState::ProgramData)",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "UPGRADE_AUTHORITY",
+          "status": "RECORDED",
+          "value": null,
+          "contextSlot": 453666563,
+          "commitment": "finalized",
+          "note": "no upgrade authority (immutable)",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "DEPLOY_SLOT",
+          "status": "RECORDED",
+          "value": "302582236",
+          "contextSlot": 453666563,
+          "commitment": "finalized",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "EXECUTABLE_HASH",
+          "status": "RECORDED",
+          "value": "d48660833989ecea3145ff726164fe640bd90696f03ce00dfd0cda258cbf2fac",
+          "contextSlot": 453666563,
+          "commitment": "finalized",
+          "note": "sha256 of the trimmed executable; a hash alone does not identify a release (e.g. 0.2.1 vs 0.2.2)",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "INTERFACE",
+          "status": "RECORDED",
+          "value": {
+            "address": "6i4UjrDtkc7dqEmCyNDRfoxnAhDKSrY92u96Z74nRFdX",
+            "present": true,
+            "version": "2.0.0",
+            "instructionCount": 31
+          },
+          "note": "on-chain Anchor IDL recorded; an IDL account can lag or differ from the deployed code, so this is an indicator only",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "SOURCE_BUILD",
+          "status": "NOT_ATTEMPTED",
+          "osec": "not verified by OtterSec; this is not a demonstrated mismatch; OtterSec on-chain hash d48660833989ecea3145ff726164fe640bd90696f03ce00dfd0cda258cbf2fac (equals the hash read here)",
+          "raw": {
+            "is_verified": false,
+            "on_chain_hash": "d48660833989ecea3145ff726164fe640bd90696f03ce00dfd0cda258cbf2fac",
+            "repo_url": "https://github.com/Squads-Protocol/v4/tree/3742e5521a3e833f24a4c6bc024dd1aa5385d010",
+            "commit": "3742e5521a3e833f24a4c6bc024dd1aa5385d010"
+          },
+          "note": "no reproducible build attempted for Squads v4; only the OtterSec status is recorded (a mainnet treasury needs its own review, readiness TRE-1)",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "AUDIT_COVERAGE",
+          "status": "NOT_EVALUATED",
+          "note": "a source/build match is not a security audit; audit scope versus deployed code was not assessed",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps25",
+          "address": "7F6dnUcRuyM2TwR8myT1dYypFXpPSxqwKNSFNkxyNESd",
+          "required": false,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 1,
+              "collect_fee_mode": 1,
+              "config_type": 0,
+              "index": "20000",
+              "sqrt_min_price": "4295048016",
+              "sqrt_max_price": "79226673521066979257578248091"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 453666564,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps25",
+          "address": "7F6dnUcRuyM2TwR8myT1dYypFXpPSxqwKNSFNkxyNESd",
+          "required": false,
+          "status": "NOT_ASSESSED",
+          "contextSlot": 453666564,
+          "commitment": "finalized",
+          "value": {
+            "route": "FixedBps25",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 0
+          },
+          "note": "fixed-fee migration routes are outside V0; recorded, not assessed (no route-specific fee/range/schedule/activation rules defined)"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps30",
+          "address": "2nHK1kju6XjphBLbNxpM5XRGFj7p9U8vvNzyZiha1z6k",
+          "required": false,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 1,
+              "collect_fee_mode": 1,
+              "config_type": 0,
+              "index": "20001",
+              "sqrt_min_price": "4295048016",
+              "sqrt_max_price": "79226673521066979257578248091"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 453666564,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps30",
+          "address": "2nHK1kju6XjphBLbNxpM5XRGFj7p9U8vvNzyZiha1z6k",
+          "required": false,
+          "status": "NOT_ASSESSED",
+          "contextSlot": 453666564,
+          "commitment": "finalized",
+          "value": {
+            "route": "FixedBps30",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 0
+          },
+          "note": "fixed-fee migration routes are outside V0; recorded, not assessed (no route-specific fee/range/schedule/activation rules defined)"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps100",
+          "address": "Hv8Lmzmnju6m7kcokVKvwqz7QPmdX9XfKjJsXz8RXcjp",
+          "required": false,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 1,
+              "collect_fee_mode": 1,
+              "config_type": 0,
+              "index": "20002",
+              "sqrt_min_price": "4295048016",
+              "sqrt_max_price": "79226673521066979257578248091"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 453666564,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps100",
+          "address": "Hv8Lmzmnju6m7kcokVKvwqz7QPmdX9XfKjJsXz8RXcjp",
+          "required": false,
+          "status": "NOT_ASSESSED",
+          "contextSlot": 453666564,
+          "commitment": "finalized",
+          "value": {
+            "route": "FixedBps100",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 0
+          },
+          "note": "fixed-fee migration routes are outside V0; recorded, not assessed (no route-specific fee/range/schedule/activation rules defined)"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps200",
+          "address": "2c4cYd4reUYVRAB9kUUkrq55VPyy2FNQ3FDL4o12JXmq",
+          "required": false,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 1,
+              "collect_fee_mode": 1,
+              "config_type": 0,
+              "index": "20003",
+              "sqrt_min_price": "4295048016",
+              "sqrt_max_price": "79226673521066979257578248091"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 453666564,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps200",
+          "address": "2c4cYd4reUYVRAB9kUUkrq55VPyy2FNQ3FDL4o12JXmq",
+          "required": false,
+          "status": "NOT_ASSESSED",
+          "contextSlot": 453666564,
+          "commitment": "finalized",
+          "value": {
+            "route": "FixedBps200",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 0
+          },
+          "note": "fixed-fee migration routes are outside V0; recorded, not assessed (no route-specific fee/range/schedule/activation rules defined)"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps400",
+          "address": "AkmQWebAwFvWk55wBoCr5D62C6VVDTzi84NJuD9H7cFD",
+          "required": false,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 1,
+              "collect_fee_mode": 1,
+              "config_type": 0,
+              "index": "20004",
+              "sqrt_min_price": "4295048016",
+              "sqrt_max_price": "79226673521066979257578248091"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 453666565,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps400",
+          "address": "AkmQWebAwFvWk55wBoCr5D62C6VVDTzi84NJuD9H7cFD",
+          "required": false,
+          "status": "NOT_ASSESSED",
+          "contextSlot": 453666565,
+          "commitment": "finalized",
+          "value": {
+            "route": "FixedBps400",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 0
+          },
+          "note": "fixed-fee migration routes are outside V0; recorded, not assessed (no route-specific fee/range/schedule/activation rules defined)"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps600",
+          "address": "DbCRBj8McvPYHJG1ukj8RE15h2dCNUdTAESG49XpQ44u",
+          "required": false,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 1,
+              "collect_fee_mode": 1,
+              "config_type": 0,
+              "index": "20005",
+              "sqrt_min_price": "4295048016",
+              "sqrt_max_price": "79226673521066979257578248091"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 453666565,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps600",
+          "address": "DbCRBj8McvPYHJG1ukj8RE15h2dCNUdTAESG49XpQ44u",
+          "required": false,
+          "status": "NOT_ASSESSED",
+          "contextSlot": 453666565,
+          "commitment": "finalized",
+          "value": {
+            "route": "FixedBps600",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 0
+          },
+          "note": "fixed-fee migration routes are outside V0; recorded, not assessed (no route-specific fee/range/schedule/activation rules defined)"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "Customizable",
+          "address": "A8gMrEPJkacWkcb3DGwtJwTe16HktSEfvwtuDh2MCtck",
+          "required": true,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 0,
+              "collect_fee_mode": 0,
+              "config_type": 1,
+              "index": "20006",
+              "sqrt_min_price": "0",
+              "sqrt_max_price": "0"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 453666565,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "Customizable",
+          "address": "A8gMrEPJkacWkcb3DGwtJwTe16HktSEfvwtuDh2MCtck",
+          "required": true,
+          "status": "PASS",
+          "contextSlot": 453666565,
+          "commitment": "finalized",
+          "value": {
+            "route": "Customizable",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "expected_pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 1,
+            "expected_config_type": 1,
+            "evidence": {
+              "authorityRule": "CONFIRMED_FOR_PINNED_SOURCE",
+              "configTypeRule": "CONFIRMED_FOR_PINNED_SOURCE",
+              "pdaDerivation": "CONFIRMED_OFFLINE",
+              "liveValues": "THIS_ROW"
+            }
+          },
+          "note": "Customizable route: DBC pool authority and Dynamic config_type both match. Rules are CONFIRMED_FOR_PINNED_SOURCE (DBC f552f20, DAMM a85c926) and the authority PDA is CONFIRMED_OFFLINE; this row is the live observation of this account only"
+        }
+      ],
+      "version": {
+        "feature-set": 3383571666,
+        "solana-core": "4.3.0"
+      },
+      "finishedAt": "2026-10-05T18:59:39.842Z"
+    },
+    {
+      "schemaVersion": "qf-program-verify-report/3",
+      "cluster": "devnet",
+      "endpoint": "https://api.devnet.solana.com",
+      "rpcLabel": "LIVE_RPC",
+      "commitment": "finalized",
+      "crossCheckRequested": false,
+      "startedAt": "2026-10-05T18:59:39.842Z",
+      "checks": [
+        {
+          "id": "CONNECTIVITY",
+          "subject": "devnet",
+          "status": "PASS",
+          "required": true
+        },
+        {
+          "id": "CLUSTER_IDENTITY",
+          "subject": "devnet",
+          "status": "PASS",
+          "required": true,
+          "value": {
+            "genesisHash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+            "expected": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG"
+          },
+          "note": "genesis hash compared with the published value"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "PROGRAM_PRESENCE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 507829781,
+          "commitment": "finalized",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "LOADER_STATE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 507829781,
+          "commitment": "finalized",
+          "note": "owned by BPFLoaderUpgradeable and executable",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "PROGRAMDATA",
+          "status": "PASS",
+          "value": {
+            "address": "HUfnSSiJxgspQm6C1rkqv6L3XgVtn7AESApgCQpCXCYh",
+            "length": 1983613
+          },
+          "contextSlot": 507829781,
+          "commitment": "finalized",
+          "note": "ProgramData decoded (UpgradeableLoaderState::ProgramData)",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "UPGRADE_AUTHORITY",
+          "status": "RECORDED",
+          "value": "DHLXnJdACTY83yKwnUkeoDjqi4QBbsYGa1v8tJL76ViX",
+          "contextSlot": 507829781,
+          "commitment": "finalized",
+          "note": "upgradeable; identity of the holder is not established by this read",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "DEPLOY_SLOT",
+          "status": "RECORDED",
+          "value": "503167099",
+          "contextSlot": 507829781,
+          "commitment": "finalized",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "EXECUTABLE_HASH",
+          "status": "RECORDED",
+          "value": "e9599c7da9278c62267615c034208e949da8670ebc6597b0ba3a904989601551",
+          "contextSlot": 507829781,
+          "commitment": "finalized",
+          "note": "sha256 of the trimmed executable; a hash alone does not identify a release (e.g. 0.2.1 vs 0.2.2)",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "INTERFACE",
+          "status": "RECORDED",
+          "value": {
+            "address": "B8daPXJqt9sv94r1s9GM13sNH6CSak6UtYHV2yyDGbtf",
+            "present": true,
+            "version": "0.1.10",
+            "instructionCount": 28,
+            "has_create_config2": false
+          },
+          "note": "on-chain Anchor IDL recorded; an IDL account can lag or differ from the deployed code, so this is an indicator only",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "SOURCE_BUILD",
+          "status": "NOT_ATTEMPTED",
+          "osec": "not verified by OtterSec; this is not a demonstrated mismatch; OtterSec on-chain hash b3f7b765e1b9a2e87e45c4663165974819d248f00c1beefe678af60e9dfe6c44 (differs from the hash read here)",
+          "raw": {
+            "is_verified": false,
+            "on_chain_hash": "b3f7b765e1b9a2e87e45c4663165974819d248f00c1beefe678af60e9dfe6c44",
+            "repo_url": "",
+            "commit": ""
+          },
+          "note": "no reproducible build attempted: building the Meteora program source for commercial evaluation awaits licence permission (LOCAL-1)",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DBC",
+          "required": true,
+          "id": "AUDIT_COVERAGE",
+          "status": "NOT_EVALUATED",
+          "note": "a source/build match is not a security audit; audit scope versus deployed code was not assessed",
+          "subject": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "PROGRAM_PRESENCE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 507829783,
+          "commitment": "finalized",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "LOADER_STATE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 507829783,
+          "commitment": "finalized",
+          "note": "owned by BPFLoaderUpgradeable and executable",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "PROGRAMDATA",
+          "status": "PASS",
+          "value": {
+            "address": "AUh8bm2XsMfex3KjYGcM3G4uBqUNSDw6HEhWaWMYnyPH",
+            "length": 1559493
+          },
+          "contextSlot": 507829783,
+          "commitment": "finalized",
+          "note": "ProgramData decoded (UpgradeableLoaderState::ProgramData)",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "UPGRADE_AUTHORITY",
+          "status": "RECORDED",
+          "value": "DHLXnJdACTY83yKwnUkeoDjqi4QBbsYGa1v8tJL76ViX",
+          "contextSlot": 507829783,
+          "commitment": "finalized",
+          "note": "upgradeable; identity of the holder is not established by this read",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "DEPLOY_SLOT",
+          "status": "RECORDED",
+          "value": "503166267",
+          "contextSlot": 507829783,
+          "commitment": "finalized",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "EXECUTABLE_HASH",
+          "status": "RECORDED",
+          "value": "f838b2ae3ed237211319493045b0a172c0946fd72ba8152895b98bb4d8a29a9c",
+          "contextSlot": 507829783,
+          "commitment": "finalized",
+          "note": "sha256 of the trimmed executable; a hash alone does not identify a release (e.g. 0.2.1 vs 0.2.2)",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "INTERFACE",
+          "status": "RECORDED",
+          "value": {
+            "address": "F1hSvutXSc9iAvB9bQPmjNDwiN2tCXzazTEEvDgNCBMa",
+            "present": true,
+            "version": "0.2.0",
+            "instructionCount": 38
+          },
+          "note": "on-chain Anchor IDL recorded; an IDL account can lag or differ from the deployed code, so this is an indicator only",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "SOURCE_BUILD",
+          "status": "NOT_ATTEMPTED",
+          "osec": "not verified by OtterSec; this is not a demonstrated mismatch",
+          "raw": {
+            "is_verified": false,
+            "on_chain_hash": "",
+            "repo_url": "",
+            "commit": ""
+          },
+          "note": "no reproducible build attempted: building the Meteora program source for commercial evaluation awaits licence permission (LOCAL-1)",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "Meteora DAMM v2",
+          "required": true,
+          "id": "AUDIT_COVERAGE",
+          "status": "NOT_EVALUATED",
+          "note": "a source/build match is not a security audit; audit scope versus deployed code was not assessed",
+          "subject": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "PROGRAM_PRESENCE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 507829784,
+          "commitment": "finalized",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "LOADER_STATE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 507829784,
+          "commitment": "finalized",
+          "note": "owned by BPFLoaderUpgradeable and executable",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "PROGRAMDATA",
+          "status": "PASS",
+          "value": {
+            "address": "BKRW5hPM4cMjNNr2EKdpScMS5kmK5bTxdELTH4LurZnu",
+            "length": 306071
+          },
+          "contextSlot": 507829784,
+          "commitment": "finalized",
+          "note": "ProgramData decoded (UpgradeableLoaderState::ProgramData)",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "UPGRADE_AUTHORITY",
+          "status": "RECORDED",
+          "value": "wB85XAcKnhQsU8BU7njytoU8AcPJuaKfkVacUyHo3Cj",
+          "contextSlot": 507829784,
+          "commitment": "finalized",
+          "note": "upgradeable; identity of the holder is not established by this read",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "DEPLOY_SLOT",
+          "status": "RECORDED",
+          "value": "466676095",
+          "contextSlot": 507829784,
+          "commitment": "finalized",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "EXECUTABLE_HASH",
+          "status": "RECORDED",
+          "value": "b243adae886d75383d45d24b18f1c1f501da001b75810f49c575c6f8551f1e3c",
+          "contextSlot": 507829784,
+          "commitment": "finalized",
+          "note": "sha256 of the trimmed executable; a hash alone does not identify a release (e.g. 0.2.1 vs 0.2.2)",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "INTERFACE",
+          "status": "UNKNOWN",
+          "value": {
+            "address": "B3d86vgLDjrvkNmhC51R9sw2mqE9rF7C2DgC7ybGoiqq",
+            "present": false,
+            "version": null,
+            "instructionCount": 0
+          },
+          "note": "no on-chain Anchor IDL account",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "SOURCE_BUILD",
+          "status": "NOT_ATTEMPTED",
+          "osec": "not verified by OtterSec; this is not a demonstrated mismatch; OtterSec on-chain hash 96a2835c4d2c0065882de9845faae7287332e84f4a5f19ef9b199c8c6034d88d (differs from the hash read here)",
+          "raw": {
+            "is_verified": false,
+            "on_chain_hash": "96a2835c4d2c0065882de9845faae7287332e84f4a5f19ef9b199c8c6034d88d",
+            "repo_url": "",
+            "commit": ""
+          },
+          "note": "no reproducible build attempted: building the Meteora program source for commercial evaluation awaits licence permission (LOCAL-1)",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "SF Rewards (candidate)",
+          "required": false,
+          "id": "AUDIT_COVERAGE",
+          "status": "NOT_EVALUATED",
+          "note": "a source/build match is not a security audit; audit scope versus deployed code was not assessed",
+          "subject": "REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "PROGRAM_PRESENCE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 507829785,
+          "commitment": "finalized",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "LOADER_STATE",
+          "status": "PASS",
+          "value": {
+            "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+            "executable": true
+          },
+          "contextSlot": 507829785,
+          "commitment": "finalized",
+          "note": "owned by BPFLoaderUpgradeable and executable",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "PROGRAMDATA",
+          "status": "PASS",
+          "value": {
+            "address": "Fy3YMJCvwbAXUgUM5b91ucUVA3jYzwWLHL3MwBqKsh8n",
+            "length": 1774845
+          },
+          "contextSlot": 507829785,
+          "commitment": "finalized",
+          "note": "ProgramData decoded (UpgradeableLoaderState::ProgramData)",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "UPGRADE_AUTHORITY",
+          "status": "RECORDED",
+          "value": "HM5y4mz3Bt9JY9mr1hkyhnvqxSH4H2u2451j7Hc2dtvK",
+          "contextSlot": 507829785,
+          "commitment": "finalized",
+          "note": "upgradeable; identity of the holder is not established by this read",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "DEPLOY_SLOT",
+          "status": "RECORDED",
+          "value": "446638068",
+          "contextSlot": 507829785,
+          "commitment": "finalized",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "EXECUTABLE_HASH",
+          "status": "RECORDED",
+          "value": "57a8d2d7ef5409df250415135f29f83da876e5adf5a2e5b5752e323cfb4f2f74",
+          "contextSlot": 507829785,
+          "commitment": "finalized",
+          "note": "sha256 of the trimmed executable; a hash alone does not identify a release (e.g. 0.2.1 vs 0.2.2)",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "INTERFACE",
+          "status": "RECORDED",
+          "value": {
+            "address": "6i4UjrDtkc7dqEmCyNDRfoxnAhDKSrY92u96Z74nRFdX",
+            "present": true,
+            "version": "2.1.0",
+            "instructionCount": 36
+          },
+          "note": "on-chain Anchor IDL recorded; an IDL account can lag or differ from the deployed code, so this is an indicator only",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "SOURCE_BUILD",
+          "status": "NOT_ATTEMPTED",
+          "osec": "not verified by OtterSec; this is not a demonstrated mismatch; OtterSec on-chain hash d48660833989ecea3145ff726164fe640bd90696f03ce00dfd0cda258cbf2fac (differs from the hash read here)",
+          "raw": {
+            "is_verified": false,
+            "on_chain_hash": "d48660833989ecea3145ff726164fe640bd90696f03ce00dfd0cda258cbf2fac",
+            "repo_url": "https://github.com/Squads-Protocol/v4/tree/3742e5521a3e833f24a4c6bc024dd1aa5385d010",
+            "commit": "3742e5521a3e833f24a4c6bc024dd1aa5385d010"
+          },
+          "note": "no reproducible build attempted for Squads v4; only the OtterSec status is recorded (a mainnet treasury needs its own review, readiness TRE-1)",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "program": "Squads v4 multisig (treasury, devnet stand-in)",
+          "required": false,
+          "id": "AUDIT_COVERAGE",
+          "status": "NOT_EVALUATED",
+          "note": "a source/build match is not a security audit; audit scope versus deployed code was not assessed",
+          "subject": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps25",
+          "address": "7F6dnUcRuyM2TwR8myT1dYypFXpPSxqwKNSFNkxyNESd",
+          "required": false,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 1,
+              "collect_fee_mode": 1,
+              "config_type": 0,
+              "index": "20000",
+              "sqrt_min_price": "4295048016",
+              "sqrt_max_price": "79226673521066979257578248091"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 507829788,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps25",
+          "address": "7F6dnUcRuyM2TwR8myT1dYypFXpPSxqwKNSFNkxyNESd",
+          "required": false,
+          "status": "NOT_ASSESSED",
+          "contextSlot": 507829788,
+          "commitment": "finalized",
+          "value": {
+            "route": "FixedBps25",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 0
+          },
+          "note": "fixed-fee migration routes are outside V0; recorded, not assessed (no route-specific fee/range/schedule/activation rules defined)"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps30",
+          "address": "2nHK1kju6XjphBLbNxpM5XRGFj7p9U8vvNzyZiha1z6k",
+          "required": false,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 1,
+              "collect_fee_mode": 1,
+              "config_type": 0,
+              "index": "20001",
+              "sqrt_min_price": "4295048016",
+              "sqrt_max_price": "79226673521066979257578248091"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 507829788,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps30",
+          "address": "2nHK1kju6XjphBLbNxpM5XRGFj7p9U8vvNzyZiha1z6k",
+          "required": false,
+          "status": "NOT_ASSESSED",
+          "contextSlot": 507829788,
+          "commitment": "finalized",
+          "value": {
+            "route": "FixedBps30",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 0
+          },
+          "note": "fixed-fee migration routes are outside V0; recorded, not assessed (no route-specific fee/range/schedule/activation rules defined)"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps100",
+          "address": "Hv8Lmzmnju6m7kcokVKvwqz7QPmdX9XfKjJsXz8RXcjp",
+          "required": false,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 1,
+              "collect_fee_mode": 1,
+              "config_type": 0,
+              "index": "20002",
+              "sqrt_min_price": "4295048016",
+              "sqrt_max_price": "79226673521066979257578248091"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 507829788,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps100",
+          "address": "Hv8Lmzmnju6m7kcokVKvwqz7QPmdX9XfKjJsXz8RXcjp",
+          "required": false,
+          "status": "NOT_ASSESSED",
+          "contextSlot": 507829788,
+          "commitment": "finalized",
+          "value": {
+            "route": "FixedBps100",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 0
+          },
+          "note": "fixed-fee migration routes are outside V0; recorded, not assessed (no route-specific fee/range/schedule/activation rules defined)"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps200",
+          "address": "2c4cYd4reUYVRAB9kUUkrq55VPyy2FNQ3FDL4o12JXmq",
+          "required": false,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 1,
+              "collect_fee_mode": 1,
+              "config_type": 0,
+              "index": "20003",
+              "sqrt_min_price": "4295048016",
+              "sqrt_max_price": "79226673521066979257578248091"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 507829789,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps200",
+          "address": "2c4cYd4reUYVRAB9kUUkrq55VPyy2FNQ3FDL4o12JXmq",
+          "required": false,
+          "status": "NOT_ASSESSED",
+          "contextSlot": 507829789,
+          "commitment": "finalized",
+          "value": {
+            "route": "FixedBps200",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 0
+          },
+          "note": "fixed-fee migration routes are outside V0; recorded, not assessed (no route-specific fee/range/schedule/activation rules defined)"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps400",
+          "address": "AkmQWebAwFvWk55wBoCr5D62C6VVDTzi84NJuD9H7cFD",
+          "required": false,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 1,
+              "collect_fee_mode": 1,
+              "config_type": 0,
+              "index": "20004",
+              "sqrt_min_price": "4295048016",
+              "sqrt_max_price": "79226673521066979257578248091"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 507829789,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps400",
+          "address": "AkmQWebAwFvWk55wBoCr5D62C6VVDTzi84NJuD9H7cFD",
+          "required": false,
+          "status": "NOT_ASSESSED",
+          "contextSlot": 507829789,
+          "commitment": "finalized",
+          "value": {
+            "route": "FixedBps400",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 0
+          },
+          "note": "fixed-fee migration routes are outside V0; recorded, not assessed (no route-specific fee/range/schedule/activation rules defined)"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "FixedBps600",
+          "address": "DbCRBj8McvPYHJG1ukj8RE15h2dCNUdTAESG49XpQ44u",
+          "required": false,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 1,
+              "collect_fee_mode": 1,
+              "config_type": 0,
+              "index": "20005",
+              "sqrt_min_price": "4295048016",
+              "sqrt_max_price": "79226673521066979257578248091"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 507829789,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "FixedBps600",
+          "address": "DbCRBj8McvPYHJG1ukj8RE15h2dCNUdTAESG49XpQ44u",
+          "required": false,
+          "status": "NOT_ASSESSED",
+          "contextSlot": 507829789,
+          "commitment": "finalized",
+          "value": {
+            "route": "FixedBps600",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 0
+          },
+          "note": "fixed-fee migration routes are outside V0; recorded, not assessed (no route-specific fee/range/schedule/activation rules defined)"
+        },
+        {
+          "id": "CONFIG",
+          "subject": "Customizable",
+          "address": "A8gMrEPJkacWkcb3DGwtJwTe16HktSEfvwtuDh2MCtck",
+          "required": true,
+          "status": "PASS",
+          "value": {
+            "owner": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+            "dataLength": 328,
+            "decoded": {
+              "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+              "vault_config_key": "11111111111111111111111111111111",
+              "activation_type": 0,
+              "collect_fee_mode": 0,
+              "config_type": 1,
+              "index": "20006",
+              "sqrt_min_price": "0",
+              "sqrt_max_price": "0"
+            }
+          },
+          "note": "owned by DAMM v2; full Config layout decoded (cp-amm-sdk 1.4.10 IDL)",
+          "contextSlot": 507829789,
+          "commitment": "finalized"
+        },
+        {
+          "id": "CONFIG_COMPATIBILITY",
+          "subject": "Customizable",
+          "address": "A8gMrEPJkacWkcb3DGwtJwTe16HktSEfvwtuDh2MCtck",
+          "required": true,
+          "status": "PASS",
+          "contextSlot": 507829789,
+          "commitment": "finalized",
+          "value": {
+            "route": "Customizable",
+            "pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "expected_pool_creator_authority": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+            "config_type": 1,
+            "expected_config_type": 1,
+            "evidence": {
+              "authorityRule": "CONFIRMED_FOR_PINNED_SOURCE",
+              "configTypeRule": "CONFIRMED_FOR_PINNED_SOURCE",
+              "pdaDerivation": "CONFIRMED_OFFLINE",
+              "liveValues": "THIS_ROW"
+            }
+          },
+          "note": "Customizable route: DBC pool authority and Dynamic config_type both match. Rules are CONFIRMED_FOR_PINNED_SOURCE (DBC f552f20, DAMM a85c926) and the authority PDA is CONFIRMED_OFFLINE; this row is the live observation of this account only"
+        }
+      ],
+      "version": {
+        "feature-set": 1855282951,
+        "solana-core": "4.4.0-beta.0"
+      },
+      "finishedAt": "2026-10-05T18:59:42.316Z"
+    }
+  ],
+  "summary": {
+    "requiredFailures": [],
+    "overall": "REQUIRED_CHECKS_SATISFIED",
+    "inventory": {
+      "expected": 104,
+      "required": 28,
+      "missing": 0,
+      "duplicate": 0,
+      "unexpected": 0
+    },
+    "notes": [
+      "SOURCE_BUILD is NOT_ATTEMPTED and AUDIT_COVERAGE is NOT_EVALUATED in every run; neither is implied by any PASS.",
+      "Exit 0 means only that the expected read-only inventory was complete and satisfied; it is not a readiness decision for any stage."
+    ]
+  },
+  "exitCode": 0
+}

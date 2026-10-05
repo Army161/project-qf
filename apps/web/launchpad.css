@@ -341,3 +341,9 @@ ul.checks li.bad { color: var(--sell); } ul.checks li.bad::before { content: "âœ
 @media (max-width: 720px) { .scroll-hint { display: block; } }
 .cov-notes { display: flex; flex-direction: column; gap: 6px; }
 .cov-notes p { margin: 0; }
+
+/* platform treasury (milestone 7) */
+.chip.pay-to { margin-left: 8px; vertical-align: 1px; font-size: 10px; padding: 2px 7px; }
+.card.treasury .tr-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.card.treasury .tr-head h3 { margin: 0; }
+.card.treasury .kpis > div { background: transparent; }

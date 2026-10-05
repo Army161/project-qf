@@ -1,0 +1,13 @@
+{"wallet":"4vCyHopHHHNiL2bVH2ve8FzkxgL91BhNFaooUG1wbMyj","faucet":"4uxPQYpG9kCjtK6nCQ2QgxxrzMotPmaBaSTK6QzzZ5ZGkuR7Wc7HVdL7DzD1P2qeteZeBrbVFF4shPtRFxRUm14G"}
+{"trade":"buy","amountRaw":"400000000","venue":"DAMM_SWAP","signature":"65BNQxa9m4fJ7bb3ZFoR4yGTzVeeTeTTvdt9zUmupKEQ23RbPucoZ3FrWbDryBmUcLeu9w1vVzsEB6hZ5rCxQy9i"}
+file:///home/user/qf/apps/launchpad/m7-wallet-driver.ts:15
+    if (!r.ok) throw new Error(`${path} ${r.status} ${JSON.stringify(j.error)}`);
+                     ^
+
+Error: /api/lp/submit 502 {"code":"SEND_FAILED","message":"429 Too Many Requests:  {\"jsonrpc\":\"2.0\",\"error\":{\"code\": 429, \"message\":\"Connection rate limits exceeded\"}, \"id\": \"2c650c52-61d7-42df-b66d-e13e78066ace\" } \r\n"}
+    at call (file:///home/user/qf/apps/launchpad/m7-wallet-driver.ts:15:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async trade (file:///home/user/qf/apps/launchpad/m7-wallet-driver.ts:36:13)
+    at async file:///home/user/qf/apps/launchpad/m7-wallet-driver.ts:59:7
+
+Node.js v22.22.0

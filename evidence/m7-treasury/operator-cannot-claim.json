@@ -1,0 +1,19 @@
+{
+  "purpose": "operator (server-held key) claims treasury-config platform fees directly",
+  "simulatedOnly": true,
+  "sent": false,
+  "err": {
+    "InstructionError": [
+      1,
+      {
+        "Custom": 6053
+      }
+    ]
+  },
+  "logs": [
+    "Program dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN invoke [1]",
+    "Program log: AnchorError thrown in programs/dynamic-bonding-curve/src/access_control.rs:31. Error Code: Unauthorized. Error Number: 6053. Error Message: Not permit to do this action.",
+    "Program dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN consumed 12531 of 386583 compute units",
+    "Program dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN failed: custom program error: 0x17a5"
+  ]
+}

@@ -1,0 +1,13 @@
+source tree: commit 3ac536e + milestone 7 working tree (committed after this run)
+node v22.22.0, pnpm 10.33.0, run 2026-10-05T18:58:17Z; secret-free wrapper: env -i PATH HOME HTTPS_PROXY HTTP_PROXY NODE_EXTRA_CA_CERTS
+install          exit=0       1s  pnpm install --frozen-lockfile --ignore-scripts
+typecheck        exit=0       6s  pnpm -s typecheck
+test             exit=0      20s  pnpm -s test
+license-check    exit=0       1s  pnpm -s license:check
+deps-chain       exit=0       1s  pnpm -s deps:chain
+build-web        exit=0       1s  pnpm -s build:web
+boundary         exit=0       1s  pnpm -s boundary
+audit-prod       exit=1       1s  pnpm audit --prod
+verifier-test    exit=0       0s  node --test test/*.test.mjs (spec/tools/program-verify, run from a copy with its own node_modules)
+program-verify   exit=0       7s  node verify-programs.mjs (live read-only, public mainnet + devnet RPC, single provider)
+note: verifier-test and program-verify were re-run after the Squads SOURCE_BUILD note fix in spec/tools/program-verify/lib.mjs: 55/55 pass, live run exit 0 (REQUIRED_CHECKS_SATISFIED, 104/104 inventory)

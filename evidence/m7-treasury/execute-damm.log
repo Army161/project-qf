@@ -1,0 +1,23 @@
+{
+  "executing": {
+    "transactionIndex": "2",
+    "claim": "DAMM_CLAIM_POSITION_FEE",
+    "pool": "HDnxLVQzPBVFhnGszBA5d1tQJ4iwAC5n54rxuENk2u2U",
+    "storedBy": "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww",
+    "proposal": {
+      "status": "Approved",
+      "approved": [
+        "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+        "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww"
+      ],
+      "rejected": [],
+      "cancelled": []
+    }
+  },
+  "result": {
+    "signature": "4rumj3FWUXWtAekWVWpzWuueUfBWHKwgaN1JqhcABy8tgRFKg8MpXKs6ibF6vrRKaBqWYDwk6m79m73cxk4m13q4",
+    "kind": "TREASURY_EXECUTE",
+    "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+    "trade": null
+  }
+}

@@ -1,0 +1,20 @@
+// DEVNET evidence (simulation only, nothing sent): the operator key, which the server holds, tries to claim the
+// treasury config's platform fees as if it were the fee claimer. The DBC program must refuse it.
+import BN from 'bn.js';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { DynamicBondingCurveClient } from '@meteora-ag/dynamic-bonding-curve-sdk';
+import { PublicKey } from '@solana/web3.js';
+import { connectDevnet, loadOrCreateDevnetKeypair } from '../src/launchpad.ts';
+
+const conn = await connectDevnet('https://api.devnet.solana.com');
+const op = loadOrCreateDevnetKeypair(join(homedir(), '.qf-devnet', 'operator.json'));
+const pool = new PublicKey('6Nq2JLyXf2bZHEVweuorkbyzmjP9CAjXGP6TjqnuSgek');
+const tx = await new DynamicBondingCurveClient(conn, 'confirmed').partner.claimPartnerTradingFee({ feeClaimer: op.publicKey, payer: op.publicKey, pool, receiver: op.publicKey,
+  maxBaseAmount: new BN(0), maxQuoteAmount: new BN(1) });
+tx.feePayer = op.publicKey;
+tx.recentBlockhash = (await conn.getLatestBlockhash('confirmed')).blockhash;
+tx.sign(op);
+const sim = await conn.simulateTransaction(tx);
+console.log(JSON.stringify({ purpose: 'operator (server-held key) claims treasury-config platform fees directly', simulatedOnly: true, sent: false,
+  err: sim.value.err, logs: (sim.value.logs ?? []).filter((l) => /Error|failed|constraint|fee_claimer|Program dbc/i.test(l)).slice(0, 8) }, null, 2));

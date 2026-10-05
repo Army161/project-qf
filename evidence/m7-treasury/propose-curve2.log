@@ -1,0 +1,18 @@
+{
+  "proposing": {
+    "transactionIndex": "3",
+    "claim": "CLAIM_PARTNER_TRADING_FEE",
+    "pool": "6Nq2JLyXf2bZHEVweuorkbyzmjP9CAjXGP6TjqnuSgek",
+    "amounts": {
+      "baseRaw": "0",
+      "quoteRaw": "2840405"
+    },
+    "paidTo": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB"
+  },
+  "result": {
+    "signature": "5sVZ2jnWiQ5nt713f4e7bJvVoAMuJXUnc4hH89mC5Xgj6kjVmKP9fHQHqC6UkipABifXAFXQxaQs4zAUn2BiGYtv",
+    "kind": "TREASURY_PROPOSE",
+    "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+    "trade": null
+  }
+}

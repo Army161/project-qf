@@ -1,0 +1,22 @@
+{
+  "approving": {
+    "transactionIndex": "1",
+    "claim": "CLAIM_PARTNER_TRADING_FEE",
+    "pool": "6Nq2JLyXf2bZHEVweuorkbyzmjP9CAjXGP6TjqnuSgek",
+    "storedBy": "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+    "proposal": {
+      "status": "Active",
+      "approved": [
+        "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz"
+      ],
+      "rejected": [],
+      "cancelled": []
+    }
+  },
+  "result": {
+    "signature": "4iw192o6kALCgi6hU8im2NcNp58LUPinb9AQZdEciq1AEAAMShjoWuxvwtMAtCZMjGccfTnXyjqsb995ApHa7i9w",
+    "kind": "TREASURY_APPROVE",
+    "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+    "trade": null
+  }
+}

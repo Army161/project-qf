@@ -667,9 +667,11 @@ interface Earnings {
   label: string; platformWallet: string; asOf: string;
   totals: { unclaimed: { creatorCurve: string; platformCurve: string; creatorLp: string; platformLp: string }; claimedThroughApp: string; incomplete: boolean;
     coverage: { unclaimedComplete: boolean; claimsComplete: boolean; unresolvedClaims: number } };
-  coins: { mint: string; symbol: string; name: string; status: string; creator: string; curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null }[];
-  claims: { sig: string; mint: string; symbol: string; venue: 'CURVE' | 'DAMM_V2'; claimer: string; byCreator: boolean; quoteRaw: string | null; at: string;
+  coins: { mint: string; symbol: string; name: string; status: string; creator: string; curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null;
+    platformWallet: string; treasury: boolean }[];
+  claims: { sig: string; mint: string; symbol: string; venue: 'CURVE' | 'DAMM_V2'; claimer: string; byCreator: boolean; byTreasury: boolean; quoteRaw: string | null; at: string;
     status: 'UNKNOWN' | 'RESOLVED' | 'FAILED_TX'; evidence: string | null }[];
+  treasury: { multisig: string; vault: string; threshold: number; members: string[]; label: string; paidToTreasuryQuoteRaw: string; unresolvedReceipts: number; openProposals: number } | null;
 }
 /** Why a receipt's amount is not known yet, in words. */
 const EVIDENCE: Record<string, string> = {
@@ -695,7 +697,8 @@ async function renderEarnings(fresh = false) {
   const lpCell = (c: Earnings['coins'][number], who: keyof Unclaimed) => c.lp === null ? h('td', { class: 'num dim' }, 'not graduated')
     : c.lp === 'UNAVAILABLE' ? h('td', { class: 'num dim' }, 'pool unreadable') : h('td', { class: 'num' }, amt(c.lp[who]));
   const rows = e.coins.map((c) => h('tr', {},
-    h('td', {}, h('a', { href: `#/t/${c.mint}` }, `$${c.symbol}`), h('span', { class: 'dim small' }, c.status === 'MIGRATED' ? ' graduated' : ' bonding')),
+    h('td', {}, h('a', { href: `#/t/${c.mint}` }, `$${c.symbol}`), h('span', { class: 'dim small' }, c.status === 'MIGRATED' ? ' graduated' : ' bonding'),
+      c.treasury ? h('span', { class: 'chip grad pay-to', title: 'Platform fees of this coin go to the treasury vault' }, 'treasury') : null),
     h('td', { class: 'num' }, amt(c.curve?.creatorQuoteRaw)), lpCell(c, 'creatorQuoteRaw'),
     h('td', { class: 'num' }, amt(c.curve?.platformQuoteRaw)), lpCell(c, 'platformQuoteRaw')));
   const paid = (c: Earnings['claims'][number]) => c.status === 'RESOLVED' ? h('td', { class: 'num' }, amt(c.quoteRaw))
@@ -703,7 +706,7 @@ async function renderEarnings(fresh = false) {
     : h('td', { class: 'num' }, h('span', {}, 'unknown'), h('span', { class: 'dim small reason' }, EVIDENCE[c.evidence ?? ''] ?? 'not checked yet'));
   const claimRows = e.claims.map((c) => h('tr', {},
     h('td', {}, h('a', { href: `#/t/${c.mint}` }, `$${c.symbol}`)), h('td', {}, c.venue === 'CURVE' ? 'Curve fees' : 'LP position fees'),
-    h('td', {}, c.byCreator ? 'Creator' : short(c.claimer)), paid(c),
+    h('td', {}, c.byCreator ? 'Creator' : c.byTreasury && e.treasury ? `Treasury (${e.treasury.threshold} of ${e.treasury.members.length})` : short(c.claimer)), paid(c),
     h('td', { class: 'dim' }, ago(Math.floor(Date.parse(c.at) / 1000))), h('td', { class: 'mono' }, ext(explorer('tx', c.sig), short(c.sig, 4)))));
   const table = (head: [string, string][], body: HTMLElement[], empty: string) => body.length
     ? h('div', {}, h('p', { class: 'scroll-hint dim small' }, 'Swipe the table sideways to see every column.'),
@@ -723,14 +726,33 @@ async function renderEarnings(fresh = false) {
       cov.unclaimedComplete ? null : h('p', { class: 'err small' }, 'Some pools or positions could not be read just now, so the unclaimed totals are incomplete. Refresh in a moment.'),
       n ? h('p', { class: 'err small' }, `${n} claim ${n === 1 ? 'receipt is' : 'receipts are'} not confirmed from ${n === 1 ? 'its' : 'their'} transaction yet, so "Claimed in the app" leaves ${n === 1 ? 'it' : 'them'} out. Each refresh checks again.`) : null),
     h('div', { class: 'card' }, h('h3', {}, 'Unclaimed, per coin'), table([['Coin', ''], ['Creator · curve', 'num'], ['Creator · LP', 'num'], ['Platform · curve', 'num'], ['Platform · LP', 'num']], rows, 'No coins yet.')),
+    e.treasury ? treasuryCard(e.treasury, amt) : null,
     h('div', { class: 'card' }, h('h3', {}, 'Claims made in the app'), table([['Coin', ''], ['What', ''], ['By', ''], ['Paid out', 'num'], ['When', ''], ['Tx', '']], claimRows, 'No claims yet.')),
     h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'How to read this'),
       h('ul', { class: 'notes' },
         h('li', {}, 'Accrued is not claimed, and claimed is not kept revenue.'),
         h('li', {}, 'Under the current test policy, half of the platform share is earmarked for holder rewards. Earmarked means counted, not moved: nothing is transferred or distributed, because holder rewards are not built.'),
         h('li', {}, 'Curve fees are the creator and platform counters in each bonding-curve pool. LP fees are what the locked DAMM v2 positions held by the creator and by the platform fee claimer have earned since their last claim.'),
-        h('li', {}, h('span', {}, 'Platform fees can only be claimed by the platform fee claimer ', ext(explorer('address', e.platformWallet), short(e.platformWallet)), '. Before mainnet that must be a multisig, so this page has no claim button.')),
+        e.treasury
+          ? h('li', {}, h('span', {}, 'Coins marked treasury pay their platform fees to the treasury vault. Earlier coins keep paying the operator wallet ',
+            ext(explorer('address', e.platformWallet === e.treasury.vault ? (e.coins.find((c) => !c.treasury)?.platformWallet ?? e.platformWallet) : e.platformWallet), 'here'),
+            ': a coin keeps the config it launched on, and a config\'s fee claimer cannot be changed.'))
+          : h('li', {}, h('span', {}, 'Platform fees can only be claimed by the platform fee claimer ', ext(explorer('address', e.platformWallet), short(e.platformWallet)), '. Before mainnet that must be a multisig, so this page has no claim button.')),
         h('li', {}, 'Claims made outside this app are not listed. A claim\'s amount is what left that coin\'s own pool vaults in its own transaction; until that is confirmed it shows as unknown.')))));
+}
+
+/** The platform treasury: what reached its vault through executed proposals, and how it is controlled. Read-only. */
+function treasuryCard(t: NonNullable<Earnings['treasury']>, amt: (raw: string) => string) {
+  const stat = (k: string, v: string | HTMLElement, sub: string) => h('div', {}, h('span', { class: 'k' }, k), h('span', { class: 'v' }, v), h('span', { class: 'dim small' }, sub));
+  return h('div', { class: 'card treasury' },
+    h('div', { class: 'tr-head' }, h('h3', {}, 'Platform treasury'), h('span', { class: 'chip warn' }, 'devnet stand-in')),
+    h('div', { class: 'kpis' },
+      stat('Paid to treasury', amt(t.paidToTreasuryQuoteRaw), t.unresolvedReceipts ? `${t.unresolvedReceipts} not confirmed yet` : 'confirmed from each transaction'),
+      stat('Approvals to move funds', `${t.threshold} of ${t.members.length}`, 'members sign for themselves'),
+      stat('Open proposals', String(t.openProposals), 'waiting for approvals or to run'),
+      stat('Vault', h('span', { class: 'mono' }, ext(explorer('address', t.vault), short(t.vault))), 'Squads v4 vault, receives platform fees')),
+    h('p', { class: 'dim small', style: { margin: '12px 0 0' } },
+      'Platform fees of coins launched since the treasury are claimed into this vault by a multisig proposal. Two of three members must approve before it runs. The server builds the transactions but holds no member key, so it cannot approve, run or spend anything. The members here are throwaway devnet keys; the real signers, threshold and any time lock are decided before mainnet.'));
 }
 
 // ------------------------------------------------------------------ router + boot

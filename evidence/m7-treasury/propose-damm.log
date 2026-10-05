@@ -1,0 +1,18 @@
+{
+  "proposing": {
+    "transactionIndex": "2",
+    "claim": "DAMM_CLAIM_POSITION_FEE",
+    "pool": "HDnxLVQzPBVFhnGszBA5d1tQJ4iwAC5n54rxuENk2u2U",
+    "amounts": {
+      "baseRaw": "0",
+      "quoteRaw": "1599999"
+    },
+    "paidTo": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB"
+  },
+  "result": {
+    "signature": "3732K58WezsxAGeb6tEp89CDtK46HDor7DLSoHZwPo3JNDJYMWHqYXtd1ehP7qTejpxh5NdcTva6hhSiphzq1NJS",
+    "kind": "TREASURY_PROPOSE",
+    "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+    "trade": null
+  }
+}

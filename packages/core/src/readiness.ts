@@ -44,7 +44,8 @@ export const READINESS: Readonly<Record<Stage, Readonly<StageRecord>>> = f({
     scope: 'production',
     blockers: f(['P0-M1..P0-M7 (DEPLOYMENT.md §2)', 'MAINNET_WRITES=false', 'REWARDS_SETTLEMENT_MAINNET=false',
       'DEV-3 review of deployed-service terms for commercial use (owner waived it for devnet only on 2026-10-03; still required before mainnet)',
-      'IDX-1 trade history at production volume: signature listing stops at 5,000 per pool per pass (logged when hit); before relying on it, unread ranges must stay recoverable and history coverage must report the truncation (Astra, milestone 6 review, 2026-10-05)']),
+      'IDX-1 trade history at production volume: signature listing stops at 5,000 per pool per pass (logged when hit); before relying on it, unread ranges must stay recoverable and history coverage must report the truncation (Astra, milestone 6 review, 2026-10-05)',
+      'TRE-1 platform treasury: the devnet 2-of-3 Squads multisig uses three throwaway member keys, no time lock and no spending limits (milestone 7). Before mainnet the owner decides the real signers, threshold, time lock and any spending limits, the Squads v4 program terms are reviewed, and the server still holds no member key']),
   }),
 });
 
