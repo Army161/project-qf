@@ -17,7 +17,8 @@ import {
 import type { LaunchpadChain, LiveDammPool, LivePool } from './chain.ts';
 import { PoolCache, syncLaunch, tradeFromSummary, DammCache } from './indexer.ts';
 import type { PlatformRecord } from './platform.ts';
-import type { LaunchRow, LaunchpadStore } from './store.ts';
+import type { ClaimRow, LaunchRow, LaunchpadStore } from './store.ts';
+import type { TxSummary } from './chain.ts';
 
 export const LP_API_VERSION = 'lp-api/1';
 export const BODY_LIMIT_BYTES = 16 * 1024;
@@ -127,25 +128,46 @@ export interface TokenView {
   mint: string; pool: string; name: string; symbol: string; description: string; imageUrl: string | null; creator: string; status: LaunchRow['status'];
   createdAt: string; liveAt: string | null; website: string | null; twitter: string | null; telegram: string | null; metadataUri: string;
   createSig: string | null; migrationSig: string | null; dammPool: string | null;
-  live: null | { priceQuotePerBase: string; marketCapQuoteRaw: string; quoteReserve: string; migrationQuoteThreshold: string; progressBps: number;
-    curveComplete: boolean; isMigrated: boolean; baseDecimals: number; quoteDecimals: number; totalSupplyRaw: string; creatorQuoteFee: string;
+  live: null | {
+    /** null after graduation when the DAMM v2 pool could not be read: never substitute the finished curve's price */
+    priceQuotePerBase: string | null; marketCapQuoteRaw: string | null; priceUnavailable: boolean; launchPriceQuotePerBase: string;
+    quoteReserve: string; migrationQuoteThreshold: string; progressBps: number;
+    curveComplete: boolean; isMigrated: boolean; baseDecimals: number; quoteDecimals: number; totalSupplyRaw: string;
+    /** unclaimed creator share of curve fees (the DBC pool counter); LP fees after graduation are per position, see /api/lp/fees */
+    creatorQuoteFee: string;
+    /** after graduation: share of the DAMM v2 pool's liquidity that is permanently locked, read from the pool account */
+    lockedBps: number | null;
     /** where the price comes from and where a trade goes: the bonding curve, or the DAMM v2 pool after graduation */
     venue: 'CURVE' | 'DAMM_V2' };
   stats: { count: number; volumeQuoteRaw: string; traders: number };
 }
-const liveView = (p: LivePool | null, damm: LiveDammPool | null = null): TokenView['live'] => p && {
-  priceQuotePerBase: damm ? damm.priceQuotePerBase : p.priceQuotePerBase,
-  marketCapQuoteRaw: damm ? ((BigInt(damm.sqrtPrice) ** 2n * BigInt(p.totalSupplyRaw)) / (1n << 128n)).toString() : p.marketCapQuoteRaw,
+const liveView = (p: LivePool | null, migrated: boolean, damm: LiveDammPool | null): TokenView['live'] => p && {
+  priceQuotePerBase: migrated ? damm?.priceQuotePerBase ?? null : p.priceQuotePerBase,
+  marketCapQuoteRaw: migrated ? (damm ? ((BigInt(damm.sqrtPrice) ** 2n * BigInt(p.totalSupplyRaw)) / (1n << 128n)).toString() : null) : p.marketCapQuoteRaw,
+  priceUnavailable: migrated && !damm, launchPriceQuotePerBase: p.launchPriceQuotePerBase,
   quoteReserve: p.quoteReserve, migrationQuoteThreshold: p.migrationQuoteThreshold,
   progressBps: p.progressBps, curveComplete: p.curveComplete, isMigrated: p.isMigrated, baseDecimals: p.baseDecimals, quoteDecimals: p.quoteDecimals,
-  totalSupplyRaw: p.totalSupplyRaw, creatorQuoteFee: p.creatorQuoteFee, venue: damm ? 'DAMM_V2' : 'CURVE',
+  totalSupplyRaw: p.totalSupplyRaw, creatorQuoteFee: p.creatorQuoteFee,
+  lockedBps: damm && BigInt(damm.liquidity) > 0n ? Number((BigInt(damm.permanentLockLiquidity) * 10_000n) / BigInt(damm.liquidity)) : null,
+  venue: migrated ? 'DAMM_V2' : 'CURVE',
 };
+
+/** What a confirmed claim paid out: the amounts that left the pool's vaults in that transaction. */
+export function claimPayout(sum: TxSummary, vaults: { quote: string[]; base: string[] }): { quoteRaw: string; baseRaw: string } {
+  const out = (vs: string[]) => vs.reduce((a, v) => { const d = sum.tokenDeltas[v] ?? 0n; return d < 0n ? a - d : a; }, 0n).toString();
+  return { quoteRaw: out(vaults.quote), baseRaw: out(vaults.base) };
+}
+export const EARNINGS_TTL_MS = 30_000;
+type Unclaimed = { creatorQuoteRaw: string | null; platformQuoteRaw: string | null };
+interface EarningsCoin { mint: string; symbol: string; name: string; status: LaunchRow['status']; creator: string;
+  curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null }
 
 export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: PoolCache; dammCache: DammCache } {
   const now = o.now ?? (() => new Date());
   const pools = new PoolCache(o.chain);
   const damms = new DammCache(o.chain);
   const rate = new Map<string, number[]>();
+  let earnings: { at: number; body: unknown } | null = null;
   const limit = (key: string, max: number) => {
     const t = now().getTime();
     const recent = (rate.get(key) ?? []).filter((x) => t - x < 60_000);
@@ -162,7 +184,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
     mint: l.mint, pool: l.pool, name: l.name, symbol: l.symbol, description: l.description, imageUrl: imageUrl(l), creator: l.creator, status: l.status,
     createdAt: l.createdAt, liveAt: l.liveAt, website: l.website, twitter: l.twitter, telegram: l.telegram, metadataUri: l.metadataUri,
     createSig: l.createSig, migrationSig: l.migrationSig, dammPool: l.dammPool,
-    live: liveView(await pools.get(l.pool, fresh).catch(() => null), l.status === 'MIGRATED' ? await damms.get(l, fresh).catch(() => null) : null), stats: o.store.tradeStats(l.mint),
+    live: liveView(await pools.get(l.pool, fresh).catch(() => null), l.status === 'MIGRATED', l.status === 'MIGRATED' ? await damms.get(l, fresh).catch(() => null) : null), stats: o.store.tradeStats(l.mint),
   });
   const intentCheck = (i: Omit<TxIntent, 'intentId' | 'createdAt' | 'expiresAt' | 'cluster' | 'mock'>, approvedEconomicsDigest?: string) => {
     const t = now();
@@ -351,8 +373,15 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
         trade = sum && p ? tradeFromSummary(l, p, sum, 'app') : null;
         if (trade) o.store.insertTrade(trade);
       }
-      if (intent.kind === 'CLAIM_CREATOR_TRADING_FEE' && l) pools.invalidate(l.pool);
-      if (intent.kind === 'DAMM_CLAIM_POSITION_FEE' && l?.dammPool) damms.invalidate(l.dammPool);
+      if ((intent.kind === 'CLAIM_CREATOR_TRADING_FEE' || intent.kind === 'DAMM_CLAIM_POSITION_FEE') && l) {
+        const curve = intent.kind === 'CLAIM_CREATOR_TRADING_FEE';
+        if (curve) pools.invalidate(l.pool); else if (l.dammPool) damms.invalidate(l.dammPool);
+        const v = curve ? await pools.get(l.pool, true).catch(() => null) : await damms.get(l, true).catch(() => null);
+        const sum = v && await o.chain.txSummary(signature).catch(() => null);
+        const paid = sum && v ? claimPayout(sum, { quote: [v.quoteVault], base: [v.baseVault] }) : null;
+        o.store.insertClaim({ sig: signature, mint: l.mint, venue: curve ? 'CURVE' : 'DAMM_V2', claimer: intent.user, quoteRaw: paid?.quoteRaw ?? null, baseRaw: paid?.baseRaw ?? null, at: now().toISOString() });
+        earnings = null;
+      }
       return send(res, 200, { signature, kind: intent.kind, mint: intent.mint, trade });
     }
 
@@ -409,6 +438,53 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
           amounts: { baseRaw: pos.feeBaseRaw, quoteRaw: pos.feeQuoteRaw } });
       }
       throw new HttpError(400, 'INVALID_REQUEST', "venue must be 'curve' or 'damm'");
+    }
+
+    // ---------------------------------------------------------------- earnings (read-only)
+    // Per coin: unclaimed curve fees (creator and platform counters in the DBC pool), unclaimed LP fees of the positions the
+    // creator and the platform fee claimer hold in the DAMM v2 pool, and the claims made through this app with what they
+    // paid out. Accrued is not claimed, and claimed is not retained revenue. Nothing here can move funds.
+    if (path === '/api/lp/earnings' && method === 'GET') {
+      const p = platform();
+      limit(`earnings:${ip}`, 30);
+      if (earnings && now().getTime() - earnings.at < EARNINGS_TTL_MS && query.get('fresh') !== '1') return send(res, 200, earnings.body);
+      const platformWallet = p.config.feeClaimer;
+      const launches = o.store.listLaunches(['LIVE', 'MIGRATED']);
+      const vaults = { quote: [] as string[], base: [] as string[] };
+      const sumQuote = (ps: { feeQuoteRaw: string }[] | null) => (ps === null ? null : ps.reduce((a, x) => a + BigInt(x.feeQuoteRaw), 0n).toString());
+      const coins: EarningsCoin[] = [];
+      for (const l of launches) {
+        const pool = await pools.get(l.pool).catch(() => null);
+        const dp = l.status === 'MIGRATED' ? await damms.get(l).catch(() => null) : null;
+        if (pool) vaults.quote.push(pool.quoteVault), vaults.base.push(pool.baseVault);
+        if (dp) vaults.quote.push(dp.quoteVault), vaults.base.push(dp.baseVault);
+        const positions = async (owner: string) => (dp ? await o.chain.dammPositions(dp, owner).catch(() => null) : null);
+        coins.push({ mint: l.mint, symbol: l.symbol, name: l.name, status: l.status, creator: l.creator,
+          curve: pool ? { creatorQuoteRaw: pool.creatorQuoteFee, platformQuoteRaw: pool.partnerQuoteFee } : null,
+          lp: l.status !== 'MIGRATED' ? null : dp ? { creatorQuoteRaw: sumQuote(await positions(l.creator)), platformQuoteRaw: sumQuote(await positions(platformWallet)) } : 'UNAVAILABLE' });
+      }
+      // receipts: fill in amounts for claims recorded before amounts were kept (a few per request; the RPC is shared)
+      let budget = 5;
+      for (const c of o.store.listClaims()) {
+        if (c.quoteRaw !== null || budget-- <= 0) continue;
+        const sum = await o.chain.txSummary(c.sig).catch(() => null);
+        if (sum) { const paid = claimPayout(sum, vaults); o.store.setClaimAmounts(c.sig, paid.quoteRaw, paid.baseRaw); }
+      }
+      const claims: (ClaimRow & { symbol: string; byCreator: boolean })[] = o.store.listClaims().map((c) => {
+        const l = launches.find((x) => x.mint === c.mint);
+        return { ...c, symbol: l?.symbol ?? '?', byCreator: l?.creator === c.claimer };
+      });
+      const add = (pick: (c: EarningsCoin) => string | null | undefined) => coins.reduce((a, c) => a + BigInt(pick(c) ?? '0'), 0n).toString();
+      const lpOf = (c: EarningsCoin) => (c.lp && c.lp !== 'UNAVAILABLE' ? c.lp : null);
+      const body = { cluster: 'devnet', label: 'TEST_ONLY devnet tokens with no value', quote: p.quote, platformWallet, asOf: now().toISOString(),
+        totals: {
+          unclaimed: { creatorCurve: add((c) => c.curve?.creatorQuoteRaw), platformCurve: add((c) => c.curve?.platformQuoteRaw),
+            creatorLp: add((c) => lpOf(c)?.creatorQuoteRaw), platformLp: add((c) => lpOf(c)?.platformQuoteRaw) },
+          claimedThroughApp: claims.reduce((a, c) => a + BigInt(c.quoteRaw ?? '0'), 0n).toString(),
+          incomplete: coins.some((c) => !c.curve || c.lp === 'UNAVAILABLE' || (lpOf(c) && (lpOf(c)!.creatorQuoteRaw === null || lpOf(c)!.platformQuoteRaw === null))) },
+        coins, claims };
+      earnings = { at: now().getTime(), body };
+      return send(res, 200, body);
     }
 
     if (path === '/api/lp/faucet' && method === 'POST') {

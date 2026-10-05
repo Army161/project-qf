@@ -13,7 +13,7 @@ interface Platform {
     launchEconomics: any; launchEconomicsDigest: string; economicsVersion: string; templateVersion: string };
   faucet: { quoteUi: string; lamports: string; claimsPerDay: number };
 }
-interface Live { priceQuotePerBase: string; marketCapQuoteRaw: string; quoteReserve: string; migrationQuoteThreshold: string; progressBps: number;
+interface Live { priceQuotePerBase: string | null; marketCapQuoteRaw: string | null; priceUnavailable?: boolean; launchPriceQuotePerBase?: string; lockedBps?: number | null; quoteReserve: string; migrationQuoteThreshold: string; progressBps: number;
   curveComplete: boolean; isMigrated: boolean; baseDecimals: number; quoteDecimals: number; totalSupplyRaw: string; creatorQuoteFee: string; venue?: 'CURVE' | 'DAMM_V2' }
 interface Token { mint: string; pool: string; name: string; symbol: string; description: string; imageUrl: string | null; creator: string; status: string;
   createdAt: string; liveAt: string | null; website: string | null; twitter: string | null; telegram: string | null; createSig: string | null;
@@ -66,6 +66,9 @@ type Sort = 'traded' | 'new' | 'progress' | 'graduated';
 const state: { platform: Platform | null; wallet: Connected | null; balances: { lamports: string; tokens: Record<string, string> } | null; tokens: Token[]; sort: Sort; query: string } =
   { platform: null, wallet: null, balances: null, tokens: [], sort: 'traded', query: '' };
 const Q = () => state.platform?.platform?.quote ?? { mint: '', decimals: 6, symbol: 'qUSD', label: 'TEST_ONLY' };
+/** Market cap text; after graduation it is unknown (not the old curve's) while the DAMM v2 pool cannot be read. */
+const mcapText = (l: Live | null) => (l?.marketCapQuoteRaw ? `${compact(l.marketCapQuoteRaw, Q().decimals)} ${Q().symbol}` : '—');
+const lockedText = (l: Live | null) => (l?.lockedBps == null ? null : `${(l.lockedBps / 100).toFixed(2)}%`);
 
 function toast(msg: string, kind: 'ok' | 'err' | 'info' = 'info') {
   const t = h('div', { class: `toast ${kind}`, role: 'status' }, msg);
@@ -213,7 +216,7 @@ function tokenCard(t: Token) {
     h('div', { class: 'tc-top' }, avatar(t), h('div', { class: 'tc-id' }, h('span', { class: 'tc-name' }, t.name), h('span', { class: 'tc-sym' }, `$${t.symbol}`, statusChip(t)))),
     t.description ? h('p', { class: 'tc-desc' }, t.description) : null,
     h('div', { class: 'tc-stats' },
-      h('div', {}, h('span', { class: 'k' }, 'Market cap'), h('span', { class: 'v' }, l ? `${compact(l.marketCapQuoteRaw, q.decimals)} ${q.symbol}` : '—')),
+      h('div', {}, h('span', { class: 'k' }, 'Market cap'), h('span', { class: 'v' }, mcapText(l))),
       h('div', {}, h('span', { class: 'k' }, 'Volume'), h('span', { class: 'v' }, `${compact(t.stats.volumeQuoteRaw, q.decimals)} ${q.symbol}`))),
     l ? progressBar(l.progressBps, l.curveComplete || l.isMigrated) : null,
     h('div', { class: 'tc-foot' }, h('b', {}, progressLabel(t)), h('span', {}, `${ago(t.liveAt ?? t.createdAt)} · by ${short(t.creator)}`)));
@@ -225,7 +228,7 @@ function featureCard(t: Token) {
   return h('a', { class: 'feature', href: `#/t/${t.mint}` },
     h('div', { class: 'feature-top' }, h('span', { class: 'eyebrow' }, 'Next to graduate'), h('span', { class: 'num dim small' }, `${t.stats.count} ${t.stats.count === 1 ? 'trade' : 'trades'} · ${t.stats.traders} ${t.stats.traders === 1 ? 'trader' : 'traders'}`)),
     h('div', { class: 'feature-id' }, avatar(t, 'xl'), h('div', { class: 'names' }, h('b', {}, t.name), h('span', { class: 'dim' }, `$${t.symbol}`)),
-      h('div', { class: 'mcap' }, h('div', { class: 'num' }, `${compact(l.marketCapQuoteRaw, q.decimals)} ${q.symbol}`), h('div', { class: 'dim small' }, 'market cap'))),
+      h('div', { class: 'mcap' }, h('div', { class: 'num' }, mcapText(l)), h('div', { class: 'dim small' }, 'market cap'))),
     progressBar(l.progressBps, false, true),
     h('div', { class: 'tc-foot' }, h('span', {}, h('b', { class: 'num' }, units(l.quoteReserve, q.decimals, 0)), ` of ${units(l.migrationQuoteThreshold, q.decimals, 0)} ${q.symbol} raised`), h('b', { class: 'up' }, pct(l.progressBps))));
 }
@@ -327,7 +330,7 @@ function renderCreate() {
     preview.replaceChildren(tokenCard({ mint: 'preview', pool: '', name: name.value || 'Your coin', symbol: sym, description: desc.value,
       imageUrl: imageDataUrl, creator: state.wallet?.account.address ?? 'you', status: 'LIVE', createdAt: new Date().toISOString(), liveAt: null, website: null, twitter: null,
       telegram: null, createSig: null, migrationSig: null, dammPool: null, stats: { count: 0, volumeQuoteRaw: '0', traders: 0 },
-      live: { priceQuotePerBase: '0', marketCapQuoteRaw: '0', quoteReserve: '0', migrationQuoteThreshold: p.threshold.rawQuoteThreshold, progressBps: 0, curveComplete: false, isMigrated: false,
+      live: { priceQuotePerBase: '0', marketCapQuoteRaw: '0', priceUnavailable: false, launchPriceQuotePerBase: '0', lockedBps: null, quoteReserve: '0', migrationQuoteThreshold: p.threshold.rawQuoteThreshold, progressBps: 0, curveComplete: false, isMigrated: false,
         baseDecimals: 6, quoteDecimals: q.decimals, totalSupplyRaw: '0', creatorQuoteFee: '0' } }));
   };
   for (const el of [name, symbol, desc]) el.addEventListener('input', updatePreview);
@@ -393,9 +396,13 @@ function renderCreate() {
 
 // ---------------- token page
 const tradePrice = (t: Trade, baseDecimals: number) => (BigInt(t.quoteRaw) * 10n ** BigInt(baseDecimals) * 10n ** 18n) / BigInt(t.baseRaw === '0' ? '1' : t.baseRaw);
+/** Price by trade: each point is one trade's average fill price (quote paid / tokens received), oldest to newest at
+ *  equal spacing (not a time axis); the last point is the current spot price. The labels say exactly that. */
 function chart(trades: Trade[], live: Live | null, baseDecimals: number) {
+  const q = Q();
   const pts = [...trades].reverse().map((t) => tradePrice(t, baseDecimals));
-  if (live) pts.push(BigInt(live.priceQuotePerBase));
+  const spot = live?.priceQuotePerBase ? BigInt(live.priceQuotePerBase) : null;
+  if (spot !== null) pts.push(spot);
   const W = 800, H = 260, pad = 10;
   if (pts.length < 2) return h('div', { class: 'chart empty dim' }, 'The price chart appears after the first trades.');
   const max = pts.reduce((a, b) => (b > a ? b : a)), min = pts.reduce((a, b) => (b < a ? b : a));
@@ -403,14 +410,19 @@ function chart(trades: Trade[], live: Live | null, baseDecimals: number) {
   const xy = pts.map((v, i) => [pad + (i * (W - 2 * pad)) / (pts.length - 1), H - pad - Number(((v - min) * 1000n) / span) * (H - 2 * pad) / 1000]);
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('class', 'chart'); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Price by trade');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('class', 'chart'); svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', `Average fill price of the last ${trades.length} trades, oldest to newest${spot !== null ? ', then the current spot price' : ''}. Range ${price(min, q.decimals)} to ${price(max, q.decimals)} ${q.symbol}.`);
   for (const y of [H / 4, H / 2, (3 * H) / 4]) { const g = document.createElementNS(ns, 'path'); g.setAttribute('d', `M0 ${y} H${W}`); g.setAttribute('class', 'grid-l'); svg.append(g); }
   const area = document.createElementNS(ns, 'path');
   area.setAttribute('d', `M${xy[0]![0]},${H} ${xy.map(([x, y]) => `L${x},${y}`).join(' ')} L${xy[xy.length - 1]![0]},${H} Z`); area.setAttribute('class', 'area');
   const line = document.createElementNS(ns, 'polyline');
   line.setAttribute('points', xy.map(([x, y]) => `${x},${y}`).join(' ')); line.setAttribute('class', 'line');
   svg.append(area, line);
-  return svg;
+  return h('figure', { class: 'chart-box' },
+    h('div', { class: 'chart-plot' }, svg,
+      h('span', { class: 'axis-y top num' }, `${price(max, q.decimals)} ${q.symbol}`), h('span', { class: 'axis-y bottom num' }, `${price(min, q.decimals)} ${q.symbol}`)),
+    h('div', { class: 'axis-x dim small' }, h('span', {}, 'oldest trade'), h('span', {}, spot !== null ? 'now (spot price)' : 'latest trade')),
+    h('figcaption', { class: 'dim small' }, `Each point is one trade's average fill price, in order, evenly spaced (not to time scale)${spot !== null ? '. The last point is the current pool price' : ''}.`));
 }
 
 let tokenTimer: number | undefined;
@@ -548,7 +560,8 @@ async function renderToken(mint: string) {
   const trust = h('div', { class: 'trust' }, icon(ICON.shield, 18, 'var(--buy)'), h('span', {}, 'Your browser checks every account and amount in the transaction before your wallet is asked to sign.'));
   let panel: HTMLElement;
   if (onDamm) {
-    panelCard.append(h('p', { class: 'venue' }, icon(ICON.shield, 16, 'var(--grad)'), h('span', {}, 'Graduated. Trades on its Meteora DAMM v2 pool, liquidity locked forever.')),
+    panelCard.append(h('p', { class: 'venue' }, icon(ICON.shield, 16, 'var(--grad)'), h('span', {}, l?.priceUnavailable ? 'Graduated. Its Meteora DAMM v2 pool could not be read just now, so there is no current price. Try again in a moment.'
+        : `Graduated. Trades on its Meteora DAMM v2 pool${lockedText(l) ? `, ${lockedText(l)} of liquidity permanently locked` : ''}.`)),
       tabs, h('label', {}, 'You pay', h('span', { class: 'payfield' }, amount, payUnit)), presets,
       h('div', { class: 'slip-row' }, h('span', {}, 'Slippage'), slip), quoteBox, go, balanceLine, trust);
     panel = panelCard;
@@ -565,8 +578,9 @@ async function renderToken(mint: string) {
   }
 
   // header numbers
-  const oldest = trades.length ? tradePrice(trades[trades.length - 1]!, bd) : 0n;
-  const changeBps = l && oldest > 0n ? Number(((BigInt(l.priceQuotePerBase) - oldest) * 10000n) / oldest) : null;
+  // "Since launch" compares with the curve's fixed starting price, so it does not shift as more trades load.
+  const launchPx = BigInt(l?.launchPriceQuotePerBase ?? '0');
+  const changeBps = l?.priceQuotePerBase && launchPx > 0n ? Number(((BigInt(l.priceQuotePerBase) - launchPx) * 10000n) / launchPx) : null;
   const links = [t.website && ext(t.website, 'Website'), t.twitter && ext(t.twitter, 'X'), t.telegram && ext(t.telegram, 'Telegram')].filter(Boolean) as HTMLElement[];
   const tradeRows = trades.map((x) => h('tr', {},
     h('td', { class: x.side === 'BUY' ? 'buy' : 'sell' }, x.side === 'BUY' ? 'Buy' : 'Sell'),
@@ -589,12 +603,12 @@ async function renderToken(mint: string) {
           h('div', { class: 'tok-meta' }, h('span', {}, 'by ', ext(explorer('address', t.creator), short(t.creator))), h('span', {}, `launched ${ago(t.liveAt ?? t.createdAt)}`),
             h('button', { class: 'copy', 'aria-label': 'Copy mint address', onclick: () => navigator.clipboard?.writeText(t.mint).then(() => toast('Mint address copied', 'ok')) }, short(t.mint, 4), icon(ICON.copy, 14)),
             ...links))),
-      l ? h('div', { class: 'tok-price' }, h('div', { class: 'num' }, price(l.priceQuotePerBase, q.decimals)),
+      l ? h('div', { class: 'tok-price' }, h('div', { class: 'num' }, l.priceQuotePerBase ? price(l.priceQuotePerBase, q.decimals) : 'Price unavailable'),
         h('div', { class: 'dim' }, `${q.symbol} per ${t.symbol}`, changeBps === null ? '' : ' · ', changeBps === null ? null : h('span', { class: changeBps >= 0 ? 'up' : 'down' }, `${changeBps >= 0 ? '+' : '−'}${pct(Math.abs(changeBps))} since launch`))) : null),
     h('div', { class: 'token' },
       h('div', { class: 'tok-main' },
         h('div', { class: 'kpis' },
-          kpi('Market cap', l ? `${compact(l.marketCapQuoteRaw, q.decimals)} ${q.symbol}` : '—'),
+          kpi('Market cap', mcapText(l)),
           kpi('Volume', `${compact(t.stats.volumeQuoteRaw, q.decimals)} ${q.symbol}`),
           kpi('Traders', String(t.stats.traders)),
           kpi('Trades', String(t.stats.count))),
@@ -602,7 +616,7 @@ async function renderToken(mint: string) {
         l ? h('div', { class: `card grad-card${graduated ? ' done' : ''}` },
           h('div', { class: 'grad-top' }, h('b', {}, 'Graduation'), h('span', { class: 'num' }, graduated ? 'Done' : pct(l.progressBps))),
           progressBar(l.progressBps, l.curveComplete || l.isMigrated, true),
-          h('p', { class: 'dim small' }, graduated ? 'Graduated to Meteora DAMM v2. Its liquidity is locked forever.'
+          h('p', { class: 'dim small' }, graduated ? `Graduated to Meteora DAMM v2.${lockedText(l) ? ` ${lockedText(l)} of the pool's liquidity is permanently locked (read from the pool account). Locked liquidity cannot be withdrawn; it does not fix the price.` : ''}`
             : `${units(l.quoteReserve, q.decimals, 0)} of ${units(l.migrationQuoteThreshold, q.decimals, 0)} ${q.symbol} raised. At ${units(l.migrationQuoteThreshold, q.decimals, 0)} the coin moves to a Meteora DAMM v2 pool and its liquidity is locked forever.${toGo > 0n ? ` About ${units(toGo, q.decimals, 0)} ${q.symbol} of buying to go.` : ''}`)) : null,
         h('div', { class: 'card' }, h('h3', {}, 'Trades'), trades.length ? h('div', { class: 'scroll' }, h('table', { class: 'trades' },
           h('thead', {}, h('tr', {}, ...[['Side', ''], ['Trader', ''], [q.symbol, 'num'], [`$${t.symbol}`, 'num'], ['When', ''], ['Tx', '']].map(([c, cls]) => h('th', { class: cls }, c)))), h('tbody', {}, ...tradeRows))) : h('p', { class: 'dim', style: { margin: '0' } }, 'No trades yet. Be the first.'))),
@@ -614,7 +628,8 @@ async function renderToken(mint: string) {
             h('dt', {}, t.dammPool ? 'Curve pool' : 'Pool'), h('dd', { class: 'num' }, ext(explorer('address', t.pool), short(t.pool, 4))),
             ...(t.migrationSig ? [h('dt', {}, 'Graduation tx'), h('dd', { class: 'num' }, ext(explorer('tx', t.migrationSig), short(t.migrationSig, 4)))] : []),
             h('dt', {}, 'Launch tx'), h('dd', { class: 'num' }, t.createSig ? ext(explorer('tx', t.createSig), short(t.createSig, 4)) : '—'),
-            h('dt', {}, 'Creator fees unclaimed'), h('dd', { class: 'num' }, l ? `${units(l.creatorQuoteFee, q.decimals, 2)} ${q.symbol}` : '—'))))),
+            ...(lockedText(l) ? [h('dt', {}, 'Liquidity locked'), h('dd', { class: 'num', title: 'permanentLockLiquidity / liquidity, read from the DAMM v2 pool account' }, lockedText(l)!)] : []),
+            h('dt', {}, 'Creator curve fees, unclaimed'), h('dd', { class: 'num' }, l ? `${units(l.creatorQuoteFee, q.decimals, 2)} ${q.symbol}` : '—'))))),
     ...(mobileBar ? [mobileBar] : []));
   clearInterval(tokenTimer);
   // Keep the page honest without a reload: index new trades, and when the coin changes phase (curve full -> graduated,
@@ -629,15 +644,65 @@ async function renderToken(mint: string) {
   }, l?.curveComplete && !graduated ? 6_000 : 20_000);
 }
 
+// ------------------------------------------------------------------ earnings (read-only)
+interface Unclaimed { creatorQuoteRaw: string | null; platformQuoteRaw: string | null }
+interface Earnings {
+  label: string; platformWallet: string; asOf: string;
+  totals: { unclaimed: { creatorCurve: string; platformCurve: string; creatorLp: string; platformLp: string }; claimedThroughApp: string; incomplete: boolean };
+  coins: { mint: string; symbol: string; name: string; status: string; creator: string; curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null }[];
+  claims: { sig: string; mint: string; symbol: string; venue: 'CURVE' | 'DAMM_V2'; claimer: string; byCreator: boolean; quoteRaw: string | null; at: string }[];
+}
+async function renderEarnings() {
+  const main = $('#view');
+  const q = Q();
+  main.replaceChildren(h('div', { class: 'empty' }, 'Loading…'));
+  let e: Earnings;
+  try { e = await api<Earnings>('/api/lp/earnings'); } catch (err) { main.replaceChildren(h('div', { class: 'empty err' }, `Earnings unavailable (${(err as Error).message}).`)); return; }
+  const amt = (raw: string | null | undefined) => (raw == null ? '—' : `${units(raw, q.decimals, 2)} ${q.symbol}`);
+  const u = e.totals.unclaimed;
+  const plat = BigInt(u.platformCurve) + BigInt(u.platformLp), crea = BigInt(u.creatorCurve) + BigInt(u.creatorLp);
+  const kpi = (k: string, v: string, sub: string) => h('div', {}, h('span', { class: 'k' }, k), h('span', { class: 'v' }, v), h('span', { class: 'dim small' }, sub));
+  const lpCell = (c: Earnings['coins'][number], who: keyof Unclaimed) => c.lp === null ? h('td', { class: 'num dim' }, 'not graduated')
+    : c.lp === 'UNAVAILABLE' ? h('td', { class: 'num dim' }, 'pool unreadable') : h('td', { class: 'num' }, amt(c.lp[who]));
+  const rows = e.coins.map((c) => h('tr', {},
+    h('td', {}, h('a', { href: `#/t/${c.mint}` }, `$${c.symbol}`), h('span', { class: 'dim small' }, c.status === 'MIGRATED' ? ' graduated' : ' bonding')),
+    h('td', { class: 'num' }, amt(c.curve?.creatorQuoteRaw)), lpCell(c, 'creatorQuoteRaw'),
+    h('td', { class: 'num' }, amt(c.curve?.platformQuoteRaw)), lpCell(c, 'platformQuoteRaw')));
+  const claimRows = e.claims.map((c) => h('tr', {},
+    h('td', {}, h('a', { href: `#/t/${c.mint}` }, `$${c.symbol}`)), h('td', {}, c.venue === 'CURVE' ? 'Curve fees' : 'LP position fees'),
+    h('td', {}, c.byCreator ? 'Creator' : short(c.claimer)), h('td', { class: 'num' }, amt(c.quoteRaw)),
+    h('td', { class: 'dim' }, ago(Math.floor(Date.parse(c.at) / 1000))), h('td', { class: 'mono' }, ext(explorer('tx', c.sig), short(c.sig, 4)))));
+  const table = (head: [string, string][], body: HTMLElement[], empty: string) => body.length
+    ? h('div', { class: 'scroll' }, h('table', { class: 'trades' }, h('thead', {}, h('tr', {}, ...head.map(([c, cls]) => h('th', { class: cls }, c)))), h('tbody', {}, ...body)))
+    : h('p', { class: 'dim', style: { margin: '0' } }, empty);
+  main.replaceChildren(h('section', { class: 'earnings' },
+    h('div', { class: 'earn-head' }, h('h1', {}, 'Earnings'), h('p', { class: 'dim' }, `Fees earned on every coin, read from the pools on devnet. ${e.label}. Read-only: nothing on this page can move funds.`)),
+    h('div', { class: 'kpis' },
+      kpi('Platform, unclaimed', amt(plat.toString()), 'curve fees + locked LP fees'),
+      kpi('Creators, unclaimed', amt(crea.toString()), 'curve fees + locked LP fees'),
+      kpi('Claimed in the app', amt(e.totals.claimedThroughApp), `${e.claims.length} ${e.claims.length === 1 ? 'claim' : 'claims'}`),
+      kpi('Coins', String(e.coins.length), `${e.coins.filter((c) => c.status === 'MIGRATED').length} graduated`)),
+    e.totals.incomplete ? h('p', { class: 'err small' }, 'Some pools could not be read just now, so these totals are incomplete. Reload in a moment.') : null,
+    h('div', { class: 'card' }, h('h3', {}, 'Unclaimed, per coin'), table([['Coin', ''], ['Creator · curve', 'num'], ['Creator · LP', 'num'], ['Platform · curve', 'num'], ['Platform · LP', 'num']], rows, 'No coins yet.')),
+    h('div', { class: 'card' }, h('h3', {}, 'Claims made in the app'), table([['Coin', ''], ['What', ''], ['By', ''], ['Paid out', 'num'], ['When', ''], ['Tx', '']], claimRows, 'No claims yet.')),
+    h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'How to read this'),
+      h('ul', { class: 'notes' },
+        h('li', {}, 'Accrued is not claimed, and claimed is not kept revenue. Under the current test settings half of the platform share is set aside for holder rewards (not built yet).'),
+        h('li', {}, 'Curve fees are the creator and platform counters in each bonding-curve pool. LP fees are what the locked DAMM v2 positions held by the creator and by the platform fee claimer have earned since their last claim.'),
+        h('li', {}, h('span', {}, 'Platform fees can only be claimed by the platform fee claimer ', ext(explorer('address', e.platformWallet), short(e.platformWallet)), '. Before mainnet that must be a multisig, so this page has no claim button.')),
+        h('li', {}, 'Claims made outside this app are not listed.')))));
+}
+
 // ------------------------------------------------------------------ router + boot
 async function route() {
   clearInterval(tokenTimer);
   if ($('.sheet .x')) closeModal(); // a finished or idle dialog never follows you to another page; a running signing flow has no close button
   const m = currentMint();
   document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === (m ? '' : location.hash || '#/')));
-  if (m || location.hash === '#/create') $('#tape').hidden = true;
+  if (m || location.hash === '#/create' || location.hash === '#/earnings') $('#tape').hidden = true;
   if (m) await renderToken(m);
   else if (location.hash === '#/create') renderCreate();
+  else if (location.hash === '#/earnings') await renderEarnings();
   else await renderHome();
   document.body.dataset.ready = 'true';
 }

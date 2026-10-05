@@ -218,6 +218,8 @@ export interface LivePool {
   baseDecimals: number; quoteDecimals: number; migrationProgress: number; isMigrated: boolean; curveComplete: boolean;
   /** quote raw per 1 base UI unit, 18-decimal fixed point string */
   priceQuotePerBase: string; marketCapQuoteRaw: string; progressBps: number; creatorQuoteFee: string; creatorBaseFee: string; partnerQuoteFee: string;
+  /** the curve's starting price (config sqrtStartPrice), same fixed point as priceQuotePerBase: a stable "since launch" reference */
+  launchPriceQuotePerBase: string;
   raw: { virtualPool: unknown; config: unknown };
 }
 
@@ -233,6 +235,8 @@ export function summarisePool(pool: string, vp: any, cfg: any): LivePool {
   const fixedSupply = cfg.preMigrationTokenSupply === undefined ? 0n : big(cfg.preMigrationTokenSupply);
   const totalSupplyRaw = fixedSupply > 0n ? fixedSupply : big(cfg.swapBaseAmount ?? 0) + big(cfg.migrationBaseThreshold ?? 0);
   const priceFp = (sqrt * sqrt * 10n ** BigInt(baseDecimals) * 10n ** 18n) / Q128; // quote raw per base UI, x1e18
+  const sqrtStart = big(cfg.sqrtStartPrice ?? 0);
+  const launchFp = (sqrtStart * sqrtStart * 10n ** BigInt(baseDecimals) * 10n ** 18n) / Q128;
   const mcapRaw = (sqrt * sqrt * totalSupplyRaw) / Q128;                           // quote raw
   const progressBps = threshold === 0n ? 0 : Number(quoteReserve >= threshold ? 10_000n : (quoteReserve * 10_000n) / threshold);
   return {
@@ -241,7 +245,7 @@ export function summarisePool(pool: string, vp: any, cfg: any): LivePool {
     baseReserve: big(s.baseReserve).toString(), migrationQuoteThreshold: threshold.toString(), totalSupplyRaw: totalSupplyRaw.toString(),
     baseDecimals, quoteDecimals, migrationProgress: Number(s.migrationProgress), isMigrated: Number(s.isMigrated) === 1,
     curveComplete: quoteReserve >= threshold, priceQuotePerBase: priceFp.toString(), marketCapQuoteRaw: mcapRaw.toString(), progressBps,
-    creatorQuoteFee: big(s.creatorQuoteFee).toString(), creatorBaseFee: big(s.creatorBaseFee ?? 0).toString(), partnerQuoteFee: big(s.partnerQuoteFee).toString(), raw: { virtualPool: vp, config: cfg },
+    creatorQuoteFee: big(s.creatorQuoteFee).toString(), creatorBaseFee: big(s.creatorBaseFee ?? 0).toString(), partnerQuoteFee: big(s.partnerQuoteFee).toString(), launchPriceQuotePerBase: launchFp.toString(), raw: { virtualPool: vp, config: cfg },
   };
 }
 

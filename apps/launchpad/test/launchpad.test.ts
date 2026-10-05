@@ -16,9 +16,9 @@ import { accountsForPool, fixtures, K, thresholdRecord } from '../../../packages
 import { createMockConnection } from '../../../packages/adapter-meteora-dbc/test/support/mockRpc.ts';
 import { checkBuiltTransaction } from '../../web/src/launchpad/txcheck.ts';
 import type { LaunchpadChain } from '../src/chain.ts';
-import { crankMigrations, PoolCache, tradeFromSummary } from '../src/indexer.ts';
+import { crankMigrations, MAX_SUMMARY_RETRIES, PoolCache, syncLaunch, tradeFromSummary } from '../src/indexer.ts';
 import { launchEconomicsFor, type PlatformRecord } from '../src/platform.ts';
-import { createLaunchpadApp, FAUCET, sniffImage } from '../src/server.ts';
+import { claimPayout, createLaunchpadApp, FAUCET, sniffImage } from '../src/server.ts';
 import { LaunchpadStore } from '../src/store.ts';
 
 const dir = mkdtempSync(join(tmpdir(), 'qf-lp-test-'));
@@ -344,4 +344,70 @@ test('creators claim their curve fees and, after graduation, their locked positi
   assert.ok(dr.checks.some((x) => x.label === 'Only Meteora DAMM v2 and token programs are called' && x.ok));
   // A browser that expected a curve claim refuses the DAMM bytes.
   assert.equal((await checkBuiltTransaction(fromBase64(d.body.transaction), d.body.terms, { kind: 'CLAIM_CREATOR_TRADING_FEE', wallet: creator, shown: {}, fields: {} })).ok, false);
+});
+
+test('the indexer retries a trade whose details the RPC has not served yet, instead of skipping past it', async () => {
+  const { store, platform, chain } = await harness();
+  const t = new Date().toISOString(), mint = K.baseMint.toBase58();
+  store.insertPendingLaunch({ mint, pool: K.pool.toBase58(), config: platform.config.config, quoteMint: platform.quote.mint, creator: K.creator.toBase58(),
+    name: 'MOCK', symbol: 'MOCK', description: '', website: null, twitter: null, telegram: null, imageType: null, metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: t }, null);
+  store.markLaunchLive(mint, 'sig', t);
+  const qv = K.quoteVault.toBase58(), bv = K.baseVault.toBase58();
+  const order = ['a', 'b', 'never'];
+  const served = new Set(['b']);
+  const sum = (signature: string) => ({ signature, slot: 1, blockTime: 1, err: false, feePayer: 'T', accountKeys: [], logMessages: [], tokenDeltas: { [qv]: 100n, [bv]: -5n } });
+  const c = { ...chain,
+    newSignatures: async (_a: string, until: string | null) => order.slice(until ? order.indexOf(until) + 1 : 0).map((signature) => ({ signature, slot: 1, err: false })),
+    txSummary: async (sig: string) => (served.has(sig) ? sum(sig) : null) };
+  const deps = { store, chain: c, poolCache: new PoolCache(c) };
+  const pass = () => syncLaunch(deps, store.getLaunch(mint)!);
+  assert.deepEqual(await pass(), { trades: 0 }, '"a" is not served yet: stop before it');
+  assert.equal(store.getLaunch(mint)!.lastIndexedSig, null);
+  served.add('a');
+  assert.deepEqual(await pass(), { trades: 2 }, 'next pass picks up "a" and "b"');
+  assert.equal(store.getLaunch(mint)!.lastIndexedSig, 'b');
+  for (let k = 2; k < MAX_SUMMARY_RETRIES; k++) { await pass(); assert.equal(store.getLaunch(mint)!.lastIndexedSig, 'b'); }
+  await pass();
+  assert.equal(store.getLaunch(mint)!.lastIndexedSig, 'never', 'a transaction that is never served stops blocking after the retry limit');
+  assert.equal(store.listTrades(mint).length, 2);
+});
+
+test('after graduation an unreadable DAMM v2 pool shows the price as unavailable, never the finished curve price', async () => {
+  const { call, store, platform, chain } = await harness();
+  const t = new Date().toISOString(), mint = K.baseMint.toBase58();
+  store.insertPendingLaunch({ mint, pool: K.pool.toBase58(), config: platform.config.config, quoteMint: platform.quote.mint, creator: K.creator.toBase58(),
+    name: 'MOCK', symbol: 'MOCK', description: '', website: null, twitter: null, telegram: null, imageType: null, metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: t }, null);
+  store.markLaunchLive(mint, 'sig', t);
+  const curve = (await call(`/api/lp/tokens/${mint}?fresh=1`)).body.token.live;
+  assert.equal(curve.venue, 'CURVE');
+  assert.ok(BigInt(curve.launchPriceQuotePerBase) > 0n, 'a fixed launch price for "since launch"');
+  store.markLaunchMigrated(mint, 'mig', K.dammPool.toBase58(), t);
+  const ok = (await call(`/api/lp/tokens/${mint}?fresh=1`)).body.token.live;
+  assert.deepEqual([ok.venue, ok.priceUnavailable], ['DAMM_V2', false]);
+  assert.ok(ok.lockedBps >= 0 && ok.lockedBps <= 10_000, 'observed lock share from the pool account');
+  chain.readDammPool = async () => { throw new Error('429 Too Many Requests'); };
+  const down = (await call(`/api/lp/tokens/${mint}?fresh=1`)).body.token.live;
+  assert.deepEqual([down.venue, down.priceUnavailable, down.priceQuotePerBase, down.marketCapQuoteRaw, down.lockedBps], ['DAMM_V2', true, null, null, null]);
+  assert.equal((await call(`/api/lp/tokens/${mint}?fresh=1`)).body.token.status, 'MIGRATED');
+});
+
+test('the earnings view separates creator and platform, curve and LP, and claim receipts count what left the vaults', async () => {
+  const { call, store, platform } = await harness();
+  const t = new Date().toISOString(), mint = K.baseMint.toBase58();
+  store.insertPendingLaunch({ mint, pool: K.pool.toBase58(), config: platform.config.config, quoteMint: platform.quote.mint, creator: K.creator.toBase58(),
+    name: 'MOCK', symbol: 'MOCK', description: '', website: null, twitter: null, telegram: null, imageType: null, metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: t }, null);
+  store.markLaunchLive(mint, 'sig', t);
+  let e = (await call('/api/lp/earnings?fresh=1')).body;
+  assert.deepEqual(e.coins[0].curve, { creatorQuoteRaw: '1000000', platformQuoteRaw: '1000000' });
+  assert.equal(e.coins[0].lp, null, 'not graduated: no LP positions yet');
+  store.markLaunchMigrated(mint, 'mig', K.dammPool.toBase58(), t);
+  store.insertClaim({ sig: 'claim-1', mint, venue: 'DAMM_V2', claimer: K.creator.toBase58(), quoteRaw: '250000', baseRaw: '0', at: t });
+  e = (await call('/api/lp/earnings?fresh=1')).body;
+  assert.deepEqual(e.coins[0].lp, { creatorQuoteRaw: '500000', platformQuoteRaw: '0' });
+  assert.deepEqual(e.totals.unclaimed, { creatorCurve: '1000000', platformCurve: '1000000', creatorLp: '500000', platformLp: '0' });
+  assert.equal(e.totals.claimedThroughApp, '250000');
+  assert.deepEqual(e.claims.map((c: any) => [c.sig, c.byCreator, c.venue]), [['claim-1', true, 'DAMM_V2']]);
+  assert.equal(e.platformWallet, platform.config.feeClaimer);
+  const sum = { signature: 's', slot: 1, blockTime: 1, err: false, feePayer: 'x', accountKeys: [], logMessages: [], tokenDeltas: { QV: -1_400_000n, BV: 0n, USER: 1_400_000n } };
+  assert.deepEqual(claimPayout(sum, { quote: ['QV'], base: ['BV'] }), { quoteRaw: '1400000', baseRaw: '0' });
 });

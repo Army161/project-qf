@@ -19,20 +19,41 @@ export function tradeFromSummary(launch: Pick<LaunchRow, 'mint'>, pool: Pick<Liv
 
 export interface IndexerDeps { store: LaunchpadStore; chain: LaunchpadChain; poolCache: PoolCache; dammCache?: DammCache; log?: (m: string) => void; now?: () => Date }
 
+/** Passes in which a signature's transaction details were not available yet (an RPC can list a signature before it
+ *  serves the transaction). Bounded so one transaction the RPC never returns cannot stall a coin's history forever. */
+const missingSummary = new Map<string, number>();
+export const MAX_SUMMARY_RETRIES = 5;
+
+/** Records trades for signatures in order. The cursor only moves past a signature once it has been read (or has
+ *  failed on chain), so a transaction whose details are not served yet is retried on the next pass, not skipped. */
+async function walk(d: IndexerDeps, launch: LaunchRow, pool: Pick<LivePool, 'baseVault' | 'quoteVault'>,
+  sigs: { signature: string; err: boolean }[], setCursor: (sig: string) => void): Promise<number> {
+  let trades = 0;
+  for (const s of sigs) {
+    if (!s.err) {
+      const sum = await d.chain.txSummary(s.signature);
+      if (!sum) {
+        const n = (missingSummary.get(s.signature) ?? 0) + 1;
+        if (n < MAX_SUMMARY_RETRIES) { missingSummary.set(s.signature, n); break; }
+        missingSummary.delete(s.signature);
+        d.log?.(`index ${launch.symbol}: no transaction details for ${s.signature} after ${n} passes; moving on`);
+      } else {
+        missingSummary.delete(s.signature);
+        const t = tradeFromSummary(launch, pool, sum, 'indexer');
+        if (t && d.store.insertTrade(t)) trades++;
+      }
+    }
+    setCursor(s.signature);
+  }
+  return trades;
+}
+
 /** Pulls new pool signatures since the last indexed one and records trades; detects completion and migration. */
 export async function syncLaunch(d: IndexerDeps, launch: LaunchRow): Promise<{ trades: number }> {
   const pool = await d.poolCache.get(launch.pool, true);
   if (!pool) return { trades: 0 };
-  let trades = 0;
   const sigs = await d.chain.newSignatures(launch.pool, launch.lastIndexedSig);
-  for (const s of sigs) {
-    if (!s.err) {
-      const sum = await d.chain.txSummary(s.signature);
-      const t = sum && tradeFromSummary(launch, pool, sum, 'indexer');
-      if (t && d.store.insertTrade(t)) trades++;
-    }
-    d.store.setLastIndexed(launch.mint, s.signature);
-  }
+  const trades = await walk(d, launch, pool, sigs, (sig) => d.store.setLastIndexed(launch.mint, sig));
   if (pool.isMigrated && launch.status !== 'MIGRATED') {
     d.store.markLaunchMigrated(launch.mint, null, await d.chain.dammPoolFor(launch.mint, launch.quoteMint), (d.now ?? (() => new Date()))().toISOString());
   }
@@ -44,16 +65,8 @@ export async function syncDamm(d: IndexerDeps, launch: LaunchRow): Promise<{ tra
   if (!launch.dammPool || !d.dammCache) return { trades: 0 };
   const pool = await d.dammCache.get(launch, true);
   if (!pool) return { trades: 0 };
-  let trades = 0;
   const sigs = await d.chain.newSignatures(launch.dammPool, launch.lastDammIndexedSig);
-  for (const s of sigs) {
-    if (!s.err) {
-      const sum = await d.chain.txSummary(s.signature);
-      const t = sum && tradeFromSummary(launch, pool, sum, 'indexer');
-      if (t && d.store.insertTrade(t)) trades++;
-    }
-    d.store.setLastDammIndexed(launch.mint, s.signature);
-  }
+  const trades = await walk(d, launch, pool, sigs, (sig) => d.store.setLastDammIndexed(launch.mint, sig));
   return { trades };
 }
 

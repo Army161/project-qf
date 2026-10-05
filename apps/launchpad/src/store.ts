@@ -19,6 +19,13 @@ const MIGRATIONS: readonly string[] = [
    CREATE INDEX faucet_wallet ON faucet_claims(wallet, at);`,
   // after graduation the launch trades on its DAMM v2 pool, indexed separately from the curve
   `ALTER TABLE launches ADD COLUMN last_damm_indexed_sig TEXT;`,
+  // fee claims made through the app, with the amounts paid out (from the confirmed transaction) as receipts
+  `CREATE TABLE claims (sig TEXT PRIMARY KEY, mint TEXT NOT NULL REFERENCES launches(mint), venue TEXT NOT NULL, claimer TEXT NOT NULL,
+     quote_raw TEXT, base_raw TEXT, at TEXT NOT NULL);
+   CREATE INDEX claims_mint ON claims(mint, at);
+   INSERT OR IGNORE INTO claims (sig, mint, venue, claimer, quote_raw, base_raw, at)
+     SELECT signature, mint, CASE kind WHEN 'DAMM_CLAIM_POSITION_FEE' THEN 'DAMM_V2' ELSE 'CURVE' END, user, NULL, NULL, created_at
+     FROM intents WHERE status = 'CONFIRMED' AND signature IS NOT NULL AND mint IS NOT NULL AND kind IN ('CLAIM_CREATOR_TRADING_FEE', 'DAMM_CLAIM_POSITION_FEE');`,
 ];
 
 export type LaunchStatus = 'PENDING' | 'LIVE' | 'MIGRATED' | 'FAILED';
@@ -28,6 +35,7 @@ export interface LaunchRow {
   createSig: string | null; createdAt: string; liveAt: string | null; migrationSig: string | null; dammPool: string | null; migratedAt: string | null;
   lastIndexedSig: string | null; lastDammIndexedSig: string | null;
 }
+export interface ClaimRow { sig: string; mint: string; venue: 'CURVE' | 'DAMM_V2'; claimer: string; quoteRaw: string | null; baseRaw: string | null; at: string }
 export interface TradeRow { sig: string; mint: string; trader: string; side: 'BUY' | 'SELL'; quoteRaw: string; baseRaw: string; slot: number; blockTime: number | null; source: string }
 export interface IntentRow { id: string; kind: string; mint: string | null; user: string; createdAt: string; expiresAt: string; messageHex: string;
   termsJson: string; lastValidBlockHeight: number; status: 'BUILT' | 'SUBMITTED' | 'CONFIRMED' | 'FAILED'; signature: string | null; error: string | null }
@@ -92,6 +100,12 @@ export class LaunchpadStore {
     return (this.db.prepare(q).all(...statuses, limit) as Record<string, unknown>[]).map((r) => camel(r) as unknown as LaunchRow);
   }
 
+  insertClaim(c: ClaimRow) {
+    this.db.prepare('INSERT OR IGNORE INTO claims (sig, mint, venue, claimer, quote_raw, base_raw, at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(c.sig, c.mint, c.venue, c.claimer, c.quoteRaw, c.baseRaw, c.at);
+  }
+  setClaimAmounts(sig: string, quoteRaw: string, baseRaw: string) { this.db.prepare('UPDATE claims SET quote_raw = ?, base_raw = ? WHERE sig = ?').run(quoteRaw, baseRaw, sig); }
+  listClaims(): ClaimRow[] { return this.db.prepare('SELECT * FROM claims ORDER BY at DESC').all().map((r) => camel(r as Record<string, unknown>) as unknown as ClaimRow); }
   insertTrade(t: TradeRow): boolean {
     const r = this.db.prepare(`INSERT OR IGNORE INTO trades (sig, mint, trader, side, quote_raw, base_raw, slot, block_time, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .run(t.sig, t.mint, t.trader, t.side, t.quoteRaw, t.baseRaw, t.slot, t.blockTime, t.source);
