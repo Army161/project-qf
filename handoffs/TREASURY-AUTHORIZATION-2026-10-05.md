@@ -49,12 +49,14 @@ This pass did the following:
 - **What it looks for:**
   - the four real devnet secrets (operator and members) in hex, base58, base64 and JSON-array form;
   - any 64-byte value that is a valid ed25519 keypair (its second half equals the public key of its first half), in JSON-array, base58, hex or base64 form;
-  - mnemonic-like text.
+  - mnemonic-like text: a line or quoted string of exactly 12 to 24 lowercase words, none of them a common English word outside the BIP39 list.
 - **Results:**
-  - 0 hits.
+  - 0 hits in all 20 scopes.
   - The 64-byte candidates it found (about 1,700 in the Git history) are transaction signatures, and none of them is a keypair.
-  - A positive control with a fresh throwaway key was detected in JSON and hex form.
-- The scanner prints counts and paths only, never key material.
+  - Positive controls were detected: a fresh throwaway key in JSON and hex form, and a published BIP39 test-vector phrase.
+  - A first, looser mnemonic rule flagged this report's own sentence "No seed phrase exists anywhere" and a 12-word line of wrapped prose. It was tightened as described, and every scope was scanned again.
+- The scanner prints counts and paths only, never key material. It is `evidence/treasury-auth/keyscan.mjs.txt`.
+- The final ZIP and its bundle were scanned again after packing; see the delivery note.
 - No seed phrase exists anywhere: keys are generated as raw keypairs.
 
 ## Signer roles and approval threshold

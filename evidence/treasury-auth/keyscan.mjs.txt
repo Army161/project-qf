@@ -1,0 +1,39 @@
+// Secret-key scan. Prints counts and file paths only, never a key or any part of one.
+//   node keyscan.mjs <label> <root>...   (files are read as bytes; directories are walked)
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { createPrivateKey, createPublicKey } from 'node:crypto';
+const A = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+const b58e = (b) => { let x = 0n; for (const v of b) x = x * 256n + BigInt(v); let s = ''; while (x > 0n) { s = A[Number(x % 58n)] + s; x /= 58n; } for (const v of b) { if (v) break; s = '1' + s; } return s; };
+const b58d = (s) => { let x = 0n; for (const c of s) { const i = A.indexOf(c); if (i < 0) return null; x = x * 58n + BigInt(i); } const out = []; while (x > 0n) { out.unshift(Number(x & 255n)); x >>= 8n; } for (const c of s) { if (c !== '1') break; out.unshift(0); } return Uint8Array.from(out); };
+const pubOf = (seed) => createPublicKey(createPrivateKey({ key: Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), Buffer.from(seed)]), format: 'der', type: 'pkcs8' })).export({ format: 'der', type: 'spki' }).subarray(-32);
+const isKeypair = (b) => b && b.length === 64 && Buffer.compare(pubOf(b.subarray(0, 32)), Buffer.from(b.subarray(32))) === 0;
+const home = process.env.HOME;
+const known = ['operator.json', 'treasury/member-1.json', 'treasury/member-2.json', 'treasury/member-3.json']
+  .map((f) => Uint8Array.from(JSON.parse(readFileSync(join(home, '.qf-devnet', f), 'utf8'))));
+const needles = [];
+for (const k of known) {
+  const seed = Buffer.from(k.subarray(0, 32)), full = Buffer.from(k);
+  needles.push(seed.toString('hex'), full.toString('base64'), seed.toString('base64').slice(0, 40), b58e(k), b58e(seed), `[${[...k].join(',')}]`, `[${[...k].join(', ')}]`, `${[...seed.subarray(0, 12)].join(',')}`, `${[...seed.subarray(0, 12)].join(', ')}`);
+}
+const [label, ...roots] = process.argv.slice(2);
+const files = [];
+const walk = (p) => { const st = statSync(p); if (st.isDirectory()) { for (const n of readdirSync(p)) { if (n === 'node_modules' || n === '.git') continue; walk(join(p, n)); } } else files.push(p); };
+roots.forEach(walk);
+let bytes = 0, candidates = 0; const hits = [];
+for (const f of files) {
+  const buf = readFileSync(f); bytes += buf.length; const t = buf.toString('latin1');
+  for (const n of needles) if (t.includes(n)) hits.push({ file: f, kind: 'KNOWN_KEY_MATERIAL' });
+  for (const m of t.matchAll(/\[\s*(?:\d{1,3}\s*,\s*){63}\d{1,3}\s*\]/g)) { candidates++; if (isKeypair(Uint8Array.from(JSON.parse(m[0])))) hits.push({ file: f, kind: 'KEYPAIR_JSON_ARRAY' }); }
+  for (const m of t.matchAll(/(?<![1-9A-HJ-NP-Za-km-z])[1-9A-HJ-NP-Za-km-z]{85,90}(?![1-9A-HJ-NP-Za-km-z])/g)) { const b = b58d(m[0]); if (b?.length === 64) { candidates++; if (isKeypair(b)) hits.push({ file: f, kind: 'KEYPAIR_BASE58' }); } }
+  for (const m of t.matchAll(/(?<![0-9a-fA-F])[0-9a-fA-F]{128}(?![0-9a-fA-F])/g)) { candidates++; if (isKeypair(Buffer.from(m[0], 'hex'))) hits.push({ file: f, kind: 'KEYPAIR_HEX' }); }
+  for (const m of t.matchAll(/[A-Za-z0-9+/]{86}==/g)) { const b = Buffer.from(m[0], 'base64'); if (b.length === 64) { candidates++; if (isKeypair(b)) hits.push({ file: f, kind: 'KEYPAIR_BASE64' }); } }
+  // a mnemonic: a line (or quoted string) that is only 12, 15, 18, 21 or 24 lowercase words of 3-8 letters, none of them a
+  // common English word that the BIP39 English list does not contain (so wrapped prose is not flagged)
+  const NOT_BIP39 = new Set(['the', 'and', 'with', 'from', 'this', 'was', 'are', 'for', 'not', 'but', 'has', 'have', 'which', 'its']);
+  for (const m of t.matchAll(/(?:^|["'`])\s*((?:[a-z]{3,8} ){11,23}[a-z]{3,8})\s*(?:$|["'`])/gm)) {
+    const w = m[1].split(' ');
+    if ([12, 15, 18, 21, 24].includes(w.length) && !w.some((x) => NOT_BIP39.has(x))) hits.push({ file: f, kind: 'POSSIBLE_MNEMONIC_REVIEW' });
+  }
+}
+console.log(JSON.stringify({ label, files: files.length, bytes, knownKeysChecked: known.length, candidates64Bytes: candidates, hits }));

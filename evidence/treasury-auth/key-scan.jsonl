@@ -16,5 +16,5 @@
 {"label":"zip:quoteforge-v0-readonly-readiness-2026-09-27.zip","files":319,"bytes":2357906,"knownKeysChecked":4,"candidates64Bytes":383,"hits":[]}
 {"label":"zip:quoteforge-v0-repair-2026-09-27.zip","files":243,"bytes":1982965,"knownKeysChecked":4,"candidates64Bytes":386,"hits":[]}
 {"label":"project-files-quoteforge","files":549,"bytes":124992439,"knownKeysChecked":4,"candidates64Bytes":403,"hits":[]}
-{"label":"repo-working-tree","files":748,"bytes":33564466,"knownKeysChecked":4,"candidates64Bytes":628,"hits":[]}
-{"label":"server-log","files":1,"bytes":24295,"knownKeysChecked":4,"candidates64Bytes":0,"hits":[]}
+{"label":"repo-working-tree","files":765,"bytes":34282001,"knownKeysChecked":4,"candidates64Bytes":647,"hits":[]}
+{"label":"server-log","files":1,"bytes":27281,"knownKeysChecked":4,"candidates64Bytes":0,"hits":[]}
