@@ -8,4 +8,6 @@ export interface IdlSubset {
   provenance: { package: string; license: string; idlName: string; idlVersion: string; programId: string; fullIdlSha256: string };
   instructions: IdlInstruction[];
   types: Record<string, IdlTypeDef>;
+  /** Account discriminators, for subsets that also decode program accounts (Squads). */
+  accounts?: Record<string, number[]>;
 }

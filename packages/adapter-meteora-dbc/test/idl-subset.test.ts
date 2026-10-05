@@ -5,14 +5,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
-import { DAMM_IDL_SUBSET, DBC_IDL_SUBSET } from '@project-qf/tx';
-import { dbcSubset, dammConfigSubset, dammUserSubset, renderTsModule } from '../scripts/extract-idl-subsets.ts';
+import { DAMM_IDL_SUBSET, DBC_IDL_SUBSET, SQUADS_IDL_SUBSET } from '@project-qf/tx';
+import { dbcSubset, dammConfigSubset, dammUserSubset, renderTsModule, squadsSubset } from '../scripts/extract-idl-subsets.ts';
 
 const require = createRequire(import.meta.url);
 const pkgJson = (name: string) => { let d = dirname(require.resolve(name)); for (;;) { try { const j = JSON.parse(readFileSync(join(d, 'package.json'), 'utf8')); if (j.name === name) return j; } catch {} d = dirname(d); } };
 
 test('SDK packages the subsets are extracted from declare MIT', () => {
-  for (const n of ['@meteora-ag/dynamic-bonding-curve-sdk', '@meteora-ag/cp-amm-sdk']) assert.equal(pkgJson(n).license, 'MIT', n);
+  for (const n of ['@meteora-ag/dynamic-bonding-curve-sdk', '@meteora-ag/cp-amm-sdk', '@sqds/multisig']) assert.equal(pkgJson(n).license, 'MIT', n);
 });
 
 test('committed DBC subset equals a fresh extraction from the pinned SDK (no drift)', () => {
@@ -45,4 +45,18 @@ test('committed DAMM v2 user subset (swap, claim position fee) equals a fresh ex
   const amm = await import('@meteora-ag/cp-amm-sdk');
   const idl = (amm as unknown as { CpAmmIdl: { instructions: { name: string; discriminator: number[] }[] } }).CpAmmIdl;
   for (const ix of fresh.instructions) assert.deepEqual(ix.discriminator, idl.instructions.find((i) => i.name === ix.name)!.discriminator, ix.name);
+});
+
+test('committed Squads v4 subset equals a fresh extraction, and its discriminators match the SDK\'s generated coder', async () => {
+  const fresh = squadsSubset();
+  assert.deepEqual(SQUADS_IDL_SUBSET, fresh);
+  assert.equal(readFileSync(new URL('../../tx/src/engine/squads-idl-subset.ts', import.meta.url), 'utf8'), renderTsModule(fresh, 'SQUADS_IDL_SUBSET'));
+  assert.equal(fresh.provenance.package, '@sqds/multisig@2.1.4');
+  assert.equal(fresh.provenance.programId, 'SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf');
+  const g = (await import('@sqds/multisig')).generated as unknown as Record<string, number[]>;
+  const want: Record<string, string> = { vault_transaction_create: 'vaultTransactionCreateInstructionDiscriminator', proposal_create: 'proposalCreateInstructionDiscriminator',
+    proposal_approve: 'proposalApproveInstructionDiscriminator', vault_transaction_execute: 'vaultTransactionExecuteInstructionDiscriminator' };
+  for (const ix of fresh.instructions) assert.deepEqual(ix.discriminator, g[want[ix.name]!], ix.name);
+  assert.deepEqual(fresh.accounts.VaultTransaction, g.vaultTransactionDiscriminator);
+  assert.deepEqual(fresh.accounts.Proposal, g.proposalDiscriminator);
 });

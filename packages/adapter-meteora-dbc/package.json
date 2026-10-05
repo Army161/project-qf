@@ -11,16 +11,20 @@
     },
     "./launchpad": {
       "node": "./src/launchpad.ts"
+    },
+    "./treasury": {
+      "node": "./src/treasury.ts"
     }
   },
   "dependencies": {
-    "@meteora-ag/dynamic-bonding-curve-sdk": "1.5.13",
     "@meteora-ag/cp-amm-sdk": "1.4.10",
-    "@solana/web3.js": "1.99.0",
-    "bn.js": "5.2.5",
+    "@meteora-ag/dynamic-bonding-curve-sdk": "1.5.13",
     "@project-qf/core": "workspace:*",
     "@project-qf/policy": "workspace:*",
-    "@project-qf/tx": "workspace:*"
+    "@project-qf/tx": "workspace:*",
+    "@solana/web3.js": "1.99.0",
+    "@sqds/multisig": "2.1.4",
+    "bn.js": "5.2.5"
   },
   "devDependencies": {
     "@project-qf/validator": "workspace:*",

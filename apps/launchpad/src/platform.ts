@@ -8,8 +8,9 @@ import {
 import { EVIDENCE_POLICY_V0_1 } from '@project-qf/validator';
 import { buildCurveConfig } from '@project-qf/adapter-meteora-dbc';
 import {
-  createPlatformConfig, createTestQuoteMint, publicKeyOf, type DevnetConnection, type DevnetSigner, type PlatformConfig, type TestQuoteMint,
+  createPlatformConfig, createTestQuoteMint, getLamports, publicKeyOf, sendFromTreasury, type DevnetConnection, type DevnetSigner, type PlatformConfig, type TestQuoteMint,
 } from '@project-qf/adapter-meteora-dbc/launchpad';
+import { createTreasuryMultisig, type TreasuryRecord } from '@project-qf/adapter-meteora-dbc/treasury';
 import type { LaunchpadStore } from './store.ts';
 
 export const QUOTE_SYMBOL = 'qUSD';
@@ -21,7 +22,12 @@ export interface PlatformRecord {
   operator: string;
   quote: TestQuoteMint & { symbol: string };
   threshold: MigrationThresholdRecord;
+  /** The config new launches use. With a treasury it pays platform fees to the treasury vault. */
   config: PlatformConfig;
+  /** Earlier configs: coins launched on them keep them for life (the DBC program cannot change a config's fee claimer). */
+  legacyConfigs?: PlatformConfig[];
+  /** Devnet stand-in platform treasury: a 2-of-3 Squads multisig of throwaway member keys (milestone 7). */
+  treasury?: TreasuryRecord;
   economicsVersion: string;
   templateVersion: string;
   /** What a creator consents to: canonical digest of the launch economics shown in the UI (recomputed in the browser). */
@@ -95,4 +101,50 @@ export async function ensurePlatform(conn: DevnetConnection, operator: DevnetSig
   };
   store.setPlatform('platform', rec);
   return rec;
+}
+
+/** The platform fee claimer of the config a coin launched on (its curve fees and, after graduation, its partner LP NFT). */
+export function feeClaimerFor(p: PlatformRecord, config: string): string | null {
+  return [p.config, ...(p.legacyConfigs ?? [])].find((c) => c.config === config)?.feeClaimer ?? null;
+}
+export const isTreasuryConfig = (p: PlatformRecord, config: string) => !!p.treasury && feeClaimerFor(p, config) === p.treasury.vault;
+
+export const TREASURY_THRESHOLD = 2;
+/** Devnet SOL the vault keeps for rent of the token accounts its claims create (it pays them itself inside a claim). */
+export const VAULT_SOL_LAMPORTS = 100_000_000n;
+/** Devnet SOL each member keeps for its own transaction fees and proposal rent (members pay for themselves). */
+export const MEMBER_SOL_LAMPORTS = 50_000_000n;
+
+/**
+ * Idempotent, step by step: creates the 2-of-3 treasury multisig from three member PUBLIC keys (the operator pays and is
+ * not a member), gives the vault and the members a little devnet SOL, then creates a new DBC config with the same
+ * economics whose fee claimer and leftover receiver are the vault, and makes it the config new launches use. Coins
+ * already launched keep their config. Each finished step is stored, so a re-run continues instead of repeating it.
+ */
+export async function setupTreasury(conn: DevnetConnection, operator: DevnetSigner, store: LaunchpadStore, members: string[], log: (m: string) => void = () => {}): Promise<PlatformRecord> {
+  const p = store.getPlatform<PlatformRecord>('platform');
+  if (!p) throw new Error('PLATFORM_NOT_READY run setup first');
+  if (p.treasury && p.config.feeClaimer === p.treasury.vault) return p;
+  let t = store.getPlatform<TreasuryRecord>('treasury');
+  if (!t) {
+    log(`creating the ${TREASURY_THRESHOLD}-of-${members.length} treasury multisig (devnet stand-in; operator pays, is not a member)`);
+    t = await createTreasuryMultisig(conn, operator, members, TREASURY_THRESHOLD);
+    store.setPlatform('treasury', t);
+  } else if ([...t.members].sort().join() !== [...members].sort().join()) throw new Error('TREASURY_MEMBERS_DIFFER the stored treasury has other members');
+  for (const [who, want] of [[t.vault, VAULT_SOL_LAMPORTS], ...t.members.map((m) => [m, MEMBER_SOL_LAMPORTS] as const)] as const) {
+    const have = await getLamports(conn, who);
+    if (have < want) { log(`funding ${who} with ${want - have} devnet lamports`); await sendFromTreasury(conn, operator, p.quote.mint, who, 0n, want - have); }
+  }
+  let cfg = store.getPlatform<PlatformConfig>('treasury-config');
+  if (!cfg) {
+    const params = buildCurveConfig(STANDARD_V1_FLAT_V0_TEST, ECONOMICS_V0_TEST, p.threshold);
+    log('creating the treasury DBC config (same economics; fee claimer and leftover receiver = treasury vault)');
+    cfg = await createPlatformConfig(conn, operator, p.quote.mint, params, { feeClaimer: t.vault, leftoverReceiver: t.vault });
+    store.setPlatform('treasury-config', cfg);
+  }
+  const launchEconomics = launchEconomicsFor(cfg.config, p.quote, p.threshold);
+  const next: PlatformRecord = { ...p, config: cfg, legacyConfigs: [p.config, ...(p.legacyConfigs ?? [])], treasury: t,
+    launchEconomics, launchEconomicsDigest: economicsDigest(launchEconomics) };
+  store.setPlatform('platform', next);
+  return next;
 }

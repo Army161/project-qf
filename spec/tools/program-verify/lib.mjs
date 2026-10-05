@@ -26,6 +26,8 @@ export const PROGRAMS = Object.freeze([
   { name: 'Meteora DBC', id: 'dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN', required: true, interfaceIndicator: 'create_config2' },
   { name: 'Meteora DAMM v2', id: 'cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG', required: true },
   { name: 'SF Rewards (candidate)', id: 'REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi', required: false },
+  // devnet platform treasury stand-in (milestone 7); a mainnet treasury needs its own review before it is required
+  { name: 'Squads v4 multisig (treasury, devnet stand-in)', id: 'SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf', required: false },
 ]);
 const DAMM_V2 = PROGRAMS[1].id;
 

@@ -135,25 +135,28 @@ export async function sendFromTreasury(conn: Connection, operator: Keypair, quot
 
 export interface PlatformConfig { config: string; quoteMint: string; feeClaimer: string; leftoverReceiver: string; signature: string }
 
-/** Creates the DBC config once per (quote mint, economics, template). The operator is fee claimer and leftover receiver on devnet. */
-export async function createPlatformConfig(conn: Connection, operator: Keypair, quoteMintAddress: string, params: ConfigParameters): Promise<PlatformConfig> {
+/** Creates the DBC config once per (quote mint, economics, template). The operator pays. Fee claimer and leftover
+ *  receiver default to the operator (the first devnet config); a treasury config passes the multisig's vault PDA. */
+export async function createPlatformConfig(conn: Connection, operator: Keypair, quoteMintAddress: string, params: ConfigParameters,
+  recipients?: { feeClaimer: string; leftoverReceiver: string }): Promise<PlatformConfig> {
   const quoteMint = new PublicKey(quoteMintAddress);
   const config = Keypair.generate();
+  const feeClaimer = new PublicKey(recipients?.feeClaimer ?? operator.publicKey), leftoverReceiver = new PublicKey(recipients?.leftoverReceiver ?? operator.publicKey);
   const client = new DynamicBondingCurveClient(conn, COMMITMENT);
-  const tx = await client.partner.createConfig({ ...(params as object), config: config.publicKey, feeClaimer: operator.publicKey,
-    leftoverReceiver: operator.publicKey, quoteMint, payer: operator.publicKey } as never);
+  const tx = await client.partner.createConfig({ ...(params as object), config: config.publicKey, feeClaimer,
+    leftoverReceiver, quoteMint, payer: operator.publicKey } as never);
   const signature = await operatorSend(conn, tx, [operator, config]);
-  return { config: config.publicKey.toBase58(), quoteMint: quoteMint.toBase58(), feeClaimer: operator.publicKey.toBase58(),
-    leftoverReceiver: operator.publicKey.toBase58(), signature };
+  return { config: config.publicKey.toBase58(), quoteMint: quoteMint.toBase58(), feeClaimer: feeClaimer.toBase58(),
+    leftoverReceiver: leftoverReceiver.toBase58(), signature };
 }
 
 // ------------------------------------------------------------------ user transactions (unsigned)
 
 export interface BuiltTx { bytes: Uint8Array; terms: ApprovedTerms; blockhash: string; lastValidBlockHeight: number }
 
-const common = (feePayer: string) => ({ cluster: LAUNCHPAD_CLUSTER, policyVersion: TX_BINDING_POLICY_VERSION, feePayer, compute: { ...COMPUTE_CAPS } });
+export const common = (feePayer: string) => ({ cluster: LAUNCHPAD_CLUSTER, policyVersion: TX_BINDING_POLICY_VERSION, feePayer, compute: { ...COMPUTE_CAPS } });
 
-async function finish(conn: Connection, tx: Transaction, feePayer: PublicKey): Promise<{ bytes: Uint8Array; blockhash: string; lastValidBlockHeight: number }> {
+export async function finish(conn: Connection, tx: Transaction, feePayer: PublicKey): Promise<{ bytes: Uint8Array; blockhash: string; lastValidBlockHeight: number }> {
   const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash(COMMITMENT);
   tx.feePayer = feePayer;
   tx.recentBlockhash = blockhash;
@@ -217,7 +220,7 @@ export interface LivePool {
   sqrtPrice: string; quoteReserve: string; baseReserve: string; migrationQuoteThreshold: string; totalSupplyRaw: string;
   baseDecimals: number; quoteDecimals: number; migrationProgress: number; isMigrated: boolean; curveComplete: boolean;
   /** quote raw per 1 base UI unit, 18-decimal fixed point string */
-  priceQuotePerBase: string; marketCapQuoteRaw: string; progressBps: number; creatorQuoteFee: string; creatorBaseFee: string; partnerQuoteFee: string;
+  priceQuotePerBase: string; marketCapQuoteRaw: string; progressBps: number; creatorQuoteFee: string; creatorBaseFee: string; partnerQuoteFee: string; partnerBaseFee: string;
   /** the curve's starting price (config sqrtStartPrice), same fixed point as priceQuotePerBase: a stable "since launch" reference */
   launchPriceQuotePerBase: string;
   raw: { virtualPool: unknown; config: unknown };
@@ -245,7 +248,7 @@ export function summarisePool(pool: string, vp: any, cfg: any): LivePool {
     baseReserve: big(s.baseReserve).toString(), migrationQuoteThreshold: threshold.toString(), totalSupplyRaw: totalSupplyRaw.toString(),
     baseDecimals, quoteDecimals, migrationProgress: Number(s.migrationProgress), isMigrated: Number(s.isMigrated) === 1,
     curveComplete: quoteReserve >= threshold, priceQuotePerBase: priceFp.toString(), marketCapQuoteRaw: mcapRaw.toString(), progressBps,
-    creatorQuoteFee: big(s.creatorQuoteFee).toString(), creatorBaseFee: big(s.creatorBaseFee ?? 0).toString(), partnerQuoteFee: big(s.partnerQuoteFee).toString(), launchPriceQuotePerBase: launchFp.toString(), raw: { virtualPool: vp, config: cfg },
+    creatorQuoteFee: big(s.creatorQuoteFee).toString(), creatorBaseFee: big(s.creatorBaseFee ?? 0).toString(), partnerQuoteFee: big(s.partnerQuoteFee).toString(), partnerBaseFee: big(s.partnerBaseFee ?? 0).toString(), launchPriceQuotePerBase: launchFp.toString(), raw: { virtualPool: vp, config: cfg },
   };
 }
 
@@ -375,13 +378,18 @@ export async function dammPositionsOf(conn: Connection, p: LiveDammPool, owner: 
 
 /** Unsigned claim of a DAMM v2 position's fees into the owner's own token accounts (the program checks the owner holds the NFT). */
 export async function buildDammClaim(conn: Connection, p: LiveDammPool, owner: string, nftMint: string): Promise<BuiltTx> {
+  const { tx, terms } = await dammClaimTransaction(conn, p, owner, nftMint);
+  return { ...(await finish(conn, tx, new PublicKey(owner))), terms };
+}
+/** The DAMM v2 claim instructions and their terms, with `owner` as fee payer (a wallet, or a treasury vault inside a proposal). */
+export async function dammClaimTransaction(conn: Connection, p: LiveDammPool, owner: string, nftMint: string): Promise<{ tx: Transaction; terms: ApprovedTerms }> {
   const o = new PublicKey(owner), nft = new PublicKey(nftMint);
   const tx = await new CpAmm(conn).claimPositionFee({ owner: o, feePayer: o, pool: new PublicKey(p.pool), position: derivePositionAddress(nft),
     positionNftAccount: derivePositionNftAccount(nft), tokenAVault: new PublicKey(p.baseVault), tokenBVault: new PublicKey(p.quoteVault),
     tokenAMint: new PublicKey(p.baseMint), tokenBMint: new PublicKey(p.quoteMint), tokenAProgram: TOKEN, tokenBProgram: TOKEN } as never);
   const terms: ApprovedTerms = { ...common(owner), kind: 'DAMM_CLAIM_POSITION_FEE', dammConfig: DAMM_V2_CUSTOMIZABLE_CONFIG.toBase58(), pool: p.pool, owner,
     positionNftMint: nftMint, baseMint: p.baseMint, quoteMint: p.quoteMint, baseTokenProgram: PROGRAM_IDS.TOKEN, quoteTokenProgram: PROGRAM_IDS.TOKEN };
-  return { ...(await finish(conn, tx, o)), terms };
+  return { tx, terms };
 }
 
 export const dammV2PoolFor = async (baseMint: string, quoteMint: string) => {
@@ -433,7 +441,7 @@ export async function confirmSignature(conn: Connection, signature: string, last
 }
 
 /** Operator-signed transaction (faucet, platform setup, migration crank) with a fresh blockhash and the same confirmation. */
-async function operatorSend(conn: Connection, tx: Transaction, signers: Keypair[]): Promise<string> {
+export async function operatorSend(conn: Connection, tx: Transaction, signers: Keypair[]): Promise<string> {
   const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash(COMMITMENT);
   tx.feePayer = signers[0]!.publicKey;
   tx.recentBlockhash = blockhash;

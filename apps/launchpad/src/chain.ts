@@ -7,7 +7,15 @@ import {
   type BuiltTx, type CreatePoolRequest, type DammPosition, type DevnetConnection, type DevnetSigner, type Direction, type LiveDammPool, type LivePool, type SwapQuote, type SwapRequest,
   type TxSummary,
 } from '@project-qf/adapter-meteora-dbc/launchpad';
+import {
+  buildTreasuryApprove, buildTreasuryExecute, buildTreasuryPropose, partnerCurveClaim, readProposal, readTreasury, readVaultTransactionAccount, vaultDammClaim,
+  type ProposalState, type TreasuryState,
+} from '@project-qf/adapter-meteora-dbc/treasury';
+import type { TreasuryInnerTerms } from '@project-qf/tx';
 
+export type { ProposalState, TreasuryState };
+/** What a treasury proposal asks the vault to claim: the partner share of a curve's fees, or a vault-held DAMM v2 position's fees. */
+export type TreasuryClaimRequest = { venue: 'CURVE'; pool: LivePool } | { venue: 'DAMM_V2'; pool: LiveDammPool; nftMint: string; amounts: { baseRaw: string; quoteRaw: string } };
 export type { BuiltTx, CreatePoolRequest, DammPosition, Direction, LiveDammPool, LivePool, SwapQuote, SwapRequest, TxSummary };
 
 export interface LaunchpadChain {
@@ -30,6 +38,14 @@ export interface LaunchpadChain {
   newSignatures(address: string, until: string | null): Promise<{ signature: string; slot: number; err: boolean }[]>;
   balances(owner: string, mints: string[]): Promise<{ lamports: string; tokens: Record<string, string> }>;
   lamports(owner: string): Promise<bigint>;
+  /** Platform treasury (Squads multisig): reads, and UNSIGNED transactions for a member to check and sign. The server holds
+   *  no member key, so none of these can approve or execute anything by themselves. */
+  readTreasury(multisig: string): Promise<TreasuryState>;
+  buildTreasuryPropose(multisig: string, vault: string, member: string, claim: TreasuryClaimRequest): Promise<BuiltTx & { transactionIndex: string; amounts: { baseRaw: string; quoteRaw: string } }>;
+  buildTreasuryApprove(multisig: string, member: string, transactionIndex: string): Promise<BuiltTx>;
+  buildTreasuryExecute(r: { multisig: string; vault: string; member: string; transactionIndex: string; inner: TreasuryInnerTerms; stored: Uint8Array }): Promise<BuiltTx>;
+  vaultTransaction(multisig: string, transactionIndex: string): Promise<Uint8Array | null>;
+  proposal(multisig: string, transactionIndex: string): Promise<ProposalState>;
   /** operator-only */
   faucet(quoteMint: string, to: string, quoteRaw: bigint, lamports: bigint): Promise<string>;
   migrate(pool: string): Promise<string>;
@@ -56,6 +72,15 @@ export function realChain(conn: DevnetConnection, operator: DevnetSigner | null,
     newSignatures: (a, u) => getNewSignatures(conn, a, u, { ...(log ? { onTruncated: log } : {}) }),
     balances: (o, m) => getWalletBalances(conn, o, m),
     lamports: (o) => getLamports(conn, o),
+    readTreasury: (m) => readTreasury(conn, m),
+    buildTreasuryPropose: async (multisig, vault, member, c) => {
+      const claim = c.venue === 'CURVE' ? await partnerCurveClaim(conn, c.pool, vault) : await vaultDammClaim(conn, c.pool, vault, c.nftMint, c.amounts);
+      return { ...(await buildTreasuryPropose(conn, { multisig, member, claim })), amounts: claim.amounts };
+    },
+    buildTreasuryApprove: (multisig, member, transactionIndex) => buildTreasuryApprove(conn, { multisig, member, transactionIndex }),
+    buildTreasuryExecute: (r) => buildTreasuryExecute(conn, r),
+    vaultTransaction: (m, i) => readVaultTransactionAccount(conn, m, i),
+    proposal: (m, i) => readProposal(conn, m, i),
     faucet: (q, to, raw, lamports) => sendFromTreasury(conn, needOperator(), q, to, raw, lamports),
     migrate: (pool) => runMigration(conn, needOperator(), pool),
     dammPoolFor: (b, q) => dammV2PoolFor(b, q),

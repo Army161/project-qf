@@ -44,6 +44,12 @@ export const STORE_MIGRATIONS: readonly string[] = [
    ALTER TABLE claims ADD COLUMN legacy_quote_raw TEXT;
    ALTER TABLE claims ADD COLUMN legacy_base_raw TEXT;
    UPDATE claims SET legacy_quote_raw = quote_raw, legacy_base_raw = base_raw, quote_raw = NULL, base_raw = NULL, status = 'UNKNOWN', evidence = 'RECHECK_LEGACY';`,
+  // (5) platform treasury (Squads multisig) fee-claim proposals: what was proposed (the vault's claim terms), who has
+  // approved it so far, and the transaction that executed it. The chain is the authority; this is the app's record.
+  `CREATE TABLE treasury_proposals (multisig TEXT NOT NULL, tx_index TEXT NOT NULL, mint TEXT NOT NULL REFERENCES launches(mint), venue TEXT NOT NULL,
+     inner_json TEXT NOT NULL, proposer TEXT NOT NULL, propose_sig TEXT NOT NULL, approvals_json TEXT NOT NULL, status TEXT NOT NULL,
+     execute_sig TEXT, executed_by TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, PRIMARY KEY (multisig, tx_index));
+   CREATE INDEX treasury_proposals_status ON treasury_proposals(status, created_at);`,
 ];
 
 export type LaunchStatus = 'PENDING' | 'LIVE' | 'MIGRATED' | 'FAILED';
@@ -64,10 +70,18 @@ export type NewClaim = Pick<ClaimRow, 'sig' | 'mint' | 'venue' | 'claimer' | 'at
 export type BackfillStatus = 'PENDING' | 'UNAVAILABLE' | 'RESOLVED';
 export interface BackfillRow { sig: string; venue: 'CURVE' | 'DAMM_V2'; mint: string; status: BackfillStatus; attempts: number; firstSeen: string; lastTried: string;
   nextTry: string; outcome: 'TRADE' | 'NOT_A_TRADE' | 'FAILED_TX' | null; resolvedAt: string | null }
+/** ACTIVE: proposed, waiting for approvals. APPROVED: threshold reached. EXECUTED: the vault's claim ran. Mirrors the
+ *  on-chain proposal status the app last observed; anything else seen on chain (rejected, cancelled) is recorded as is. */
+export interface TreasuryProposalRow { multisig: string; txIndex: string; mint: string; venue: 'CURVE' | 'DAMM_V2'; innerJson: string; proposer: string;
+  proposeSig: string; approvals: string[]; status: string; executeSig: string | null; executedBy: string | null; createdAt: string; updatedAt: string }
 export interface TradeRow { sig: string; mint: string; trader: string; side: 'BUY' | 'SELL'; quoteRaw: string; baseRaw: string; slot: number; blockTime: number | null; source: string }
 export interface IntentRow { id: string; kind: string; mint: string | null; user: string; createdAt: string; expiresAt: string; messageHex: string;
   termsJson: string; lastValidBlockHeight: number; status: 'BUILT' | 'SUBMITTED' | 'CONFIRMED' | 'FAILED'; signature: string | null; error: string | null }
 
+const treasuryRow = (r: Record<string, unknown>): TreasuryProposalRow => {
+  const { approvalsJson, ...rest } = camel(r) as Record<string, unknown>;
+  return { ...rest, approvals: JSON.parse(String(approvalsJson)) as string[] } as unknown as TreasuryProposalRow;
+};
 const camel = (r: Record<string, unknown>) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase()), v]));
 
 export class LaunchpadStore {
@@ -219,6 +233,22 @@ export class LaunchpadStore {
 
   faucetClaimsSince(wallet: string, sinceIso: string): number {
     return (this.db.prepare('SELECT COUNT(*) AS n FROM faucet_claims WHERE wallet = ? AND at >= ?').get(wallet, sinceIso) as { n: number }).n;
+  }
+  insertTreasuryProposal(r: Omit<TreasuryProposalRow, 'executeSig' | 'executedBy' | 'updatedAt'>) {
+    this.db.prepare(`INSERT OR IGNORE INTO treasury_proposals (multisig, tx_index, mint, venue, inner_json, proposer, propose_sig, approvals_json, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(r.multisig, r.txIndex, r.mint, r.venue, r.innerJson, r.proposer, r.proposeSig, JSON.stringify(r.approvals), r.status, r.createdAt, r.createdAt);
+  }
+  getTreasuryProposal(multisig: string, txIndex: string): TreasuryProposalRow | null {
+    const r = this.db.prepare('SELECT * FROM treasury_proposals WHERE multisig = ? AND tx_index = ?').get(multisig, txIndex) as Record<string, unknown> | undefined;
+    return r ? treasuryRow(r) : null;
+  }
+  listTreasuryProposals(multisig: string): TreasuryProposalRow[] {
+    return this.db.prepare('SELECT * FROM treasury_proposals WHERE multisig = ? ORDER BY CAST(tx_index AS INTEGER) DESC').all(multisig).map((r) => treasuryRow(r as Record<string, unknown>));
+  }
+  /** Records what the chain says now (status and approvals), and the executing transaction once there is one. */
+  updateTreasuryProposal(multisig: string, txIndex: string, u: { status: string; approvals: string[]; executeSig?: string; executedBy?: string }) {
+    this.db.prepare(`UPDATE treasury_proposals SET status = ?, approvals_json = ?, execute_sig = COALESCE(?, execute_sig), executed_by = COALESCE(?, executed_by), updated_at = ?
+      WHERE multisig = ? AND tx_index = ?`).run(u.status, JSON.stringify(u.approvals), u.executeSig ?? null, u.executedBy ?? null, new Date().toISOString(), multisig, txIndex);
   }
   insertFaucetClaim(wallet: string, at: string, signature: string) {
     this.db.prepare('INSERT INTO faucet_claims (wallet, at, signature) VALUES (?, ?, ?)').run(wallet, at, signature);

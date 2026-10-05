@@ -26,7 +26,17 @@ export type ApprovedTerms =
   // Claiming the trading fees a graduated launch's DAMM v2 position has earned, into the position owner's own token accounts.
   | (Common & Mints & { kind: 'DAMM_CLAIM_POSITION_FEE'; dammConfig: string; pool: string; owner: string; positionNftMint: string })
   | (Common & Mints & { kind: 'CLAIM_PARTNER_TRADING_FEE'; config: string; pool: string; feeClaimer: string; receiver: string; maxBaseAmount: string; maxQuoteAmount: string })
-  | (Common & Mints & { kind: 'CLAIM_CREATOR_TRADING_FEE'; config: string; pool: string; creator: string; receiver: string; maxBaseAmount: string; maxQuoteAmount: string });
+  | (Common & Mints & { kind: 'CLAIM_CREATOR_TRADING_FEE'; config: string; pool: string; creator: string; receiver: string; maxBaseAmount: string; maxQuoteAmount: string })
+  // Platform treasury (Squads v4, devnet stand-in): a fee claim run by the multisig's vault. `inner` is the claim the vault
+  // signs; members propose it (vault_transaction_create + proposal_create, optionally the creator's own approval), approve
+  // it, and execute it. Members sign for themselves only; nothing here is signed by the server.
+  | (Common & TreasuryRef & { kind: 'TREASURY_PROPOSE'; vault: string; vaultIndex: number; creator: string; rentPayer: string; approve: boolean; inner: TreasuryInnerTerms })
+  | (Common & TreasuryRef & { kind: 'TREASURY_APPROVE'; member: string })
+  | (Common & TreasuryRef & { kind: 'TREASURY_EXECUTE'; vault: string; vaultIndex: number; member: string; inner: TreasuryInnerTerms });
+interface TreasuryRef { multisig: string; transactionIndex: string }
+/** What a treasury vault may be asked to sign in V0: claiming platform fees into its own accounts, nothing else. */
+export type TreasuryInnerTerms = Extract<ApprovedTerms, { kind: 'CLAIM_PARTNER_TRADING_FEE' | 'DAMM_CLAIM_POSITION_FEE' }>;
+export const TREASURY_INNER_KINDS: readonly string[] = ['CLAIM_PARTNER_TRADING_FEE', 'DAMM_CLAIM_POSITION_FEE'];
 
 /** What was consented to. The blockhash is deliberately absent: a refreshed blockhash is not a change of terms. */
 export interface ConsentRecord {
@@ -50,6 +60,9 @@ const KIND_FIELDS: Record<ApprovedTerms['kind'], { addrs: string[]; u64: string[
   DAMM_SWAP: { addrs: ['dammConfig', 'pool', 'user', 'baseMint', 'quoteMint', 'baseTokenProgram', 'quoteTokenProgram'], u64: ['amountIn', 'minimumAmountOut'], positive: ['amountIn'] },
   CLAIM_PARTNER_TRADING_FEE: { addrs: ['config', 'pool', 'feeClaimer', 'receiver', 'baseMint', 'quoteMint', 'baseTokenProgram', 'quoteTokenProgram'], u64: ['maxBaseAmount', 'maxQuoteAmount'], positive: [] },
   CLAIM_CREATOR_TRADING_FEE: { addrs: ['config', 'pool', 'creator', 'receiver', 'baseMint', 'quoteMint', 'baseTokenProgram', 'quoteTokenProgram'], u64: ['maxBaseAmount', 'maxQuoteAmount'], positive: [] },
+  TREASURY_PROPOSE: { addrs: ['multisig', 'vault', 'creator', 'rentPayer'], u64: ['transactionIndex'], positive: ['transactionIndex'] },
+  TREASURY_APPROVE: { addrs: ['multisig', 'member'], u64: ['transactionIndex'], positive: ['transactionIndex'] },
+  TREASURY_EXECUTE: { addrs: ['multisig', 'vault', 'member'], u64: ['transactionIndex'], positive: ['transactionIndex'] },
 };
 
 /** Runtime validation of terms. Returns violations; empty means structurally valid V0 terms. */
@@ -80,6 +93,23 @@ export function validateTerms(t: unknown): string[] {
   if (o.kind === 'CREATE_CONFIG' && (typeof o.configParametersDigest !== 'string' || !HEX32.test(o.configParametersDigest))) v.push('TERMS_BAD_DIGEST configParametersDigest');
   if (o.kind === 'CREATE_POOL') for (const k of ['name', 'symbol', 'uri']) if (typeof o[k] !== 'string' || (o[k] as string).length === 0 || (o[k] as string).length > 200) v.push(`TERMS_BAD_STRING ${k}`);
   if ((o.kind === 'MIGRATE_DAMM_V2' || o.kind === 'DAMM_SWAP' || o.kind === 'DAMM_CLAIM_POSITION_FEE') && o.dammConfig !== DAMM_V2_CUSTOMIZABLE_CONFIG) v.push('TERMS_DAMM_CONFIG_NOT_V0_TEMPLATE');
+  if (o.kind === 'TREASURY_PROPOSE' || o.kind === 'TREASURY_EXECUTE') v.push(...treasuryInnerViolations(o));
+  if (o.kind === 'TREASURY_PROPOSE' && typeof o.approve !== 'boolean') v.push('TERMS_BAD_FLAG approve');
+  return v;
+}
+
+/** The vault pays for, signs and receives everything inside a treasury claim; no member or outside account does. */
+function treasuryInnerViolations(o: Record<string, unknown>): string[] {
+  const v: string[] = [];
+  if (o.vaultIndex !== 0) v.push('TERMS_TREASURY_VAULT_INDEX must be 0 in V0');
+  const signer = o.kind === 'TREASURY_PROPOSE' ? o.creator : o.member;
+  if (signer === o.vault) v.push('TERMS_TREASURY_MEMBER_IS_VAULT');
+  const inner = o.inner as Record<string, unknown> | undefined;
+  if (!inner || typeof inner !== 'object' || !TREASURY_INNER_KINDS.includes(inner.kind as string)) return [...v, `TERMS_TREASURY_INNER_KIND ${String(inner?.kind)}`];
+  v.push(...validateTerms(inner).map((x) => `INNER_${x}`));
+  if (inner.cluster !== o.cluster) v.push('TERMS_TREASURY_INNER_CLUSTER');
+  const vaultFields = inner.kind === 'CLAIM_PARTNER_TRADING_FEE' ? ['feePayer', 'feeClaimer', 'receiver'] : ['feePayer', 'owner'];
+  for (const k of vaultFields) if (inner[k] !== o.vault) v.push(`TERMS_TREASURY_INNER_NOT_VAULT ${k}`);
   return v;
 }
 const CLAIMS_CLUSTER = (c: unknown) => typeof c === 'string' && CLUSTERS.has(c);

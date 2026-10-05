@@ -11,12 +11,12 @@ import { extname, join, sep } from 'node:path';
 import { economicsDigest } from '@project-qf/policy';
 import { READINESS } from '@project-qf/core';
 import {
-  bindTransactionToTerms, decodeTransactionBytes, fromBase64, parseWire, sameMessage, toBase64, toHex, validateIntent, verifyWireSignatures,
-  type ApprovedTerms, type TxIntent,
+  bindStoredVaultTransaction, bindTransactionToTerms, decodeTransactionBytes, fromBase64, parseWire, sameMessage, toBase64, toHex, validateIntent, verifyWireSignatures,
+  type ApprovedTerms, type BindingContext, type TreasuryInnerTerms, type TxIntent,
 } from '@project-qf/tx';
 import type { LaunchpadChain, LiveDammPool, LivePool } from './chain.ts';
 import { PoolCache, syncLaunch, tradeFromSummary, DammCache } from './indexer.ts';
-import type { PlatformRecord } from './platform.ts';
+import { feeClaimerFor, isTreasuryConfig, type PlatformRecord } from './platform.ts';
 import { claimIdentity, claimReceipt, resolveClaims } from './receipts.ts';
 import type { ClaimRow, LaunchRow, LaunchpadStore } from './store.ts';
 
@@ -160,7 +160,10 @@ export const EARNINGS_TTL_MS = 30_000;
 export const RECEIPT_CHECKS_PER_REQUEST = 5;
 type Unclaimed = { creatorQuoteRaw: string | null; platformQuoteRaw: string | null };
 interface EarningsCoin { mint: string; symbol: string; name: string; status: LaunchRow['status']; creator: string;
-  curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null }
+  curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null; platformWallet: string; treasury: boolean }
+const TX_INDEX = /^[1-9]\d{0,18}$/;
+const TREASURY_REFRESH_PER_REQUEST = 5;
+const FINAL_PROPOSAL = new Set(['Executed', 'Rejected', 'Cancelled']);
 
 export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: PoolCache; dammCache: DammCache } {
   const now = o.now ?? (() => new Date());
@@ -193,14 +196,46 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       { now: t.toISOString(), ...(approvedEconomicsDigest ? { approvedEconomicsDigest } : {}) });
     if (!r.ok) throw new HttpError(409, 'INTENT_REFUSED', 'the transaction intent is refused by policy', r.violations);
   };
-  const storeBuilt = async (kind: string, mint: string | null, user: string, built: { bytes: Uint8Array; terms: ApprovedTerms; blockhash: string; lastValidBlockHeight: number }) => {
+  const storeBuilt = async (kind: string, mint: string | null, user: string, built: { bytes: Uint8Array; terms: ApprovedTerms; blockhash: string; lastValidBlockHeight: number },
+    ctx: BindingContext = {}) => {
     // Defence in depth: what we built must bind to the terms we are about to hand out.
-    const v = await bindTransactionToTerms(decodeTransactionBytes(built.bytes), built.terms);
+    const v = await bindTransactionToTerms(decodeTransactionBytes(built.bytes), built.terms, ctx);
     if (v.length) { o.log?.(`binding failed for ${kind}: ${v.join('; ')}`); throw new HttpError(500, 'BINDING_FAILED', 'the built transaction does not bind to its terms', v); }
     const t = now();
     return o.store.insertIntent({ kind, mint, user, createdAt: t.toISOString(), expiresAt: new Date(t.getTime() + INTENT_TTL_MS).toISOString(),
       messageHex: toHex(parseWire(built.bytes).message), termsJson: JSON.stringify({ terms: built.terms, blockhash: built.blockhash }), lastValidBlockHeight: built.lastValidBlockHeight });
   };
+
+  // ---------------------------------------------------------------- platform treasury helpers
+  const treasuryView = (p: PlatformRecord) => ({ multisig: p.treasury!.multisig, vault: p.treasury!.vault, threshold: p.treasury!.threshold, members: p.treasury!.members,
+    label: p.treasury!.label, note: 'Devnet stand-in: three throwaway member keys. Real signers, threshold and time lock are decided before mainnet.' });
+  const innerVenue = (inner: TreasuryInnerTerms): 'CURVE' | 'DAMM_V2' => (inner.kind === 'CLAIM_PARTNER_TRADING_FEE' ? 'CURVE' : 'DAMM_V2');
+  /** After a member's treasury transaction confirms: the app's record of the proposal, and for an execution the claim receipt. */
+  async function recordTreasury(terms: Extract<ApprovedTerms, { kind: `TREASURY_${string}` }>, user: string, mint: string | null, signature: string) {
+    const p = platform();
+    const chainState = await o.chain.proposal(terms.multisig, terms.transactionIndex).catch(() => null);
+    if (terms.kind === 'TREASURY_PROPOSE') {
+      o.store.insertTreasuryProposal({ multisig: terms.multisig, txIndex: terms.transactionIndex, mint: mint!, venue: innerVenue(terms.inner), innerJson: JSON.stringify(terms.inner),
+        proposer: user, proposeSig: signature, approvals: chainState?.approved ?? (terms.approve ? [user] : []), status: chainState?.status ?? 'Active', createdAt: now().toISOString() });
+      return;
+    }
+    const row = o.store.getTreasuryProposal(terms.multisig, terms.transactionIndex);
+    if (!row) return;
+    if (terms.kind === 'TREASURY_APPROVE') {
+      const approvals = chainState?.approved ?? [...new Set([...row.approvals, user])];
+      o.store.updateTreasuryProposal(terms.multisig, terms.transactionIndex, { status: chainState?.status ?? (approvals.length >= (p.treasury?.threshold ?? 2) ? 'Approved' : 'Active'), approvals });
+      return;
+    }
+    o.store.updateTreasuryProposal(terms.multisig, terms.transactionIndex, { status: chainState?.status ?? 'Executed', approvals: chainState?.approved ?? row.approvals, executeSig: signature, executedBy: user });
+    const l = o.store.getLaunch(row.mint);
+    if (!l) return;
+    if (terms.inner.kind === 'CLAIM_PARTNER_TRADING_FEE') pools.invalidate(l.pool); else if (l.dammPool) damms.invalidate(l.dammPool);
+    // the receipt is the vault's: what left this claim's own pool vaults in the executing transaction, nothing else
+    const id = await claimIdentity(terms.inner, l);
+    o.store.insertClaim({ sig: signature, mint: l.mint, venue: innerVenue(terms.inner), claimer: terms.inner.feePayer, at: now().toISOString(), ...(id ?? {}) });
+    if (id) o.store.setClaimEvidence(signature, claimReceipt(id, await o.chain.txSummary(signature).catch(() => null)));
+    earnings = null;
+  }
 
   async function api(req: IncomingMessage, res: ServerResponse, path: string, query: URLSearchParams) {
     const method = req.method ?? 'GET';
@@ -211,7 +246,9 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       const p = o.platform();
       return send(res, 200, { apiVersion: LP_API_VERSION, cluster: 'devnet', ready: !!p, readiness: { DEVNET_INTEGRATION: READINESS.DEVNET_INTEGRATION.status, MAINNET: READINESS.MAINNET.status },
         operator: o.chain.operatorAddress, platform: p && { quote: p.quote, config: p.config.config, threshold: p.threshold, launchEconomics: p.launchEconomics,
-          launchEconomicsDigest: p.launchEconomicsDigest, economicsVersion: p.economicsVersion, templateVersion: p.templateVersion },
+          launchEconomicsDigest: p.launchEconomicsDigest, economicsVersion: p.economicsVersion, templateVersion: p.templateVersion,
+          configs: [p.config, ...(p.legacyConfigs ?? [])].map((c) => ({ config: c.config, feeClaimer: c.feeClaimer, current: c.config === p.config.config, treasury: isTreasuryConfig(p, c.config) })),
+          treasury: p.treasury ? treasuryView(p) : null },
         faucet: { quoteUi: FAUCET.quoteUi.toString(), lamports: FAUCET.lamports.toString(), claimsPerDay: FAUCET.claimsPerDay } });
     }
 
@@ -346,7 +383,13 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       const sigs = await verifyWireSignatures(bytes);
       if (!sigs.ok) throw new HttpError(400, 'SIGNATURE_INVALID', 'a required signature is missing or invalid', sigs.bad);
       const { terms, blockhash } = JSON.parse(intent.termsJson) as { terms: ApprovedTerms; blockhash: string };
-      const bound = await bindTransactionToTerms(decodeTransactionBytes(bytes), terms);
+      // execute runs what the multisig stored: re-read it now and bind it again, never trust the copy from build time
+      const ctx: BindingContext = {};
+      if (terms.kind === 'TREASURY_EXECUTE') {
+        const stored = await o.chain.vaultTransaction(terms.multisig, terms.transactionIndex).catch(() => null);
+        if (stored) ctx.vaultTransactionAccount = stored;
+      }
+      const bound = await bindTransactionToTerms(decodeTransactionBytes(bytes), terms, ctx);
       if (bound.length) throw new HttpError(409, 'BINDING_FAILED', 'the transaction does not bind to its terms', bound);
       if (!o.store.claimIntent(intent.id)) throw new HttpError(409, 'ALREADY_SUBMITTED', 'this transaction was already submitted');
       let signature: string;
@@ -385,6 +428,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
         else o.log?.(`claim ${signature}: its terms do not match ${l.symbol}'s ${curve ? 'curve' : 'DAMM v2'} pool; receipt left unknown`);
         earnings = null;
       }
+      if (terms.kind === 'TREASURY_PROPOSE' || terms.kind === 'TREASURY_APPROVE' || terms.kind === 'TREASURY_EXECUTE') await recordTreasury(terms, intent.user, intent.mint, signature);
       return send(res, 200, { signature, kind: intent.kind, mint: intent.mint, trade });
     }
 
@@ -443,6 +487,98 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       throw new HttpError(400, 'INVALID_REQUEST', "venue must be 'curve' or 'damm'");
     }
 
+    // ---------------------------------------------------------------- platform treasury (Squads multisig, devnet stand-in)
+    // Platform fees of coins launched on the treasury config belong to the multisig's vault. Moving them takes a proposal
+    // and approvals from two members. The server only builds unsigned transactions for a member to check and sign; it
+    // holds no member key, so it cannot approve, execute or spend.
+    if (path.startsWith('/api/lp/treasury')) {
+      const p = platform();
+      if (!p.treasury) throw new HttpError(409, 'NO_TREASURY', 'the platform treasury has not been set up');
+      const t = p.treasury;
+      const memberOf = (b: Record<string, unknown>) => { const m = addr(b, 'member'); if (!t.members.includes(m)) throw new HttpError(403, 'NOT_A_MEMBER', 'that wallet is not a member of the platform treasury'); return m; };
+      const indexOf = (b: Record<string, unknown>) => { const i = b.transactionIndex; if (typeof i !== 'string' || !TX_INDEX.test(i)) throw new HttpError(400, 'INVALID_REQUEST', 'transactionIndex must be a positive integer string'); return i; };
+      const memberIntent = (kind: 'TREASURY_PROPOSE' | 'TREASURY_APPROVE' | 'TREASURY_EXECUTE', m: string) =>
+        intentCheck({ kind, signer: { role: 'TREASURY_MEMBER', address: m, serverHeld: false }, feePayer: m });
+
+      if (path === '/api/lp/treasury' && method === 'GET') {
+        limit(`treasury:${ip}`, 30);
+        const rows = o.store.listTreasuryProposals(t.multisig);
+        for (const r of rows.filter((x) => !FINAL_PROPOSAL.has(x.status)).slice(0, TREASURY_REFRESH_PER_REQUEST)) {
+          const st = await o.chain.proposal(t.multisig, r.txIndex).catch(() => null);
+          if (st) o.store.updateTreasuryProposal(t.multisig, r.txIndex, { status: st.status, approvals: st.approved });
+        }
+        const claimable = [];
+        for (const l of o.store.listLaunches(['LIVE', 'MIGRATED']).filter((x) => isTreasuryConfig(p, x.config))) {
+          const pool = await pools.get(l.pool).catch(() => null);
+          const dp = l.status === 'MIGRATED' ? await damms.get(l).catch(() => null) : null;
+          const positions = dp ? await o.chain.dammPositions(dp, t.vault).catch(() => null) : null;
+          claimable.push({ mint: l.mint, symbol: l.symbol, status: l.status,
+            curve: pool ? { quoteRaw: pool.partnerQuoteFee, baseRaw: pool.partnerBaseFee } : null,
+            positions: l.status !== 'MIGRATED' ? [] : positions ?? 'UNAVAILABLE' });
+        }
+        return send(res, 200, { treasury: treasuryView(p), proposals: o.store.listTreasuryProposals(t.multisig).map(({ innerJson, ...r }) => ({ ...r, inner: JSON.parse(innerJson) })), claimable });
+      }
+      if (method !== 'POST') throw new HttpError(404, 'NOT_FOUND', 'no such route');
+      limit(`build:${ip}`, BUILDS_PER_MINUTE);
+      const b = await readJson(req, BODY_LIMIT_BYTES);
+
+      if (path === '/api/lp/treasury/propose') {
+        onlyKeys(b, ['mint', 'venue', 'member', 'nftMint']);
+        const m = memberOf(b);
+        const l = o.store.getLaunch(addr(b, 'mint'));
+        if (!l || (l.status !== 'LIVE' && l.status !== 'MIGRATED')) throw new HttpError(404, 'NOT_FOUND', 'token not found');
+        if (!isTreasuryConfig(p, l.config)) throw new HttpError(409, 'NOT_TREASURY_COIN', "this coin launched on an earlier config whose platform fees go to the operator wallet, not the treasury");
+        let req2: Parameters<typeof o.chain.buildTreasuryPropose>[3];
+        if (b.venue === 'curve') {
+          const pool = await pools.get(l.pool, true);
+          if (!pool) throw new HttpError(502, 'POOL_UNAVAILABLE', 'could not read the pool');
+          if (BigInt(pool.partnerQuoteFee) === 0n && BigInt(pool.partnerBaseFee) === 0n) throw new HttpError(409, 'NOTHING_TO_CLAIM', 'there are no platform fees to claim yet');
+          req2 = { venue: 'CURVE', pool };
+        } else if (b.venue === 'damm') {
+          if (l.status !== 'MIGRATED' || !l.dammPool) throw new HttpError(409, 'NOT_GRADUATED', 'this coin has not graduated to DAMM v2 yet');
+          const nftMint = addr(b, 'nftMint');
+          const dp = await damms.get(l, true);
+          if (!dp) throw new HttpError(502, 'POOL_UNAVAILABLE', 'could not read the DAMM v2 pool');
+          const pos = (await o.chain.dammPositions(dp, t.vault)).find((x) => x.nftMint === nftMint);
+          if (!pos) throw new HttpError(403, 'NOT_POSITION_OWNER', 'the treasury vault does not hold that position in this pool');
+          if (BigInt(pos.feeBaseRaw) === 0n && BigInt(pos.feeQuoteRaw) === 0n) throw new HttpError(409, 'NOTHING_TO_CLAIM', 'there are no fees to claim yet');
+          req2 = { venue: 'DAMM_V2', pool: dp, nftMint, amounts: { baseRaw: pos.feeBaseRaw, quoteRaw: pos.feeQuoteRaw } };
+        } else throw new HttpError(400, 'INVALID_REQUEST', "venue must be 'curve' or 'damm'");
+        memberIntent('TREASURY_PROPOSE', m);
+        const built = await o.chain.buildTreasuryPropose(t.multisig, t.vault, m, req2);
+        const intent = await storeBuilt('TREASURY_PROPOSE', l.mint, m, built);
+        return send(res, 201, { intentId: intent.id, expiresAt: intent.expiresAt, transaction: toBase64(built.bytes), terms: built.terms, transactionIndex: built.transactionIndex, amounts: built.amounts });
+      }
+      if (path === '/api/lp/treasury/approve' || path === '/api/lp/treasury/execute') {
+        onlyKeys(b, ['transactionIndex', 'member']);
+        const m = memberOf(b), index = indexOf(b);
+        const row = o.store.getTreasuryProposal(t.multisig, index);
+        if (!row) throw new HttpError(404, 'NOT_FOUND', 'no such treasury proposal');
+        const inner = JSON.parse(row.innerJson) as TreasuryInnerTerms;
+        const st = await o.chain.proposal(t.multisig, index);
+        if (!st) throw new HttpError(502, 'PROPOSAL_UNAVAILABLE', 'could not read the proposal');
+        o.store.updateTreasuryProposal(t.multisig, index, { status: st.status, approvals: st.approved });
+        if (path === '/api/lp/treasury/approve') {
+          if (st.status !== 'Active') throw new HttpError(409, 'NOT_ACTIVE', `the proposal is ${st.status}, not open for approval`);
+          if (st.approved.includes(m)) throw new HttpError(409, 'ALREADY_APPROVED', 'this member already approved');
+          memberIntent('TREASURY_APPROVE', m);
+          const built = await o.chain.buildTreasuryApprove(t.multisig, m, index);
+          const intent = await storeBuilt('TREASURY_APPROVE', row.mint, m, built);
+          return send(res, 201, { intentId: intent.id, expiresAt: intent.expiresAt, transaction: toBase64(built.bytes), terms: built.terms, inner, proposal: st });
+        }
+        if (st.status !== 'Approved') throw new HttpError(409, 'NOT_APPROVED', `the proposal is ${st.status}; it needs ${t.threshold} approvals before it can run`);
+        const stored = await o.chain.vaultTransaction(t.multisig, index);
+        if (!stored) throw new HttpError(502, 'PROPOSAL_UNAVAILABLE', 'could not read the stored vault transaction');
+        const chk = await bindStoredVaultTransaction(stored, { multisig: t.multisig, transactionIndex: index, vaultIndex: 0, inner });
+        if (chk.violations.length) throw new HttpError(409, 'STORED_TRANSACTION_MISMATCH', 'what the multisig stored is not the claim this app proposed', chk.violations);
+        memberIntent('TREASURY_EXECUTE', m);
+        const built = await o.chain.buildTreasuryExecute({ multisig: t.multisig, vault: t.vault, member: m, transactionIndex: index, inner, stored });
+        const intent = await storeBuilt('TREASURY_EXECUTE', row.mint, m, built, { vaultTransactionAccount: stored });
+        return send(res, 201, { intentId: intent.id, expiresAt: intent.expiresAt, transaction: toBase64(built.bytes), terms: built.terms, inner, proposal: st });
+      }
+      throw new HttpError(404, 'NOT_FOUND', 'no such route');
+    }
+
     // ---------------------------------------------------------------- earnings (read-only)
     // Per coin: unclaimed curve fees (creator and platform counters in the DBC pool), unclaimed LP fees of the positions the
     // creator and the platform fee claimer hold in the DAMM v2 pool, and the claims made through this app with what they
@@ -452,6 +588,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       limit(`earnings:${ip}`, 30);
       if (earnings && now().getTime() - earnings.at < EARNINGS_TTL_MS && query.get('fresh') !== '1') return send(res, 200, earnings.body);
       const platformWallet = p.config.feeClaimer;
+      const vault = p.treasury?.vault ?? null;
       const launches = o.store.listLaunches(['LIVE', 'MIGRATED']);
       const sumQuote = (ps: { feeQuoteRaw: string }[] | null) => (ps === null ? null : ps.reduce((a, x) => a + BigInt(x.feeQuoteRaw), 0n).toString());
       const coins: EarningsCoin[] = [];
@@ -459,15 +596,18 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
         const pool = await pools.get(l.pool).catch(() => null);
         const dp = l.status === 'MIGRATED' ? await damms.get(l).catch(() => null) : null;
         const positions = async (owner: string) => (dp ? await o.chain.dammPositions(dp, owner).catch(() => null) : null);
-        coins.push({ mint: l.mint, symbol: l.symbol, name: l.name, status: l.status, creator: l.creator,
+        // each coin's platform share belongs to the fee claimer of the config it launched on: the operator for earlier
+        // coins, the treasury vault for coins launched since the treasury config
+        const claimer = feeClaimerFor(p, l.config) ?? platformWallet;
+        coins.push({ mint: l.mint, symbol: l.symbol, name: l.name, status: l.status, creator: l.creator, platformWallet: claimer, treasury: claimer === vault,
           curve: pool ? { creatorQuoteRaw: pool.creatorQuoteFee, platformQuoteRaw: pool.partnerQuoteFee } : null,
-          lp: l.status !== 'MIGRATED' ? null : dp ? { creatorQuoteRaw: sumQuote(await positions(l.creator)), platformQuoteRaw: sumQuote(await positions(platformWallet)) } : 'UNAVAILABLE' });
+          lp: l.status !== 'MIGRATED' ? null : dp ? { creatorQuoteRaw: sumQuote(await positions(l.creator)), platformQuoteRaw: sumQuote(await positions(claimer)) } : 'UNAVAILABLE' });
       }
       // receipts still waiting for evidence: each is checked against its own transaction and vaults (a few per request)
       await resolveClaims(o, RECEIPT_CHECKS_PER_REQUEST);
-      const claims: (ClaimRow & { symbol: string; byCreator: boolean })[] = o.store.listClaims().map((c) => {
+      const claims: (ClaimRow & { symbol: string; byCreator: boolean; byTreasury: boolean })[] = o.store.listClaims().map((c) => {
         const l = launches.find((x) => x.mint === c.mint) ?? o.store.getLaunch(c.mint);
-        return { ...c, symbol: l?.symbol ?? '?', byCreator: l?.creator === c.claimer };
+        return { ...c, symbol: l?.symbol ?? '?', byCreator: l?.creator === c.claimer, byTreasury: c.claimer === vault };
       });
       const unresolvedClaims = claims.filter((c) => c.status === 'UNKNOWN').length;
       const add = (pick: (c: EarningsCoin) => string | null | undefined) => coins.reduce((a, c) => a + BigInt(pick(c) ?? '0'), 0n).toString();
@@ -482,6 +622,11 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
           claimedThroughApp: claims.reduce((a, c) => a + (c.status === 'UNKNOWN' ? 0n : BigInt(c.quoteRaw!)), 0n).toString(),
           coverage: { unclaimedComplete, claimsComplete: unresolvedClaims === 0, unresolvedClaims },
           incomplete: !unclaimedComplete || unresolvedClaims > 0 },
+        // what reached the treasury vault through executed proposals (proven receipts only), and what is still waiting
+        treasury: p.treasury ? { ...treasuryView(p),
+          paidToTreasuryQuoteRaw: claims.filter((c) => c.byTreasury && c.status === 'RESOLVED').reduce((a, c) => a + BigInt(c.quoteRaw!), 0n).toString(),
+          unresolvedReceipts: claims.filter((c) => c.byTreasury && c.status === 'UNKNOWN').length,
+          openProposals: o.store.listTreasuryProposals(p.treasury.multisig).filter((r) => !FINAL_PROPOSAL.has(r.status)).length } : null,
         coins, claims };
       earnings = { at: now().getTime(), body };
       return send(res, 200, body);

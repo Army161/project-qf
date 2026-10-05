@@ -13,10 +13,11 @@ import type { IdlInstruction } from './engine/idl-types.ts';
 import * as D from './engine/pda.ts';
 import { canonicalJson } from '@project-qf/core';
 import { sha256Hex } from './terms.ts';
+import { bindTreasury } from './treasury.ts';
 
 const P = PROGRAM_IDS;
 const fromHex = (h: string) => Uint8Array.from(h.match(/../g) ?? [], (x) => parseInt(x, 16));
-const OP_FOR_KIND: Record<ApprovedTerms['kind'], string> = {
+const OP_FOR_KIND: Record<Exclude<ApprovedTerms['kind'], `TREASURY_${string}`>, string> = {
   CREATE_CONFIG: 'create_config', CREATE_POOL: 'initialize_virtual_pool_with_spl_token', SWAP: 'swap',
   MIGRATE_DAMM_V2: 'migration_damm_v2', CLAIM_PARTNER_TRADING_FEE: 'claim_trading_fee', CLAIM_CREATOR_TRADING_FEE: 'claim_creator_trading_fee',
   DAMM_SWAP: 'swap', DAMM_CLAIM_POSITION_FEE: 'claim_position_fee',
@@ -25,6 +26,7 @@ const OP_FOR_KIND: Record<ApprovedTerms['kind'], string> = {
 interface Engine { program: string; label: string; subset: IdlSubset }
 const DBC_ENGINE: Engine = { program: P.DBC, label: 'DBC', subset: DBC_IDL_SUBSET };
 const DAMM_ENGINE: Engine = { program: P.DAMM_V2, label: 'DAMM', subset: DAMM_IDL_SUBSET };
+type EngineTerms = Exclude<ApprovedTerms, { kind: `TREASURY_${string}` }>;
 const engineFor = (kind: ApprovedTerms['kind']) => (kind === 'DAMM_SWAP' || kind === 'DAMM_CLAIM_POSITION_FEE' ? DAMM_ENGINE : DBC_ENGINE);
 
 /** Digest of a ConfigParameters value in decoded (snake_case, bigint) form; the adapter computes the same via normalizeToIdl. */
@@ -40,7 +42,7 @@ interface Expected {
   checkArgs: (a: Record<string, Decoded>) => Promise<string[]>;
 }
 
-async function expectedFor(t: ApprovedTerms): Promise<{ e: Expected; termViolations: string[] }> {
+async function expectedFor(t: EngineTerms): Promise<{ e: Expected; termViolations: string[] }> {
   const op = engineFor(t.kind).subset.instructions.find((i) => i.name === OP_FOR_KIND[t.kind])!;
   const common = { event_authority: await D.dbcEventAuthority(), program: P.DBC, system_program: P.SYSTEM, pool_authority: D.DBC_POOL_AUTHORITY };
   const tv: string[] = [];
@@ -160,10 +162,34 @@ function decodeEngine(ix: DecodedInstruction, en: Engine): { op: IdlInstruction;
   catch (e) { return { error: `${en.label}_DECODE_FAILED ${op.name}: ${(e as Error).message}` }; }
 }
 
+/** One ComputeBudget instruction: SetComputeUnitLimit / SetComputeUnitPrice within the approved caps, nothing else. */
+export function checkComputeBudget(ix: DecodedInstruction, terms: ApprovedTerms, at: string): { v: string[]; limit: number; price: number } {
+  const v: string[] = [];
+  const data = fromHex(ix.dataHex);
+  if (ix.accounts.length) v.push(`COMPUTE_BUDGET_WITH_ACCOUNTS ${at}`);
+  if (data[0] === 2 && data.length === 5) {
+    const units = data[1]! | (data[2]! << 8) | (data[3]! << 16) | (data[4]! * 2 ** 24);
+    if (units > terms.compute.maxUnitLimit) v.push(`COMPUTE_LIMIT_EXCEEDS_CAP ${units} > ${terms.compute.maxUnitLimit} ${at}`);
+    return { v, limit: 1, price: 0 };
+  }
+  if (data[0] === 3 && data.length === 9) {
+    let price = 0n; for (let j = 8; j >= 1; j--) price = (price << 8n) | BigInt(data[j]!);
+    if (price > BigInt(terms.compute.maxUnitPriceMicroLamports)) v.push(`COMPUTE_PRICE_EXCEEDS_CAP ${price} > ${terms.compute.maxUnitPriceMicroLamports} ${at}`);
+    return { v, limit: 0, price: 1 };
+  }
+  v.push(`COMPUTE_BUDGET_UNSUPPORTED ${ix.dataHex.slice(0, 2)} ${at}`);
+  return { v, limit: 0, price: 0 };
+}
+
+/** Evidence some bindings need besides the transaction: execute runs what the multisig stored, so the stored
+ *  VaultTransaction account (raw data) must be supplied and is bound to the approved inner terms too. */
+export interface BindingContext { vaultTransactionAccount?: Uint8Array }
+
 /** Binds a decoded transaction to approved terms. Returns violations; empty means every instruction is accounted for. */
-export async function bindTransactionToTerms(d: DecodedTransaction, terms: ApprovedTerms): Promise<string[]> {
+export async function bindTransactionToTerms(d: DecodedTransaction, terms: ApprovedTerms, ctx: BindingContext = {}): Promise<string[]> {
   const tv = validateTerms(terms);
   if (tv.length) return tv;
+  if (terms.kind === 'TREASURY_PROPOSE' || terms.kind === 'TREASURY_APPROVE' || terms.kind === 'TREASURY_EXECUTE') return bindTreasury(d, terms, ctx);
   const v: string[] = [];
   if (d.addressTableLookups > 0) v.push('ADDRESS_LOOKUP_TABLES_NOT_SUPPORTED_IN_PREVIEW');
   if (d.feePayer !== terms.feePayer) v.push('FEE_PAYER_MISMATCH');
@@ -231,17 +257,8 @@ export async function bindTransactionToTerms(d: DecodedTransaction, terms: Appro
       for (const a of req) v.push(`MISSING_REMAINING_ACCOUNT ${a} ${at}`);
       v.push(...(await e.checkArgs(r.args)).map((x) => `${x} ${at}`));
     } else if (ix.programAddress === P.COMPUTE_BUDGET) {
-      const data = fromHex(ix.dataHex);
-      if (ix.accounts.length) v.push(`COMPUTE_BUDGET_WITH_ACCOUNTS ${at}`);
-      if (data[0] === 2 && data.length === 5) {
-        limitSeen++;
-        const units = data[1]! | (data[2]! << 8) | (data[3]! << 16) | (data[4]! * 2 ** 24);
-        if (units > terms.compute.maxUnitLimit) v.push(`COMPUTE_LIMIT_EXCEEDS_CAP ${units} > ${terms.compute.maxUnitLimit} ${at}`);
-      } else if (data[0] === 3 && data.length === 9) {
-        priceSeen++;
-        let price = 0n; for (let j = 8; j >= 1; j--) price = (price << 8n) | BigInt(data[j]!);
-        if (price > BigInt(terms.compute.maxUnitPriceMicroLamports)) v.push(`COMPUTE_PRICE_EXCEEDS_CAP ${price} > ${terms.compute.maxUnitPriceMicroLamports} ${at}`);
-      } else v.push(`COMPUTE_BUDGET_UNSUPPORTED ${ix.dataHex.slice(0, 2)} ${at}`);
+      const r = checkComputeBudget(ix, terms, at);
+      v.push(...r.v); limitSeen += r.limit; priceSeen += r.price;
     } else if (ix.programAddress === P.ASSOCIATED_TOKEN) {
       // CreateIdempotent only: [payer(W,S), ata(W), owner, mint, system, token program]
       const [payer, addr, owner, mint, sys, tokenProg] = ix.accounts;

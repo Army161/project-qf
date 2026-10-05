@@ -12,9 +12,9 @@ export const CLAIM_KINDS = Object.freeze({ CLAIM_CREATOR_TRADING_FEE: 'CURVE', D
 /** The pool and vaults a claim transaction was bound to, checked against the coin it is recorded for. Null when the
  *  terms are not a claim of that coin on that venue. */
 export async function claimIdentity(terms: ApprovedTerms, l: Pick<LaunchRow, 'mint' | 'quoteMint' | 'pool' | 'dammPool'>): Promise<ClaimIdentity | null> {
-  if (terms.kind !== 'CLAIM_CREATOR_TRADING_FEE' && terms.kind !== 'DAMM_CLAIM_POSITION_FEE') return null;
+  if (terms.kind !== 'CLAIM_CREATOR_TRADING_FEE' && terms.kind !== 'CLAIM_PARTNER_TRADING_FEE' && terms.kind !== 'DAMM_CLAIM_POSITION_FEE') return null;
   if (terms.baseMint !== l.mint || terms.quoteMint !== l.quoteMint) return null;
-  if (terms.kind === 'CLAIM_CREATOR_TRADING_FEE') {
+  if (terms.kind === 'CLAIM_CREATOR_TRADING_FEE' || terms.kind === 'CLAIM_PARTNER_TRADING_FEE') {
     if (terms.pool !== l.pool) return null;
     return { venue: 'CURVE', pool: terms.pool, quoteVault: await derive.dbcVault(terms.quoteMint, terms.pool), baseVault: await derive.dbcVault(terms.baseMint, terms.pool) };
   }

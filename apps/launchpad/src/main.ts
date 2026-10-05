@@ -1,6 +1,8 @@
 // CLI for the devnet launchpad.
 //   node --use-env-proxy src/main.ts operator   prints the operator's PUBLIC address and devnet SOL balance (fund it from a faucet)
 //   node --use-env-proxy src/main.ts setup      creates the TEST_ONLY quote token and the DBC config once (needs ~0.1 devnet SOL)
+//   node --use-env-proxy src/main.ts treasury-setup <m1,m2,m3>   creates the 2-of-3 platform treasury multisig from three member PUBLIC keys
+//                                               (src/member.ts init makes them) and a new DBC config paying platform fees to its vault
 //   node --use-env-proxy src/main.ts serve      starts the launchpad on 127.0.0.1 (indexer + migration crank in the background)
 // Configuration (environment): QF_LP_DB (default ./qf-launchpad.sqlite), QF_LP_PORT (default 8788), QF_RPC_DEVNET (default the
 // public devnet endpoint), QF_DEVNET_KEY (default ~/.qf-devnet/operator.json; must be outside any git checkout, mode 0600),
@@ -12,7 +14,7 @@ import { connectDevnet, getLamports, loadOrCreateDevnetKeypair, publicKeyOf } fr
 import { READINESS } from '@project-qf/core';
 import { realChain } from './chain.ts';
 import { startBackground } from './indexer.ts';
-import { ensurePlatform, type PlatformRecord } from './platform.ts';
+import { ensurePlatform, setupTreasury, type PlatformRecord } from './platform.ts';
 import { createLaunchpadApp } from './server.ts';
 import { LaunchpadStore } from './store.ts';
 
@@ -36,6 +38,13 @@ if (cmd === 'operator') {
   const p = await ensurePlatform(conn, operator, store, log);
   console.log(JSON.stringify({ quote: p.quote, config: p.config, threshold: p.threshold.rawQuoteThreshold, launchEconomicsDigest: p.launchEconomicsDigest }, null, 2));
   store.close();
+} else if (cmd === 'treasury-setup') {
+  const members = (process.argv[3] ?? '').split(',').filter(Boolean);
+  if (members.length !== 3) { console.error('usage: main.ts treasury-setup <member1,member2,member3> (public keys)'); process.exit(64); }
+  const store = new LaunchpadStore(resolve(env.QF_LP_DB ?? 'qf-launchpad.sqlite'));
+  const p = await setupTreasury(conn, operator, store, members, log);
+  console.log(JSON.stringify({ treasury: p.treasury, config: p.config, legacyConfigs: p.legacyConfigs, launchEconomicsDigest: p.launchEconomicsDigest }, null, 2));
+  store.close();
 } else if (cmd === 'serve') {
   // A long-running server must not die because a dependency left a promise behind (seen on devnet: a 429 from the public
   // RPC inside a library call nobody awaited). Log it and keep serving; every request path has its own error handling.
@@ -48,6 +57,6 @@ if (cmd === 'operator') {
   app.listen(port, '127.0.0.1', () => log(JSON.stringify({ listening: `http://127.0.0.1:${port}`, operator: chain.operatorAddress, ready: !!store.getPlatform('platform') })));
   startBackground({ store, chain, poolCache: app.poolCache, dammCache: app.dammCache, log }, Number(env.QF_LP_INTERVAL_MS ?? 15_000));
 } else {
-  console.error('usage: main.ts operator | setup | serve');
+  console.error('usage: main.ts operator | setup | treasury-setup <m1,m2,m3> | serve');
   process.exitCode = 64;
 }

@@ -9,6 +9,7 @@ const addrDec = getAddressDecoder();
 const utf8 = new TextDecoder('utf-8', { fatal: true });
 const MAX_VEC = 64;       // DBC curve has at most 20 points; anything larger is not a V0 instruction
 const MAX_STRING = 256;   // name/symbol/uri bounds are enforced again by terms equality
+const MAX_BYTES = 1232;   // one Solana packet: a wrapped vault-transaction message can never be larger
 
 export type Decoded = number | bigint | boolean | string | null | Decoded[] | { [k: string]: Decoded };
 
@@ -36,6 +37,10 @@ function read(r: Reader, t: IdlType, types: Record<string, IdlTypeDef>): Decoded
     if (t === 'string') {
       const n = Number(r.uint(4)); if (n > MAX_STRING) throw new BorshError(`string length ${n} exceeds ${MAX_STRING}`);
       try { return utf8.decode(r.take(n)); } catch (e) { throw e instanceof BorshError ? e : new BorshError('invalid utf-8'); }
+    }
+    if (t === 'bytes') { // returned as lower-case hex
+      const n = Number(r.uint(4)); if (n > MAX_BYTES) throw new BorshError(`bytes length ${n} exceeds ${MAX_BYTES}`);
+      return Array.from(r.take(n), (x) => x.toString(16).padStart(2, '0')).join('');
     }
     throw new BorshError(`unsupported primitive ${t}`);
   }
@@ -85,6 +90,11 @@ export function normalizeToIdl(v: unknown, t: IdlType, types: Record<string, Idl
     if (t === 'bool') { if (typeof v !== 'boolean') throw new BorshError(`${path} not bool`); return v; }
     if (t === 'pubkey') return typeof v === 'string' ? v : String((v as { toBase58(): string }).toBase58());
     if (t === 'string') return String(v);
+    if (t === 'bytes') {
+      if (typeof v === 'string' && /^([0-9a-f]{2})*$/.test(v)) return v;
+      if (v instanceof Uint8Array || Array.isArray(v)) return Array.from(v as ArrayLike<number>, (x) => x.toString(16).padStart(2, '0')).join('');
+      throw new BorshError(`${path} not bytes`);
+    }
     throw new BorshError(`unsupported primitive ${t}`);
   }
   if (t.array) {
