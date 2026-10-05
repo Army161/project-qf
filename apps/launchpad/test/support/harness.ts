@@ -14,7 +14,7 @@ import { buildCreatePool, buildCreatorCurveClaim, buildDammClaim, buildDammSwap,
 import { createQuoteSimulator } from '@project-qf/adapter-meteora-dbc';
 import { accountsForPool, fixtures, K, thresholdRecord } from '../../../../packages/adapter-meteora-dbc/test/support/fixtures.ts';
 import { createMockConnection } from '../../../../packages/adapter-meteora-dbc/test/support/mockRpc.ts';
-import type { LaunchpadChain } from '../../src/chain.ts';
+import type { LaunchpadChain, TokenBalanceChanges } from '../../src/chain.ts';
 import { launchEconomicsFor, type PlatformRecord } from '../../src/platform.ts';
 import { createLaunchpadApp, type ServerProfile } from '../../src/server.ts';
 import { LaunchpadStore } from '../../src/store.ts';
@@ -75,6 +75,8 @@ export async function harness(opts: { profile?: ServerProfile } = {}) {
       }
     }
   };
+  const holders = { slot: 0, supplyExtraRaw: 0n, accounts: [] as { account: string; owner: string; amountRaw: bigint }[],
+    sigs: new Map<string, { signature: string; slot: number; err: boolean }[]>(), txs: new Map<string, TokenBalanceChanges>() };
   const chain: LaunchpadChain = {
     operatorAddress: K.partner.toBase58(),
     readPool: async (p) => withMigrationPrice(await readPool(conn, p)),
@@ -93,6 +95,15 @@ export async function harness(opts: { profile?: ServerProfile } = {}) {
     dammFeeAccounting: async (p) => ({ pool: p.pool, collectFeeMode: 1, liquidity: '1', feePerLiquidityQuote: '0', totalLpQuoteRaw: '0', totalLpBaseRaw: '0', totalPositions: '1',
       positions: [{ position: 'pos', nftMint: K.positionNft.toBase58(), liquidity: '1', checkpointQuote: '0', pendingQuoteRaw: '0', claimedQuoteRaw: '0', claimedBaseRaw: '0' }] }),
     buildDammClaim: (p, owner, nft) => buildDammClaim(conn, p, owner, nft),
+    // TEST_ONLY holder ledger: tests fill `holders`; one slot per second of the harness clock
+    mintTokenAccounts: async () => ({ slot: holders.slot, accounts: holders.accounts.map((a) => ({ ...a })) }),
+    mintSupply: async () => ({ slot: holders.slot, supplyRaw: holders.accounts.reduce((s, a) => s + a.amountRaw, 0n) + holders.supplyExtraRaw }),
+    finalizedSignatures: async (a, until) => {
+      const l = holders.sigs.get(a) ?? [];
+      return l.slice(until ? l.findIndex((x) => x.signature === until) + 1 : 0);
+    },
+    tokenBalanceChanges: async (sig) => holders.txs.get(sig) ?? null,
+    firstSlotAtOrAfter: async (t) => (t * 1000 <= clock ? { slot: t, blockTime: t } : null),
     send: async (b) => { sent.push(b); await applySquads(b); return (await verifyWireSignatures(b)).firstSignature; },
     txSummary: async () => null,
     newSignatures: async () => [],
@@ -124,12 +135,12 @@ export async function harness(opts: { profile?: ServerProfile } = {}) {
     const r = await fetch(base + path, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     return { status: r.status, body: await r.json().catch(() => null) as any, headers: r.headers };
   };
-  return { conn, store, dbPath, platform, call, sent, faucetCalls, chain, app, tre, tick: (ms: number) => { clock += ms; }, now: () => new Date(clock) };
+  return { conn, store, dbPath, platform, call, sent, faucetCalls, chain, app, tre, holders, tick: (ms: number) => { clock += ms; }, now: () => new Date(clock) };
 }
 
 /** Records the fixture coin (mint K.baseMint on pool K.pool) as LIVE, and optionally graduated to the fixture DAMM v2 pool. */
-export function seedLaunch(store: LaunchpadStore, platform: PlatformRecord, o: { creator?: string; migrated?: boolean; symbol?: string } = {}) {
-  const t = new Date().toISOString(), mint = K.baseMint.toBase58();
+export function seedLaunch(store: LaunchpadStore, platform: PlatformRecord, o: { creator?: string; migrated?: boolean; symbol?: string; liveAt?: string } = {}) {
+  const t = o.liveAt ?? new Date().toISOString(), mint = K.baseMint.toBase58();
   store.insertPendingLaunch({ mint, pool: K.pool.toBase58(), config: platform.config.config, quoteMint: platform.quote.mint, creator: o.creator ?? K.creator.toBase58(),
     name: 'MOCK', symbol: o.symbol ?? 'MOCK', description: '', website: null, twitter: null, telegram: null, imageType: null, metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: t }, null);
   store.markLaunchLive(mint, 'sig', t);

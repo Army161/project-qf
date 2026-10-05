@@ -359,3 +359,24 @@ ul.checks li.bad { color: var(--sell); } ul.checks li.bad::before { content: "âœ
 .check-ok { color: var(--buy, #b6f35c); font-weight: 600; }
 .check-bad { color: var(--sell, #ff8a3d); font-weight: 600; }
 .check-residual { color: var(--devnet); font-weight: 600; }
+
+/* holder rewards (read-only) */
+.rw-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 8px; }
+.rw-head h3 { margin: 0; }
+.rw-head > :last-child { margin-left: auto; }
+.rw-checks { margin: 0 0 12px; }
+.rw-checks summary { cursor: pointer; overflow-wrap: anywhere; }
+.rw-checks .notes { margin-top: 8px; }
+.rw-checks .notes li { overflow-wrap: anywhere; }
+.earnings .notes.err { color: var(--sell); }
+@media (max-width: 520px) {
+  nav { flex: 1 1 100%; order: 4; overflow-x: auto; scrollbar-width: none; }
+  nav::-webkit-scrollbar { display: none; }
+  nav a { flex: none; padding: 8px 9px; }
+}
+.rw-title span { white-space: nowrap; }
+@media (max-width: 520px) {
+  .earn-head h1 { font-size: 32px; }
+  nav { mask-image: linear-gradient(to right, #000 85%, transparent); }
+  nav:has(a[href="#/status"].on) { mask-image: none; }
+}

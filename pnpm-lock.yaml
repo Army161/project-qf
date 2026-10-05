@@ -59,6 +59,9 @@ importers:
       '@project-qf/policy':
         specifier: workspace:*
         version: link:../../packages/policy
+      '@project-qf/rewards':
+        specifier: workspace:*
+        version: link:../../packages/rewards
       '@project-qf/tx':
         specifier: workspace:*
         version: link:../../packages/tx

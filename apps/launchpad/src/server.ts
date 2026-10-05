@@ -20,6 +20,8 @@ import { feeClaimerFor, isTreasuryConfig, type PlatformRecord } from './platform
 import type { ChainChecks, ClusterProfile } from './cluster.ts';
 import { claimIdentity, claimReceipt, resolveClaims } from './receipts.ts';
 import { explainLpResidual, type LpResidualProof } from './lp-residual.ts';
+import { storedCoverage, toBalanceChanges } from './holders.ts';
+import { coinRewards, epochDetail, rewardsOverview, type CoinRewards } from './rewards.ts';
 import { sumFees, type ClaimRow, type FeeTotals, type LaunchRow, type LaunchpadStore, type StoredTrade } from './store.ts';
 
 export const LP_API_VERSION = 'lp-api/1';
@@ -215,6 +217,7 @@ export function feeCheck(fromTrades: bigint, unclaimed: string | null, claimed: 
 
 const lpOfCoin = (c: EarningsCoin) => (c.lp && c.lp !== 'UNAVAILABLE' ? c.lp : null);
 export const EARNINGS_TTL_MS = 30_000;
+export const REWARDS_TTL_MS = 30_000;
 /** Unresolved claim receipts checked against their transactions per uncached earnings request (the RPC is shared). */
 export const RECEIPT_CHECKS_PER_REQUEST = 5;
 type Unclaimed = { creatorQuoteRaw: string | null; platformQuoteRaw: string | null };
@@ -254,6 +257,19 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
   const damms = new DammCache(o.chain);
   const rate = new Map<string, number[]>();
   let earnings: { at: number; body: unknown } | null = null;
+  let rewards: { at: number; coins: CoinRewards[] } | null = null;
+  /** Every coin's reward epochs, recomputed from the stored history at most every REWARDS_TTL_MS (or on ?fresh=1). */
+  const rewardCoins = async (fresh: boolean): Promise<CoinRewards[]> => {
+    if (rewards && !fresh && now().getTime() - rewards.at < REWARDS_TTL_MS) return rewards.coins;
+    const p = platform(), coins: CoinRewards[] = [];
+    for (const l of o.store.listLaunches(['LIVE', 'MIGRATED'])) {
+      coins.push(await coinRewards({ store: o.store, chain: o.chain, platform: p, cluster: profile.cluster, nowSec: Math.floor(now().getTime() / 1000),
+        coverage: storedCoverage(o.store, l.mint), changes: toBalanceChanges(o.store.holderChanges(l.mint)) }, l));
+    }
+    coins.sort((a, b) => a.symbol.localeCompare(b.symbol));
+    rewards = { at: now().getTime(), coins };
+    return coins;
+  };
   const limit = (key: string, max: number) => {
     const t = now().getTime();
     const recent = (rate.get(key) ?? []).filter((x) => t - x < 60_000);
@@ -384,6 +400,25 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       const wallets = o.store.feeTotals(['trader']).sort((a, b) => (BigInt(b.feesRaw) > BigInt(a.feesRaw) ? 1 : BigInt(b.feesRaw) < BigInt(a.feesRaw) ? -1 : a.trader!.localeCompare(b.trader!)));
       const all = o.store.feeTotals([])[0] ?? sumFees([]);
       return send(res, 200, { totals: all, coins: coinRows(o.store.feeTotals(['mint'])), wallets: wallets.slice(0, 200), walletCount: wallets.length });
+    }
+    // Holder rewards (devnet): each coin's holder history coverage and reward epochs (status, earmark from the fee
+    // ledger, deposits, allocation, artifact). Read-only: nothing here builds or sends a payout.
+    if (path === '/api/lp/rewards' && method === 'GET') {
+      limit(`rewards:${ip}`, 30);
+      return send(res, 200, rewardsOverview(profile.cluster, await rewardCoins(query.get('fresh') === '1')));
+    }
+    const rm = /^\/api\/lp\/rewards\/([1-9A-HJ-NP-Za-km-z]{32,44})\/(\d{4}-\d{2}-\d{2})(\/artifact\.json)?$/.exec(path);
+    if (rm && method === 'GET') {
+      limit(`rewards:${ip}`, 30);
+      const c = (await rewardCoins(false)).find((x) => x.mint === rm[1]);
+      const d = c && epochDetail(c, rm[2]!);
+      if (!d) throw new HttpError(404, 'NOT_FOUND', 'no such coin or epoch');
+      if (rm[3]) {
+        if (!d.artifact) throw new HttpError(404, 'NOT_FOUND', 'this epoch has no artifact yet (it is still open)');
+        const frozen = o.store.getRewardEpoch(rm[1]!, rm[2]!);
+        return send(res, 200, frozen ? JSON.parse(frozen.artifactJson) : d.artifact);
+      }
+      return send(res, 200, d);
     }
     const tm = /^\/api\/lp\/tokens\/([1-9A-HJ-NP-Za-km-z]{32,44})$/.exec(path);
     if (tm && method === 'GET') {

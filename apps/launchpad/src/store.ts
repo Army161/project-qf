@@ -66,6 +66,20 @@ export const STORE_MIGRATIONS: readonly string[] = [
    ALTER TABLE trades ADD COLUMN fee_compounding_raw TEXT;
    CREATE INDEX trades_trader ON trades(trader, slot);
    CREATE INDEX trades_fee_status ON trades(fee_status);`,
+  // (7) holder balance history for rewards: each coin's token accounts (with a signature cursor each), the transactions
+  // read for the coin, every token-account balance change they contain (trades, direct transfers, anything), the
+  // finalized first slot of each UTC epoch, and the frozen artifact of each final reward epoch.
+  `CREATE TABLE holder_accounts (mint TEXT NOT NULL REFERENCES launches(mint), account TEXT NOT NULL, cursor TEXT, discovered_at TEXT NOT NULL,
+     PRIMARY KEY (mint, account));
+   CREATE TABLE holder_txs (mint TEXT NOT NULL REFERENCES launches(mint), sig TEXT NOT NULL, slot INTEGER, status TEXT NOT NULL, attempts INTEGER NOT NULL,
+     updated_at TEXT NOT NULL, PRIMARY KEY (mint, sig));
+   CREATE INDEX holder_txs_status ON holder_txs(mint, status);
+   CREATE TABLE holder_changes (mint TEXT NOT NULL REFERENCES launches(mint), sig TEXT NOT NULL, slot INTEGER NOT NULL, block_time INTEGER,
+     account TEXT NOT NULL, owner TEXT NOT NULL, pre_raw TEXT NOT NULL, post_raw TEXT NOT NULL, PRIMARY KEY (mint, sig, account));
+   CREATE INDEX holder_changes_slot ON holder_changes(mint, slot);
+   CREATE TABLE epoch_slots (start_sec INTEGER PRIMARY KEY, slot INTEGER NOT NULL, block_time INTEGER NOT NULL);
+   CREATE TABLE reward_epochs (mint TEXT NOT NULL REFERENCES launches(mint), epoch_id TEXT NOT NULL, artifact_json TEXT NOT NULL, artifact_hash TEXT NOT NULL,
+     finalized_at TEXT NOT NULL, PRIMARY KEY (mint, epoch_id));`,
 ];
 
 export type LaunchStatus = 'PENDING' | 'LIVE' | 'MIGRATED' | 'FAILED';
@@ -326,4 +340,65 @@ export class LaunchpadStore {
   insertFaucetClaim(wallet: string, at: string, signature: string) {
     this.db.prepare('INSERT INTO faucet_claims (wallet, at, signature) VALUES (?, ?, ?)').run(wallet, at, signature);
   }
+
+  // ---------------------------------------------------------------- holder balance history (rewards)
+  holderAccounts(mint: string): { account: string; cursor: string | null }[] {
+    return this.db.prepare('SELECT account, cursor FROM holder_accounts WHERE mint = ? ORDER BY account').all(mint) as { account: string; cursor: string | null }[];
+  }
+  addHolderAccount(mint: string, account: string, at: string): boolean {
+    return Number(this.db.prepare('INSERT OR IGNORE INTO holder_accounts (mint, account, cursor, discovered_at) VALUES (?, ?, NULL, ?)').run(mint, account, at).changes) === 1;
+  }
+  setHolderCursor(mint: string, account: string, sig: string) { this.db.prepare('UPDATE holder_accounts SET cursor = ? WHERE mint = ? AND account = ?').run(sig, mint, account); }
+  holderTx(mint: string, sig: string): HolderTxRow | null {
+    const r = this.db.prepare('SELECT * FROM holder_txs WHERE mint = ? AND sig = ?').get(mint, sig) as Record<string, unknown> | undefined;
+    return r ? (camel(r) as unknown as HolderTxRow) : null;
+  }
+  /** A transaction read for the coin: DONE with its balance changes (written together), FAILED_TX, or PENDING (listed by
+   *  the RPC but not served yet; kept and retried, so history is never silently short). */
+  recordHolderTx(mint: string, sig: string, r: { status: HolderTxRow['status']; slot: number | null; at: string; changes?: HolderChangeRow[] }) {
+    this.db.exec('BEGIN');
+    try {
+      const prev = this.holderTx(mint, sig);
+      this.db.prepare(`INSERT INTO holder_txs (mint, sig, slot, status, attempts, updated_at) VALUES (?, ?, ?, ?, 1, ?)
+        ON CONFLICT (mint, sig) DO UPDATE SET slot = COALESCE(excluded.slot, slot), status = excluded.status, attempts = attempts + 1, updated_at = excluded.updated_at`)
+        .run(mint, sig, r.slot, r.status, r.at);
+      if (prev?.status !== 'DONE') for (const c of r.changes ?? []) {
+        this.db.prepare(`INSERT OR IGNORE INTO holder_changes (mint, sig, slot, block_time, account, owner, pre_raw, post_raw) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+          .run(mint, sig, c.slot, c.blockTime, c.account, c.owner, c.preRaw, c.postRaw);
+      }
+      this.db.exec('COMMIT');
+    } catch (e) { this.db.exec('ROLLBACK'); throw e; }
+  }
+  pendingHolderTxs(mint: string, limit: number): HolderTxRow[] {
+    return (this.db.prepare("SELECT * FROM holder_txs WHERE mint = ? AND status = 'PENDING' ORDER BY attempts, sig LIMIT ?").all(mint, limit) as Record<string, unknown>[])
+      .map((r) => camel(r) as unknown as HolderTxRow);
+  }
+  holderTxCounts(mint: string): { done: number; pending: number; failed: number; accounts: number; changes: number } {
+    const n = (q: string, ...a: string[]) => (this.db.prepare(q).get(mint, ...a) as { n: number }).n;
+    return { done: n("SELECT COUNT(*) AS n FROM holder_txs WHERE mint = ? AND status = 'DONE'"), pending: n("SELECT COUNT(*) AS n FROM holder_txs WHERE mint = ? AND status = 'PENDING'"),
+      failed: n("SELECT COUNT(*) AS n FROM holder_txs WHERE mint = ? AND status = 'FAILED_TX'"), accounts: n('SELECT COUNT(*) AS n FROM holder_accounts WHERE mint = ?'),
+      changes: n('SELECT COUNT(*) AS n FROM holder_changes WHERE mint = ?') };
+  }
+  holderChanges(mint: string): HolderChangeRow[] {
+    return (this.db.prepare('SELECT sig, slot, block_time, account, owner, pre_raw, post_raw FROM holder_changes WHERE mint = ? ORDER BY slot, sig, account').all(mint) as Record<string, unknown>[])
+      .map((r) => camel(r) as unknown as HolderChangeRow);
+  }
+  epochSlot(startSec: number): { slot: number; blockTime: number } | null {
+    return (this.db.prepare('SELECT slot, block_time AS blockTime FROM epoch_slots WHERE start_sec = ?').get(startSec) as { slot: number; blockTime: number } | undefined) ?? null;
+  }
+  setEpochSlot(startSec: number, b: { slot: number; blockTime: number }) {
+    this.db.prepare('INSERT OR IGNORE INTO epoch_slots (start_sec, slot, block_time) VALUES (?, ?, ?)').run(startSec, b.slot, b.blockTime);
+  }
+  getRewardEpoch(mint: string, epochId: string): { artifactJson: string; artifactHash: string; finalizedAt: string } | null {
+    const r = this.db.prepare('SELECT artifact_json, artifact_hash, finalized_at FROM reward_epochs WHERE mint = ? AND epoch_id = ?').get(mint, epochId) as Record<string, unknown> | undefined;
+    return r ? (camel(r) as unknown as { artifactJson: string; artifactHash: string; finalizedAt: string }) : null;
+  }
+  /** Freezes a final epoch's artifact; a second save of the same epoch is ignored (the first one stands). */
+  saveRewardEpoch(mint: string, epochId: string, artifactJson: string, artifactHash: string, at: string): boolean {
+    return Number(this.db.prepare('INSERT OR IGNORE INTO reward_epochs (mint, epoch_id, artifact_json, artifact_hash, finalized_at) VALUES (?, ?, ?, ?, ?)')
+      .run(mint, epochId, artifactJson, artifactHash, at).changes) === 1;
+  }
 }
+
+export interface HolderTxRow { mint: string; sig: string; slot: number | null; status: 'DONE' | 'PENDING' | 'FAILED_TX'; attempts: number; updatedAt: string }
+export interface HolderChangeRow { sig: string; slot: number; blockTime: number | null; account: string; owner: string; preRaw: string; postRaw: string }

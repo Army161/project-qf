@@ -1,6 +1,6 @@
 {
   "tool": "tools/license-check/check-licenses.ts",
-  "generatedAt": "2026-10-05T21:56:33.299Z",
+  "generatedAt": "2026-10-05T22:26:32.803Z",
   "manifestVersion": "2",
   "packages": 211,
   "tally": {
@@ -427,8 +427,7 @@
         "@project-qf/econ-sim",
         "@project-qf/launchpad",
         "@project-qf/policy",
-        "@project-qf/rewards",
-        "@project-qf/web"
+        "@project-qf/rewards"
       ],
       "note": "",
       "sampleChain": "@project-qf/api > @project-qf/policy@link:../../packages/policy > @noble/hashes@1.8.0"
@@ -738,11 +737,10 @@
       "importers": [
         "@project-qf/launchpad",
         "@project-qf/rewards",
-        "@project-qf/tx",
-        "@project-qf/web"
+        "@project-qf/tx"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @solana/kit@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/rewards@link:../../packages/rewards > @solana/kit@8.3.0"
     },
     {
       "package": "@solana/nominal-types@8.3.0",

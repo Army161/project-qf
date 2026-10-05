@@ -585,12 +585,13 @@ export async function getTxSummary(conn: Connection, signature: string): Promise
  *  the last pass. This pages back with `before` until it reaches `until`. Bounded by `maxPages`: past that, the older
  *  part of the window is not returned and `onTruncated` is told (the caller logs it; nothing is skipped silently). */
 export async function getNewSignatures(conn: Connection, address: string, until: string | null,
-  o: { pageSize?: number; maxPages?: number; onTruncated?: (m: string) => void } = {}): Promise<{ signature: string; slot: number; err: boolean }[]> {
+  o: { pageSize?: number; maxPages?: number; onTruncated?: (m: string) => void; commitment?: 'confirmed' | 'finalized' } = {}): Promise<{ signature: string; slot: number; err: boolean }[]> {
   const pageSize = o.pageSize ?? 100, maxPages = o.maxPages ?? 50;
   const out: { signature: string; slot: number; err: boolean }[] = [];
   let before: string | undefined;
   for (let page = 0; ; page++) {
-    const list = await conn.getSignaturesForAddress(new PublicKey(address), { limit: pageSize, ...(until ? { until } : {}), ...(before ? { before } : {}) }, 'confirmed');
+    const read = () => conn.getSignaturesForAddress(new PublicKey(address), { limit: pageSize, ...(until ? { until } : {}), ...(before ? { before } : {}) }, o.commitment ?? 'confirmed');
+    const list = o.commitment === 'finalized' ? await busyRetry(read) : await read();
     out.push(...list.map((s) => ({ signature: s.signature, slot: s.slot, err: s.err !== null })));
     if (list.length < pageSize) break;
     if (page + 1 >= maxPages) {
@@ -614,3 +615,79 @@ export async function getWalletBalances(conn: Connection, owner: string, mints: 
   return { lamports: String(lamports), tokens };
 }
 export const getLamports = async (conn: Connection, owner: string) => BigInt(await conn.getBalance(new PublicKey(owner), COMMITMENT));
+
+// ------------------------------------------------------------------ holder balance history (rewards), all at finalized
+
+/** Retries a read the public RPC refused as busy (429, reset), backing off 1, 2, 4, 8 and 16 s; anything else is thrown. */
+export async function busyRetry<T>(f: () => Promise<T>, attempts = 6): Promise<T> {
+  for (let k = 0; ; k++) {
+    try { return await f(); } catch (e) {
+      if (!rpcBusy(e) || k + 1 >= attempts) throw e;
+      await sleep(1000 * 2 ** k);
+    }
+  }
+}
+
+/** Every SPL token account of `mint` with its owner and balance, read at one finalized slot. */
+export async function getMintTokenAccounts(conn: Connection, mint: string): Promise<{ slot: number; accounts: { account: string; owner: string; amountRaw: bigint }[] }> {
+  const r = await busyRetry(() => conn.getProgramAccounts(TOKEN, { commitment: 'finalized', withContext: true, dataSlice: { offset: 32, length: 40 },
+    filters: [{ dataSize: 165 }, { memcmp: { offset: 0, bytes: new PublicKey(mint).toBase58() } }] })) as unknown as
+    { context: { slot: number }; value: { pubkey: PublicKey; account: { data: Buffer } }[] };
+  return { slot: r.context.slot, accounts: r.value.map((a) => ({ account: a.pubkey.toBase58(), owner: new PublicKey(a.account.data.subarray(0, 32)).toBase58(),
+    amountRaw: a.account.data.readBigUInt64LE(32) })).sort((x, y) => (x.account < y.account ? -1 : 1)) };
+}
+export async function getMintSupply(conn: Connection, mint: string): Promise<{ slot: number; supplyRaw: bigint }> {
+  const r = await busyRetry(() => conn.getTokenSupply(new PublicKey(mint), 'finalized'));
+  return { slot: r.context.slot, supplyRaw: BigInt(r.value.amount) };
+}
+
+export interface TokenBalanceChanges { signature: string; slot: number; blockTime: number | null; err: boolean;
+  /** every token account whose balance the transaction lists, before and after; an account created in it has no
+   *  before (0), one closed in it has no after (0). `owner` is the owner after, or before when it was closed. */
+  balances: { account: string; mint: string; owner: string; preRaw: bigint; postRaw: bigint }[] }
+/** A finalized transaction's token balances, before and after, per token account. */
+export async function getTokenBalanceChanges(conn: Connection, signature: string): Promise<TokenBalanceChanges | null> {
+  const t = await busyRetry(() => conn.getParsedTransaction(signature, { commitment: 'finalized', maxSupportedTransactionVersion: 0 }));
+  if (!t || !t.meta) return null;
+  const keys = t.transaction.message.accountKeys.map((k) => k.pubkey.toBase58());
+  const m = new Map<number, { mint: string; owner: string; preRaw: bigint; postRaw: bigint }>();
+  for (const b of t.meta.preTokenBalances ?? []) m.set(b.accountIndex, { mint: b.mint, owner: b.owner ?? '', preRaw: BigInt(b.uiTokenAmount.amount), postRaw: 0n });
+  for (const b of t.meta.postTokenBalances ?? []) {
+    const e = m.get(b.accountIndex);
+    m.set(b.accountIndex, { mint: b.mint, owner: b.owner ?? e?.owner ?? '', preRaw: e?.preRaw ?? 0n, postRaw: BigInt(b.uiTokenAmount.amount) });
+  }
+  return { signature, slot: t.slot, blockTime: t.blockTime ?? null, err: t.meta.err !== null,
+    balances: [...m].sort(([a], [b]) => a - b).map(([i, v]) => ({ account: keys[i]!, ...v })) };
+}
+
+/** The first finalized slot with a block whose time is at or after `unixSec`, or null when the chain has not reached
+ *  that time yet. Binary search over produced blocks (skipped slots have no block time). */
+export async function firstSlotAtOrAfter(conn: Connection, unixSec: number): Promise<{ slot: number; blockTime: number } | null> {
+  const blockAt = async (slot: number) => {
+    const [b] = await busyRetry(() => conn.getBlocks(slot, slot + 500, 'finalized'));
+    if (b === undefined) return null;
+    const time = await busyRetry(() => conn.getBlockTime(b));
+    return time === null ? null : { slot: b, blockTime: time };
+  };
+  const top = await busyRetry(() => conn.getSlot('finalized'));
+  const last = await blockAt(Math.max(0, top - 150));
+  if (!last) return null;
+  const end = (await busyRetry(() => conn.getBlocks(last.slot, top, 'finalized'))).at(-1) ?? last.slot;
+  const endTime = await busyRetry(() => conn.getBlockTime(end));
+  if (endTime === null || endTime < unixSec) return null;
+  // P(s): the first block at or after slot s has a time at or after unixSec. P is monotonic; P(end) holds.
+  const P = async (slot: number) => { const b = await blockAt(slot); return b === null || b.blockTime >= unixSec; };
+  const floor = await busyRetry(() => conn.getFirstAvailableBlock());
+  let hi = end, step = Math.max(1, Math.ceil((endTime - unixSec) / 0.2)), lo = Math.max(floor, end - step);
+  while (await P(lo)) {
+    if (lo === floor) { const b = await blockAt(lo); if (!b) throw new Error(`EPOCH_BOUNDARY_UNREADABLE no block at or after slot ${lo}`); return b; }
+    hi = lo; step *= 2; lo = Math.max(floor, end - step);
+  }
+  while (hi - lo > 1) {
+    const mid = lo + Math.floor((hi - lo) / 2);
+    if (await P(mid)) hi = mid; else lo = mid;
+  }
+  const r = await blockAt(hi);
+  if (!r) throw new Error(`EPOCH_BOUNDARY_UNREADABLE no block at or after slot ${hi}`);
+  return r;
+}

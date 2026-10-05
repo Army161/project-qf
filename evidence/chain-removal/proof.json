@@ -1,6 +1,6 @@
 {
   "tool": "tools/deps/prove-chain-absent.ts",
-  "generatedAt": "2026-10-05T21:56:34.667Z",
+  "generatedAt": "2026-10-05T22:26:34.153Z",
   "result": "PASS",
   "override": "\"@meteora-ag/cp-amm-sdk@1.4.10>chain\": \"-\"",
   "checks": [
@@ -27,7 +27,7 @@
     {
       "id": "resolved-graph",
       "status": "PASS",
-      "detail": "0 of 629 graph occurrences are named chain"
+      "detail": "0 of 630 graph occurrences are named chain"
     },
     {
       "id": "node_modules",

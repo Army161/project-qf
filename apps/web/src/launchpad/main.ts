@@ -751,7 +751,7 @@ async function renderEarnings(fresh = false) {
     h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'How to read this'),
       h('ul', { class: 'notes' },
         h('li', {}, 'Accrued is not claimed, and claimed is not kept revenue.'),
-        h('li', {}, 'Under the current test policy, half of the platform share is earmarked for holder rewards. Earmarked means counted, not moved: nothing is transferred or distributed, because holder rewards are not built.'),
+        h('li', {}, h('span', {}, 'Under the current test policy, half of the platform share is earmarked for ', h('a', { href: '#/rewards' }, 'holder rewards'), '. Earmarked means counted, not moved: nothing is transferred or distributed, because there is no rewards vault and payouts are not switched on.')),
         h('li', {}, 'Curve fees are the creator and platform counters in each bonding-curve pool. LP fees are what the locked DAMM v2 positions held by the creator and by the platform fee claimer have earned since their last claim.'),
         e.treasury
           ? h('li', {}, h('span', {}, 'Coins marked treasury pay their platform fees to the treasury vault. Coins marked legacy config launched on the earlier config and keep paying the operator wallet ',
@@ -855,7 +855,8 @@ async function renderFees(wallet: string | null) {
     h('p', { class: 'dim' }, 'Every fee is read from the swap record the pool program wrote in that trade\'s own transaction, so each figure links to a transaction anyone can check. Devnet test tokens with no value. Read-only.'), lookup);
   const notes = h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'How to read this'), h('ul', { class: 'notes' },
     h('li', {}, 'A fee is what a trader paid on a trade. On the bonding curve it is split between the coin\'s creator and the platform by the coin\'s fee settings, plus Meteora\'s protocol share. After graduation it goes to the pool\'s liquidity positions (the creator\'s and the platform\'s locked positions) plus Meteora\'s share.'),
-    h('li', {}, 'Fees paid are not owed back. Holder rewards, the next milestone, will pay out from this record, wallet by wallet, and stay off on mainnet until reviewed.'),
+    h('li', {}, h('span', {}, 'Fees paid are not owed back. This record sets how much is earmarked for ', h('a', { href: '#/rewards' }, 'holder rewards'),
+      '. An earmark is not money: only rewards deposited into the rewards vault are paid, and who receives them is set by balances over time, not by trading.')),
     h('li', {}, 'Earnings checks that these per-trade figures add up to what the pools hold plus what was claimed.')));
   if (w) {
     const rows = w.trades.map((x) => h('tr', {},
@@ -886,6 +887,161 @@ async function renderFees(wallet: string | null) {
     h('div', { class: 'card' }, h('h3', {}, a.walletCount > a.wallets.length ? `Per wallet (top ${a.wallets.length} of ${a.walletCount})` : 'Per wallet'),
       table([['Wallet', ''], ['Trades', 'num'], ['Volume', 'num'], ['Fees paid', 'num'], ['Unconfirmed', 'num']], walletRows, 'No trades yet.')),
     notes));
+}
+
+// ------------------------------------------------------------------ holder rewards (read-only)
+interface CoverageCheck { id: string; ok: boolean; detail: string }
+interface HolderCoverage { status: 'COMPLETE' | 'CATCHING_UP' | 'MISMATCH'; checkedAtSlot: number; checkedAt: string; accounts: number; transactions: number; pending: number;
+  failed: number; changes: number; checks: CoverageCheck[]; providers: 'SINGLE_PROVIDER' }
+interface EpochFunding { earmarkedRaw: string; earmarkTrades: number; unknownFeeTrades: number; fundedRaw: string; poolCarryInRaw: string; deposits: { sig: string; amountRaw: string }[] }
+interface EpochWindowView { startSec: number; endSec: number; startSlot: number | null; endSlot: number | null; nextStartSlot: number | null; slots: number }
+type EpochStatus = 'FINAL' | 'OPEN' | 'INCOMPLETE';
+interface Frozen { hash: string; finalizedAt: string; reproduced: boolean }
+interface RewardRules { strategy: string; funding: string; allocation: string; settlement: { mainnet: boolean; devnet: string; note: string } }
+interface RewardsOverview { cluster: string; label: string; rules: RewardRules; rewardsVault: string | null;
+  policies: { exclusion: { version: string }; allocation: { version: string }; earmark: { economicsVersion: string; partnerRewardsSplitPct: number; label: string } };
+  coins: { mint: string; symbol: string; status: string; coverage: HolderCoverage | null; totals: { earmarkedRaw: string; depositedRaw: string; allocatedRaw: string };
+    epochs: { epochId: string; status: EpochStatus; reasons: string[]; window: EpochWindowView; holders: number; excluded: number; funding: EpochFunding;
+      totalAllocatedRaw: string; merkleRoot: string | null; artifactHash: string | null; frozen: Frozen | null }[] }[] }
+interface EpochDetailView { mint: string; symbol: string; label: string; rules: RewardRules; coverage: HolderCoverage | null;
+  epoch: { epochId: string; status: EpochStatus; reasons: string[]; window: EpochWindowView; funding: EpochFunding; poolRollForwardRaw: string; merkleRoot: string | null;
+    holders: { owner: string; balanceUnits: string; averageRaw: string; shareBps: number; allocationRaw: string; carryOutRaw: string }[];
+    excluded: { owner: string; reason: string; balanceUnits: string }[];
+    payouts: { owner: string; amountRaw: string; leaf: string; proof: string[] }[]; artifactHash: string | null; frozen: Frozen | null } }
+/** #/rewards/<mint>/<YYYY-MM-DD>, or null on any other page. */
+const rewardsEpoch = () => { const x = /^#\/rewards\/([1-9A-HJ-NP-Za-km-z]{32,44})\/(\d{4}-\d{2}-\d{2})$/.exec(location.hash); return x ? { mint: x[1]!, epochId: x[2]! } : null; };
+const baseDecimals = () => Number(state.platform?.platform?.launchEconomics?.baseDecimals ?? 6);
+const EXCLUSION_TEXT: Record<string, string> = {
+  QF_OPERATOR: 'platform operator wallet', QF_PLATFORM_FEE_CLAIMER: 'platform fee claimer', QF_TREASURY_MULTISIG: 'treasury multisig', QF_TREASURY_VAULT: 'treasury vault',
+  DBC_POOL_AUTHORITY: 'bonding-curve pool', DAMM_V2_POOL_AUTHORITY: 'graduated pool', BURN_ADDRESS: 'burn address',
+};
+const exclusionText = (r: string) => EXCLUSION_TEXT[r] ?? (r.startsWith('OFF_CURVE_OWNER') ? 'program account (a pool, vault or program, not a wallet)' : r);
+function epochStatusLabel(s: EpochStatus) {
+  return s === 'FINAL' ? h('span', { class: 'check-ok' }, 'final') : s === 'OPEN' ? h('span', { class: 'check-residual' }, 'running') : h('span', { class: 'check-bad' }, 'not final');
+}
+function coverageLabel(c: HolderCoverage | null) {
+  if (!c) return h('span', { class: 'dim' }, 'not read yet');
+  return c.status === 'COMPLETE' ? h('span', { class: 'check-ok' }, 'complete') : c.status === 'CATCHING_UP' ? h('span', { class: 'check-residual' }, 'catching up') : h('span', { class: 'check-bad' }, 'does not match the chain');
+}
+const COVERAGE_CHECK_TEXT: Record<string, string> = {
+  ALL_TRANSACTIONS_READ: 'Every transaction that touched a holder account is read',
+  REPLAYS_CLEANLY: 'Every account replays from its creation without a gap',
+  REPLAY_EQUALS_CHAIN: 'Replayed balances equal the chain (closed accounts replay to zero)',
+  ACCOUNTS_ADD_UP_TO_SUPPLY: 'The accounts on chain add up to the supply',
+};
+const utcDay = (sec: number) => new Date(sec * 1000).toISOString().slice(0, 10);
+/** The funding rule and the payout switch, in the server's words; on every rewards page. */
+function rewardsRulesCard(r: RewardRules) {
+  return h('div', { class: 'card treasury' },
+    h('div', { class: 'tr-head' }, h('h3', {}, 'Where rewards come from'), h('span', { class: 'chip warn' }, 'no payouts'),
+      h('span', { class: 'chip legacy' }, r.settlement.mainnet ? 'mainnet on' : 'mainnet off')),
+    h('ul', { class: 'notes' }, h('li', {}, r.funding), h('li', {}, r.allocation), h('li', { class: 'err' }, r.settlement.note)));
+}
+
+async function renderRewards(fresh = false) {
+  const main = $('#view');
+  const q = Q();
+  if (!fresh) main.replaceChildren(h('div', { class: 'empty' }, 'Loading…'));
+  let o: RewardsOverview;
+  try { o = await api<RewardsOverview>(`/api/lp/rewards${fresh ? '?fresh=1' : ''}`); }
+  catch (err) { if (!fresh) main.replaceChildren(h('div', { class: 'empty err' }, `Rewards unavailable (${(err as Error).message}).`)); else toast(`Refresh failed: ${(err as Error).message}`, 'err'); return; }
+  if (location.hash !== '#/rewards') return;
+  const amt = (raw: string) => `${units(raw, q.decimals, 6)} ${q.symbol}`;
+  const kpi = (k: string, v: string, sub: string) => h('div', {}, h('span', { class: 'k' }, k), h('span', { class: 'v' }, v), h('span', { class: 'dim small' }, sub));
+  const sum = (f: (c: RewardsOverview['coins'][number]) => string) => o.coins.reduce((s, c) => s + BigInt(f(c)), 0n).toString();
+  const complete = o.coins.filter((c) => c.coverage?.status === 'COMPLETE').length;
+  const refresh = h('button', { class: 'btn ghost sm', onclick: async () => { refresh.setAttribute('disabled', ''); await renderRewards(true); } }, 'Refresh');
+  const coinCard = (c: RewardsOverview['coins'][number]) => {
+    const cov = c.coverage;
+    const rows = [...c.epochs].reverse().map((e) => h('tr', {},
+      h('td', {}, e.window.slots ? h('a', { href: `#/rewards/${c.mint}/${e.epochId}` }, e.epochId) : e.epochId),
+      h('td', {}, epochStatusLabel(e.status), e.reasons.length ? h('span', { class: 'dim small reason' }, e.reasons[0]!) : null),
+      h('td', { class: 'num' }, String(e.holders), e.excluded ? h('span', { class: 'dim small reason' }, `${e.excluded} excluded`) : null),
+      h('td', { class: 'num' }, amt(e.funding.earmarkedRaw), e.funding.earmarkTrades ? h('span', { class: 'dim small reason' }, `from ${e.funding.earmarkTrades} ${e.funding.earmarkTrades === 1 ? 'trade' : 'trades'}`) : null),
+      h('td', { class: 'num' }, amt(e.funding.fundedRaw)),
+      h('td', { class: 'num' }, amt(e.totalAllocatedRaw)),
+      h('td', { class: 'mono' }, e.frozen ? h('span', { title: `frozen ${e.frozen.finalizedAt}; artifact sha256 ${e.frozen.hash}` }, short(e.frozen.hash, 6),
+        h('span', { class: `small reason ${e.frozen.reproduced ? 'check-ok' : 'check-bad'}` }, e.frozen.reproduced ? 'frozen, recomputed identically' : 'recomputed differently')) : h('span', { class: 'dim' }, e.status === 'OPEN' ? 'after it ends' : '—'))));
+    return h('div', { class: 'card' },
+      h('div', { class: 'tr-head rw-head' }, h('h3', {}, h('a', { href: `#/t/${c.mint}` }, `$${c.symbol}`)), h('span', { class: 'dim small' }, c.status === 'MIGRATED' ? 'graduated' : 'bonding'),
+        h('span', { class: 'small' }, 'Holder history: ', coverageLabel(cov))),
+      cov ? h('details', { class: 'rw-checks' }, h('summary', { class: 'dim small' },
+        `${cov.accounts} token ${cov.accounts === 1 ? 'account' : 'accounts'}, ${cov.transactions} ${cov.transactions === 1 ? 'transaction' : 'transactions'}, checked against the chain at slot ${cov.checkedAtSlot} (${ago(cov.checkedAt)}), one RPC provider`),
+        h('ul', { class: 'notes' }, ...cov.checks.map((x) => h('li', {}, h('span', { class: x.ok ? 'check-ok' : 'check-bad' }, x.ok ? 'Yes' : 'No'), ` ${COVERAGE_CHECK_TEXT[x.id] ?? x.id}. `, h('span', { class: 'small' }, x.detail))))) : null,
+      h('p', { class: 'scroll-hint dim small' }, 'Swipe the table sideways to see every column.'),
+      h('div', { class: 'scroll' }, h('table', { class: 'trades' },
+        h('thead', {}, h('tr', {}, ...[['Epoch (UTC day)', ''], ['Status', ''], ['Holders', 'num'], ['Earmarked', 'num'], ['Funded', 'num'], ['Allocated', 'num'], ['Artifact', '']].map(([x, cls]) => h('th', { class: cls }, x)))),
+        h('tbody', {}, ...rows))));
+  };
+  main.replaceChildren(h('section', { class: 'earnings' },
+    h('div', { class: 'earn-head' }, h('h1', {}, 'Holder rewards'),
+      h('p', { class: 'dim' }, `Each coin's holders, day by day, from every wallet's balance over time. ${o.label}. Read-only: nothing on this page moves funds.`),
+      h('div', { class: 'asof' }, h('span', { class: 'dim small' }, 'Recomputed from the stored history; kept for up to 30 seconds.'), refresh)),
+    h('div', { class: 'kpis' },
+      kpi('Earmarked', amt(sum((c) => c.totals.earmarkedRaw)), `${o.policies.earmark.partnerRewardsSplitPct}% of platform fees · not money`),
+      kpi('Deposited', amt(sum((c) => c.totals.depositedRaw)), o.rewardsVault ? 'into the rewards vault' : 'no rewards vault yet'),
+      kpi('Allocated to holders', amt(sum((c) => c.totals.allocatedRaw)), 'only deposits are allocated'),
+      kpi('Holder history', `${complete} of ${o.coins.length}`, 'coins proven complete')),
+    rewardsRulesCard(o.rules),
+    ...(o.coins.length ? o.coins.map(coinCard) : [h('div', { class: 'card' }, h('p', { class: 'dim', style: { margin: '0' } }, 'No coins yet.'))]),
+    h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'How to read this'), h('ul', { class: 'notes' },
+      h('li', {}, 'An epoch is one UTC day, from the first finalized slot of that day to the first slot of the next.'),
+      h('li', {}, 'A holder\'s weight is their balance averaged over every slot of the epoch. Buys, sells and direct transfers between wallets all count, each read from its own transaction.'),
+      h('li', {}, `Pools, vaults, program accounts, the platform's own wallets and burn addresses are excluded (${o.policies.exclusion.version}). Allocation policy ${o.policies.allocation.version}.`),
+      h('li', {}, 'Earmarked is what the fee ledger sets aside for holder rewards from the platform\'s share of each epoch\'s trading fees. It is a count, not money. Funded is what was deposited into the rewards vault for that epoch, plus any remainder carried from the epoch before. Only funded amounts are allocated.'),
+      h('li', {}, 'An epoch becomes final once it has ended and its holder history is proven complete through its last slot. Its result is then frozen with a hash, and every later recomputation must give the same hash.')))));
+}
+
+async function renderRewardEpoch(mint: string, epochId: string) {
+  const main = $('#view');
+  const q = Q();
+  main.replaceChildren(h('div', { class: 'empty' }, 'Loading…'));
+  let d: EpochDetailView;
+  try { d = await api<EpochDetailView>(`/api/lp/rewards/${mint}/${epochId}`); }
+  catch (err) { main.replaceChildren(h('div', { class: 'empty err' }, `This epoch is unavailable (${(err as Error).message}).`), h('p', {}, h('a', { href: '#/rewards' }, 'All coins'))); return; }
+  const cur = rewardsEpoch();
+  if (!cur || cur.mint !== mint || cur.epochId !== epochId) return;
+  const e = d.epoch, w = e.window;
+  const amt = (raw: string) => `${units(raw, q.decimals, 6)} ${q.symbol}`;
+  const bal = (raw: string) => `${units(raw, baseDecimals(), 2)} $${d.symbol}`;
+  const avg = (u: string) => (w.slots ? bal((BigInt(u) / BigInt(w.slots)).toString()) : '—');
+  const kpi = (k: string, v: string | HTMLElement, sub: string) => h('div', {}, h('span', { class: 'k' }, k), h('span', { class: 'v' }, v), h('span', { class: 'dim small' }, sub));
+  const table = (head: [string, string][], body: HTMLElement[], empty: string) => body.length
+    ? h('div', {}, h('p', { class: 'scroll-hint dim small' }, 'Swipe the table sideways to see every column.'),
+      h('div', { class: 'scroll' }, h('table', { class: 'trades' }, h('thead', {}, h('tr', {}, ...head.map(([c, cls]) => h('th', { class: cls }, c)))), h('tbody', {}, ...body))))
+    : h('p', { class: 'dim', style: { margin: '0' } }, empty);
+  const holderRows = e.holders.map((x) => h('tr', {}, h('td', { class: 'mono' }, ext(explorer('address', x.owner), short(x.owner))),
+    h('td', { class: 'num' }, bal(x.averageRaw)), h('td', { class: 'num' }, x.shareBps === 0 && BigInt(x.balanceUnits) > 0n ? 'under 0.01%' : pct(x.shareBps)), h('td', { class: 'num' }, amt(x.allocationRaw)),
+    h('td', { class: 'num' }, BigInt(x.carryOutRaw) ? amt(x.carryOutRaw) : '—')));
+  const excludedRows = e.excluded.map((x) => h('tr', {}, h('td', { class: 'mono' }, ext(explorer('address', x.owner), short(x.owner))),
+    h('td', {}, exclusionText(x.reason)), h('td', { class: 'num' }, avg(x.balanceUnits))));
+  const artifactHref = `/api/lp/rewards/${mint}/${epochId}/artifact.json`;
+  const f = e.funding;
+  main.replaceChildren(h('section', { class: 'earnings' },
+    h('div', { class: 'earn-head' }, h('p', { class: 'small' }, h('a', { href: '#/rewards' }, 'Holder rewards')),
+      h('h1', { class: 'rw-title' }, h('span', {}, `$${d.symbol}`), h('span', { class: 'dim' }, ` · ${e.epochId}`)),
+      h('p', { class: 'dim' }, w.startSlot === null ? `${utcDay(w.startSec)} UTC. The chain has not reached this day yet.`
+        : `${utcDay(w.startSec)} UTC, slots ${w.startSlot.toLocaleString()} to ${w.endSlot === null ? 'now' : w.endSlot.toLocaleString()} (${w.slots.toLocaleString()} slots${w.nextStartSlot === null ? ', still running' : ''}). ${d.label}.`)),
+    h('div', { class: 'kpis' },
+      kpi('Status', epochStatusLabel(e.status), e.status === 'FINAL' ? 'frozen, cannot change' : e.status === 'OPEN' ? 'a preview until the day ends' : 'ended, not proven yet'),
+      kpi('Holders', String(e.holders.length), `${e.excluded.length} excluded`),
+      kpi('Earmarked', amt(f.earmarkedRaw), `from ${f.earmarkTrades} ${f.earmarkTrades === 1 ? 'trade' : 'trades'} · not money`),
+      kpi('Funded', amt(f.fundedRaw), f.deposits.length ? `${f.deposits.length} ${f.deposits.length === 1 ? 'deposit' : 'deposits'}` : 'nothing deposited')),
+    e.reasons.length ? h('div', { class: 'cov-notes' }, h('p', { class: 'small' }, 'Why this epoch is not final:'), h('ul', { class: 'notes err small' }, ...e.reasons.map((r) => h('li', {}, r)))) : null,
+    rewardsRulesCard(d.rules),
+    h('div', { class: 'card' }, h('h3', {}, 'Holders and their share'),
+      h('p', { class: 'dim small', style: { margin: '0 0 12px' } }, 'Average balance over every slot of the epoch, from the coin\'s full transfer history. The share is of all eligible holders. The allocation divides only what was funded, so it is zero while nothing is deposited.'),
+      table([['Wallet', ''], ['Average balance', 'num'], ['Share', 'num'], ['Allocation', 'num'], ['Carried to next epoch', 'num']], holderRows, 'No eligible holders in this epoch.')),
+    h('div', { class: 'card' }, h('h3', {}, 'Excluded'),
+      table([['Owner', ''], ['Why', ''], ['Average balance', 'num']], excludedRows, 'Nothing excluded.')),
+    h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'Result record'),
+      e.artifactHash ? h('ul', { class: 'notes' },
+        h('li', { class: 'mono small' }, `sha256 ${e.artifactHash}`),
+        e.frozen ? h('li', {}, `Frozen ${new Date(e.frozen.finalizedAt).toLocaleString()}. `, h('span', { class: e.frozen.reproduced ? 'check-ok' : 'check-bad' }, e.frozen.reproduced ? 'Recomputed just now with the same hash.' : 'Recomputed just now with a different hash.'))
+          : h('li', {}, 'Not frozen: the epoch is not final.'),
+        e.merkleRoot ? h('li', { class: /^0+$/.test(e.merkleRoot) ? 'small' : 'mono small' }, /^0+$/.test(e.merkleRoot) ? 'Merkle root: empty, nothing was allocated.' : `Merkle root ${e.merkleRoot}`) : null,
+        h('li', {}, h('a', { href: artifactHref, target: '_blank', rel: 'noopener' }, 'Open the record (JSON)'), ': inputs hash, window, policies, funding, exclusions and allocation.'))
+        : h('p', { class: 'dim' }, 'A record is written once the epoch has ended.'))));
 }
 
 // ------------------------------------------------------------------ network status (read-only)
@@ -932,9 +1088,13 @@ async function route() {
   document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === (m ? '' : location.hash || '#/')));
   const fw = feesWallet();
   if (fw !== undefined) document.querySelector('nav a[href="#/fees"]')?.classList.add('on');
-  if (m || fw !== undefined || location.hash === '#/create' || location.hash === '#/earnings' || location.hash === '#/status') $('#tape').hidden = true;
+  const re = rewardsEpoch();
+  if (re) document.querySelector('nav a[href="#/rewards"]')?.classList.add('on');
+  if (m || fw !== undefined || re || location.hash === '#/create' || location.hash === '#/earnings' || location.hash === '#/rewards' || location.hash === '#/status') $('#tape').hidden = true;
   if (m) await renderToken(m);
   else if (fw !== undefined) await renderFees(fw);
+  else if (re) await renderRewardEpoch(re.mint, re.epochId);
+  else if (location.hash === '#/rewards') await renderRewards();
   else if (location.hash === '#/status') renderStatus();
   else if (location.hash === '#/create') renderCreate();
   else if (location.hash === '#/earnings') await renderEarnings();

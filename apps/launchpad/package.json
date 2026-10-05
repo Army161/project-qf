@@ -13,6 +13,7 @@
     "@project-qf/adapter-meteora-dbc": "workspace:*",
     "@project-qf/core": "workspace:*",
     "@project-qf/policy": "workspace:*",
+    "@project-qf/rewards": "workspace:*",
     "@project-qf/tx": "workspace:*",
     "@project-qf/validator": "workspace:*"
   }

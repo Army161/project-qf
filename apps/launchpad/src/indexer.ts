@@ -6,6 +6,7 @@
 import type { LaunchpadChain, LiveDammPool, LivePool, TxSummary } from './chain.ts';
 import { feesFromSummary, unknownFees, type TradeFees } from './fees.ts';
 import type { LaunchRow, LaunchpadStore, TradeRow } from './store.ts';
+import { syncAllHolders } from './holders.ts';
 
 /** The pool a trade is read against: its vaults; and, to read its fees, its address and (curve) the creator's fee share. */
 type TradePool = Pick<LivePool, 'baseVault' | 'quoteVault'> & { pool?: string; creatorTradingFeePct?: number };
@@ -191,9 +192,10 @@ export class DammCache {
   invalidate(pool: string) { this.m.delete(pool); }
 }
 
-/** Background loop: index and crank every `intervalMs`, one pass at a time. */
-export function startBackground(d: IndexerDeps, intervalMs = 15_000): () => void {
-  let stopped = false, running = false;
+/** Background loop: index and crank every `intervalMs`, one pass at a time. The holder balance history (rewards) is read
+ *  every `holdersEvery` passes, so the public RPC's rate limit is shared with the trade indexer. */
+export function startBackground(d: IndexerDeps, intervalMs = 15_000, holdersEvery = 4): () => void {
+  let stopped = false, running = false, passes = 0;
   const pass = async () => {
     if (running || stopped) return;
     running = true;
@@ -205,6 +207,7 @@ export function startBackground(d: IndexerDeps, intervalMs = 15_000): () => void
       }
       await crankMigrations(d);
       await fillTradeFees(d).catch((e) => d.log?.(`trade fees: ${(e as Error).message.slice(0, 200)}`));
+      if (passes++ % holdersEvery === 0) await syncAllHolders(d);
     } catch (e) {
       d.log?.(`background pass failed: ${(e as Error).message.slice(0, 200)}`);
     } finally { running = false; }
