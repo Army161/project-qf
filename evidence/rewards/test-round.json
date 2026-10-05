@@ -1,0 +1,59 @@
+{
+ "label": "TEST_ONLY devnet holder-rewards test round (test qUSD, valueless). Signatures and public addresses only.",
+ "cluster": "devnet",
+ "multisig": "6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd",
+ "treasuryVault": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+ "rewardsVault": "Y2HuCzcjTnKHTCn7cBcPm2DsGKnuqScsVpXy7ifCon7",
+ "rewardsVaultQuoteAccount": "BeJ86unizDStGtfcEgpFTQquAgsD8CSY2YPDsvS4heGq",
+ "coin": {
+  "symbol": "VAULT",
+  "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o"
+ },
+ "epochId": "2026-10-05",
+ "deposit": {
+  "amountRaw": "2020202",
+  "memo": "qf-rewards-deposit@1 mint=FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o epoch=2026-10-05",
+  "steps": [
+   {
+    "step": "propose",
+    "transactionIndex": "5",
+    "kind": "REWARDS_DEPOSIT",
+    "signature": "2tFcAp4V2XfF2dZvWMK16zacYqcw1SpMG6jqvMfggsS4GuABF6BmMvCC3XD7WctVA3Korgh5kPesboKLjCxBzp8p",
+    "signedAs": "TREASURY_PROPOSE",
+    "proposal": null
+   },
+   {
+    "step": "approve",
+    "transactionIndex": "5",
+    "kind": "REWARDS_DEPOSIT",
+    "signature": "Bcb9ZUB6DUiiZ9A3uKBCznAdmqY9xFXtLm8rUphogm85KYpgSzuukiQEU1o4HwFj7qyRbw6bRtBnyRYkkDPBrZq",
+    "signedAs": "TREASURY_APPROVE",
+    "proposal": {
+     "status": "Active",
+     "approved": [
+      "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz"
+     ],
+     "rejected": [],
+     "cancelled": []
+    }
+   },
+   {
+    "step": "execute",
+    "transactionIndex": "5",
+    "kind": "REWARDS_DEPOSIT",
+    "signature": "5dfSB2ndawyzkNhk5RQPFM7m1KNsmxNssR3QUNNNRVwjGV9nVDKzTySa5SsYqWbZHP3BuZoPkhEi8De7EjcYN5Za",
+    "signedAs": "TREASURY_EXECUTE",
+    "proposal": {
+     "status": "Approved",
+     "approved": [
+      "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+      "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ"
+     ],
+     "rejected": [],
+     "cancelled": []
+    }
+   }
+  ]
+ },
+ "payout": null
+}
