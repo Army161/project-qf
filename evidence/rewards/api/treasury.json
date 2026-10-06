@@ -1,0 +1,281 @@
+{
+ "treasury": {
+  "multisig": "6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd",
+  "vault": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+  "threshold": 2,
+  "members": [
+   "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+   "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ",
+   "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww"
+  ],
+  "label": "DEVNET_STAND_IN",
+  "signers": "ONE_OPERATOR_TEST_KEYS",
+  "separationOfControl": false,
+  "note": "Devnet stand-in. All three member keys are throwaway test keys held by one operator in one container, so this demonstrates the approval flow, not separation of control. The real signers, threshold and time lock are decided before mainnet."
+ },
+ "proposals": [
+  {
+   "multisig": "6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd",
+   "txIndex": "6",
+   "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+   "venue": "REWARDS_PAYOUT",
+   "proposer": "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+   "proposeSig": "3jzzCYoi5hUgdYMmqJj8D2DCobEs2sWQ9XkBaftKX2ToYtJsmVoD5ykER5bYJhyhExJj9m6eKuHAQNmSp7NMeS2Z",
+   "status": "Executed",
+   "executeSig": "37DjqzrYoRmQUyAU8sGzEWNz5xQ4rMLDTXd1qovBFE9fWTzCdzo6NzN6z78eCcSzBisnrai9mMy2i78dVE6rpTRg",
+   "executedBy": "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ",
+   "createdAt": "2026-10-06T00:01:26.056Z",
+   "updatedAt": "2026-10-06T00:01:44.552Z",
+   "approvals": [
+    "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+    "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ"
+   ],
+   "inner": {
+    "cluster": "devnet",
+    "policyVersion": "tx-binding-v0.1",
+    "feePayer": "Y2HuCzcjTnKHTCn7cBcPm2DsGKnuqScsVpXy7ifCon7",
+    "compute": {
+     "maxUnitLimit": 400000,
+     "maxUnitPriceMicroLamports": "0"
+    },
+    "quoteMint": "GWjfymuG7NhkWm2aEKhCexJKkXvM8Fe6k3mQGB313Vez",
+    "quoteDecimals": 6,
+    "quoteTokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "launchMint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+    "epochId": "2026-10-05",
+    "kind": "REWARDS_PAYOUT",
+    "from": "Y2HuCzcjTnKHTCn7cBcPm2DsGKnuqScsVpXy7ifCon7",
+    "artifactHash": "ec069d2532e624077f601f905cbdbd993485cfbf49049ae61600e4fe1d42c1fc",
+    "payouts": [
+     {
+      "owner": "4vCyHopHHHNiL2bVH2ve8FzkxgL91BhNFaooUG1wbMyj",
+      "amountRaw": "132849"
+     },
+     {
+      "owner": "8RKJVqkE8EGWLfghbXUAe1JhgEN2Z9eEX4EJ8xXdnAYG",
+      "amountRaw": "4228"
+     },
+     {
+      "owner": "8UXp4uJTicUWj55mGFwy4gncRBYxH8ej5DuxEZR2FDk2",
+      "amountRaw": "1185026"
+     },
+     {
+      "owner": "DJg6AJPT3jUsx2jSWvrFzAaiYnwDp2F3TTJfsjYSpMYe",
+      "amountRaw": "698096"
+     }
+    ]
+   }
+  },
+  {
+   "multisig": "6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd",
+   "txIndex": "5",
+   "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+   "venue": "REWARDS_DEPOSIT",
+   "proposer": "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+   "proposeSig": "2tFcAp4V2XfF2dZvWMK16zacYqcw1SpMG6jqvMfggsS4GuABF6BmMvCC3XD7WctVA3Korgh5kPesboKLjCxBzp8p",
+   "status": "Executed",
+   "executeSig": "5dfSB2ndawyzkNhk5RQPFM7m1KNsmxNssR3QUNNNRVwjGV9nVDKzTySa5SsYqWbZHP3BuZoPkhEi8De7EjcYN5Za",
+   "executedBy": "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ",
+   "createdAt": "2026-10-05T22:41:06.574Z",
+   "updatedAt": "2026-10-05T22:41:22.167Z",
+   "approvals": [
+    "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+    "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ"
+   ],
+   "inner": {
+    "cluster": "devnet",
+    "policyVersion": "tx-binding-v0.1",
+    "feePayer": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "compute": {
+     "maxUnitLimit": 400000,
+     "maxUnitPriceMicroLamports": "0"
+    },
+    "quoteMint": "GWjfymuG7NhkWm2aEKhCexJKkXvM8Fe6k3mQGB313Vez",
+    "quoteDecimals": 6,
+    "quoteTokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "launchMint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+    "epochId": "2026-10-05",
+    "kind": "REWARDS_DEPOSIT",
+    "from": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "to": "Y2HuCzcjTnKHTCn7cBcPm2DsGKnuqScsVpXy7ifCon7",
+    "amountRaw": "2020202"
+   }
+  },
+  {
+   "multisig": "6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd",
+   "txIndex": "4",
+   "mint": "2d66yf3bjcXp2sLDAmBV7BvDhKgVpSTeEUkJYiMNgMqX",
+   "venue": "CURVE",
+   "proposer": "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+   "proposeSig": "4SaPsKNRLMuaUwYqnccb6tdS5xQeBi5tU6xLKzHUuYEXduomU7AuL3MSmbACNQSbrvtpkuvEyE3HVrYcwMYf1GF4",
+   "status": "Executed",
+   "executeSig": "7DsBcUn3WfKumKyQmKve7GwXdZrXxBokgdo7ucWCEZn82exv6uophzNZcxxLd5ssH26XYUpiRpXgyJ4zp3U75Fh",
+   "executedBy": "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ",
+   "createdAt": "2026-10-05T20:52:08.379Z",
+   "updatedAt": "2026-10-05T20:52:36.215Z",
+   "approvals": [
+    "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+    "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww"
+   ],
+   "inner": {
+    "cluster": "devnet",
+    "policyVersion": "tx-binding-v0.1",
+    "feePayer": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "compute": {
+     "maxUnitLimit": 400000,
+     "maxUnitPriceMicroLamports": "0"
+    },
+    "kind": "CLAIM_PARTNER_TRADING_FEE",
+    "config": "7Jcu6GtNEqgfvYNTk9XNEWrWq6duuFFdSXjhNE6nU5UE",
+    "pool": "Ecqo6oGeg6ByKQo6Yogsa5r6hpxFxmgiMGXtTgQMBjBC",
+    "feeClaimer": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "receiver": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "baseMint": "2d66yf3bjcXp2sLDAmBV7BvDhKgVpSTeEUkJYiMNgMqX",
+    "quoteMint": "GWjfymuG7NhkWm2aEKhCexJKkXvM8Fe6k3mQGB313Vez",
+    "baseTokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "quoteTokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "maxBaseAmount": "0",
+    "maxQuoteAmount": "420030"
+   }
+  },
+  {
+   "multisig": "6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd",
+   "txIndex": "3",
+   "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+   "venue": "CURVE",
+   "proposer": "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ",
+   "proposeSig": "5sVZ2jnWiQ5nt713f4e7bJvVoAMuJXUnc4hH89mC5Xgj6kjVmKP9fHQHqC6UkipABifXAFXQxaQs4zAUn2BiGYtv",
+   "status": "Executed",
+   "executeSig": "322BXcdshNjwbKKAXaB4iczq2r8aspNDSE6hgZRM51gh48zhhp8ecDi43ikqtxP4rCqhfyvYyCAozzvSayFAcCvt",
+   "executedBy": "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+   "createdAt": "2026-10-05T18:53:15.200Z",
+   "updatedAt": "2026-10-05T18:53:26.408Z",
+   "approvals": [
+    "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww",
+    "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ"
+   ],
+   "inner": {
+    "cluster": "devnet",
+    "policyVersion": "tx-binding-v0.1",
+    "feePayer": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "compute": {
+     "maxUnitLimit": 400000,
+     "maxUnitPriceMicroLamports": "0"
+    },
+    "kind": "CLAIM_PARTNER_TRADING_FEE",
+    "config": "7Jcu6GtNEqgfvYNTk9XNEWrWq6duuFFdSXjhNE6nU5UE",
+    "pool": "6Nq2JLyXf2bZHEVweuorkbyzmjP9CAjXGP6TjqnuSgek",
+    "feeClaimer": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "receiver": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "baseMint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+    "quoteMint": "GWjfymuG7NhkWm2aEKhCexJKkXvM8Fe6k3mQGB313Vez",
+    "baseTokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "quoteTokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "maxBaseAmount": "0",
+    "maxQuoteAmount": "2840405"
+   }
+  },
+  {
+   "multisig": "6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd",
+   "txIndex": "2",
+   "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+   "venue": "DAMM_V2",
+   "proposer": "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww",
+   "proposeSig": "3732K58WezsxAGeb6tEp89CDtK46HDor7DLSoHZwPo3JNDJYMWHqYXtd1ehP7qTejpxh5NdcTva6hhSiphzq1NJS",
+   "status": "Executed",
+   "executeSig": "4rumj3FWUXWtAekWVWpzWuueUfBWHKwgaN1JqhcABy8tgRFKg8MpXKs6ibF6vrRKaBqWYDwk6m79m73cxk4m13q4",
+   "executedBy": "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ",
+   "createdAt": "2026-10-05T18:52:52.652Z",
+   "updatedAt": "2026-10-05T18:53:01.868Z",
+   "approvals": [
+    "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+    "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww"
+   ],
+   "inner": {
+    "cluster": "devnet",
+    "policyVersion": "tx-binding-v0.1",
+    "feePayer": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "compute": {
+     "maxUnitLimit": 400000,
+     "maxUnitPriceMicroLamports": "0"
+    },
+    "kind": "DAMM_CLAIM_POSITION_FEE",
+    "dammConfig": "A8gMrEPJkacWkcb3DGwtJwTe16HktSEfvwtuDh2MCtck",
+    "pool": "HDnxLVQzPBVFhnGszBA5d1tQJ4iwAC5n54rxuENk2u2U",
+    "owner": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "positionNftMint": "8gEEEei7E1krQYR8GzgpoLUG2k1en3fFNu5udawR1Ri6",
+    "baseMint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+    "quoteMint": "GWjfymuG7NhkWm2aEKhCexJKkXvM8Fe6k3mQGB313Vez",
+    "baseTokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "quoteTokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+   }
+  },
+  {
+   "multisig": "6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd",
+   "txIndex": "1",
+   "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+   "venue": "CURVE",
+   "proposer": "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+   "proposeSig": "3Y7JHFJW8iBGDMWs8AYfo1UxLVgyUetJrfY5yR4eRNkx6vEXkPJ1zDU3teypKzE9zjWbcKirPLqrqKK249ZV9ZES",
+   "status": "Executed",
+   "executeSig": "3YkaPFZHkWbyYw6BwhvEt9PmWzX2BhQ6kdH9bUiRDYdy5kGVYbhxtY6p8Vcsfw7UbxvPqUZvicdwWqcrzpeFopuv",
+   "executedBy": "AWQwPuzNarN4rVRVfRBMMeNwHsGZ8F6ZPeHRk1Wm7nww",
+   "createdAt": "2026-10-05T18:51:08.204Z",
+   "updatedAt": "2026-10-05T18:53:42.656Z",
+   "approvals": [
+    "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+    "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ"
+   ],
+   "inner": {
+    "cluster": "devnet",
+    "policyVersion": "tx-binding-v0.1",
+    "feePayer": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "compute": {
+     "maxUnitLimit": 400000,
+     "maxUnitPriceMicroLamports": "0"
+    },
+    "kind": "CLAIM_PARTNER_TRADING_FEE",
+    "config": "7Jcu6GtNEqgfvYNTk9XNEWrWq6duuFFdSXjhNE6nU5UE",
+    "pool": "6Nq2JLyXf2bZHEVweuorkbyzmjP9CAjXGP6TjqnuSgek",
+    "feeClaimer": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "receiver": "7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB",
+    "baseMint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+    "quoteMint": "GWjfymuG7NhkWm2aEKhCexJKkXvM8Fe6k3mQGB313Vez",
+    "baseTokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "quoteTokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "maxBaseAmount": "0",
+    "maxQuoteAmount": "1200000"
+   }
+  }
+ ],
+ "claimable": [
+  {
+   "mint": "2d66yf3bjcXp2sLDAmBV7BvDhKgVpSTeEUkJYiMNgMqX",
+   "symbol": "TRSY",
+   "status": "LIVE",
+   "curve": {
+    "quoteRaw": "0",
+    "baseRaw": "0"
+   },
+   "positions": []
+  },
+  {
+   "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+   "symbol": "VAULT",
+   "status": "MIGRATED",
+   "curve": {
+    "quoteRaw": "0",
+    "baseRaw": "0"
+   },
+   "positions": [
+    {
+     "position": "57uwTdgpbbTs9cDY9SuWyfR68zEMFfsNzSgNPVCTahfb",
+     "nftMint": "8gEEEei7E1krQYR8GzgpoLUG2k1en3fFNu5udawR1Ri6",
+     "feeBaseRaw": "0",
+     "feeQuoteRaw": "240309",
+     "permanentlyLocked": true
+    }
+   ]
+  }
+ ]
+}

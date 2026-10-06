@@ -949,7 +949,7 @@ function rewardsVaultCard(v: RewardsVaultView, amt: (raw: string) => string) {
       stat('Holds', v.balanceRaw === null ? '—' : amt(v.balanceRaw), 'deposited and not yet paid'),
       stat('Approvals to move funds', `${v.threshold} of ${v.members}`, 'the treasury members'),
       stat('History read to', v.checkedToSlot === null ? '—' : `slot ${v.checkedToSlot.toLocaleString()}`, v.caughtUp ? 'every transaction read' : 'catching up'),
-      stat('Vault', h('span', { class: 'mono' }, ext(explorer('address', v.vault), short(v.vault))), 'treasury multisig, vault 2')),
+      stat('Vault', h('span', { class: 'mono' }, ext(explorer('address', v.vault), short(v.vault))), 'treasury multisig, vault index 1')),
     h('p', { class: 'dim small', style: { margin: '12px 0 0' } }, 'Deposits and payouts are read from this vault\'s own transactions. Each carries a memo naming the coin and day. A deposit funds that day only if it lands before the day ends. A payout must pay exactly what the day\'s frozen record allocates.'),
     v.untagged.length ? h('p', { class: 'err small', style: { margin: '8px 0 0' } }, `${v.untagged.length} transfer(s) without a rewards memo: listed, never counted.`) : null);
 }
@@ -1000,12 +1000,12 @@ async function renderRewards(fresh = false) {
   main.replaceChildren(h('section', { class: 'earnings' },
     h('div', { class: 'earn-head' }, h('h1', {}, 'Holder rewards'),
       h('p', { class: 'dim' }, `Each coin's holders, day by day, from every wallet's balance over time. ${o.label}. Read-only: nothing on this page moves funds.`),
-      h('div', { class: 'asof' }, h('span', { class: 'dim small' }, 'Recomputed from the stored history; kept for up to 30 seconds.'), refresh)),
+      h('div', { class: 'asof' }, h('span', { class: 'dim small' }, `Recomputed from the stored history (${complete} of ${o.coins.length} coins' history proven); kept for up to 30 seconds.`), refresh)),
     h('div', { class: 'kpis' },
       kpi('Earmarked', amt(sum((c) => c.totals.earmarkedRaw)), `${o.policies.earmark.partnerRewardsSplitPct}% of platform fees · not money`),
       kpi('Deposited', amt(sum((c) => c.totals.depositedRaw)), o.rewardsVault ? 'into the rewards vault, counted' : 'no rewards vault yet'),
-      kpi('Allocated to holders', amt(sum((c) => c.totals.allocatedRaw)), 'only deposits are allocated'),
-      kpi('Paid to holders', amt(o.coins.reduce((t, c) => t + c.epochs.reduce((x, e) => x + BigInt(e.settlement.paidRaw), 0n), 0n).toString()), `${complete} of ${o.coins.length} coins' history proven`)),
+      kpi('Allocated to holders', amt(sum((c) => c.totals.allocatedRaw)), 'only deposits are allocated · includes running days'),
+      kpi('Paid to holders', amt(o.coins.reduce((t, c) => t + c.epochs.reduce((x, e) => x + BigInt(e.settlement.paidRaw), 0n), 0n).toString()), 'read back from the vault\'s own transactions')),
     rewardsRulesCard(o.rules),
     o.rewardsVault ? rewardsVaultCard(o.rewardsVault, amt) : null,
     ...(o.coins.length ? o.coins.map(coinCard) : [h('div', { class: 'card' }, h('p', { class: 'dim', style: { margin: '0' } }, 'No coins yet.'))]),
@@ -1038,6 +1038,7 @@ function settlementCard(d: EpochDetailView, amt: (raw: string) => string) {
       h('li', {}, h('span', {}, 'Payout: '), e.status === 'OPEN' && !st.txs.length ? h('span', { class: 'dim' }, 'after the day ends and its record is frozen') : settlementLabel(st.status), st.txs.length ? h('span', {}, ' in ', ...st.txs.map((t) => txLink(t.sig))) : null,
         st.status === 'NOT_PAID' ? h('span', { class: 'dim' }, '. A payout needs 2 of 3 treasury approvals and pays exactly the amounts below.') : null),
       ...st.reasons.map((r) => h('li', { class: 'err' }, r))),
+    rows.length ? h('p', { class: 'scroll-hint dim small' }, 'Swipe the table sideways to see every column.') : null,
     rows.length ? h('div', { class: 'scroll', style: { marginTop: '12px' } }, h('table', { class: 'trades' }, h('thead', {}, h('tr', {}, h('th', {}, 'Wallet'), h('th', { class: 'num' }, 'Allocated'), h('th', { class: 'num' }, 'Received'))),
       h('tbody', {}, ...rows))) : null);
 }

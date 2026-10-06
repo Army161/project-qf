@@ -117,8 +117,16 @@ test('[TEST_ONLY] rewards round: deposit up to the earmark, read back from the v
   assert.deepEqual(due.map((x: any) => x.owner).sort(), [A, B].sort());
   assert.ok(due.reduce((t: bigint, x: any) => t + BigInt(x.amountRaw), 0n) <= 500n);
 
-  // the payout pays exactly the frozen allocation, from the rewards vault, tagged with the frozen record's hash
+  // the owner approved one devnet test round: with another coin's payout already proposed, this one is refused, and a
+  // cancelled proposal does not use up the round
   s.held.set(s.rewards, 500n);
+  const other = { multisig: h.tre.multisig, txIndex: '99', mint: K.baseMint.toBase58(), venue: 'REWARDS_PAYOUT' as const, proposer: m1!.address, proposeSig: 'earlier',
+    innerJson: JSON.stringify({ kind: 'REWARDS_PAYOUT', launchMint: K.baseMint.toBase58(), epochId: '2026-01-01' }), approvals: [], status: 'Active', createdAt: h.now().toISOString() };
+  h.store.insertTreasuryProposal(other);
+  assert.equal((await h.call('/api/lp/rewards/payout', { member: m1!.address, mint, epochId: epoch })).body.error.code, 'ROUND_LIMIT');
+  h.store.updateTreasuryProposal(other.multisig, other.txIndex, { status: 'Cancelled', approvals: [] });
+
+  // the payout pays exactly the frozen allocation, from the rewards vault, tagged with the frozen record's hash
   const pay = await h.call('/api/lp/rewards/payout', { member: m1!.address, mint, epochId: epoch });
   assert.equal(pay.status, 201, JSON.stringify(pay.body));
   assert.equal(pay.body.terms.vaultIndex, 1);

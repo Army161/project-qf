@@ -1,48 +1,51 @@
-===== pnpm typecheck (2026-10-05T22:26:02Z)
+Project QF launchpad: full checks after the holder-rewards devnet test round. Secret-free environment (env -i).
+pnpm audit --prod exits 1 on the 3 known SEC-A advisories (bigint-buffer, uuid, stream-json), unchanged.
+
+=== pnpm typecheck  (2026-10-06T00:04:33Z)
 exit 0
-===== pnpm test (2026-10-05T22:26:08Z)
-✔ manipulated (inflated) price: disagreement values at the lowest price and caps the check at WARN (0.207317ms)
-✔ manipulated price cannot lift a sub-floor market over $25,000 (0.166453ms)
-✔ non-positive or malformed prices are dropped, not coerced (0.159525ms)
-✔ LIVE mode ignores TEST_ONLY providers entirely (0.112584ms)
-✔ TEST_ONLY mode (synthetic devnet qUSD) is capped at WARN and never asserts real liquidity (0.138238ms)
-✔ deterministic: same inputs give identical results (1.72022ms)
-✔ QF-VAL-01: an empty required-exit list never passes S3.1 (1.599663ms)
-✔ QF-VAL-02: an asserted issuer class with an invalid mint and no evidence is not admitted to production (0.44487ms)
-✔ QF-VAL-03: an unknown runtime validation mode cannot bypass the required LIVE checks (0.2996ms)
-✔ S3.1 schema: duplicate, malformed, non-policy exits, nonpositive notional and unknown mode FAIL (4.476144ms)
-✔ S3.1: an identity exit is recorded but not counted as an independent market (0.394594ms)
-✔ S3.1: malformed routes are excluded, never counted (0.311701ms)
-✔ aggregate: duplicate or malformed checks and an empty set FAIL (0.757499ms)
-✔ EV-1 lineage: two labels relaying one upstream are one source (INSUFFICIENT at minimum 2) (1.129601ms)
-✔ EV-1 timestamps: malformed and future-beyond-skew evidence is excluded (0.345683ms)
-✔ S3.2: an unknown mode FAILs (0.684488ms)
-✔ evidence-v0.1 is labelled V0_TEST analytical only (owner decision EV-1) (1.001727ms)
-✔ admission: V0 has no configured authoritative sources, so even a complete request is refused (1.144385ms)
-✔ admission: class is derived from provenance; an asserted class is ignored (0.720045ms)
-✔ admission: each missing or contradictory element is refused (2.206353ms)
-✔ prng is deterministic and seed-sensitive (1.54853ms)
-✔ six documented traces; each is deterministic and labelled synthetic (20.028205ms)
-✔ the threshold used by the simulation comes from the Decision-3 policy path (0.98236ms)
-✔ both configurations run on byte-identical traces and conserve quote exactly (201.756494ms)
-✔ decay charges more than flat inside the window and the same after it (141.702683ms)
-✔ trades after graduation are rejected and recorded, never dropped (65.901887ms)
-✔ low_demand never graduates under either configuration (119.087638ms)
-✔ comparison is deterministic, labelled, and retains failed hypotheses (1508.372237ms)
-✔ SPDX classification against LICENSE-MANIFEST policy (1.423369ms)
-✔ the code-repo manifest copy is identical to the spec manifest when both are present (0.272985ms)
-✔ LGPL exception is exact and narrow; chain is recorded as removed (0.375548ms)
-✔ LIC-R1: pako@2.2.0 (MIT AND Zlib) is allowed only as the exact, unmodified, notice-preserving exception (1.272921ms)
-ℹ tests 334
+=== pnpm test  (2026-10-06T00:04:39Z)
+✔ manipulated (inflated) price: disagreement values at the lowest price and caps the check at WARN (0.169941ms)
+✔ manipulated price cannot lift a sub-floor market over $25,000 (0.21829ms)
+✔ non-positive or malformed prices are dropped, not coerced (0.156908ms)
+✔ LIVE mode ignores TEST_ONLY providers entirely (0.10357ms)
+✔ TEST_ONLY mode (synthetic devnet qUSD) is capped at WARN and never asserts real liquidity (0.126072ms)
+✔ deterministic: same inputs give identical results (1.571633ms)
+✔ QF-VAL-01: an empty required-exit list never passes S3.1 (1.171828ms)
+✔ QF-VAL-02: an asserted issuer class with an invalid mint and no evidence is not admitted to production (0.405387ms)
+✔ QF-VAL-03: an unknown runtime validation mode cannot bypass the required LIVE checks (0.255095ms)
+✔ S3.1 schema: duplicate, malformed, non-policy exits, nonpositive notional and unknown mode FAIL (2.227715ms)
+✔ S3.1: an identity exit is recorded but not counted as an independent market (0.352618ms)
+✔ S3.1: malformed routes are excluded, never counted (0.275412ms)
+✔ aggregate: duplicate or malformed checks and an empty set FAIL (0.53298ms)
+✔ EV-1 lineage: two labels relaying one upstream are one source (INSUFFICIENT at minimum 2) (0.794388ms)
+✔ EV-1 timestamps: malformed and future-beyond-skew evidence is excluded (0.188539ms)
+✔ S3.2: an unknown mode FAILs (0.550408ms)
+✔ evidence-v0.1 is labelled V0_TEST analytical only (owner decision EV-1) (0.663593ms)
+✔ admission: V0 has no configured authoritative sources, so even a complete request is refused (0.781035ms)
+✔ admission: class is derived from provenance; an asserted class is ignored (0.610317ms)
+✔ admission: each missing or contradictory element is refused (0.938356ms)
+✔ prng is deterministic and seed-sensitive (1.481081ms)
+✔ six documented traces; each is deterministic and labelled synthetic (19.886902ms)
+✔ the threshold used by the simulation comes from the Decision-3 policy path (0.90642ms)
+✔ both configurations run on byte-identical traces and conserve quote exactly (172.651694ms)
+✔ decay charges more than flat inside the window and the same after it (131.534726ms)
+✔ trades after graduation are rejected and recorded, never dropped (64.910909ms)
+✔ low_demand never graduates under either configuration (122.678018ms)
+✔ comparison is deterministic, labelled, and retains failed hypotheses (1618.562994ms)
+✔ SPDX classification against LICENSE-MANIFEST policy (1.249042ms)
+✔ the code-repo manifest copy is identical to the spec manifest when both are present (0.314076ms)
+✔ LGPL exception is exact and narrow; chain is recorded as removed (0.354934ms)
+✔ LIC-R1: pako@2.2.0 (MIT AND Zlib) is allowed only as the exact, unmodified, notice-preserving exception (1.248715ms)
+ℹ tests 345
 ℹ suites 0
-ℹ pass 334
+ℹ pass 345
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 22781.338453
+ℹ duration_ms 23650.910601
 exit 0
-===== pnpm license:check (2026-10-05T22:26:31Z)
+=== pnpm license:check  (2026-10-06T00:05:03Z)
 {
   "packages": 211,
   "tally": {
@@ -54,7 +57,7 @@ exit 0
   "reviewRequired": []
 }
 exit 0
-===== pnpm deps:chain (2026-10-05T22:26:32Z)
+=== pnpm deps:chain  (2026-10-06T00:05:04Z)
 PASS  override-declared: pnpm-workspace.yaml contains "@meteora-ag/cp-amm-sdk@1.4.10>chain": "-"
 PASS  lockfile-override-recorded: pnpm-lock.yaml overrides section records the removal
 PASS  lockfile-no-chain-package: no chain@* key in packages/snapshots
@@ -69,7 +72,7 @@ PASS  sbom:sbom/project-qf.cdx.json: 133 components, none named chain
 PASS  sbom:sbom/apps-web.cdx.json: 53 components, none named chain
 RESULT PASS
 exit 0
-===== pnpm boundary (2026-10-05T22:26:34Z)
+=== pnpm boundary  (2026-10-06T00:05:06Z)
     "@solana/rpc-subscriptions-channel-websocket",
     "@solana/rpc-subscriptions-spec",
     "@solana/rpc-transformers",
@@ -111,17 +114,7 @@ exit 0
   "canaryB": true
 }
 exit 0
-===== pnpm audit --prod (2026-10-05T22:26:35Z)
-├─────────────────────┼────────────────────────────────────────────────────────┤
-│ Paths               │ packages__adapter-meteora-dbc>@meteora-ag/cp-amm-      │
-│                     │ sdk>@solana/spl-token>@solana/buffer-layout-           │
-│                     │ utils>bigint-buffer                                    │
-├─────────────────────┼────────────────────────────────────────────────────────┤
-│ More info           │ https://github.com/advisories/GHSA-3gc7-fjrx-p6mg      │
-└─────────────────────┴────────────────────────────────────────────────────────┘
-┌─────────────────────┬────────────────────────────────────────────────────────┐
-│ moderate            │ uuid: Missing buffer bounds check in v3/v5/v6 when buf │
-│                     │ is provided                                            │
+=== pnpm audit --prod  (2026-10-06T00:05:07Z)
 ├─────────────────────┼────────────────────────────────────────────────────────┤
 │ Package             │ uuid                                                   │
 ├─────────────────────┼────────────────────────────────────────────────────────┤

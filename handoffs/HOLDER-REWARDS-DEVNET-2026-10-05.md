@@ -1,64 +1,111 @@
-# Project QF Launchpad: holder rewards on devnet (2026-10-05)
+# Project QF Launchpad: holder rewards on devnet, first test payout (2026-10-05/06)
 
 Author: Claude (implementer). Owner: Jeremy Gephart. Reviewer: Astra.
 
-- Branch `milestone/launchpad-devnet`, commit `0da37b3`, on top of the LP residual proof (`4f2a421`).
-- Devnet only. The first part of this pass (`0da37b3`) computed and showed holder rewards with no payout; the test round below is in progress.
-- Chain writes in this pass: one throwaway devnet wallet took the app's test faucet, bought FROG through the app and sent part of it directly to another wallet. That was done to prove that direct transfers count. The wallet's key was held in memory only and never written to disk. No fee, key, authority or multisig setting changed. Mainnet is unchanged and read-only.
-- Answers Astra's fee-ledger criteria (relayed 2026-10-05 20:54Z). This is not a request to start payouts.
+- Branch `milestone/launchpad-devnet`. Commits:
+  - `0da37b3`: holder history, epochs and frozen records, with no payouts;
+  - `ebb5c17`: the rewards vault, plus deposit and payout binding;
+  - `fd3712f`: deposit evidence;
+  - this report's commit: the payout evidence and the round-limit test.
+- **Devnet only, test qUSD with no value.** Jeremy chose "Test payout" at 2026-10-05 22:28Z: one round, in test qUSD, with 2-of-3 test approvals. That round is now done.
+- Chain writes in this round:
+  - one deposit and one payout, each a Squads proposal approved by 2 of the 3 test members;
+  - nothing else. No fee, key, authority, threshold or multisig setting changed.
+- Mainnet is unchanged and read-only. `REWARDS_SETTLEMENT_MAINNET` stays false.
 
-## Status (in progress, 2026-10-05 22:55Z)
+## Needed from Jeremy
 
-Jeremy chose **Test payout** at 22:28Z: one devnet test round in test qUSD, with 2-of-3 test approvals. Done so far:
+Nothing for this round. The app refuses a second payout until you say so. A second round, or making payouts a daily routine, needs your word. Mainnet payouts also need the five owner items from 2026-10-05 20:38Z.
 
-- A rewards vault (the test multisig's vault index 1) and the deposit and payout binding, committed in `ebb5c17`.
-- VAULT's 2026-10-05 earmark (2.020202 qUSD) deposited from the test treasury into the rewards vault through treasury
-  proposal #5 (propose `2tFcAp4V…`, approve `Bcb9ZUB6…`, execute `5dfSB2nd…`), and read back as a deposit.
+## What happened
 
-The payout waits for that day to end at 00:00Z and its record to freeze. This report is rewritten with the payout and
-its transactions once it lands. Mainnet settlement stays off.
+| Step | When (UTC) | Transaction | Who signed |
+|---|---|---|---|
+| Deposit proposed: 2.020202 qUSD from the treasury vault to the rewards vault, tagged VAULT 2026-10-05 (proposal #5) | 10-05 22:41 | `2tFcAp4V2XfF2dZvWMK16zacYqcw1SpMG6jqvMfggsS4GuABF6BmMvCC3XD7WctVA3Korgh5kPesboKLjCxBzp8p` | member 1 |
+| Deposit approved (2 of 3) | 10-05 22:41 | `Bcb9ZUB6DUiiZ9A3uKBCznAdmqY9xFXtLm8rUphogm85KYpgSzuukiQEU1o4HwFj7qyRbw6bRtBnyRYkkDPBrZq` | member 2 |
+| Deposit executed | 10-05 22:41 | `5dfSB2ndawyzkNhk5RQPFM7m1KNsmxNssR3QUNNNRVwjGV9nVDKzTySa5SsYqWbZHP3BuZoPkhEi8De7EjcYN5Za` | member 2 |
+| VAULT's day ended; history and vault read past its last slot; record frozen | 10-06 00:01:04 | record `ec069d2532e624077f601f905cbdbd993485cfbf49049ae61600e4fe1d42c1fc` | nobody (computed) |
+| Payout proposed: the frozen allocation, from the rewards vault (proposal #6) | 10-06 00:01 | `3jzzCYoi5hUgdYMmqJj8D2DCobEs2sWQ9XkBaftKX2ToYtJsmVoD5ykER5bYJhyhExJj9m6eKuHAQNmSp7NMeS2Z` | member 1 |
+| Payout approved (2 of 3) | 10-06 00:01 | `2aiPhVmGiyuxKSRgzZBfL4pLsi6eM2tsqTwDH87z8eZov7Y1Tdkn9HF3Ka4Nzrh45CovtZxqFaAJQWgkvrRdYeus` | member 2 |
+| Payout executed (slot 507,905,565) | 10-06 00:01:43 | `37DjqzrYoRmQUyAU8sGzEWNz5xQ4rMLDTXd1qovBFE9fWTzCdzo6NzN6z78eCcSzBisnrai9mMy2i78dVE6rpTRg` | member 2 |
+| Payout read back from the rewards vault's history: settlement **PAID** | 10-06 00:01:52 | | nobody (computed) |
 
-## Astra's criteria, and where each one is met
+**The coin and day.** $VAULT (`FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o`), 2026-10-05 UTC, slots 507,541,152 to 507,905,128.
+- Earmark: 2.020202 qUSD, from 5 trades.
+- Deposited: 2.020202 qUSD, the whole earmark.
+- Allocated: 2.020199 qUSD. The other 3 raw round down and roll into 2026-10-06.
+- Excluded: the bonding-curve pool and the graduated DAMM v2 pool.
 
-| Astra's words | What the build does | Evidence |
-|---|---|---|
-| "the fee ledger determines the funding" | Each epoch's **earmark** is the holder-reward share (50%, ECONOMICS_V0_TEST) of the platform fee share of every curve trade in the epoch. Each trade's fee is read from that trade's own swap event. A trade whose fee is not read yet keeps the epoch from being final. | `funding.earmarkedRaw`, `earmarkTrades`, `unknownFeeTrades` per epoch |
-| "wallet-balance history determines who receives it … including direct transfers" | Each holder's share is their slot-weighted average balance over the epoch. It comes from every token-account balance change in every finalized transaction that touched the coin, read from each transaction's own before and after balances. Trades are not used for this. | Live: wallet `8RKJ…nAYG` never traded FROG. It received FROG by direct transfer (`57SoULGU…`) and is a FROG holder in the 2026-10-05 epoch. |
-| "accrued or earmarked fees are not yet funded rewards … must be backed by assets actually deposited into the designated rewards vault" | **Funded** = proven deposits for that epoch + the previous epoch's rounding remainder. Only funded amounts are allocated. The earmark is shown beside it and never allocated. The record says so: `earmarkIsNotFunding: true`. There is no rewards vault yet, so funded = 0 and allocated = 0 on every epoch. | `apps/launchpad/test/rewards.test.ts` test 1 (earmark 500 → allocated 0) and test 3 (deposits allocated in proportion, conserved to the unit) |
-| "A difference should not automatically be classified as rounding merely because it is small." | Closed in the previous pass. Each LP residual is proven from the pool's own fee accounting, or it stays unproven and names the failed check. | `handoffs/LP-RESIDUAL-PROOF-2026-10-05.md` |
-| "not … authorization to start reward payouts" | No code path builds or sends a payout. The API states `settlement: { mainnet: false, devnet: "NOT_AUTHORIZED" }`, and the Rewards page shows "no payouts". | `evidence/rewards/api/rewards.json` |
+| Holder | Share of the day's average balance | Allocated (frozen record) | Received (on chain) |
+|---|---|---|---|
+| `8UXp4uJTicUWj55mGFwy4gncRBYxH8ej5DuxEZR2FDk2` | 58.6% | 1.185026 | 1.185026 |
+| `DJg6AJPT3jUsx2jSWvrFzAaiYnwDp2F3TTJfsjYSpMYe` | 34.5% | 0.698096 | 0.698096 |
+| `4vCyHopHHHNiL2bVH2ve8FzkxgL91BhNFaooUG1wbMyj` | 6.6% | 0.132849 | 0.132849 |
+| `8RKJVqkE8EGWLfghbXUAe1JhgEN2Z9eEX4EJ8xXdnAYG` | 0.2% | 0.004228 | 0.004228 |
 
-## Live devnet run
+- **Two independent checks of the payout.**
+  - Read straight from devnet (`getTransaction`, finalized): the rewards vault's quote account went down 2,020,199 raw, each holder's account went up by exactly their allocation, and the only memo is `qf-rewards-payout@1 mint=FN2t… epoch=2026-10-05 artifact=ec069d25…42c1fc`.
+  - The app's own read of the rewards vault's history gives settlement PAID.
+- **The proposer's check.** Before signing, the member tool fetched `artifact.json` and confirmed three things against it: the sha256 of its canonical JSON equals the hash in the proposal, its total equals the sum being paid, and its Merkle root recomputes.
+- **Afterwards.**
+  - The record still recomputes to the same hash.
+  - A second payout request for the same day is refused live with `ALREADY_PAID`.
+  - The rewards vault holds 3 raw, the rolled-forward remainder.
+- **Why the preview differed.** At 22:41Z the running day showed slightly different shares. Shares are averages over the whole day, so they kept moving until the day ended. Only the frozen record was paid.
 
-The server was restarted on this commit. The new tables are empty after the schema 7 migration, so it read every holder history from devnet from scratch. Read at about 22:24Z:
+Addresses (all test, devnet):
+- treasury multisig `6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd`, threshold 2 of 3;
+- treasury vault (index 0) `7ac8CDv8vcb7wAUgrmzamJUUnNgPqiQfg2MhxSGufCoB`;
+- rewards vault (index 1) `Y2HuCzcjTnKHTCn7cBcPm2DsGKnuqScsVpXy7ifCon7`, quote account `BeJ86unizDStGtfcEgpFTQquAgsD8CSY2YPDsvS4heGq`;
+- members `68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz` (1) and `AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ` (2), plus a third.
 
-| Coin | Token accounts | Transactions | History vs chain | Final epochs, frozen (sha256) | 2026-10-05 (running) | Earmarked, all epochs |
-|---|---|---|---|---|---|---|
-| $CASH | 3 | 10 | complete | none (launched 10-05) | 1 holder, 2 excluded | 2.020522 qUSD |
-| $FROG | 5 | 6 | complete | 10-03 `089e8186…6e5311`, 10-04 `2c544b3e…d2afba` | 4 holders, 1 excluded | 0.524 qUSD |
-| $MCAT | 7 | 12 | complete | 10-03 `643252fd…31fd83`, 10-04 `6fe16a5b…9414b2` | 5 holders, 2 excluded | 2.020786 qUSD |
-| $PAYDAY | 3 | 7 | complete | none (launched 10-05) | 1 holder, 2 excluded | 2.020522 qUSD |
-| $TIPJAR | 2 | 3 | complete | none (launched 10-05) | 1 holder, 1 excluded | 0.400159 qUSD |
-| $TRSY | 5 | 7 | complete | none (launched 10-05) | 3 holders, 1 excluded | 0.210015 qUSD |
-| $VAULT | 7 | 10 | complete | none (launched 10-05) | 4 holders, 2 excluded | 2.020202 qUSD |
+All three members' keys are held by one operator in one container. This is a demonstration of the flow, not separation of control.
 
-- Totals: 9.216206 qUSD earmarked, 0 deposited, 0 allocated. Every coin's listed accounts add up to its supply (1,000,000,000 tokens).
-- **Determinism across two independent reads.** Earlier today the same epochs were computed on a copy of the database, from a history read separately. FROG 10-03 and MCAT 10-04 gave the same hashes then as now. Each recompute is checked against the frozen record ("frozen, recomputed identically" on the page).
-- Epoch windows:
-  - 2026-10-03 is slots 506,806,896 to 507,172,682.
-  - 2026-10-04 is 507,172,683 to 507,541,151.
-  - 2026-10-05 starts at 507,541,152 and is still running.
-- The direct-transfer demo, in `evidence/rewards/direct-transfer-flow.json` (signatures and public addresses only):
+## Astra's criteria, met with real money movement
 
-| Step | Transaction | Detail |
-|---|---|---|
-| Faucet | `383AY1sH…` | throwaway wallet `CBG61DYr…SWUsb` took the app's test faucet |
-| Buy | `3yQADwrh…` | bought 2,010,649.811201 FROG through the app |
-| Transfer | `57SoULGU…` | sent 1,005,324.9056 FROG directly to `8RKJ…nAYG` |
+| Astra's words | Now |
+|---|---|
+| "the fee ledger determines the funding" | The earmark comes only from the fee ledger: 2.020202 qUSD from VAULT's 5 trades on 2026-10-05. The deposit route refuses more than the earmark minus what is already deposited or proposed (`OVER_EARMARK`). |
+| "wallet-balance history determines who receives it … including direct transfers" | The shares come only from the balance history, unchanged from `0da37b3`. `8RKJ…nAYG` was a VAULT holder in it and was paid. |
+| "accrued or earmarked fees are not yet funded rewards … must be backed by assets actually deposited into the designated rewards vault" | Funded = deposits read back from the rewards vault's own transactions, and nothing else. An executed proposal alone funds nothing until its transaction is read from the vault's history; the test asserts this. A deposit tagged for a day funds it only if it landed before the day ended. A late or untagged transfer is listed and funds nothing. |
+| Payout matches the frozen allocation | The payout terms carry the frozen record's hash. The binding requires exactly one TransferChecked per holder, in the record's order, with exact amounts, plus the one memo. Settlement compares what the vault's history shows was paid with the frozen allocation: `PAID`, `PARTLY_PAID` or `MISMATCH`. |
 
-  After one sync, FROG showed 5 accounts and 6 transactions, still complete, and `8RKJ…nAYG` is a holder.
+## How the deposit and payout are built and checked
 
-## How it works
+- **Two new treasury kinds.** `REWARDS_DEPOSIT` runs from the treasury vault (index 0) to the rewards vault. `REWARDS_PAYOUT` runs from the rewards vault (index 1) to holders.
+  - Both are Squads vault transactions: proposed by one member, approved by 2 of 3, executed by a member.
+  - The server builds them unsigned. Each member signs locally with the member tool (`apps/launchpad/src/member.ts`), which re-checks what it signs.
+- **Binding** (`packages/tx/src/rewards.ts`). The vault transaction must contain exactly the following, and nothing else:
+  - one `TransferChecked` per transfer, with source = the vault's own quote account, mint, decimals, destination = the recipient's quote account, authority = the vault, and the exact amount;
+  - then one SPL Memo with no accounts and the exact text:
+    - `qf-rewards-deposit@1 mint=<coin> epoch=<day>`
+    - `qf-rewards-payout@1 mint=<coin> epoch=<day> artifact=<record sha256>`
+- **Each proposal is checked three times**, against what it was built from, what Squads stored on chain, and the execute transaction. Rejected mutations, each a failing case in `rewards-binding.test.ts`:
+  - another destination, amount, mint, decimals or source;
+  - a plain `Transfer`;
+  - an extra SOL transfer;
+  - a missing or changed memo;
+  - recipients reordered, dropped or added;
+  - a deposit to anything but this multisig's vault index 1;
+  - a payout from anything but vault index 1.
+- **Limits enforced by the routes:**
+  - Deposit: only for the day that is running now; up to the earmark left; up to what the treasury holds.
+  - Payout: only for a FINAL day whose frozen record recomputes identically; only when settlement is `NOT_PAID`; at most 8 recipients per proposal; up to what the rewards vault holds.
+  - **One test round on devnet**: `DEVNET_TEST_PAYOUT_ROUNDS = 1`, counted over payout proposals that are not cancelled or rejected (`ROUND_LIMIT`).
+- **Missing quote accounts.** The operator creates any missing quote account (the rewards vault's or a recipient's) with create-idempotent instructions and pays only the rent. All four holders already had one, so none was created.
+- **Read-back** (`apps/launchpad/src/rewards-vault.ts`). The rewards vault's quote account is read like a holder account: every finalized transaction, with its own before and after balances and its memo. Each one is classified:
+
+  | Class | Balance | Memo |
+  |---|---|---|
+  | DEPOSIT | up | deposit memo |
+  | PAYOUT | down | payout memo; recipients = the other quote accounts that went up |
+  | UNTAGGED | moved | anything else |
+  | NONE | unchanged | |
+
+  The app's own proposal records are never used as evidence of money moving.
+- **When a day can go final.** Once a rewards vault exists, the day must also have the vault's history read past its last slot (`depositsProvenToSlot`). Tonight the day turned FINAL on the first read after 00:00Z, about 60 seconds after the day ended.
+
+## How holder history, epochs and records work (unchanged from `0da37b3`)
 
 **Holder history** (`apps/launchpad/src/holders.ts`, `packages/rewards/src/history.ts`):
 1. List every token account of the mint at `finalized` (`getProgramAccounts`, classic SPL Token, 165-byte accounts).
@@ -98,7 +145,7 @@ A final epoch's record (`qf-reward-epoch@1`) is frozen with its sha256 the first
 - `inputHash`, the sha256 of every balance change used;
 - the exclusion and allocation policy versions;
 - `holderAllocationFileHash`, `merkleRoot`, `totalAllocated`, `rolledForward`;
-- `settlementTx: null`, `settlementAdapter: null`, `claimStatus`.
+- `settlementTx: null`, `settlementAdapter: null`, `claimStatus`. The record is frozen before any payout, so these stay null in it; the payout is shown beside the record as its settlement (below).
 
 It adds the mint, the window, the funding block (earmark, deposits, funded, `earmarkIsNotFunding`) and the excluded owners. With nothing funded, the Merkle tree is empty and its root is all zeros.
 
@@ -109,58 +156,73 @@ It adds the mint, the window, the funding block (earmark, deposits, funded, `ear
 | `GET /api/lp/rewards` | every coin's coverage and epochs |
 | `GET /api/lp/rewards/{mint}/{YYYY-MM-DD}` | one epoch: holders and shares, exclusions, payouts with Merkle proofs |
 | `…/artifact.json` | the frozen record; 404 while the epoch is open |
+| `POST /api/lp/rewards/deposit` | new: builds an unsigned deposit proposal for a treasury member |
+| `POST /api/lp/rewards/payout` | new: builds an unsigned payout proposal for a treasury member |
 
-The new Rewards page (`#/rewards` and `#/rewards/{mint}/{day}`) shows all of this read-only, with the funding rule and "no payouts" on every view. Screenshots for desktop and phone are in `evidence/rewards/shots/`. The Fees and Earnings notes now say the earmark is not money and link to Rewards.
+The Rewards page (`#/rewards`) now also shows:
+- the rewards vault: its balance, how far its history is read, and its 2-of-3 test signers;
+- a Paid column and a "Paid to holders" total;
+- on each day's page, a "Funding and payout" card with deposits, the payout transaction and allocated against received per wallet.
 
-## Tests (334/334, 10 new)
+The page itself moves no funds. Screenshots for desktop and phone are in `evidence/rewards/shots/`.
 
-- `packages/rewards/test/history.test.ts`, 7 tests:
-  - trades and direct transfers move balances alike;
-  - in-slot order and input order don't change the result;
-  - an owner change moves the balance;
-  - gaps are reported, never smoothed over (no creation, a missing middle transaction, two owners in one slot, a duplicate, the cut-off);
-  - replayed balances against the chain, including closed accounts;
-  - `exclusion@1`;
-  - UTC epochs.
-- `apps/launchpad/test/rewards.test.ts`, 3 tests:
-  - a direct transfer is counted, the pool is excluded, earmark 500 against funded 0 allocates 0, and the final record is frozen and recomputed identically;
-  - an unread transaction keeps the epoch INCOMPLETE, a replay gap or a supply gap gives MISMATCH, and nothing is frozen;
-  - deposits are allocated in proportion and conserved to the unit, the Merkle proofs verify, and the result is deterministic.
-- Full checks (`evidence/rewards/checks.txt`): typecheck, test, license:check, deps:chain and boundary all exit 0.
+## Tests (345/345; 11 new since `0da37b3`, one extended)
+
+- `packages/adapter-meteora-dbc/test/rewards-binding.test.ts`, 8 tests:
+  - deposit and payout propose, stored-transaction and execute all bind with zero violations;
+  - the memo format;
+  - every mutation listed above is rejected;
+  - the terms rules (vault index per kind, distinct recipients, never to itself, positive amounts, a real date, a hex digest, fee payer = source vault).
+- `apps/launchpad/test/rewards-payout.test.ts`, 3 tests:
+  - the whole round over the API: deposit refusals (`OVER_EARMARK`, `NOT_A_MEMBER`, `TREASURY_SHORT`); deposit 2-of-3; nothing funded until the vault's own transaction is read; `EPOCH_NOT_FINAL` while running; FINAL and frozen after the day; `ROUND_LIMIT` when another payout is already proposed (a cancelled one does not count); payout 2-of-3 with exactly the frozen allocation; `ALREADY_PROPOSED`; read-back PAID with the record unchanged;
+  - vault transaction classification, including memos on the wrong direction;
+  - settlement: PAID, PARTLY_PAID and MISMATCH (overpaid, unknown recipient, wrong record, open day).
+- Full checks (`evidence/rewards/checks.txt`, secret-free environment): typecheck, test, license:check, deps:chain and boundary all exit 0.
   - `pnpm audit --prod` exits 1 with the same 3 known SEC-A advisories (bigint-buffer, uuid, stream-json), all under the server-side Meteora adapter.
-  - No external dependency was added. One workspace link was added (`@project-qf/rewards` in the launchpad app).
-  - The key scan of the changed files found 0 hits.
+  - No dependency was added.
+  - The key scans of the changed files, the evidence and the ZIP found 0 hits.
 
 Test results are not an audit or a readiness claim.
 
 ## Limits, stated plainly
 
-1. **One RPC provider.** Devnet has no free second provider, so coverage says `SINGLE_PROVIDER`. CLAUDE.md requires reward-settlement reads at finalized and cross-checked against a second provider. Before any mainnet settlement, the history reads and the coverage checks must run on two providers.
-2. **Block times are assumed to rise with slots** for the epoch boundary search. Solana block times are validator-voted and can be off by seconds. The boundary is cached once found, so a later re-read cannot move it.
-3. **The earmark counts curve fees only.** After graduation, the platform earns LP fees through its locked DAMM v2 position, paid when the position is claimed, not per trade. Whether those claims add to the holder-reward earmark is an economics decision that hasn't been made. Today they don't.
-4. **No Sybil rules** (`sybilHeuristics: []`). Under proportional allocation, splitting a balance across wallets does not raise its total share. It only matters for the minimum payout of 1 raw.
-5. **Holders using a program wallet are excluded.** The off-curve rule excludes pools and vaults, but it also excludes anyone holding through a multisig vault or a smart wallet. That is safe for now, but it is a policy question before mainnet.
-6. **Scale.** Reading each account's signatures is fine for these coins (at most 7 accounts each). A busy mainnet coin with thousands of holders would need an indexing provider. The per-pass budget (40 transactions per coin) keeps public RPCs from rate-limiting us, and coverage shows "catching up" until it is through.
-7. **Classic SPL Token only.** Launched coins are classic SPL by rule. A Token-2022 coin would not be listed.
+1. **Test signers, one operator.** All three member keys sit in one container, under one operator. The 2-of-3 flow is real and enforced on chain, but control is not separated. Mainnet needs three real signers on hardware wallets, which is owner item 3.
+2. **One RPC provider.** History, deposits and payouts are read from public devnet only (`SINGLE_PROVIDER`). CLAUDE.md requires reward-settlement reads at finalized and cross-checked against a second provider. That must be in place before any mainnet settlement.
+3. **A deposit must land before the day ends.** That keeps a day's funding fixed before its record freezes, but the earmark is only final once the day ends. Tonight's deposit (22:41Z) covered the whole earmark because VAULT had no later trades. On a busy coin, trades after the deposit would leave part of the earmark unfunded. **Decision for Astra and Jeremy before routine payouts**, one of:
+   - a deposit window for day N that stays open into day N+1, freezing only after it closes; or
+   - funding each day from the previous day's earmark.
+4. **At most 8 holders per payout proposal.** A day with more holders needs several proposals, each bound to a slice of the frozen record. That is not built yet.
+5. **Recipient account rent.** The operator pays rent for any holder without a quote account. On mainnet that is about 0.002 SOL per new holder account, an economics question before mainnet.
+6. **The memo convention is the tag.** A transfer into the rewards vault without the exact memo is listed as untagged and funds nothing. A deposit made outside the app with the right memo counts, by design.
+7. Unchanged from `0da37b3`:
+   - holders using a program wallet (multisig, smart wallet) are excluded;
+   - block times are assumed to rise with slots for the day boundary;
+   - the earmark counts curve fees only;
+   - there are no Sybil rules;
+   - classic SPL Token only.
 
 ## Notes for Astra
 
-- Your funding/allocation split is implemented as two separate inputs that never mix. The fee ledger only ever produces the earmark. The balance history only ever produces weights. Only deposits produce money to allocate.
-- The deposit source is a stub returning none, because there is no rewards vault. If Jeremy picks "Test payout", deposits become proven transfers into a dedicated rewards vault (a second vault of the test multisig, 2-of-3), read back from their own transactions like the treasury receipts.
-- Payouts would use the DIRECT strategy (transfers through multisig proposals) from the frozen Merkle list. The SF Rewards program is not on devnet.
+- The funding, allocation and settlement inputs never mix:
+  - the fee ledger produces only the earmark (a cap);
+  - the vault's history produces only funding and payments;
+  - the balance history produces only weights.
+- The frozen record is the only thing paid. Its hash is in the payout terms, in the on-chain memo and in the member's pre-signing check.
+- Settlement is derived from the vault's history, not from the app's proposal table. So a payout made outside the app would still be checked against the record, and anything unexpected shows as MISMATCH.
+- Limit 3 (deposit timing) is the open design point I'd most like your view on before a second round.
 
 ## Files
 
 - New:
-  - `packages/rewards/src/history.ts`, `exclusion.ts`, `epoch.ts`, and `packages/rewards/test/history.test.ts`;
-  - `apps/launchpad/src/holders.ts`, `rewards.ts`, and `apps/launchpad/test/rewards.test.ts`.
+  - `packages/tx/src/rewards.ts` and `packages/adapter-meteora-dbc/test/rewards-binding.test.ts`;
+  - `apps/launchpad/src/rewards-vault.ts` and `apps/launchpad/test/rewards-payout.test.ts`.
 - Changed:
-  - `packages/adapter-meteora-dbc/src/launchpad.ts` (finalized token-account listing, supply, per-transaction balance changes, epoch boundary search, backoff on 429);
-  - `apps/launchpad/src/chain.ts`, `store.ts` (schema 7: holder accounts, transactions, changes, epoch slots, frozen epochs), `indexer.ts` (holder sync every 4th pass) and `server.ts` (the rewards API);
-  - `apps/launchpad/test/support/harness.ts`;
-  - `apps/web/src/launchpad/main.ts`, `launchpad.html` and `launchpad.css` (the Rewards page and nav).
+  - `packages/tx/src/terms.ts`, `treasury.ts`, `semantic.ts`, `programs.ts` and `index.ts`;
+  - `packages/adapter-meteora-dbc/src/treasury.ts` (rewards vault, transfer builder, quote-account creation) and `launchpad.ts` (memos in balance changes);
+  - `apps/launchpad/src/chain.ts`, `store.ts` (migration 8: rewards vault transactions), `rewards.ts` (deposits by slot, settlement, the one-round rule), `server.ts` (deposit and payout routes), `indexer.ts`, `member.ts` (`reward-deposit` and `reward-payout`) and the test harness;
+  - `apps/web/src/launchpad/main.ts` (vault card, funding and payout card, Paid column).
 - Evidence in `evidence/rewards/`:
-  - `api/`: the live overview, three epoch details and two frozen records;
-  - `direct-transfer-flow.json`;
+  - `test-round.json`: every signature, the proposals' approvals, and the payout read back from devnet;
+  - `api/`: the live overview, VAULT 2026-10-05 detail and frozen record, the treasury view, and the earlier FROG and MCAT records;
   - `shots/`;
   - `checks.txt`.

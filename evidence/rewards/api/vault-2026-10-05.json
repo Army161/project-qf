@@ -1,0 +1,255 @@
+{
+ "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+ "symbol": "VAULT",
+ "label": "TEST_ONLY devnet holder rewards on valueless test coins",
+ "rules": {
+  "strategy": "EPOCH_PROPORTIONAL",
+  "funding": "The fee ledger sets the earmark: the holder-reward share of the platform fees each epoch's trades paid. An earmark is not money. Only rewards deposited into the rewards vault for an epoch are distributable.",
+  "allocation": "The holder balance history (every transfer, not only trades) sets each holder's share: slot-weighted average balance over the epoch, after exclusions.",
+  "settlement": {
+   "mainnet": false,
+   "devnet": "ONE_TEST_ROUND",
+   "note": "Devnet only: the owner approved one test round in test qUSD on 2026-10-05. A deposit into the rewards vault and a payout from it each need 2 of 3 test approvals, and the server holds no approver key. Mainnet payouts stay off."
+  }
+ },
+ "coverage": {
+  "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+  "status": "COMPLETE",
+  "checkedAtSlot": 507905728,
+  "checkedAt": "2026-10-06T00:02:23.354Z",
+  "accounts": 7,
+  "transactions": 10,
+  "pending": 0,
+  "failed": 0,
+  "changes": 19,
+  "checks": [
+   {
+    "id": "ALL_TRANSACTIONS_READ",
+    "ok": true,
+    "detail": "10 read, 0 failed (no balance change), 0 not served yet"
+   },
+   {
+    "id": "REPLAYS_CLEANLY",
+    "ok": true,
+    "detail": "7 account(s) replayed from creation"
+   },
+   {
+    "id": "REPLAY_EQUALS_CHAIN",
+    "ok": true,
+    "detail": "every account's replayed balance equals the chain at slot 507905728"
+   },
+   {
+    "id": "ACCOUNTS_ADD_UP_TO_SUPPLY",
+    "ok": true,
+    "detail": "7 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507905729)"
+   }
+  ],
+  "providers": "SINGLE_PROVIDER"
+ },
+ "epoch": {
+  "epochId": "2026-10-05",
+  "status": "FINAL",
+  "reasons": [],
+  "window": {
+   "startSec": 1791158400,
+   "endSec": 1791244800,
+   "startSlot": 507541152,
+   "endSlot": 507905128,
+   "nextStartSlot": 507905129,
+   "slots": 363977
+  },
+  "holders": [
+   {
+    "owner": "8UXp4uJTicUWj55mGFwy4gncRBYxH8ej5DuxEZR2FDk2",
+    "balanceUnits": "39010621062315583317",
+    "averageRaw": "107178808172811",
+    "shareBps": 5865,
+    "allocationRaw": "1185026",
+    "carryOutRaw": "0"
+   },
+   {
+    "owner": "DJg6AJPT3jUsx2jSWvrFzAaiYnwDp2F3TTJfsjYSpMYe",
+    "balanceUnits": "22981072605608392677",
+    "averageRaw": "63138804390410",
+    "shareBps": 3455,
+    "allocationRaw": "698096",
+    "carryOutRaw": "0"
+   },
+   {
+    "owner": "4vCyHopHHHNiL2bVH2ve8FzkxgL91BhNFaooUG1wbMyj",
+    "balanceUnits": "4373370722092843530",
+    "averageRaw": "12015513953059",
+    "shareBps": 657,
+    "allocationRaw": "132849",
+    "carryOutRaw": "0"
+   },
+   {
+    "owner": "8RKJVqkE8EGWLfghbXUAe1JhgEN2Z9eEX4EJ8xXdnAYG",
+    "balanceUnits": "139215845867461387",
+    "averageRaw": "382485283046",
+    "shareBps": 20,
+    "allocationRaw": "4228",
+    "carryOutRaw": "0"
+   }
+  ],
+  "excluded": [
+   {
+    "owner": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+    "reason": "DBC_POOL_AUTHORITY",
+    "balanceUnits": "230999142277541550"
+   },
+   {
+    "owner": "HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC",
+    "reason": "DAMM_V2_POOL_AUTHORITY",
+    "balanceUnits": "10903720621838177539"
+   }
+  ],
+  "funding": {
+   "earmarkedRaw": "2020202",
+   "earmarkTrades": 5,
+   "unknownFeeTrades": 0,
+   "fundedRaw": "2020202",
+   "poolCarryInRaw": "0",
+   "deposits": [
+    {
+     "sig": "5dfSB2ndawyzkNhk5RQPFM7m1KNsmxNssR3QUNNNRVwjGV9nVDKzTySa5SsYqWbZHP3BuZoPkhEi8De7EjcYN5Za",
+     "amountRaw": "2020202"
+    }
+   ]
+  },
+  "poolRollForwardRaw": "3",
+  "merkleRoot": "4075607e54c044d00ec2192d03fb20ec1e9392fdef791b2f62ff5534a52f0e62",
+  "payouts": [
+   {
+    "owner": "4vCyHopHHHNiL2bVH2ve8FzkxgL91BhNFaooUG1wbMyj",
+    "amountRaw": "132849",
+    "leaf": "34bace2d256c14602207bf7b5931669113307e316b4e338fd7f7f4e25d38591c",
+    "proof": [
+     "965dc74b597ef0be9decbad2740605df7bb58e5e49ea920bb8d7f97e8315461d",
+     "f8770fbe47afe4a842d1cbd2358128f101098c0dc856e3002d663470a9364467"
+    ]
+   },
+   {
+    "owner": "8RKJVqkE8EGWLfghbXUAe1JhgEN2Z9eEX4EJ8xXdnAYG",
+    "amountRaw": "4228",
+    "leaf": "274a0bc28b74690fb4b14c69d8f997025cc503874dd7dc118f473a391a96f941",
+    "proof": [
+     "25c9b7a9df6b349e66954f4e2a5ea3947768c6c5ef10ab02a52c683094f81974",
+     "c4f9b7824b999f8021557a80902462e9c7f3d0fee0648fb3667f9b3055ff651e"
+    ]
+   },
+   {
+    "owner": "8UXp4uJTicUWj55mGFwy4gncRBYxH8ej5DuxEZR2FDk2",
+    "amountRaw": "1185026",
+    "leaf": "965dc74b597ef0be9decbad2740605df7bb58e5e49ea920bb8d7f97e8315461d",
+    "proof": [
+     "34bace2d256c14602207bf7b5931669113307e316b4e338fd7f7f4e25d38591c",
+     "f8770fbe47afe4a842d1cbd2358128f101098c0dc856e3002d663470a9364467"
+    ]
+   },
+   {
+    "owner": "DJg6AJPT3jUsx2jSWvrFzAaiYnwDp2F3TTJfsjYSpMYe",
+    "amountRaw": "698096",
+    "leaf": "25c9b7a9df6b349e66954f4e2a5ea3947768c6c5ef10ab02a52c683094f81974",
+    "proof": [
+     "274a0bc28b74690fb4b14c69d8f997025cc503874dd7dc118f473a391a96f941",
+     "c4f9b7824b999f8021557a80902462e9c7f3d0fee0648fb3667f9b3055ff651e"
+    ]
+   }
+  ],
+  "artifactHash": "ec069d2532e624077f601f905cbdbd993485cfbf49049ae61600e4fe1d42c1fc",
+  "frozen": {
+   "hash": "ec069d2532e624077f601f905cbdbd993485cfbf49049ae61600e4fe1d42c1fc",
+   "finalizedAt": "2026-10-06T00:01:04.000Z",
+   "reproduced": true
+  },
+  "settlement": {
+   "adapter": "direct-squads@1",
+   "txs": [
+    {
+     "sig": "37DjqzrYoRmQUyAU8sGzEWNz5xQ4rMLDTXd1qovBFE9fWTzCdzo6NzN6z78eCcSzBisnrai9mMy2i78dVE6rpTRg",
+     "slot": 507905565,
+     "blockTime": 1791244903,
+     "artifactHash": "ec069d2532e624077f601f905cbdbd993485cfbf49049ae61600e4fe1d42c1fc",
+     "paidRaw": "2020199",
+     "transfers": [
+      {
+       "owner": "4vCyHopHHHNiL2bVH2ve8FzkxgL91BhNFaooUG1wbMyj",
+       "amountRaw": "132849"
+      },
+      {
+       "owner": "DJg6AJPT3jUsx2jSWvrFzAaiYnwDp2F3TTJfsjYSpMYe",
+       "amountRaw": "698096"
+      },
+      {
+       "owner": "8UXp4uJTicUWj55mGFwy4gncRBYxH8ej5DuxEZR2FDk2",
+       "amountRaw": "1185026"
+      },
+      {
+       "owner": "8RKJVqkE8EGWLfghbXUAe1JhgEN2Z9eEX4EJ8xXdnAYG",
+       "amountRaw": "4228"
+      }
+     ]
+    }
+   ],
+   "paidRaw": "2020199",
+   "reasons": [],
+   "status": "PAID"
+  }
+ },
+ "artifact": {
+  "allocationPolicyVersion": "allocation-v0-test",
+  "artifactVersion": "qf-reward-epoch@1",
+  "chain": "solana-devnet",
+  "claimStatus": {
+   "claimed": 0,
+   "total": 4
+  },
+  "eligible": 4,
+  "endSlot": 507905128,
+  "epochId": "2026-10-05",
+  "excluded": [
+   {
+    "owner": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+    "reason": "DBC_POOL_AUTHORITY"
+   },
+   {
+    "owner": "HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC",
+    "reason": "DAMM_V2_POOL_AUTHORITY"
+   }
+  ],
+  "exclusionPolicyVersion": "exclusion@1",
+  "funding": {
+   "depositedRaw": "2020202",
+   "deposits": [
+    {
+     "amountRaw": "2020202",
+     "sig": "5dfSB2ndawyzkNhk5RQPFM7m1KNsmxNssR3QUNNNRVwjGV9nVDKzTySa5SsYqWbZHP3BuZoPkhEi8De7EjcYN5Za"
+    }
+   ],
+   "earmarkIsNotFunding": true,
+   "earmarkPolicy": "50% of the platform fee share (ECONOMICS STANDARD_V1@0-v0test, partnerRewardsSplitPct)",
+   "earmarkedRaw": "2020202",
+   "fundedRaw": "2020202",
+   "poolCarryInRaw": "0"
+  },
+  "holderAllocationFileHash": "ae87bbfcac99813d6cc5b9c90ef40eaf6a57392bf581e24e6700d07782c56ca2",
+  "holders": 6,
+  "inputChanges": 19,
+  "inputHash": "233be9ce657bdd98c2c71cc31d6b45c997ec89ef2d7293e9cbdd39cd93eb5beb",
+  "label": "TEST_ONLY devnet holder rewards on valueless test coins",
+  "launch": "6Nq2JLyXf2bZHEVweuorkbyzmjP9CAjXGP6TjqnuSgek",
+  "merkleRoot": "4075607e54c044d00ec2192d03fb20ec1e9392fdef791b2f62ff5534a52f0e62",
+  "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+  "rolledForward": "3",
+  "settlementAdapter": null,
+  "settlementTx": null,
+  "startSlot": 507541152,
+  "totalAllocated": "2020199",
+  "weighting": "slot-weighted TWAB over [startSlot, next epoch startSlot)",
+  "windowSlots": [
+   507541152,
+   507905129
+  ]
+ }
+}

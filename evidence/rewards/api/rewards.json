@@ -1,1 +1,1193 @@
-{"cluster":"devnet","label":"TEST_ONLY devnet holder rewards on valueless test coins","rules":{"strategy":"EPOCH_PROPORTIONAL","funding":"The fee ledger sets the earmark: the holder-reward share of the platform fees each epoch's trades paid. An earmark is not money. Only rewards deposited into the rewards vault for an epoch are distributable.","allocation":"The holder balance history (every transfer, not only trades) sets each holder's share: slot-weighted average balance over the epoch, after exclusions.","settlement":{"mainnet":false,"devnet":"NOT_AUTHORIZED","note":"No payout is built or sent. There is no rewards vault yet, so nothing is deposited and nothing is allocated; devnet test payouts wait for the owner's decision."}},"policies":{"exclusion":{"id":"exclusion","version":"exclusion@1","rules":["NAMED_ACCOUNT","BURN_ADDRESS","OFF_CURVE_OWNER"],"burnAddresses":["1nc1nerator11111111111111111111111111111111","11111111111111111111111111111111"],"sybilHeuristics":[]},"allocation":{"id":"allocation","version":"allocation-v0-test","exclusionPolicyVersion":"exclusion@1","minEligibleBalanceUnits":"0","minPayoutRaw":"1"},"earmark":{"economicsVersion":"STANDARD_V1@0-v0test","partnerRewardsSplitPct":50,"label":"V0_TEST: not approved for production"}},"rewardsVault":null,"coins":[{"mint":"6RxnQppWqqsRYeeRFUbrEjfoCMTdRyrCySsPSh1nNQE1","symbol":"CASH","status":"MIGRATED","coverage":{"mint":"6RxnQppWqqsRYeeRFUbrEjfoCMTdRyrCySsPSh1nNQE1","status":"COMPLETE","checkedAtSlot":507880951,"checkedAt":"2026-10-05T22:23:33.439Z","accounts":3,"transactions":10,"pending":0,"failed":0,"changes":19,"checks":[{"id":"ALL_TRANSACTIONS_READ","ok":true,"detail":"10 read, 0 failed (no balance change), 0 not served yet"},{"id":"REPLAYS_CLEANLY","ok":true,"detail":"3 account(s) replayed from creation"},{"id":"REPLAY_EQUALS_CHAIN","ok":true,"detail":"every account's replayed balance equals the chain at slot 507880951"},{"id":"ACCOUNTS_ADD_UP_TO_SUPPLY","ok":true,"detail":"3 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507880952)"}],"providers":"SINGLE_PROVIDER"},"totals":{"earmarkedRaw":"2020522","depositedRaw":"0","allocatedRaw":"0"},"epochs":[{"epochId":"2026-10-05","status":"OPEN","reasons":[],"window":{"startSec":1791158400,"endSec":1791244800,"startSlot":507541152,"endSlot":507880951,"nextStartSlot":null,"slots":339800},"holders":1,"excluded":2,"topHolders":[{"owner":"DgcJHwtDYiUAE8J7i8cdWChYa5JhqvwJTP49AzbUBxYo","shareBps":10000}],"funding":{"earmarkedRaw":"2020522","earmarkTrades":6,"unknownFeeTrades":0,"fundedRaw":"0","poolCarryInRaw":"0","deposits":[]},"totalAllocatedRaw":"0","merkleRoot":"0000000000000000000000000000000000000000000000000000000000000000","artifactHash":null,"frozen":null}]},{"mint":"4TzRBV1sP1sZUATwxJ4Q3w56ADhj3W885UJGaaWAyeQb","symbol":"FROG","status":"LIVE","coverage":{"mint":"4TzRBV1sP1sZUATwxJ4Q3w56ADhj3W885UJGaaWAyeQb","status":"COMPLETE","checkedAtSlot":507880983,"checkedAt":"2026-10-05T22:23:40.947Z","accounts":5,"transactions":6,"pending":0,"failed":0,"changes":11,"checks":[{"id":"ALL_TRANSACTIONS_READ","ok":true,"detail":"6 read, 0 failed (no balance change), 0 not served yet"},{"id":"REPLAYS_CLEANLY","ok":true,"detail":"5 account(s) replayed from creation"},{"id":"REPLAY_EQUALS_CHAIN","ok":true,"detail":"every account's replayed balance equals the chain at slot 507880983"},{"id":"ACCOUNTS_ADD_UP_TO_SUPPLY","ok":true,"detail":"5 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507880983)"}],"providers":"SINGLE_PROVIDER"},"totals":{"earmarkedRaw":"524000","depositedRaw":"0","allocatedRaw":"0"},"epochs":[{"epochId":"2026-10-03","status":"FINAL","reasons":[],"window":{"startSec":1790985600,"endSec":1791072000,"startSlot":506806896,"endSlot":507172682,"nextStartSlot":507172683,"slots":365787},"holders":1,"excluded":1,"topHolders":[{"owner":"66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX","shareBps":10000}],"funding":{"earmarkedRaw":"470000","earmarkTrades":2,"unknownFeeTrades":0,"fundedRaw":"0","poolCarryInRaw":"0","deposits":[]},"totalAllocatedRaw":"0","merkleRoot":"0000000000000000000000000000000000000000000000000000000000000000","artifactHash":"089e8186240c1bb8544e4f34dd488c1a55e660e10f6376422a4f98df3f6e5311","frozen":{"hash":"089e8186240c1bb8544e4f34dd488c1a55e660e10f6376422a4f98df3f6e5311","finalizedAt":"2026-10-05T22:24:10.000Z","reproduced":true}},{"epochId":"2026-10-04","status":"FINAL","reasons":[],"window":{"startSec":1791072000,"endSec":1791158400,"startSlot":507172683,"endSlot":507541151,"nextStartSlot":507541152,"slots":368469},"holders":1,"excluded":1,"topHolders":[{"owner":"66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX","shareBps":10000}],"funding":{"earmarkedRaw":"0","earmarkTrades":0,"unknownFeeTrades":0,"fundedRaw":"0","poolCarryInRaw":"0","deposits":[]},"totalAllocatedRaw":"0","merkleRoot":"0000000000000000000000000000000000000000000000000000000000000000","artifactHash":"2c544b3ee810dee9b11c045666190218b1512c27ee1c83eb5efecd8ca9d2afba","frozen":{"hash":"2c544b3ee810dee9b11c045666190218b1512c27ee1c83eb5efecd8ca9d2afba","finalizedAt":"2026-10-05T22:24:10.000Z","reproduced":true}},{"epochId":"2026-10-05","status":"OPEN","reasons":[],"window":{"startSec":1791158400,"endSec":1791244800,"startSlot":507541152,"endSlot":507880983,"nextStartSlot":null,"slots":339832},"holders":4,"excluded":1,"topHolders":[{"owner":"66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX","shareBps":9918},{"owner":"5KZ1huEFv9ZwSQACsiWVZt5JKmauXSMojpf9pqnu24Xk","shareBps":81},{"owner":"CBG61DYreVbVXtsHFJ7j63fam81zAEnyc5LKz59SWUsb","shareBps":0}],"funding":{"earmarkedRaw":"54000","earmarkTrades":2,"unknownFeeTrades":0,"fundedRaw":"0","poolCarryInRaw":"0","deposits":[]},"totalAllocatedRaw":"0","merkleRoot":"0000000000000000000000000000000000000000000000000000000000000000","artifactHash":null,"frozen":null}]},{"mint":"81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge","symbol":"MCAT","status":"MIGRATED","coverage":{"mint":"81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge","status":"COMPLETE","checkedAtSlot":507881003,"checkedAt":"2026-10-05T22:23:45.785Z","accounts":7,"transactions":12,"pending":0,"failed":0,"changes":23,"checks":[{"id":"ALL_TRANSACTIONS_READ","ok":true,"detail":"12 read, 0 failed (no balance change), 0 not served yet"},{"id":"REPLAYS_CLEANLY","ok":true,"detail":"7 account(s) replayed from creation"},{"id":"REPLAY_EQUALS_CHAIN","ok":true,"detail":"every account's replayed balance equals the chain at slot 507881003"},{"id":"ACCOUNTS_ADD_UP_TO_SUPPLY","ok":true,"detail":"7 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507881003)"}],"providers":"SINGLE_PROVIDER"},"totals":{"earmarkedRaw":"2020786","depositedRaw":"0","allocatedRaw":"0"},"epochs":[{"epochId":"2026-10-03","status":"FINAL","reasons":[],"window":{"startSec":1790985600,"endSec":1791072000,"startSlot":506806896,"endSlot":507172682,"nextStartSlot":507172683,"slots":365787},"holders":5,"excluded":2,"topHolders":[{"owner":"4ebtmzcQA8yyiN8Tyd7T1hJCZcnPbj7QtGu3B2quXTcN","shareBps":3411},{"owner":"8t2k9VtK7bEUJZG37xZMMjBuzdCECUVvWxPK4MRPfCpM","shareBps":2943},{"owner":"66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX","shareBps":1846}],"funding":{"earmarkedRaw":"2020786","earmarkTrades":10,"unknownFeeTrades":0,"fundedRaw":"0","poolCarryInRaw":"0","deposits":[]},"totalAllocatedRaw":"0","merkleRoot":"0000000000000000000000000000000000000000000000000000000000000000","artifactHash":"643252fdf8b4ebe61057e080410b19a05e5e107a1d33b9837032b1013a31fd83","frozen":{"hash":"643252fdf8b4ebe61057e080410b19a05e5e107a1d33b9837032b1013a31fd83","finalizedAt":"2026-10-05T22:23:55.000Z","reproduced":true}},{"epochId":"2026-10-04","status":"FINAL","reasons":[],"window":{"startSec":1791072000,"endSec":1791158400,"startSlot":507172683,"endSlot":507541151,"nextStartSlot":507541152,"slots":368469},"holders":5,"excluded":2,"topHolders":[{"owner":"4ebtmzcQA8yyiN8Tyd7T1hJCZcnPbj7QtGu3B2quXTcN","shareBps":3386},{"owner":"8t2k9VtK7bEUJZG37xZMMjBuzdCECUVvWxPK4MRPfCpM","shareBps":3011},{"owner":"66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX","shareBps":1853}],"funding":{"earmarkedRaw":"0","earmarkTrades":0,"unknownFeeTrades":0,"fundedRaw":"0","poolCarryInRaw":"0","deposits":[]},"totalAllocatedRaw":"0","merkleRoot":"0000000000000000000000000000000000000000000000000000000000000000","artifactHash":"6fe16a5b5fb2b9870a511c3c839f481e3627f7e59989c0bc97e8a29feb9414b2","frozen":{"hash":"6fe16a5b5fb2b9870a511c3c839f481e3627f7e59989c0bc97e8a29feb9414b2","finalizedAt":"2026-10-05T22:23:55.000Z","reproduced":true}},{"epochId":"2026-10-05","status":"OPEN","reasons":[],"window":{"startSec":1791158400,"endSec":1791244800,"startSlot":507541152,"endSlot":507881003,"nextStartSlot":null,"slots":339852},"holders":5,"excluded":2,"topHolders":[{"owner":"4ebtmzcQA8yyiN8Tyd7T1hJCZcnPbj7QtGu3B2quXTcN","shareBps":3386},{"owner":"8t2k9VtK7bEUJZG37xZMMjBuzdCECUVvWxPK4MRPfCpM","shareBps":3011},{"owner":"66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX","shareBps":1853}],"funding":{"earmarkedRaw":"0","earmarkTrades":0,"unknownFeeTrades":0,"fundedRaw":"0","poolCarryInRaw":"0","deposits":[]},"totalAllocatedRaw":"0","merkleRoot":"0000000000000000000000000000000000000000000000000000000000000000","artifactHash":null,"frozen":null}]},{"mint":"CNCbBAZm58ghSRqWtW5WQGo127NU5srFJYQh8tEzbESL","symbol":"PAYDAY","status":"MIGRATED","coverage":{"mint":"CNCbBAZm58ghSRqWtW5WQGo127NU5srFJYQh8tEzbESL","status":"COMPLETE","checkedAtSlot":507880968,"checkedAt":"2026-10-05T22:23:37.473Z","accounts":3,"transactions":7,"pending":0,"failed":0,"changes":13,"checks":[{"id":"ALL_TRANSACTIONS_READ","ok":true,"detail":"7 read, 0 failed (no balance change), 0 not served yet"},{"id":"REPLAYS_CLEANLY","ok":true,"detail":"3 account(s) replayed from creation"},{"id":"REPLAY_EQUALS_CHAIN","ok":true,"detail":"every account's replayed balance equals the chain at slot 507880968"},{"id":"ACCOUNTS_ADD_UP_TO_SUPPLY","ok":true,"detail":"3 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507880968)"}],"providers":"SINGLE_PROVIDER"},"totals":{"earmarkedRaw":"2020522","depositedRaw":"0","allocatedRaw":"0"},"epochs":[{"epochId":"2026-10-05","status":"OPEN","reasons":[],"window":{"startSec":1791158400,"endSec":1791244800,"startSlot":507541152,"endSlot":507880968,"nextStartSlot":null,"slots":339817},"holders":1,"excluded":2,"topHolders":[{"owner":"3t5EUNug7yFwQhV3Gijmumf4N9DSLaLbzn9f2pbbd7Pv","shareBps":10000}],"funding":{"earmarkedRaw":"2020522","earmarkTrades":4,"unknownFeeTrades":0,"fundedRaw":"0","poolCarryInRaw":"0","deposits":[]},"totalAllocatedRaw":"0","merkleRoot":"0000000000000000000000000000000000000000000000000000000000000000","artifactHash":null,"frozen":null}]},{"mint":"3WJU8EnqCQVHEdvwwGxvJuxyei72WXvnxNNZPSwtYkY6","symbol":"TIPJAR","status":"LIVE","coverage":{"mint":"3WJU8EnqCQVHEdvwwGxvJuxyei72WXvnxNNZPSwtYkY6","status":"COMPLETE","checkedAtSlot":507880962,"checkedAt":"2026-10-05T22:23:35.709Z","accounts":2,"transactions":3,"pending":0,"failed":0,"changes":5,"checks":[{"id":"ALL_TRANSACTIONS_READ","ok":true,"detail":"3 read, 0 failed (no balance change), 0 not served yet"},{"id":"REPLAYS_CLEANLY","ok":true,"detail":"2 account(s) replayed from creation"},{"id":"REPLAY_EQUALS_CHAIN","ok":true,"detail":"every account's replayed balance equals the chain at slot 507880962"},{"id":"ACCOUNTS_ADD_UP_TO_SUPPLY","ok":true,"detail":"2 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507880962)"}],"providers":"SINGLE_PROVIDER"},"totals":{"earmarkedRaw":"400159","depositedRaw":"0","allocatedRaw":"0"},"epochs":[{"epochId":"2026-10-05","status":"OPEN","reasons":[],"window":{"startSec":1791158400,"endSec":1791244800,"startSlot":507541152,"endSlot":507880962,"nextStartSlot":null,"slots":339811},"holders":1,"excluded":1,"topHolders":[{"owner":"GWMF5JVGHTW9KLAoTuWmNiq2cFSEbcoYRYEkCfNnmGzU","shareBps":10000}],"funding":{"earmarkedRaw":"400159","earmarkTrades":2,"unknownFeeTrades":0,"fundedRaw":"0","poolCarryInRaw":"0","deposits":[]},"totalAllocatedRaw":"0","merkleRoot":"0000000000000000000000000000000000000000000000000000000000000000","artifactHash":null,"frozen":null}]},{"mint":"2d66yf3bjcXp2sLDAmBV7BvDhKgVpSTeEUkJYiMNgMqX","symbol":"TRSY","status":"LIVE","coverage":{"mint":"2d66yf3bjcXp2sLDAmBV7BvDhKgVpSTeEUkJYiMNgMqX","status":"COMPLETE","checkedAtSlot":507880923,"checkedAt":"2026-10-05T22:23:26.928Z","accounts":5,"transactions":7,"pending":0,"failed":0,"changes":13,"checks":[{"id":"ALL_TRANSACTIONS_READ","ok":true,"detail":"7 read, 0 failed (no balance change), 0 not served yet"},{"id":"REPLAYS_CLEANLY","ok":true,"detail":"5 account(s) replayed from creation"},{"id":"REPLAY_EQUALS_CHAIN","ok":true,"detail":"every account's replayed balance equals the chain at slot 507880923"},{"id":"ACCOUNTS_ADD_UP_TO_SUPPLY","ok":true,"detail":"5 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507880923)"}],"providers":"SINGLE_PROVIDER"},"totals":{"earmarkedRaw":"210015","depositedRaw":"0","allocatedRaw":"0"},"epochs":[{"epochId":"2026-10-05","status":"OPEN","reasons":[],"window":{"startSec":1791158400,"endSec":1791244800,"startSlot":507541152,"endSlot":507880923,"nextStartSlot":null,"slots":339772},"holders":3,"excluded":1,"topHolders":[{"owner":"5hRMa224wFQ4UdiVqEEAy3DFgo1gzvMQpq7fskBBYtSa","shareBps":4833},{"owner":"F77mcrJorEvnpAWd2g25mKqQW6RA6zpPSQFBjw4ENpaQ","shareBps":4756},{"owner":"13W5KXwToNEUJwuKRKTykYSNRUmuqCWwhZjMjyDGtMUv","shareBps":409}],"funding":{"earmarkedRaw":"210015","earmarkTrades":5,"unknownFeeTrades":0,"fundedRaw":"0","poolCarryInRaw":"0","deposits":[]},"totalAllocatedRaw":"0","merkleRoot":"0000000000000000000000000000000000000000000000000000000000000000","artifactHash":null,"frozen":null}]},{"mint":"FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o","symbol":"VAULT","status":"MIGRATED","coverage":{"mint":"FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o","status":"COMPLETE","checkedAtSlot":507880939,"checkedAt":"2026-10-05T22:23:30.191Z","accounts":7,"transactions":10,"pending":0,"failed":0,"changes":19,"checks":[{"id":"ALL_TRANSACTIONS_READ","ok":true,"detail":"10 read, 0 failed (no balance change), 0 not served yet"},{"id":"REPLAYS_CLEANLY","ok":true,"detail":"7 account(s) replayed from creation"},{"id":"REPLAY_EQUALS_CHAIN","ok":true,"detail":"every account's replayed balance equals the chain at slot 507880939"},{"id":"ACCOUNTS_ADD_UP_TO_SUPPLY","ok":true,"detail":"7 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507880939)"}],"providers":"SINGLE_PROVIDER"},"totals":{"earmarkedRaw":"2020202","depositedRaw":"0","allocatedRaw":"0"},"epochs":[{"epochId":"2026-10-05","status":"OPEN","reasons":[],"window":{"startSec":1791158400,"endSec":1791244800,"startSlot":507541152,"endSlot":507880939,"nextStartSlot":null,"slots":339788},"holders":4,"excluded":2,"topHolders":[{"owner":"8UXp4uJTicUWj55mGFwy4gncRBYxH8ej5DuxEZR2FDk2","shareBps":5871},{"owner":"DJg6AJPT3jUsx2jSWvrFzAaiYnwDp2F3TTJfsjYSpMYe","shareBps":3451},{"owner":"4vCyHopHHHNiL2bVH2ve8FzkxgL91BhNFaooUG1wbMyj","shareBps":656}],"funding":{"earmarkedRaw":"2020202","earmarkTrades":5,"unknownFeeTrades":0,"fundedRaw":"0","poolCarryInRaw":"0","deposits":[]},"totalAllocatedRaw":"0","merkleRoot":"0000000000000000000000000000000000000000000000000000000000000000","artifactHash":null,"frozen":null}]}]}
+{
+ "cluster": "devnet",
+ "label": "TEST_ONLY devnet holder rewards on valueless test coins",
+ "rules": {
+  "strategy": "EPOCH_PROPORTIONAL",
+  "funding": "The fee ledger sets the earmark: the holder-reward share of the platform fees each epoch's trades paid. An earmark is not money. Only rewards deposited into the rewards vault for an epoch are distributable.",
+  "allocation": "The holder balance history (every transfer, not only trades) sets each holder's share: slot-weighted average balance over the epoch, after exclusions.",
+  "settlement": {
+   "mainnet": false,
+   "devnet": "ONE_TEST_ROUND",
+   "note": "Devnet only: the owner approved one test round in test qUSD on 2026-10-05. A deposit into the rewards vault and a payout from it each need 2 of 3 test approvals, and the server holds no approver key. Mainnet payouts stay off."
+  }
+ },
+ "policies": {
+  "exclusion": {
+   "id": "exclusion",
+   "version": "exclusion@1",
+   "rules": [
+    "NAMED_ACCOUNT",
+    "BURN_ADDRESS",
+    "OFF_CURVE_OWNER"
+   ],
+   "burnAddresses": [
+    "1nc1nerator11111111111111111111111111111111",
+    "11111111111111111111111111111111"
+   ],
+   "sybilHeuristics": []
+  },
+  "allocation": {
+   "id": "allocation",
+   "version": "allocation-v0-test",
+   "exclusionPolicyVersion": "exclusion@1",
+   "minEligibleBalanceUnits": "0",
+   "minPayoutRaw": "1"
+  },
+  "earmark": {
+   "economicsVersion": "STANDARD_V1@0-v0test",
+   "partnerRewardsSplitPct": 50,
+   "label": "V0_TEST: not approved for production"
+  }
+ },
+ "rewardsVault": {
+  "multisig": "6VWeQwhL4nWAWz34LPhZtbC97DfDL1ndNufVdySUcEJd",
+  "vault": "Y2HuCzcjTnKHTCn7cBcPm2DsGKnuqScsVpXy7ifCon7",
+  "quoteAccount": "BeJ86unizDStGtfcEgpFTQquAgsD8CSY2YPDsvS4heGq",
+  "balanceRaw": "3",
+  "checkedToSlot": 507905779,
+  "caughtUp": true,
+  "untagged": [],
+  "threshold": 2,
+  "members": 3,
+  "signers": "ONE_OPERATOR_TEST_KEYS"
+ },
+ "coins": [
+  {
+   "mint": "6RxnQppWqqsRYeeRFUbrEjfoCMTdRyrCySsPSh1nNQE1",
+   "symbol": "CASH",
+   "status": "MIGRATED",
+   "coverage": {
+    "mint": "6RxnQppWqqsRYeeRFUbrEjfoCMTdRyrCySsPSh1nNQE1",
+    "status": "COMPLETE",
+    "checkedAtSlot": 507905737,
+    "checkedAt": "2026-10-06T00:02:25.565Z",
+    "accounts": 3,
+    "transactions": 10,
+    "pending": 0,
+    "failed": 0,
+    "changes": 19,
+    "checks": [
+     {
+      "id": "ALL_TRANSACTIONS_READ",
+      "ok": true,
+      "detail": "10 read, 0 failed (no balance change), 0 not served yet"
+     },
+     {
+      "id": "REPLAYS_CLEANLY",
+      "ok": true,
+      "detail": "3 account(s) replayed from creation"
+     },
+     {
+      "id": "REPLAY_EQUALS_CHAIN",
+      "ok": true,
+      "detail": "every account's replayed balance equals the chain at slot 507905737"
+     },
+     {
+      "id": "ACCOUNTS_ADD_UP_TO_SUPPLY",
+      "ok": true,
+      "detail": "3 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507905737)"
+     }
+    ],
+    "providers": "SINGLE_PROVIDER"
+   },
+   "totals": {
+    "earmarkedRaw": "2020522",
+    "depositedRaw": "0",
+    "allocatedRaw": "0"
+   },
+   "epochs": [
+    {
+     "epochId": "2026-10-05",
+     "status": "FINAL",
+     "reasons": [],
+     "window": {
+      "startSec": 1791158400,
+      "endSec": 1791244800,
+      "startSlot": 507541152,
+      "endSlot": 507905128,
+      "nextStartSlot": 507905129,
+      "slots": 363977
+     },
+     "holders": 1,
+     "excluded": 2,
+     "topHolders": [
+      {
+       "owner": "DgcJHwtDYiUAE8J7i8cdWChYa5JhqvwJTP49AzbUBxYo",
+       "shareBps": 10000
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "2020522",
+      "earmarkTrades": 6,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": "c9af76cb362a4f87c4771b516d698ddca9938cc1c17169b636bc5e368c91620a",
+     "frozen": {
+      "hash": "c9af76cb362a4f87c4771b516d698ddca9938cc1c17169b636bc5e368c91620a",
+      "finalizedAt": "2026-10-06T00:00:19.000Z",
+      "reproduced": true
+     },
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    },
+    {
+     "epochId": "2026-10-06",
+     "status": "OPEN",
+     "reasons": [],
+     "window": {
+      "startSec": 1791244800,
+      "endSec": 1791331200,
+      "startSlot": 507905129,
+      "endSlot": 507905737,
+      "nextStartSlot": null,
+      "slots": 609
+     },
+     "holders": 1,
+     "excluded": 2,
+     "topHolders": [
+      {
+       "owner": "DgcJHwtDYiUAE8J7i8cdWChYa5JhqvwJTP49AzbUBxYo",
+       "shareBps": 10000
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "0",
+      "earmarkTrades": 0,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": null,
+     "frozen": null,
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    }
+   ]
+  },
+  {
+   "mint": "4TzRBV1sP1sZUATwxJ4Q3w56ADhj3W885UJGaaWAyeQb",
+   "symbol": "FROG",
+   "status": "LIVE",
+   "coverage": {
+    "mint": "4TzRBV1sP1sZUATwxJ4Q3w56ADhj3W885UJGaaWAyeQb",
+    "status": "COMPLETE",
+    "checkedAtSlot": 507905756,
+    "checkedAt": "2026-10-06T00:02:30.136Z",
+    "accounts": 5,
+    "transactions": 6,
+    "pending": 0,
+    "failed": 0,
+    "changes": 11,
+    "checks": [
+     {
+      "id": "ALL_TRANSACTIONS_READ",
+      "ok": true,
+      "detail": "6 read, 0 failed (no balance change), 0 not served yet"
+     },
+     {
+      "id": "REPLAYS_CLEANLY",
+      "ok": true,
+      "detail": "5 account(s) replayed from creation"
+     },
+     {
+      "id": "REPLAY_EQUALS_CHAIN",
+      "ok": true,
+      "detail": "every account's replayed balance equals the chain at slot 507905756"
+     },
+     {
+      "id": "ACCOUNTS_ADD_UP_TO_SUPPLY",
+      "ok": true,
+      "detail": "5 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507905756)"
+     }
+    ],
+    "providers": "SINGLE_PROVIDER"
+   },
+   "totals": {
+    "earmarkedRaw": "524000",
+    "depositedRaw": "0",
+    "allocatedRaw": "0"
+   },
+   "epochs": [
+    {
+     "epochId": "2026-10-03",
+     "status": "FINAL",
+     "reasons": [],
+     "window": {
+      "startSec": 1790985600,
+      "endSec": 1791072000,
+      "startSlot": 506806896,
+      "endSlot": 507172682,
+      "nextStartSlot": 507172683,
+      "slots": 365787
+     },
+     "holders": 1,
+     "excluded": 1,
+     "topHolders": [
+      {
+       "owner": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+       "shareBps": 10000
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "470000",
+      "earmarkTrades": 2,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": "089e8186240c1bb8544e4f34dd488c1a55e660e10f6376422a4f98df3f6e5311",
+     "frozen": {
+      "hash": "089e8186240c1bb8544e4f34dd488c1a55e660e10f6376422a4f98df3f6e5311",
+      "finalizedAt": "2026-10-05T22:24:10.000Z",
+      "reproduced": true
+     },
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    },
+    {
+     "epochId": "2026-10-04",
+     "status": "FINAL",
+     "reasons": [],
+     "window": {
+      "startSec": 1791072000,
+      "endSec": 1791158400,
+      "startSlot": 507172683,
+      "endSlot": 507541151,
+      "nextStartSlot": 507541152,
+      "slots": 368469
+     },
+     "holders": 1,
+     "excluded": 1,
+     "topHolders": [
+      {
+       "owner": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+       "shareBps": 10000
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "0",
+      "earmarkTrades": 0,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": "2c544b3ee810dee9b11c045666190218b1512c27ee1c83eb5efecd8ca9d2afba",
+     "frozen": {
+      "hash": "2c544b3ee810dee9b11c045666190218b1512c27ee1c83eb5efecd8ca9d2afba",
+      "finalizedAt": "2026-10-05T22:24:10.000Z",
+      "reproduced": true
+     },
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    },
+    {
+     "epochId": "2026-10-05",
+     "status": "FINAL",
+     "reasons": [],
+     "window": {
+      "startSec": 1791158400,
+      "endSec": 1791244800,
+      "startSlot": 507541152,
+      "endSlot": 507905128,
+      "nextStartSlot": 507905129,
+      "slots": 363977
+     },
+     "holders": 4,
+     "excluded": 1,
+     "topHolders": [
+      {
+       "owner": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+       "shareBps": 9881
+      },
+      {
+       "owner": "5KZ1huEFv9ZwSQACsiWVZt5JKmauXSMojpf9pqnu24Xk",
+       "shareBps": 114
+      },
+      {
+       "owner": "CBG61DYreVbVXtsHFJ7j63fam81zAEnyc5LKz59SWUsb",
+       "shareBps": 1
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "54000",
+      "earmarkTrades": 2,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": "e1d5f3c8768cb2ff882664772b214ec11f45763f1cfc37196adcae66623abd34",
+     "frozen": {
+      "hash": "e1d5f3c8768cb2ff882664772b214ec11f45763f1cfc37196adcae66623abd34",
+      "finalizedAt": "2026-10-06T00:00:19.000Z",
+      "reproduced": true
+     },
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    },
+    {
+     "epochId": "2026-10-06",
+     "status": "OPEN",
+     "reasons": [],
+     "window": {
+      "startSec": 1791244800,
+      "endSec": 1791331200,
+      "startSlot": 507905129,
+      "endSlot": 507905756,
+      "nextStartSlot": null,
+      "slots": 628
+     },
+     "holders": 4,
+     "excluded": 1,
+     "topHolders": [
+      {
+       "owner": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+       "shareBps": 9393
+      },
+      {
+       "owner": "5KZ1huEFv9ZwSQACsiWVZt5JKmauXSMojpf9pqnu24Xk",
+       "shareBps": 563
+      },
+      {
+       "owner": "CBG61DYreVbVXtsHFJ7j63fam81zAEnyc5LKz59SWUsb",
+       "shareBps": 21
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "0",
+      "earmarkTrades": 0,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": null,
+     "frozen": null,
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    }
+   ]
+  },
+  {
+   "mint": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+   "symbol": "MCAT",
+   "status": "MIGRATED",
+   "coverage": {
+    "mint": "81EixAtVvJHMpVkbaEeiHsC1V8DcCcYaEpBnurNZfcge",
+    "status": "COMPLETE",
+    "checkedAtSlot": 507905779,
+    "checkedAt": "2026-10-06T00:02:35.494Z",
+    "accounts": 7,
+    "transactions": 12,
+    "pending": 0,
+    "failed": 0,
+    "changes": 23,
+    "checks": [
+     {
+      "id": "ALL_TRANSACTIONS_READ",
+      "ok": true,
+      "detail": "12 read, 0 failed (no balance change), 0 not served yet"
+     },
+     {
+      "id": "REPLAYS_CLEANLY",
+      "ok": true,
+      "detail": "7 account(s) replayed from creation"
+     },
+     {
+      "id": "REPLAY_EQUALS_CHAIN",
+      "ok": true,
+      "detail": "every account's replayed balance equals the chain at slot 507905779"
+     },
+     {
+      "id": "ACCOUNTS_ADD_UP_TO_SUPPLY",
+      "ok": true,
+      "detail": "7 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507905779)"
+     }
+    ],
+    "providers": "SINGLE_PROVIDER"
+   },
+   "totals": {
+    "earmarkedRaw": "2020786",
+    "depositedRaw": "0",
+    "allocatedRaw": "0"
+   },
+   "epochs": [
+    {
+     "epochId": "2026-10-03",
+     "status": "FINAL",
+     "reasons": [],
+     "window": {
+      "startSec": 1790985600,
+      "endSec": 1791072000,
+      "startSlot": 506806896,
+      "endSlot": 507172682,
+      "nextStartSlot": 507172683,
+      "slots": 365787
+     },
+     "holders": 5,
+     "excluded": 2,
+     "topHolders": [
+      {
+       "owner": "4ebtmzcQA8yyiN8Tyd7T1hJCZcnPbj7QtGu3B2quXTcN",
+       "shareBps": 3411
+      },
+      {
+       "owner": "8t2k9VtK7bEUJZG37xZMMjBuzdCECUVvWxPK4MRPfCpM",
+       "shareBps": 2943
+      },
+      {
+       "owner": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+       "shareBps": 1846
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "2020786",
+      "earmarkTrades": 10,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": "643252fdf8b4ebe61057e080410b19a05e5e107a1d33b9837032b1013a31fd83",
+     "frozen": {
+      "hash": "643252fdf8b4ebe61057e080410b19a05e5e107a1d33b9837032b1013a31fd83",
+      "finalizedAt": "2026-10-05T22:23:55.000Z",
+      "reproduced": true
+     },
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    },
+    {
+     "epochId": "2026-10-04",
+     "status": "FINAL",
+     "reasons": [],
+     "window": {
+      "startSec": 1791072000,
+      "endSec": 1791158400,
+      "startSlot": 507172683,
+      "endSlot": 507541151,
+      "nextStartSlot": 507541152,
+      "slots": 368469
+     },
+     "holders": 5,
+     "excluded": 2,
+     "topHolders": [
+      {
+       "owner": "4ebtmzcQA8yyiN8Tyd7T1hJCZcnPbj7QtGu3B2quXTcN",
+       "shareBps": 3386
+      },
+      {
+       "owner": "8t2k9VtK7bEUJZG37xZMMjBuzdCECUVvWxPK4MRPfCpM",
+       "shareBps": 3011
+      },
+      {
+       "owner": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+       "shareBps": 1853
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "0",
+      "earmarkTrades": 0,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": "6fe16a5b5fb2b9870a511c3c839f481e3627f7e59989c0bc97e8a29feb9414b2",
+     "frozen": {
+      "hash": "6fe16a5b5fb2b9870a511c3c839f481e3627f7e59989c0bc97e8a29feb9414b2",
+      "finalizedAt": "2026-10-05T22:23:55.000Z",
+      "reproduced": true
+     },
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    },
+    {
+     "epochId": "2026-10-05",
+     "status": "FINAL",
+     "reasons": [],
+     "window": {
+      "startSec": 1791158400,
+      "endSec": 1791244800,
+      "startSlot": 507541152,
+      "endSlot": 507905128,
+      "nextStartSlot": 507905129,
+      "slots": 363977
+     },
+     "holders": 5,
+     "excluded": 2,
+     "topHolders": [
+      {
+       "owner": "4ebtmzcQA8yyiN8Tyd7T1hJCZcnPbj7QtGu3B2quXTcN",
+       "shareBps": 3386
+      },
+      {
+       "owner": "8t2k9VtK7bEUJZG37xZMMjBuzdCECUVvWxPK4MRPfCpM",
+       "shareBps": 3011
+      },
+      {
+       "owner": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+       "shareBps": 1853
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "0",
+      "earmarkTrades": 0,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": "611ce891299dce92dfdb289b675cf25d27131b582132d7f7aad8e6ca46b277a3",
+     "frozen": {
+      "hash": "611ce891299dce92dfdb289b675cf25d27131b582132d7f7aad8e6ca46b277a3",
+      "finalizedAt": "2026-10-06T00:00:19.000Z",
+      "reproduced": true
+     },
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    },
+    {
+     "epochId": "2026-10-06",
+     "status": "OPEN",
+     "reasons": [],
+     "window": {
+      "startSec": 1791244800,
+      "endSec": 1791331200,
+      "startSlot": 507905129,
+      "endSlot": 507905779,
+      "nextStartSlot": null,
+      "slots": 651
+     },
+     "holders": 5,
+     "excluded": 2,
+     "topHolders": [
+      {
+       "owner": "4ebtmzcQA8yyiN8Tyd7T1hJCZcnPbj7QtGu3B2quXTcN",
+       "shareBps": 3386
+      },
+      {
+       "owner": "8t2k9VtK7bEUJZG37xZMMjBuzdCECUVvWxPK4MRPfCpM",
+       "shareBps": 3011
+      },
+      {
+       "owner": "66He5bc6HznVqKApGSVHiJSgsTFkcfnpzbK7wtBbgduX",
+       "shareBps": 1853
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "0",
+      "earmarkTrades": 0,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": null,
+     "frozen": null,
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    }
+   ]
+  },
+  {
+   "mint": "CNCbBAZm58ghSRqWtW5WQGo127NU5srFJYQh8tEzbESL",
+   "symbol": "PAYDAY",
+   "status": "MIGRATED",
+   "coverage": {
+    "mint": "CNCbBAZm58ghSRqWtW5WQGo127NU5srFJYQh8tEzbESL",
+    "status": "COMPLETE",
+    "checkedAtSlot": 507905745,
+    "checkedAt": "2026-10-06T00:02:27.317Z",
+    "accounts": 3,
+    "transactions": 7,
+    "pending": 0,
+    "failed": 0,
+    "changes": 13,
+    "checks": [
+     {
+      "id": "ALL_TRANSACTIONS_READ",
+      "ok": true,
+      "detail": "7 read, 0 failed (no balance change), 0 not served yet"
+     },
+     {
+      "id": "REPLAYS_CLEANLY",
+      "ok": true,
+      "detail": "3 account(s) replayed from creation"
+     },
+     {
+      "id": "REPLAY_EQUALS_CHAIN",
+      "ok": true,
+      "detail": "every account's replayed balance equals the chain at slot 507905745"
+     },
+     {
+      "id": "ACCOUNTS_ADD_UP_TO_SUPPLY",
+      "ok": true,
+      "detail": "3 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507905745)"
+     }
+    ],
+    "providers": "SINGLE_PROVIDER"
+   },
+   "totals": {
+    "earmarkedRaw": "2020522",
+    "depositedRaw": "0",
+    "allocatedRaw": "0"
+   },
+   "epochs": [
+    {
+     "epochId": "2026-10-05",
+     "status": "FINAL",
+     "reasons": [],
+     "window": {
+      "startSec": 1791158400,
+      "endSec": 1791244800,
+      "startSlot": 507541152,
+      "endSlot": 507905128,
+      "nextStartSlot": 507905129,
+      "slots": 363977
+     },
+     "holders": 1,
+     "excluded": 2,
+     "topHolders": [
+      {
+       "owner": "3t5EUNug7yFwQhV3Gijmumf4N9DSLaLbzn9f2pbbd7Pv",
+       "shareBps": 10000
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "2020522",
+      "earmarkTrades": 4,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": "7a6cf4c41c1f22c2f3efcff202edddfad5bd36fa8d7d304240246dfbc11b02f9",
+     "frozen": {
+      "hash": "7a6cf4c41c1f22c2f3efcff202edddfad5bd36fa8d7d304240246dfbc11b02f9",
+      "finalizedAt": "2026-10-06T00:00:19.000Z",
+      "reproduced": true
+     },
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    },
+    {
+     "epochId": "2026-10-06",
+     "status": "OPEN",
+     "reasons": [],
+     "window": {
+      "startSec": 1791244800,
+      "endSec": 1791331200,
+      "startSlot": 507905129,
+      "endSlot": 507905745,
+      "nextStartSlot": null,
+      "slots": 617
+     },
+     "holders": 1,
+     "excluded": 2,
+     "topHolders": [
+      {
+       "owner": "3t5EUNug7yFwQhV3Gijmumf4N9DSLaLbzn9f2pbbd7Pv",
+       "shareBps": 10000
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "0",
+      "earmarkTrades": 0,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": null,
+     "frozen": null,
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    }
+   ]
+  },
+  {
+   "mint": "3WJU8EnqCQVHEdvwwGxvJuxyei72WXvnxNNZPSwtYkY6",
+   "symbol": "TIPJAR",
+   "status": "LIVE",
+   "coverage": {
+    "mint": "3WJU8EnqCQVHEdvwwGxvJuxyei72WXvnxNNZPSwtYkY6",
+    "status": "COMPLETE",
+    "checkedAtSlot": 507905740,
+    "checkedAt": "2026-10-06T00:02:26.270Z",
+    "accounts": 2,
+    "transactions": 3,
+    "pending": 0,
+    "failed": 0,
+    "changes": 5,
+    "checks": [
+     {
+      "id": "ALL_TRANSACTIONS_READ",
+      "ok": true,
+      "detail": "3 read, 0 failed (no balance change), 0 not served yet"
+     },
+     {
+      "id": "REPLAYS_CLEANLY",
+      "ok": true,
+      "detail": "2 account(s) replayed from creation"
+     },
+     {
+      "id": "REPLAY_EQUALS_CHAIN",
+      "ok": true,
+      "detail": "every account's replayed balance equals the chain at slot 507905740"
+     },
+     {
+      "id": "ACCOUNTS_ADD_UP_TO_SUPPLY",
+      "ok": true,
+      "detail": "2 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507905740)"
+     }
+    ],
+    "providers": "SINGLE_PROVIDER"
+   },
+   "totals": {
+    "earmarkedRaw": "400159",
+    "depositedRaw": "0",
+    "allocatedRaw": "0"
+   },
+   "epochs": [
+    {
+     "epochId": "2026-10-05",
+     "status": "FINAL",
+     "reasons": [],
+     "window": {
+      "startSec": 1791158400,
+      "endSec": 1791244800,
+      "startSlot": 507541152,
+      "endSlot": 507905128,
+      "nextStartSlot": 507905129,
+      "slots": 363977
+     },
+     "holders": 1,
+     "excluded": 1,
+     "topHolders": [
+      {
+       "owner": "GWMF5JVGHTW9KLAoTuWmNiq2cFSEbcoYRYEkCfNnmGzU",
+       "shareBps": 10000
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "400159",
+      "earmarkTrades": 2,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": "d66df43905f39ed1b27bd2788f092566f18f53107f7058358657c44b5eed2103",
+     "frozen": {
+      "hash": "d66df43905f39ed1b27bd2788f092566f18f53107f7058358657c44b5eed2103",
+      "finalizedAt": "2026-10-06T00:00:19.000Z",
+      "reproduced": true
+     },
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    },
+    {
+     "epochId": "2026-10-06",
+     "status": "OPEN",
+     "reasons": [],
+     "window": {
+      "startSec": 1791244800,
+      "endSec": 1791331200,
+      "startSlot": 507905129,
+      "endSlot": 507905740,
+      "nextStartSlot": null,
+      "slots": 612
+     },
+     "holders": 1,
+     "excluded": 1,
+     "topHolders": [
+      {
+       "owner": "GWMF5JVGHTW9KLAoTuWmNiq2cFSEbcoYRYEkCfNnmGzU",
+       "shareBps": 10000
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "0",
+      "earmarkTrades": 0,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": null,
+     "frozen": null,
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    }
+   ]
+  },
+  {
+   "mint": "2d66yf3bjcXp2sLDAmBV7BvDhKgVpSTeEUkJYiMNgMqX",
+   "symbol": "TRSY",
+   "status": "LIVE",
+   "coverage": {
+    "mint": "2d66yf3bjcXp2sLDAmBV7BvDhKgVpSTeEUkJYiMNgMqX",
+    "status": "COMPLETE",
+    "checkedAtSlot": 507905719,
+    "checkedAt": "2026-10-06T00:02:21.211Z",
+    "accounts": 5,
+    "transactions": 7,
+    "pending": 0,
+    "failed": 0,
+    "changes": 13,
+    "checks": [
+     {
+      "id": "ALL_TRANSACTIONS_READ",
+      "ok": true,
+      "detail": "7 read, 0 failed (no balance change), 0 not served yet"
+     },
+     {
+      "id": "REPLAYS_CLEANLY",
+      "ok": true,
+      "detail": "5 account(s) replayed from creation"
+     },
+     {
+      "id": "REPLAY_EQUALS_CHAIN",
+      "ok": true,
+      "detail": "every account's replayed balance equals the chain at slot 507905719"
+     },
+     {
+      "id": "ACCOUNTS_ADD_UP_TO_SUPPLY",
+      "ok": true,
+      "detail": "5 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507905719)"
+     }
+    ],
+    "providers": "SINGLE_PROVIDER"
+   },
+   "totals": {
+    "earmarkedRaw": "210015",
+    "depositedRaw": "0",
+    "allocatedRaw": "0"
+   },
+   "epochs": [
+    {
+     "epochId": "2026-10-05",
+     "status": "FINAL",
+     "reasons": [],
+     "window": {
+      "startSec": 1791158400,
+      "endSec": 1791244800,
+      "startSlot": 507541152,
+      "endSlot": 507905128,
+      "nextStartSlot": 507905129,
+      "slots": 363977
+     },
+     "holders": 3,
+     "excluded": 1,
+     "topHolders": [
+      {
+       "owner": "5hRMa224wFQ4UdiVqEEAy3DFgo1gzvMQpq7fskBBYtSa",
+       "shareBps": 4830
+      },
+      {
+       "owner": "F77mcrJorEvnpAWd2g25mKqQW6RA6zpPSQFBjw4ENpaQ",
+       "shareBps": 4759
+      },
+      {
+       "owner": "13W5KXwToNEUJwuKRKTykYSNRUmuqCWwhZjMjyDGtMUv",
+       "shareBps": 410
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "210015",
+      "earmarkTrades": 5,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": "76cd827cce391e8a1255d448b35c43d4f9f1c95591aaef711833070a9db22418",
+     "frozen": {
+      "hash": "76cd827cce391e8a1255d448b35c43d4f9f1c95591aaef711833070a9db22418",
+      "finalizedAt": "2026-10-06T00:01:04.000Z",
+      "reproduced": true
+     },
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    },
+    {
+     "epochId": "2026-10-06",
+     "status": "OPEN",
+     "reasons": [],
+     "window": {
+      "startSec": 1791244800,
+      "endSec": 1791331200,
+      "startSlot": 507905129,
+      "endSlot": 507905719,
+      "nextStartSlot": null,
+      "slots": 591
+     },
+     "holders": 3,
+     "excluded": 1,
+     "topHolders": [
+      {
+       "owner": "5hRMa224wFQ4UdiVqEEAy3DFgo1gzvMQpq7fskBBYtSa",
+       "shareBps": 4827
+      },
+      {
+       "owner": "F77mcrJorEvnpAWd2g25mKqQW6RA6zpPSQFBjw4ENpaQ",
+       "shareBps": 4761
+      },
+      {
+       "owner": "13W5KXwToNEUJwuKRKTykYSNRUmuqCWwhZjMjyDGtMUv",
+       "shareBps": 410
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "0",
+      "earmarkTrades": 0,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "0",
+      "poolCarryInRaw": "0",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "0",
+     "merkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+     "artifactHash": null,
+     "frozen": null,
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    }
+   ]
+  },
+  {
+   "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+   "symbol": "VAULT",
+   "status": "MIGRATED",
+   "coverage": {
+    "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+    "status": "COMPLETE",
+    "checkedAtSlot": 507905728,
+    "checkedAt": "2026-10-06T00:02:23.354Z",
+    "accounts": 7,
+    "transactions": 10,
+    "pending": 0,
+    "failed": 0,
+    "changes": 19,
+    "checks": [
+     {
+      "id": "ALL_TRANSACTIONS_READ",
+      "ok": true,
+      "detail": "10 read, 0 failed (no balance change), 0 not served yet"
+     },
+     {
+      "id": "REPLAYS_CLEANLY",
+      "ok": true,
+      "detail": "7 account(s) replayed from creation"
+     },
+     {
+      "id": "REPLAY_EQUALS_CHAIN",
+      "ok": true,
+      "detail": "every account's replayed balance equals the chain at slot 507905728"
+     },
+     {
+      "id": "ACCOUNTS_ADD_UP_TO_SUPPLY",
+      "ok": true,
+      "detail": "7 account(s) hold 1000000000000000; supply 1000000000000000 (slot 507905729)"
+     }
+    ],
+    "providers": "SINGLE_PROVIDER"
+   },
+   "totals": {
+    "earmarkedRaw": "2020202",
+    "depositedRaw": "2020202",
+    "allocatedRaw": "2020201"
+   },
+   "epochs": [
+    {
+     "epochId": "2026-10-05",
+     "status": "FINAL",
+     "reasons": [],
+     "window": {
+      "startSec": 1791158400,
+      "endSec": 1791244800,
+      "startSlot": 507541152,
+      "endSlot": 507905128,
+      "nextStartSlot": 507905129,
+      "slots": 363977
+     },
+     "holders": 4,
+     "excluded": 2,
+     "topHolders": [
+      {
+       "owner": "8UXp4uJTicUWj55mGFwy4gncRBYxH8ej5DuxEZR2FDk2",
+       "shareBps": 5865
+      },
+      {
+       "owner": "DJg6AJPT3jUsx2jSWvrFzAaiYnwDp2F3TTJfsjYSpMYe",
+       "shareBps": 3455
+      },
+      {
+       "owner": "4vCyHopHHHNiL2bVH2ve8FzkxgL91BhNFaooUG1wbMyj",
+       "shareBps": 657
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "2020202",
+      "earmarkTrades": 5,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "2020202",
+      "poolCarryInRaw": "0",
+      "deposits": [
+       {
+        "sig": "5dfSB2ndawyzkNhk5RQPFM7m1KNsmxNssR3QUNNNRVwjGV9nVDKzTySa5SsYqWbZHP3BuZoPkhEi8De7EjcYN5Za",
+        "amountRaw": "2020202"
+       }
+      ]
+     },
+     "totalAllocatedRaw": "2020199",
+     "merkleRoot": "4075607e54c044d00ec2192d03fb20ec1e9392fdef791b2f62ff5534a52f0e62",
+     "artifactHash": "ec069d2532e624077f601f905cbdbd993485cfbf49049ae61600e4fe1d42c1fc",
+     "frozen": {
+      "hash": "ec069d2532e624077f601f905cbdbd993485cfbf49049ae61600e4fe1d42c1fc",
+      "finalizedAt": "2026-10-06T00:01:04.000Z",
+      "reproduced": true
+     },
+     "settlement": {
+      "status": "PAID",
+      "paidRaw": "2020199",
+      "txs": [
+       "37DjqzrYoRmQUyAU8sGzEWNz5xQ4rMLDTXd1qovBFE9fWTzCdzo6NzN6z78eCcSzBisnrai9mMy2i78dVE6rpTRg"
+      ]
+     }
+    },
+    {
+     "epochId": "2026-10-06",
+     "status": "OPEN",
+     "reasons": [],
+     "window": {
+      "startSec": 1791244800,
+      "endSec": 1791331200,
+      "startSlot": 507905129,
+      "endSlot": 507905728,
+      "nextStartSlot": null,
+      "slots": 600
+     },
+     "holders": 4,
+     "excluded": 2,
+     "topHolders": [
+      {
+       "owner": "8UXp4uJTicUWj55mGFwy4gncRBYxH8ej5DuxEZR2FDk2",
+       "shareBps": 5853
+      },
+      {
+       "owner": "DJg6AJPT3jUsx2jSWvrFzAaiYnwDp2F3TTJfsjYSpMYe",
+       "shareBps": 3463
+      },
+      {
+       "owner": "4vCyHopHHHNiL2bVH2ve8FzkxgL91BhNFaooUG1wbMyj",
+       "shareBps": 660
+      }
+     ],
+     "funding": {
+      "earmarkedRaw": "0",
+      "earmarkTrades": 0,
+      "unknownFeeTrades": 0,
+      "fundedRaw": "3",
+      "poolCarryInRaw": "3",
+      "deposits": []
+     },
+     "totalAllocatedRaw": "2",
+     "merkleRoot": "6a82b6c4571d2175ed0a78b74a5f5cb7936cfeef0d7fa263b2835f2831498943",
+     "artifactHash": null,
+     "frozen": null,
+     "settlement": {
+      "status": "NOTHING_TO_PAY",
+      "paidRaw": "0",
+      "txs": []
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,55 @@
+{
+ "allocationPolicyVersion": "allocation-v0-test",
+ "artifactVersion": "qf-reward-epoch@1",
+ "chain": "solana-devnet",
+ "claimStatus": {
+  "claimed": 0,
+  "total": 4
+ },
+ "eligible": 4,
+ "endSlot": 507905128,
+ "epochId": "2026-10-05",
+ "excluded": [
+  {
+   "owner": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM",
+   "reason": "DBC_POOL_AUTHORITY"
+  },
+  {
+   "owner": "HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC",
+   "reason": "DAMM_V2_POOL_AUTHORITY"
+  }
+ ],
+ "exclusionPolicyVersion": "exclusion@1",
+ "funding": {
+  "depositedRaw": "2020202",
+  "deposits": [
+   {
+    "amountRaw": "2020202",
+    "sig": "5dfSB2ndawyzkNhk5RQPFM7m1KNsmxNssR3QUNNNRVwjGV9nVDKzTySa5SsYqWbZHP3BuZoPkhEi8De7EjcYN5Za"
+   }
+  ],
+  "earmarkIsNotFunding": true,
+  "earmarkPolicy": "50% of the platform fee share (ECONOMICS STANDARD_V1@0-v0test, partnerRewardsSplitPct)",
+  "earmarkedRaw": "2020202",
+  "fundedRaw": "2020202",
+  "poolCarryInRaw": "0"
+ },
+ "holderAllocationFileHash": "ae87bbfcac99813d6cc5b9c90ef40eaf6a57392bf581e24e6700d07782c56ca2",
+ "holders": 6,
+ "inputChanges": 19,
+ "inputHash": "233be9ce657bdd98c2c71cc31d6b45c997ec89ef2d7293e9cbdd39cd93eb5beb",
+ "label": "TEST_ONLY devnet holder rewards on valueless test coins",
+ "launch": "6Nq2JLyXf2bZHEVweuorkbyzmjP9CAjXGP6TjqnuSgek",
+ "merkleRoot": "4075607e54c044d00ec2192d03fb20ec1e9392fdef791b2f62ff5534a52f0e62",
+ "mint": "FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o",
+ "rolledForward": "3",
+ "settlementAdapter": null,
+ "settlementTx": null,
+ "startSlot": 507541152,
+ "totalAllocated": "2020199",
+ "weighting": "slot-weighted TWAB over [startSlot, next epoch startSlot)",
+ "windowSlots": [
+  507541152,
+  507905129
+ ]
+}

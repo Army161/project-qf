@@ -55,5 +55,117 @@
    }
   ]
  },
- "payout": null
+ "payout": {
+  "allocation": [
+   {
+    "owner": "4vCyHopHHHNiL2bVH2ve8FzkxgL91BhNFaooUG1wbMyj",
+    "amountRaw": "132849"
+   },
+   {
+    "owner": "8RKJVqkE8EGWLfghbXUAe1JhgEN2Z9eEX4EJ8xXdnAYG",
+    "amountRaw": "4228"
+   },
+   {
+    "owner": "8UXp4uJTicUWj55mGFwy4gncRBYxH8ej5DuxEZR2FDk2",
+    "amountRaw": "1185026"
+   },
+   {
+    "owner": "DJg6AJPT3jUsx2jSWvrFzAaiYnwDp2F3TTJfsjYSpMYe",
+    "amountRaw": "698096"
+   }
+  ],
+  "checkedByProposerAgainstRecord": {
+   "record": "ec069d2532e624077f601f905cbdbd993485cfbf49049ae61600e4fe1d42c1fc",
+   "total": "2020199",
+   "merkleRoot": "4075607e54c044d00ec2192d03fb20ec1e9392fdef791b2f62ff5534a52f0e62"
+  },
+  "memo": "qf-rewards-payout@1 mint=FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o epoch=2026-10-05 artifact=ec069d2532e624077f601f905cbdbd993485cfbf49049ae61600e4fe1d42c1fc",
+  "steps": [
+   {
+    "step": "propose",
+    "transactionIndex": "6",
+    "kind": "REWARDS_PAYOUT",
+    "signature": "3jzzCYoi5hUgdYMmqJj8D2DCobEs2sWQ9XkBaftKX2ToYtJsmVoD5ykER5bYJhyhExJj9m6eKuHAQNmSp7NMeS2Z",
+    "signedAs": "TREASURY_PROPOSE",
+    "proposal": null
+   },
+   {
+    "step": "approve",
+    "transactionIndex": "6",
+    "kind": "REWARDS_PAYOUT",
+    "signature": "2aiPhVmGiyuxKSRgzZBfL4pLsi6eM2tsqTwDH87z8eZov7Y1Tdkn9HF3Ka4Nzrh45CovtZxqFaAJQWgkvrRdYeus",
+    "signedAs": "TREASURY_APPROVE",
+    "proposal": {
+     "status": "Active",
+     "approved": [
+      "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz"
+     ],
+     "rejected": [],
+     "cancelled": []
+    }
+   },
+   {
+    "step": "execute",
+    "transactionIndex": "6",
+    "kind": "REWARDS_PAYOUT",
+    "signature": "37DjqzrYoRmQUyAU8sGzEWNz5xQ4rMLDTXd1qovBFE9fWTzCdzo6NzN6z78eCcSzBisnrai9mMy2i78dVE6rpTRg",
+    "signedAs": "TREASURY_EXECUTE",
+    "proposal": {
+     "status": "Approved",
+     "approved": [
+      "68awUL2hdmFyJ68dBKTmewJ7MEnJ6ALJCD2QdLWQZLWz",
+      "AXwufa2En6DLdzNG9eerknWZxA1p8gt3sDpbWKSsrorQ"
+     ],
+     "rejected": [],
+     "cancelled": []
+    }
+   }
+  ],
+  "readBackFromChain": {
+   "commitment": "finalized",
+   "slot": 507905565,
+   "blockTime": "2026-10-06T00:01:43.000Z",
+   "err": null,
+   "quoteBalanceChanges": [
+    {
+     "owner": "4vCyHopHHHNiL2bVH2ve8FzkxgL91BhNFaooUG1wbMyj",
+     "account": "5dvVp9FGXc3cfXDzbEkmUmqeijU4TdHdkFKuci42DDGZ",
+     "deltaRaw": "132849"
+    },
+    {
+     "owner": "DJg6AJPT3jUsx2jSWvrFzAaiYnwDp2F3TTJfsjYSpMYe",
+     "account": "9G7Uj9wWtNVVtY51Po3XLSAzW8tsfQ39iZ38Uvj8iuxZ",
+     "deltaRaw": "698096"
+    },
+    {
+     "owner": "8UXp4uJTicUWj55mGFwy4gncRBYxH8ej5DuxEZR2FDk2",
+     "account": "Avg37ATpi4MQvdZLLspUYVeQ5Eo7buUhkHXNy8Lf24nw",
+     "deltaRaw": "1185026"
+    },
+    {
+     "owner": "Y2HuCzcjTnKHTCn7cBcPm2DsGKnuqScsVpXy7ifCon7",
+     "account": "BeJ86unizDStGtfcEgpFTQquAgsD8CSY2YPDsvS4heGq",
+     "deltaRaw": "-2020199"
+    },
+    {
+     "owner": "8RKJVqkE8EGWLfghbXUAe1JhgEN2Z9eEX4EJ8xXdnAYG",
+     "account": "DDA7S3MpS94Fd7wsxC4xvcDEy49mg2ufo6emdwELNmWv",
+     "deltaRaw": "4228"
+    }
+   ],
+   "memos": [
+    "qf-rewards-payout@1 mint=FN2tqDtSnXte3EYKX53ZmDN1vi372y34yEsGPgPrWr9o epoch=2026-10-05 artifact=ec069d2532e624077f601f905cbdbd993485cfbf49049ae61600e4fe1d42c1fc"
+   ]
+  },
+  "settlement": "PAID (every recipient received exactly the frozen allocation; read from the rewards vault account history by the app)"
+ },
+ "epochFinal": {
+  "record": "ec069d2532e624077f601f905cbdbd993485cfbf49049ae61600e4fe1d42c1fc",
+  "frozenAt": "2026-10-06T00:01:04Z",
+  "reproduced": true,
+  "totalAllocatedRaw": "2020199",
+  "rolledForwardRaw": "3",
+  "merkleRoot": "4075607e54c044d00ec2192d03fb20ec1e9392fdef791b2f62ff5534a52f0e62"
+ },
+ "rewardsVaultAfterRaw": "3"
 }
