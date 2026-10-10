@@ -7,3 +7,4 @@ coverage/
 *.keypair.json
 .devnet-keys/
 apps/launchpad/.preview/
+deploy/alwaysdata/out/

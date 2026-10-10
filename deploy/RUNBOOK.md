@@ -1,6 +1,6 @@
 # Launchpad hosting runbook
 
-One container image runs the launchpad server and serves the web app. It has two modes:
+One container image runs the launchpad server and serves the web app (§2-§4). For the free test link without Docker, a one-file build of the same server runs on alwaysdata (§6a). It has two modes:
 
 | Mode | Setting | What people can do | Keys on the host |
 |---|---|---|---|
@@ -18,9 +18,18 @@ This build cannot write to mainnet in any setting. Going live on mainnet is a re
 
 ## 1. Before you start (owner)
 
-- [ ] A host account: Fly.io or Render.
+**Free, for now: a public devnet test link (§6a).** No card, no domain, nothing to pay.
+
+- [ ] An alwaysdata Free account (https://www.alwaysdata.com). The account name becomes the address `https://<name>.alwaysdata.net`.
+- [ ] Optional, recommended: a free Helius API key and a free Alchemy key for a Solana Devnet app. Without them the site uses the public devnet endpoint, which is rate-limited.
+
+**Paid, later: mainnet read-only now, real launches after the owner's gate (§3, §4).**
+
+- [ ] A host account with a persistent disk: Fly.io or Render.
 - [ ] A domain, and the public product name (not "QuoteForge", DEPLOYMENT.md §2 item 8).
 - [ ] Two RPC providers from different companies (for example Helius plus Triton or QuickNode), mainnet https endpoints. The public endpoints work for a trial but are rate-limited.
+
+Free options checked on 2026-10-10 and not used: Render Free (the disk is wiped on every restart and the service sleeps after 15 minutes, so the SQLite store would be lost), Koyeb (needs a card; no disk on the free instance), Railway (a $1 monthly credit), Fly.io (no free plan), Oracle Cloud Always Free (a real server, but sign-up needs a card for verification; the fallback if alwaysdata's 256 MB of memory turns out too small). QuickNode's free offer is a 30-day trial.
 
 ## 2. Build and run it on your own computer (optional)
 
@@ -78,6 +87,35 @@ For testing with real wallets (Phantom or Solflare set to devnet) at a public ad
 5. Restart the machine. The home page now offers launching and the test faucet.
 
 This host gets its own test token and config. The coins launched in the development container stay there.
+
+## 6a. Free devnet test link (alwaysdata, no card, no domain)
+
+The same devnet test launchpad as §6, on alwaysdata's free plan: €0, no card, 1 GB disk that persists, 256 MB memory, an always-on Node.js site at `https://<account>.alwaysdata.net`. alwaysdata has no Docker, so the server is built into one file and uploaded over HTTPS. Devnet only: valueless test coins, a throwaway operator key.
+
+**Owner, once:**
+
+1. Sign up for alwaysdata Free (no card). Pick the account name you want in the address.
+2. In the alwaysdata admin, Profile: turn on two-factor login (the token page needs it), then Profile → Tokens → add a token.
+3. Optional, recommended: a free Helius account (copy the API key) and a free Alchemy account with an app on **Solana Devnet** (copy the API key).
+4. In this project's cloud environment settings (Project settings → Cloud environment → the gear next to the environment), add `ALWAYSDATA_ACCOUNT`, `ALWAYSDATA_API_TOKEN` and, if you made them, `QF_HELIUS_API_KEY` and `QF_ALCHEMY_API_KEY`. Never paste them in chat. Settings reach new sessions only, so the deploy runs in a fresh thread.
+
+**Deploy (Claude, in a fresh session, from the repository root):**
+
+```sh
+pnpm install --frozen-lockfile --ignore-scripts      # in a secret-free environment (env -i ...)
+pnpm build:web && pnpm boundary
+node deploy/alwaysdata/build.mjs                     # deploy/alwaysdata/out/app: server.mjs, web/, NOTICES/, BUILD.json
+node --no-warnings --use-env-proxy deploy/alwaysdata/deploy.mjs --dry-run   # prints the site settings, checks the token
+node --no-warnings --use-env-proxy deploy/alwaysdata/deploy.mjs
+```
+
+`deploy.mjs` checks the token, and on the first deploy makes a throwaway devnet operator key and this host's test token and config on the deploying machine. The operator needs about 1 devnet SOL. The script asks the devnet faucet; when the faucet refuses (it refuses the cloud container), it prints the operator's public address and stops with exit code 2. Send it about 1 devnet SOL from https://faucet.solana.com (choose Devnet), or from the launchpad operator, then run it again. It then uploads the app (and, the first time, the data folder with the key and the store) through a temporary WebDAV login that it deletes at the end, creates or updates the Node.js site (Node 22, never idle, listening on `::` port 8100, settings in the site's environment), restarts it and waits for `/api/lp/healthz`. On success it deletes the local copy of the key; the host's copy is in `~/qf-launchpad/data` (outside the web folder, not served).
+
+What runs on the host: `~/qf-launchpad/app/server.mjs` (the server in one file), `app/node_modules/` (unmodified `rpc-websockets@9.3.9` and its dependencies, QF-LIC-EX-001: server-side only), `app/web/` (the launchpad page only: no source maps, no inspector or mock pages), `app/NOTICES/`, `app/BUILD.json`. It stays on the owner's account; the rules above apply as they do to the image.
+
+**First-deploy checks (Claude):** the site log in the admin (Logs) shows the server listening; §5 items 1, 3 and 4 with `mode` `DEVNET`; the Status page shows `SINGLE_PROVIDER` unless both RPC keys are set. Not yet confirmed against the live service, so check them on the first run: the API's login format (the script uses the token with `account=<name>`), the WebDAV address (`https://webdav-<account>.alwaysdata.net`; override with `ALWAYSDATA_WEBDAV_URL`), how the site's environment field reads the quoted RPC URL, and memory (the server runs with `--max-old-space-size=160` and used 110-145 MB in the container). Leave `QF_CLIENT_IP_HEADER` unset until one request's headers show which one carries the visitor's address.
+
+**Update:** run `build.mjs` and `deploy.mjs` again; the data folder is left alone. **Take it down:** in the admin, Web → Sites, delete the site (or stop it). The store and key stay in `~/qf-launchpad/data` until you delete that folder.
 
 ## 7. Mainnet setup plan (review only)
 
