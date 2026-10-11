@@ -15,11 +15,10 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createSolanaRpc } from '@solana/kit';
 import { CAPABILITY_FLAGS, READINESS } from '@project-qf/core';
-import * as E from '@project-qf/engine';
 import { engineBooks, engineBooksText } from './books.ts';
 import { kitChain, loadOperator, proveCluster } from './chain.ts';
 import { startEngineBackground } from './indexer.ts';
-import type { QuoteAsset } from './market.ts';
+import { SOL_QUOTE } from './market.ts';
 import { createEngineApp, type EngineProfile } from './server.ts';
 import { EngineStore } from './store.ts';
 
@@ -27,9 +26,6 @@ const here = dirname(fileURLToPath(import.meta.url));
 const env = process.env;
 const log = (m: string) => console.log(`[launchpad qf ${new Date().toISOString()}] ${m}`);
 const [cmd] = process.argv.slice(2);
-
-/** Every engine coin is quoted in SOL (wrapped for the programs, plain SOL in the wallet). */
-export const SOL_QUOTE: QuoteAsset = Object.freeze({ mint: E.NATIVE_MINT, decimals: 9, symbol: 'SOL', label: 'test SOL' });
 
 const wanted = env.QF_CLUSTER === 'localnet' ? 'localnet' : env.QF_CLUSTER && env.QF_CLUSTER !== 'devnet' ? null : 'devnet';
 if (!wanted) { console.error(`QF_CLUSTER must be devnet or localnet (got ${env.QF_CLUSTER})`); process.exit(64); }

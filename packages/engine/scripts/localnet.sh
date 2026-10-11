@@ -1,6 +1,8 @@
 #!/bin/sh
 # Runs scripts/localnet-run.ts against the real engine programs on a fresh local validator.
 #   QF_ENGINE_DIR=<engine-qf checkout or source copy> sh packages/engine/scripts/localnet.sh [evidence.json]
+# QF_LOCALNET_THEN=<script.ts> runs that script instead of scripts/localnet-run.ts, with the same three arguments
+# (evidence file, authority key file, treasury address); apps/launchpad/scripts/engine-localnet.ts uses it.
 # The two program binaries are checked against the engine build's sha256 before they are loaded. The curve's upgrade
 # authority and the treasury are throwaway keys generated into $QF_LOCALNET_KEYS (default ~/.qf-localnet, outside
 # the repo). The pool admin's one-time accounts (pool config, graduator permission, pool-fee account) are preloaded
@@ -44,4 +46,8 @@ for i in $(seq 1 90); do
 done
 # wait until the preloaded accounts and programs are visible
 sleep 3
-node --no-warnings "$HERE/localnet-run.ts" run "$OUT" "$KEYS/authority.json" "$TREASURY"
+if [ -n "${QF_LOCALNET_THEN:-}" ]; then
+  node --no-warnings "$QF_LOCALNET_THEN" "$OUT" "$KEYS/authority.json" "$TREASURY"
+else
+  node --no-warnings "$HERE/localnet-run.ts" run "$OUT" "$KEYS/authority.json" "$TREASURY"
+fi

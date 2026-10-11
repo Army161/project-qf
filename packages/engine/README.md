@@ -43,6 +43,8 @@ The programs live in the engine's own repository (`quoteforge/engine-qf/`). Its 
 
   It needs the Agave CLI on `PATH`. The keys are throwaway and live in `~/.qf-localnet`, outside the repo.
 
+- With `QF_LOCALNET_THEN=apps/launchpad/scripts/engine-localnet.ts` the same validator runs the whole app instead: the launchpad server in engine mode, with the script acting as the browser and the wallet (it checks every built transaction with the web app's own checker before signing). It launches a coin, trades it on the curve, buys it out, cranks the graduation, trades on the pool, claims every fee and reconciles the books before and after the claims. Pass the evidence file as the argument, for example `evidence/engine-localnet/app-localnet.json`.
+
 ## Licence
 
 The package is Project QF proprietary code, except for two files derived from raydium-cp-swap under Apache-2.0: `idl/qf_pool.json` and `src/pool-math.ts`. See `third_party/raydium-cp-swap/` (LICENSE and NOTICE).

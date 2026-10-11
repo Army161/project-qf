@@ -6,6 +6,8 @@ import * as E from '@project-qf/engine';
 import type { EngineChain } from './chain.ts';
 
 export interface QuoteAsset { mint: string; decimals: number; symbol: string; label: string }
+/** Every engine coin is quoted in SOL (wrapped for the programs, plain SOL in the wallet). */
+export const SOL_QUOTE: QuoteAsset = Object.freeze({ mint: E.NATIVE_MINT, decimals: 9, symbol: 'SOL', label: 'test SOL' });
 /** What a creator consents to before launching: every number that decides how their coin trades, as the chain holds it. */
 export interface EngineEconomics {
   engine: 'qf'; programs: { curve: string; pool: string }; quoteMint: string; baseDecimals: number;

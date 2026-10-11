@@ -3,7 +3,7 @@
   "specVersion": "1.6",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-11T14:22:30.043Z",
+    "timestamp": "2026-10-11T15:04:39.106Z",
     "tools": {
       "components": [
         {
@@ -26,7 +26,7 @@
       },
       {
         "name": "qf:pnpm-lock.sha256",
-        "value": "90c232b5d0f30cd23a7714bb4b9e5c569843a7f5f144dbe04cc82208d47b205e"
+        "value": "7d6a6b0a31f5c41fb5f535c65203b67bb102f523032dce98f59dd2543bfc9c30"
       },
       {
         "name": "qf:overrides",
@@ -4624,6 +4624,12 @@
       ]
     },
     {
+      "ref": "pkg:npm/%40project-qf/engine@link:../../packages/engine",
+      "dependsOn": [
+        "pkg:npm/%40solana/kit@8.3.0"
+      ]
+    },
+    {
       "ref": "pkg:npm/%40project-qf/policy@link:../../packages/policy",
       "dependsOn": [
         "pkg:npm/%40noble/hashes@1.8.0"
@@ -5718,6 +5724,12 @@
     },
     {
       "ref": "workspace:@project-qf/engine",
+      "dependsOn": [
+        "pkg:npm/%40solana/kit@8.3.0"
+      ]
+    },
+    {
+      "ref": "workspace:@project-qf/launchpad",
       "dependsOn": [
         "pkg:npm/%40solana/kit@8.3.0"
       ]

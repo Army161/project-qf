@@ -12,6 +12,9 @@ export interface StandardWallet {
 }
 
 export const DEVNET_CHAIN = 'solana:devnet';
+let CHAIN = DEVNET_CHAIN;
+/** The Wallet Standard chain the page signs for: the network the launchpad server runs on (set once at boot). */
+export const setWalletCluster = (cluster: 'devnet' | 'localnet') => { CHAIN = `solana:${cluster}`; };
 const wallets = new Set<StandardWallet>();
 const listeners = new Set<() => void>();
 const usable = (w: StandardWallet) => !!w.features['standard:connect'] && !!w.features['solana:signTransaction'];
@@ -41,7 +44,7 @@ export interface Connected { wallet: StandardWallet; account: WalletAccount }
 export async function connect(w: StandardWallet): Promise<Connected> {
   const r = await w.features['standard:connect'].connect();
   const accounts: WalletAccount[] = (r?.accounts ?? w.accounts) as WalletAccount[];
-  const account = accounts.find((a) => a.chains.includes(DEVNET_CHAIN)) ?? accounts[0];
+  const account = accounts.find((a) => a.chains.includes(CHAIN)) ?? accounts[0];
   if (!account) throw new Error('the wallet returned no account');
   return { wallet: w, account };
 }
@@ -49,9 +52,9 @@ export async function disconnect(c: Connected) {
   try { await c.wallet.features['standard:disconnect']?.disconnect(); } catch { /* ignore */ }
 }
 
-/** Asks the wallet to sign exactly `tx` (wire bytes) for devnet and returns the signed wire bytes. */
+/** Asks the wallet to sign exactly `tx` (wire bytes) for the server's network and returns the signed wire bytes. */
 export async function signTransaction(c: Connected, tx: Uint8Array): Promise<Uint8Array> {
-  const out = await c.wallet.features['solana:signTransaction'].signTransaction({ account: c.account, transaction: tx, chain: DEVNET_CHAIN });
+  const out = await c.wallet.features['solana:signTransaction'].signTransaction({ account: c.account, transaction: tx, chain: CHAIN });
   const signed = Array.isArray(out) ? out[0]?.signedTransaction : out?.signedTransaction;
   if (!(signed instanceof Uint8Array)) throw new Error('the wallet did not return a signed transaction');
   return signed;

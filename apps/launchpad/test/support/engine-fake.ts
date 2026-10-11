@@ -139,10 +139,11 @@ export function txRecord(signature: string, events: E.EngineEvent[], extra: Part
 }
 
 export const DEVNET: EngineProfile = { cluster: 'devnet', writes: true, faucet: true, label: 'TEST_ONLY', writesLockedBecause: [] };
-export async function engineHarness(o: { chain?: FakeChain; profile?: EngineProfile; now?: () => Date } = {}) {
+export async function engineHarness(o: { chain?: FakeChain; profile?: EngineProfile; now?: () => Date; staticDir?: string; log?: (m: string) => void } = {}) {
   const chain = o.chain ?? fakeChain();
   const store = new EngineStore(join(engineDir, `e-${Math.random().toString(36).slice(2)}.sqlite`));
-  const app = createEngineApp({ store, chain, quote: SOL, profile: o.profile ?? DEVNET, staticDir: null, publicBaseUrl: 'http://127.0.0.1:8788', ...(o.now ? { now: o.now } : {}) });
+  const app = createEngineApp({ store, chain, quote: SOL, profile: o.profile ?? DEVNET, staticDir: o.staticDir ?? null, publicBaseUrl: 'http://127.0.0.1:8788',
+    ...(o.now ? { now: o.now } : {}), ...(o.log ? { log: o.log } : {}) });
   await new Promise<void>((r) => app.listen(0, '127.0.0.1', r));
   after(() => { app.close(); store.close(); });
   const base = `http://127.0.0.1:${(app.address() as AddressInfo).port}`;
@@ -151,4 +152,12 @@ export async function engineHarness(o: { chain?: FakeChain; profile?: EngineProf
     return { status: r.status, body: await r.json().catch(() => null) as any };
   };
   return { chain, store, app, call };
+}
+
+/** A live coin in the store with its curve on the fake chain (TEST_ONLY). */
+export async function seedEngineCoin(h: { chain: FakeChain; store: EngineStore }, creator: string, mint: string, symbol: string, s: CurveState = {}) {
+  h.store.insertPendingCoin({ mint, quoteMint: E.NATIVE_MINT, creator, name: `${symbol} coin`, symbol, description: 'TEST_ONLY', website: null, twitter: null, telegram: null,
+    imageType: null, metadataUri: `http://127.0.0.1:8788/m/${mint}.json`, createdAt: '2026-10-11T00:00:00.000Z' }, null);
+  h.store.markLive(mint, null, '2026-10-11T00:00:01.000Z');
+  await putCurve(h.chain, mint, creator, s);
 }

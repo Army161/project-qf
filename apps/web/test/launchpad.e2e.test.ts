@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium, type Page } from 'playwright-core';
 import { generateMintKey } from '@project-qf/tx';
 import { harness, seedLaunch } from '../../launchpad/test/support/harness.ts';
+import { engineHarness, putPlatform, seedEngineCoin } from '../../launchpad/test/support/engine-fake.ts';
 
 const dist = fileURLToPath(new URL('../dist/', import.meta.url));
 const CHROMIUM = process.env.QF_CHROMIUM ?? '/opt/pw-browsers/chromium';
@@ -74,6 +75,62 @@ test('launchpad UI: explore, a coin, My coins before and after connecting, creat
     }
 
     assert.deepEqual(requests.filter((u) => !u.startsWith(`${base}/`) && !u.startsWith('data:')), [], 'no requests leave the launchpad server');
+    assert.deepEqual(failed, [], `no failed requests; server log: ${serverLog.join(' | ')}`);
+    assert.deepEqual(errors, [], 'no console errors (including CSP violations)');
+  } finally {
+    await browser.close();
+  }
+});
+
+test('launchpad UI on the QF engine: SOL quote, its own pool, the engine economics and creator claims, no Meteora wording', { skip: !existsSync(CHROMIUM) && `Chromium not found at ${CHROMIUM}` }, async () => {
+  assert.ok(existsSync(join(dist, 'launchpad.html')), 'run `pnpm build:web` first');
+  const serverLog: string[] = [];
+  const h = await engineHarness({ staticDir: dist, log: (m) => serverLog.push(m) });
+  await putPlatform(h.chain);
+  const creator = (await generateMintKey()).address, mint = (await generateMintKey()).address;
+  await seedEngineCoin(h, creator, mint, 'ENGN', { realQuote: 100_000_000n, baseSold: 200_000_000_000_000n, platformFees: 700_000n, creatorFees: 300_000n });
+  const base = `http://127.0.0.1:${(h.app.address() as { port: number }).port}`;
+  const browser = await chromium.launch({ executablePath: CHROMIUM, args: ['--no-proxy-server'] });
+  try {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await ctx.addInitScript((address) => {
+      const wallet = { name: 'View-only test wallet', icon: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22/%3E', version: '1.0.0',
+        chains: ['solana:devnet'], accounts: [],
+        features: { 'standard:connect': { connect: async () => ({ accounts: [{ address, publicKey: new Uint8Array(32), chains: ['solana:devnet'], features: [] }] }) },
+          'solana:signTransaction': { signTransaction: async () => { throw new Error('view-only'); } } } };
+      window.addEventListener('wallet-standard:app-ready', (e) => (e as CustomEvent).detail.register(wallet));
+    }, creator);
+    const page = await ctx.newPage();
+    const errors: string[] = [], failed: string[] = [];
+    page.on('response', (r) => { if (r.status() >= 400) failed.push(`${r.status()} ${r.url().slice(base.length)}`); });
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('pageerror', (e) => errors.push(String(e)));
+    const view = async () => (await page.textContent('#view')) ?? '';
+
+    await page.goto(`${base}/`);
+    await page.waitForSelector('body[data-ready="true"]', { timeout: 15_000 });
+    await page.waitForFunction(() => document.querySelector('#view .grid')?.textContent?.includes('$ENGN'), null, { timeout: 15_000 });
+    assert.match(await view(), /priced in SOL/);
+    assert.match(await view(), /graduates to its own pool/);
+
+    await go(page, `#/t/${mint}`);
+    assert.match(await view(), /SOL per ENGN/);
+    assert.match(await page.textContent('.presets') ?? '', /0\.05 SOL/);
+
+    await go(page, '#/create');
+    assert.match(await view(), /every LP token is burned at graduation/);
+    assert.match(await view(), /30% of curve fees, then 0\.05% of every pool trade/);
+
+    await go(page, '#/me');
+    await page.click('#connect');
+    await page.click('.wopt');
+    await page.waitForFunction(() => document.querySelector('#view')?.textContent?.includes('Bonding curve'), null, { timeout: 15_000 });
+    assert.match(await view(), /0\.0003 SOL/, 'the creator\'s unclaimed curve fees, in SOL');
+    assert.doesNotMatch(await view(), /Holder rewards/);
+    for (const hash of ['#/', `#/t/${mint}`, '#/create', '#/me']) {
+      await go(page, hash);
+      assert.doesNotMatch(await page.textContent('body') ?? '', /Meteora|DAMM|qUSD/, `${hash} says nothing about Meteora on the QF engine`);
+    }
     assert.deepEqual(failed, [], `no failed requests; server log: ${serverLog.join(' | ')}`);
     assert.deepEqual(errors, [], 'no console errors (including CSP violations)');
   } finally {

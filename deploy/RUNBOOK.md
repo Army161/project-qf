@@ -53,6 +53,9 @@ Not yet confirmed against the live service, so check on the first run: the API's
 | `QF_PUBLIC_BASE_URL` | `http://127.0.0.1:<port>` | the public https address; written into new coins' metadata links, so set it before the first launch |
 | `QF_CLIENT_IP_HEADER` | unset | the header carrying the visitor's address behind the host's proxy, for per-person rate limits. Leave unset until one request's headers show which one; until then every visitor shares one limit (safe, stricter) |
 | `QF_LP_INTERVAL_MS` | `15000` | how often the indexer and the graduation crank run |
+| `QF_ENGINE` | `meteora` | `qf` runs Project QF's own engine (SOL-quoted, its own store, no `setup`); `meteora` the Meteora one. Anything else refuses to start |
+| `QF_CLUSTER` | `devnet` | engine mode only: `localnet` runs against a validator on 127.0.0.1 (refused anywhere else, and refused if the genesis is devnet's) |
+| `QF_LP_DB` (engine) | `./qf-launchpad-engine.sqlite` | engine mode's store (`./qf-launchpad-engine-localnet.sqlite` on localnet); Meteora coins are in the other store and do not show in engine mode |
 
 ## 5. Checking the books
 
@@ -65,6 +68,8 @@ It reads the chain and prints one line per check, then a total:
 - **PASS**: the numbers agree exactly (fees recorded trade by trade = what the pool still holds + what was claimed; the treasury vault = claim receipts in − rewards deposits out; each frozen holder-rewards record recomputes to the same hash; each payout matches its record), or differ only by rounding proven from the pool's own fee accounting.
 - **FAIL**: they disagree. The exit code is 1.
 - **WAIT**: something could not be read yet (a transaction, a pool, the RPC was busy). Run it again later.
+
+In engine mode (`QF_ENGINE=qf … src/main.ts verify [--json]`) the checks are per coin and exact to the raw unit: each curve vault against the curve account, the curve against its last trade, platform and creator fees (every trade's fee − claims = unclaimed on chain), the pool's LP supply is 0 after graduation, and the pool's creator fee against every pool swap − collected.
 
 ## 6. Updates, take down, backups
 

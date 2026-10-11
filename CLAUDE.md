@@ -5,7 +5,7 @@
 Rules for every coding agent working in Project QF repositories. These are binding. If a task conflicts with a rule here, stop and ask.
 
 ## Status
-- Stage: **V0 offline implementation** (amended 2026-09-27, ADR-011). Readiness is tracked per stage: `OFFLINE_V0` ACTIVE; `DEVNET_INTEGRATION` ACTIVE since 2026-10-03 (owner's "unblock devnet", devnet test launches with throwaway keys and free test SOL only); `LOCALNET_INTEGRATION` and `MAINNET` BLOCKED (see `packages/core/src/readiness.ts`). No mainnet write transactions. No production deployment.
+- Stage: **V0 offline implementation** (amended 2026-09-27, ADR-011). Readiness is tracked per stage: `OFFLINE_V0` ACTIVE; `DEVNET_INTEGRATION` ACTIVE since 2026-10-03 (owner's "unblock devnet", devnet test launches with throwaway keys and free test SOL only); `LOCALNET_INTEGRATION` ACTIVE since 2026-10-11 for Project QF's own engine programs only on 127.0.0.1 (ADR-014; Meteora program copies stay excluded, ADR-013); `MAINNET` BLOCKED (see `packages/core/src/readiness.ts`). No mainnet write transactions. No production deployment.
 - Codename only: `QuoteForge` / `Project QF`. Do not create public branding, domains, or package scopes using "QuoteForge". Internal npm scope: `@project-qf/*`.
 
 ## Source of truth
@@ -51,7 +51,7 @@ Rules for every coding agent working in Project QF repositories. These are bindi
 - Mocks and fixtures carry `MOCK_BANNER` / `TEST_ONLY` labels and are never presented as live results. Synthetic assets live in the `test-only:` namespace and cannot be promoted to the production registry.
 - All policies (validator thresholds, economics, exclusions, allocation) are versioned objects; every result records the policy version it used.
 - Money math in integer base units (`bigint`); never JS `number` for token amounts.
-- The launchpad (`apps/launchpad`) runs on devnet only and proves the cluster by genesis hash before it starts. Live reads never fall back to fixtures. Missing data is INCOMPLETE, UNAVAILABLE or WAIT with a reason, never a default and never a zero.
+- The launchpad (`apps/launchpad`) runs on devnet only and proves the cluster by genesis hash before it starts. In engine mode (`QF_ENGINE=qf`) it may also run on a local validator at 127.0.0.1 (`QF_CLUSTER=localnet`), proven by a loopback URL and a genesis that is not devnet's. Live reads never fall back to fixtures. Missing data is INCOMPLETE, UNAVAILABLE or WAIT with a reason, never a default and never a zero.
 - The browser (`apps/web`) talks only to the same-origin launchpad server (CSP `connect-src 'self'`) and the user's wallet, and never calls an RPC.
 - Before any PR: `pnpm typecheck && pnpm test && pnpm license:check && pnpm deps:chain && pnpm boundary && pnpm audit --prod` (install with `--ignore-scripts` in a secret-free environment).
 

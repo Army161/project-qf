@@ -58,5 +58,7 @@ export const pct = (bps: number) => `${(bps / 100).toFixed(bps % 100 === 0 ? 0 :
 
 let explorerQuery = '?cluster=devnet';
 /** Explorer links point at the network this server runs on (set once at boot from lp-api/platform). */
-export const setExplorerCluster = (cluster: 'devnet' | 'mainnet-beta') => { explorerQuery = cluster === 'devnet' ? '?cluster=devnet' : ''; };
+export const setExplorerCluster = (cluster: 'devnet' | 'localnet' | 'mainnet-beta') => {
+  explorerQuery = cluster === 'devnet' ? '?cluster=devnet' : cluster === 'localnet' ? '?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899' : '';
+};
 export const explorer = (kind: 'tx' | 'address', id: string) => `https://explorer.solana.com/${kind}/${id}${explorerQuery}`;

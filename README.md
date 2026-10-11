@@ -24,7 +24,7 @@ pnpm install --frozen-lockfile --ignore-scripts
 
 The browser test uses `playwright-core` with Chromium at `/opt/pw-browsers/chromium` (`QF_CHROMIUM` points it elsewhere).
 
-Run the launchpad (from `apps/launchpad`, devnet): `node --use-env-proxy src/main.ts operator` prints the throwaway operator's address to fund with devnet SOL, `setup` creates the test quote token and config once, `serve` starts it on http://127.0.0.1:8788, and `verify` checks the books against the chain (PASS / FAIL / WAIT; `deploy/RUNBOOK.md` §5).
+Run the launchpad (from `apps/launchpad`, devnet): `node --use-env-proxy src/main.ts operator` prints the throwaway operator's address to fund with devnet SOL, `setup` creates the test quote token and config once, `serve` starts it on http://127.0.0.1:8788, and `verify` checks the books against the chain (PASS / FAIL / WAIT; `deploy/RUNBOOK.md` §5). With `QF_ENGINE=qf` the same commands (`operator`, `serve`, `verify`; no `setup`) run Project QF's own engine instead of Meteora, quoted in SOL, with its own store; `QF_CLUSTER=localnet` runs it against a validator on 127.0.0.1. The whole app runs end to end against the real engine programs on a local validator with `QF_LOCALNET_THEN=apps/launchpad/scripts/engine-localnet.ts sh packages/engine/scripts/localnet.sh <evidence.json>` (`packages/engine/README.md`).
 
 ## Layout
 - `packages/core` — decimals, flags, readiness stages, mock labels, canonical JSON
@@ -33,7 +33,7 @@ Run the launchpad (from `apps/launchpad`, devnet): `node --use-env-proxy src/mai
 - `packages/rewards` — TWAB, allocation, SF Rewards-format Merkle
 - `packages/tx` — transaction intent validation, independent Kit decoder, strict DBC Borsh decoding and binding of the decoded message to approved terms and consent (repair pass)
 - `packages/adapter-meteora-dbc` — **server-only** Meteora SDK adapter (the only web3.js v1 user)
-- `packages/engine` — Project QF's own launch engine (qf-curve + qf-pool): addresses, unsigned instruction builders, curve and pool math, account and event decoders; browser-safe, Kit only. Checked against the engine's own client and, on a local validator, against the real programs (`packages/engine/README.md`). Not wired into the app yet
+- `packages/engine` — Project QF's own launch engine (qf-curve + qf-pool): addresses, unsigned instruction builders, curve and pool math, account and event decoders; browser-safe, Kit only. Checked against the engine's own client and, on a local validator, against the real programs (`packages/engine/README.md`). The app uses it behind `QF_ENGINE=qf` (`apps/launchpad/src/engine/`); Meteora stays the default until the engine's devnet proof run passes
 - `apps/launchpad` — **server-only** launchpad (`lp-api/1`): builds unsigned transactions for wallets, relays signed ones after exact-message checks, indexes trades, cranks graduation, keeps the books (`books.ts`, `verify.ts`); never signs for a user
 - `apps/web` — the launchpad's browser app (`launchpad.html`; talks only to the same-origin server and the user's wallet, and checks every transaction before the wallet signs it)
 - `tools/*` — licence check, chain proof, SBOM, boundary, econ-sim
