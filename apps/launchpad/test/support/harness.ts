@@ -50,7 +50,7 @@ export function withMigrationPrice<T extends { raw: { config: unknown } } | null
 }
 
 /** A fresh store, chain double and running app. `dbPath` lets a test reopen the same database to simulate a restart. */
-export async function harness(opts: { profile?: ServerProfile; staticDir?: string } = {}) {
+export async function harness(opts: { profile?: ServerProfile; staticDir?: string; log?: (m: string) => void } = {}) {
   const conn = await mockConn();
   const sent: Uint8Array[] = [];
   const faucetCalls: unknown[] = [];

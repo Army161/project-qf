@@ -202,7 +202,8 @@ export interface CoinRewards {
 export async function coinRewards(o: { store: LaunchpadStore; chain: Pick<LaunchpadChain, 'firstSlotAtOrAfter'>; platform: PlatformRecord; cluster: string; nowSec: number;
   coverage: HolderCoverage | null; changes: readonly BalanceChange[]; deposits?: (epochId: string) => RewardDeposit[]; payouts?: (epochId: string) => PayoutTx[];
   rewardsVault?: string | null; depositsProvenToSlot?: number }, launch: LaunchRow): Promise<CoinRewards> {
-  const from = Math.floor(new Date(launch.liveAt ?? launch.createdAt).getTime() / 1000);
+  // a launch stamped with a chain block time can be a few seconds ahead of this server's clock: it starts in the current epoch
+  const from = Math.min(Math.floor(new Date(launch.liveAt ?? launch.createdAt).getTime() / 1000), o.nowSec);
   const windows = await epochWindows(o.store, o.chain, from, o.nowSec);
   const trades = o.store.listTrades(launch.mint, 100_000);
   const named = namedExclusions(o.platform, o.rewardsVault);

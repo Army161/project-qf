@@ -125,3 +125,12 @@ test('[TEST_ONLY] rewards: deposits are allocated by time-weighted balance, cons
   // the platform's own accounts are excluded by name
   assert.deepEqual(namedExclusions(s.h.platform).map((n) => n.reason).slice(0, 1), ['QF_OPERATOR']);
 });
+
+test('[TEST_ONLY] rewards: a coin whose launch time is a moment ahead of the server clock has one open epoch, not an error', async () => {
+  const h = await harness();
+  // chain block times can run a few seconds ahead of the server's clock
+  const mint = seedLaunch(h.store, h.platform, { liveAt: new Date(h.now().getTime() + 5_000).toISOString() });
+  const r = await h.call(`/api/lp/rewards/${mint}?fresh=1`);
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.deepEqual(r.body.coins[0].epochs.map((e: any) => e.status), ['OPEN']);
+});

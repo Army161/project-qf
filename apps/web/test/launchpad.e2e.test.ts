@@ -21,7 +21,8 @@ async function go(page: Page, hash: string) {
 
 test('launchpad UI: explore, a coin, My coins before and after connecting, create, and old links land on My coins', { skip: !existsSync(CHROMIUM) && `Chromium not found at ${CHROMIUM}` }, async () => {
   assert.ok(existsSync(join(dist, 'launchpad.html')), 'run `pnpm build:web` first');
-  const h = await harness({ staticDir: dist });
+  const serverLog: string[] = [];
+  const h = await harness({ staticDir: dist, log: (m) => serverLog.push(m) });
   const creator = (await generateMintKey()).address;
   const mint = seedLaunch(h.store, h.platform, { creator, symbol: 'SMOKE' });
   const base = `http://127.0.0.1:${(h.app.address() as { port: number }).port}`;
@@ -37,8 +38,9 @@ test('launchpad UI: explore, a coin, My coins before and after connecting, creat
       window.addEventListener('wallet-standard:app-ready', (e) => (e as CustomEvent).detail.register(wallet));
     }, creator);
     const page = await ctx.newPage();
-    const requests: string[] = [], errors: string[] = [];
+    const requests: string[] = [], errors: string[] = [], failed: string[] = [];
     page.on('request', (r) => requests.push(r.url()));
+    page.on('response', (r) => { if (r.status() >= 400) failed.push(`${r.status()} ${r.url().slice(base.length)}`); });
     page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
     page.on('pageerror', (e) => errors.push(String(e)));
     const fits = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
@@ -72,6 +74,7 @@ test('launchpad UI: explore, a coin, My coins before and after connecting, creat
     }
 
     assert.deepEqual(requests.filter((u) => !u.startsWith(`${base}/`) && !u.startsWith('data:')), [], 'no requests leave the launchpad server');
+    assert.deepEqual(failed, [], `no failed requests; server log: ${serverLog.join(' | ')}`);
     assert.deepEqual(errors, [], 'no console errors (including CSP violations)');
   } finally {
     await browser.close();
