@@ -38,6 +38,9 @@ importers:
       '@project-qf/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@project-qf/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@project-qf/policy':
         specifier: workspace:*
         version: link:../../packages/policy
@@ -50,6 +53,9 @@ importers:
       '@project-qf/validator':
         specifier: workspace:*
         version: link:../../packages/validator
+      '@solana/kit':
+        specifier: 8.3.0
+        version: 8.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
 
   apps/web:
     dependencies:
@@ -150,6 +156,9 @@ importers:
       '@project-qf/core':
         specifier: workspace:*
         version: link:../core
+      '@project-qf/engine':
+        specifier: workspace:*
+        version: link:../engine
       '@solana/kit':
         specifier: 8.3.0
         version: 8.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)

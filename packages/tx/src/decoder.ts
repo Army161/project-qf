@@ -3,6 +3,7 @@
 import { getCompiledTransactionMessageDecoder, getTransactionDecoder, getTransactionEncoder } from '@solana/kit';
 import type { IntentKind } from './intent.ts';
 import { PROGRAM_IDS } from './programs.ts';
+import { QF_CURVE, QF_POOL } from '@project-qf/engine';
 import { bindTransactionToTerms } from './semantic.ts';
 import { verifyConsentBinding, termsDigest, consentDigest, sha256Hex, type ApprovedTerms, type ConsentRecord } from './terms.ts';
 export { PROGRAM_IDS };
@@ -61,6 +62,9 @@ export const TOP_LEVEL_ALLOWLIST: Record<IntentKind, readonly string[]> = {
   // a treasury transaction calls Squads only; what the vault runs is bound inside the proposal
   TREASURY_PROPOSE: [P.COMPUTE_BUDGET, P.SQUADS_V4], TREASURY_APPROVE: [P.COMPUTE_BUDGET, P.SQUADS_V4], TREASURY_EXECUTE: [P.COMPUTE_BUDGET, P.SQUADS_V4],
   CREATE_CONFIG_TRANSFER_FEE: [], CREATE_CONFIG_TRANSFER_HOOK: [],
+  // Project QF's own engine: the curve before graduation, its pool after (wrapped SOL uses the system and token programs)
+  QF_CREATE: [...BASE, QF_CURVE], QF_SWAP: [...BASE, QF_CURVE], QF_CLAIM_CREATOR_FEES: [...BASE, QF_CURVE],
+  QF_POOL_SWAP: [...BASE, QF_POOL], QF_COLLECT_POOL_CREATOR_FEE: [...BASE, QF_POOL],
 };
 
 export interface PreviewRequest { kind: IntentKind; feePayer: string; signerAddress: string; terms: ApprovedTerms; consent: ConsentRecord }

@@ -191,7 +191,8 @@ test('[TEST_ONLY] a coin on the earlier config is legacy, and the test treasury 
 });
 
 test('only the member signer loads member keys: the server process has no path to them', () => {
-  for (const f of ['../src/server.ts', '../src/main.ts', '../src/chain.ts', '../src/indexer.ts', '../src/platform.ts', '../src/books.ts', '../src/verify.ts']) {
+  for (const f of ['../src/server.ts', '../src/main.ts', '../src/meteora-main.ts', '../src/chain.ts', '../src/indexer.ts', '../src/platform.ts', '../src/books.ts', '../src/verify.ts',
+    '../src/engine/server.ts', '../src/engine/main.ts', '../src/engine/chain.ts', '../src/engine/indexer.ts']) {
     const src = readFileSync(new URL(f, import.meta.url), 'utf8');
     assert.ok(!/signAsMember|member-\$\{|member-[123]\.json|QF_TREASURY_DIR/.test(src), `${f} must not load or sign with member keys`);
   }

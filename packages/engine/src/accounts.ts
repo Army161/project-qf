@@ -74,7 +74,8 @@ export interface PoolState {
   /** Bit 0 deposits off, bit 1 withdrawals off, bit 2 swaps off. */
   status: number;
   lpMintDecimals: number; mint0Decimals: number; mint1Decimals: number;
-  /** LP tokens outstanding (0 for a graduated coin: its LP is burned). */
+  /** The pool program's own LP count. Burning LP tokens does not lower it, so a graduated coin keeps its count here
+   *  while the LP mint's supply is 0 (seen on the real programs, localnet 2026-10-11): check the mint, not this. */
   lpSupply: bigint;
   protocolFeesToken0: bigint; protocolFeesToken1: bigint; fundFeesToken0: bigint; fundFeesToken1: bigint;
   openTime: bigint; recentEpoch: bigint;

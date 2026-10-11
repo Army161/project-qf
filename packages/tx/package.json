@@ -5,6 +5,12 @@
   "license": "UNLICENSED",
   "type": "module",
   "description": "Transaction-intent validation and browser-safe preview decoder (Solana Kit only; never @solana/web3.js v1).",
-  "exports": { ".": "./src/index.ts" },
-  "dependencies": { "@project-qf/core": "workspace:*", "@solana/kit": "8.3.0" }
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@project-qf/core": "workspace:*",
+    "@project-qf/engine": "workspace:*",
+    "@solana/kit": "8.3.0"
+  }
 }

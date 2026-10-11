@@ -26,13 +26,9 @@ export const READINESS: Readonly<Record<Stage, Readonly<StageRecord>>> = f({
     ]),
   }),
   LOCALNET_INTEGRATION: f({
-    status: 'BLOCKED',
-    scope: 'solana-test-validator with Meteora DBC / DAMM v2 program copies',
-    blockers: f([
-      'LOCAL-1 written Meteora permission covering local program copies, source builds, CI caching (Meteora licence personal-testing clause excludes anticipated commercial application)',
-      'LOCAL-2 artifact provenance for any program binary / account snapshot',
-      'LOCAL-3 compatible tooling (Agave 3.x) and cloned configs identified by read-only verification',
-    ]),
+    status: 'ACTIVE',
+    scope: 'Project QF\'s own engine programs only (qf-curve and the Apache-2.0 qf-pool fork; ADR-014, owner direction 2026-10-11) on a solana-test-validator bound to 127.0.0.1, with keys generated for the run and the program binaries checked by sha256 before loading. Meteora program copies stay excluded (ADR-013, LOCAL-1: no written permission): a localnet intent must be an engine (QF_*) kind. Localnet results are not devnet or mainnet evidence',
+    blockers: f([]),
   }),
   DEVNET_INTEGRATION: f({
     status: 'ACTIVE',

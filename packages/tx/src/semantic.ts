@@ -15,10 +15,12 @@ import { canonicalJson } from '@project-qf/core';
 import { sha256Hex } from './terms.ts';
 import { bindTreasury } from './treasury.ts';
 import { bindRewardsTransfer } from './rewards.ts';
+import { bindQfTransaction } from './qf-engine.ts';
+import { isQfTerms } from './terms.ts';
 
 const P = PROGRAM_IDS;
 const fromHex = (h: string) => Uint8Array.from(h.match(/../g) ?? [], (x) => parseInt(x, 16));
-const OP_FOR_KIND: Record<Exclude<ApprovedTerms['kind'], `TREASURY_${string}` | `REWARDS_${string}`>, string> = {
+const OP_FOR_KIND: Record<Exclude<ApprovedTerms['kind'], `TREASURY_${string}` | `REWARDS_${string}` | `QF_${string}`>, string> = {
   CREATE_CONFIG: 'create_config', CREATE_POOL: 'initialize_virtual_pool_with_spl_token', SWAP: 'swap',
   MIGRATE_DAMM_V2: 'migration_damm_v2', CLAIM_PARTNER_TRADING_FEE: 'claim_trading_fee', CLAIM_CREATOR_TRADING_FEE: 'claim_creator_trading_fee',
   DAMM_SWAP: 'swap', DAMM_CLAIM_POSITION_FEE: 'claim_position_fee',
@@ -27,7 +29,7 @@ const OP_FOR_KIND: Record<Exclude<ApprovedTerms['kind'], `TREASURY_${string}` | 
 interface Engine { program: string; label: string; subset: IdlSubset }
 const DBC_ENGINE: Engine = { program: P.DBC, label: 'DBC', subset: DBC_IDL_SUBSET };
 const DAMM_ENGINE: Engine = { program: P.DAMM_V2, label: 'DAMM', subset: DAMM_IDL_SUBSET };
-type EngineTerms = Exclude<ApprovedTerms, { kind: `TREASURY_${string}` | `REWARDS_${string}` }>;
+type EngineTerms = Exclude<ApprovedTerms, { kind: `TREASURY_${string}` | `REWARDS_${string}` | `QF_${string}` }>;
 const engineFor = (kind: ApprovedTerms['kind']) => (kind === 'DAMM_SWAP' || kind === 'DAMM_CLAIM_POSITION_FEE' ? DAMM_ENGINE : DBC_ENGINE);
 
 /** Digest of a ConfigParameters value in decoded (snake_case, bigint) form; the adapter computes the same via normalizeToIdl. */
@@ -192,6 +194,7 @@ export async function bindTransactionToTerms(d: DecodedTransaction, terms: Appro
   if (tv.length) return tv;
   if (terms.kind === 'TREASURY_PROPOSE' || terms.kind === 'TREASURY_APPROVE' || terms.kind === 'TREASURY_EXECUTE') return bindTreasury(d, terms, ctx);
   if (terms.kind === 'REWARDS_DEPOSIT' || terms.kind === 'REWARDS_PAYOUT') return bindRewardsTransfer(d, terms);
+  if (isQfTerms(terms)) return bindQfTransaction(d, terms);
   const v: string[] = [];
   if (d.addressTableLookups > 0) v.push('ADDRESS_LOOKUP_TABLES_NOT_SUPPORTED_IN_PREVIEW');
   if (d.feePayer !== terms.feePayer) v.push('FEE_PAYER_MISMATCH');

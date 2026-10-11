@@ -15,7 +15,6 @@ import {
 import * as E from '../src/index.ts';
 import { encodeFields } from '../src/codec.ts';
 
-const POOL_FEE_RECEIVER = 'BYSX6JVNMtMEyqbxkgJgnXMrWYVpftU4oxR25CKwmXeA'; // compile-time key in the qf-pool fork
 const POOL_FEE_OWNERS = '66wkzUGeSBNudGdskL7SC1cz4dSvdFqm7KY6hfngTsHX'; // protocol and fund fee owner in the fork
 const b64 = getBase64Decoder(), fromB64 = getBase64Encoder(), enc = getAddressEncoder();
 const rent = (len: number) => BigInt((128 + len) * 6960);
@@ -41,7 +40,7 @@ async function prepare(dir: string, treasury: string) {
   const fee = new Uint8Array(165);
   fee.set(enc.encode(address(E.NATIVE_MINT)), 0); fee.set(enc.encode(address(treasury)), 32); fee[108] = 1;
   fee.set([1, 0, 0, 0], 109); new DataView(fee.buffer).setBigUint64(113, rent(165), true);
-  file('pool-fee-account', POOL_FEE_RECEIVER, E.TOKEN, fee);
+  file('pool-fee-account', E.POOL_FEE_RECEIVER, E.TOKEN, fee);
   console.log(`prepared ${dir}: amm config ${ammConfig}, permission, pool-fee account`);
 }
 
@@ -170,7 +169,7 @@ async function run(out: string, authorityFile: string, treasury: string) {
 
   // graduate (anyone; here the authority acts as QF's server)
   const preGrad = c.launch;
-  const gradEvents = await send('graduate', authority, [], [await E.graduateIx({ payer: authority.address, mint: mint.address, ammConfig: preGrad.ammConfig, creator: preGrad.creator, createPoolFee: POOL_FEE_RECEIVER })]);
+  const gradEvents = await send('graduate', authority, [], [await E.graduateIx({ payer: authority.address, mint: mint.address, ammConfig: preGrad.ammConfig, creator: preGrad.creator, createPoolFee: E.POOL_FEE_RECEIVER })]);
   const grad = gradEvents.find((e) => e.name === 'Graduated') as E.GraduatedEvent;
   const poolAddr = await E.launchPoolAddress(mint.address);
   check('Graduated event: pool address, amounts and fee', { pool: poolAddr, quoteToPool: preGrad.realQuote - cfg.graduationFee, baseToPool: E.poolSupply(cfg), graduationFee: cfg.graduationFee },

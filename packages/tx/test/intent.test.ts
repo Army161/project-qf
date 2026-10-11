@@ -23,7 +23,9 @@ test('real clusters are gated by readiness stages and MAINNET_WRITES=false', () 
   assert.match(v({ cluster: 'mainnet-beta', mock: false }).violations.join(), /MAINNET_WRITES/);
   // DEVNET_INTEGRATION is ACTIVE since 2026-10-03: a devnet intent is no longer refused for its stage
   assert.doesNotMatch(v({ cluster: 'devnet', mock: false }).violations.join(), /DEVNET_INTEGRATION/);
-  assert.match(v({ cluster: 'localnet', mock: false }).violations.join(), /LOCALNET_INTEGRATION.*BLOCKED/);
+  // localnet runs QF's own engine only: a Meteora kind is refused there, an engine kind passes the stage gate
+  assert.match(v({ cluster: 'localnet', mock: false }).violations.join(), /LOCALNET_QF_ENGINE_ONLY/);
+  assert.deepEqual(v({ cluster: 'localnet', mock: false, kind: 'QF_SWAP' }).violations, []);
   assert.match(v({ cluster: 'devnet', mock: true }).violations.join(), /MOCK_INTENT_ON_REAL_CLUSTER/);
   assert.match(v({ mock: false }).violations.join(), /mock-offline.*requires mock/);
 });

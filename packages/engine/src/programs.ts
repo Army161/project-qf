@@ -9,6 +9,8 @@ export const TOKEN_2022 = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
 export const ASSOCIATED_TOKEN = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
 export const COMPUTE_BUDGET = 'ComputeBudget111111111111111111111111111111';
 export const BPF_UPGRADEABLE_LOADER = 'BPFLoaderUpgradeab1e11111111111111111111111';
+/** qf-pool's pool-creation-fee account, a compile-time key in the fork: graduation passes it as `create_pool_fee`. */
+export const POOL_FEE_RECEIVER = 'BYSX6JVNMtMEyqbxkgJgnXMrWYVpftU4oxR25CKwmXeA';
 /** Wrapped SOL: the quote mint of SOL-quoted coins. */
 export const NATIVE_MINT = 'So11111111111111111111111111111111111111112';
 /** Every coin the curve creates is a Token-2022 mint with 6 decimals (qf-curve state.rs BASE_DECIMALS). */

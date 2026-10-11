@@ -38,7 +38,20 @@ export type ApprovedTerms =
   //   REWARDS_PAYOUT: the rewards vault pays one final epoch's allocation, recipient by recipient, as frozen in its record.
   // Each carries a memo naming the coin and epoch, so the deposit or payout can be read back from its own transaction.
   | (Common & RewardsRef & { kind: 'REWARDS_DEPOSIT'; to: string; amountRaw: string })
-  | (Common & RewardsRef & { kind: 'REWARDS_PAYOUT'; artifactHash: string; payouts: { owner: string; amountRaw: string }[] });
+  | (Common & RewardsRef & { kind: 'REWARDS_PAYOUT'; artifactHash: string; payouts: { owner: string; amountRaw: string }[] })
+  // Project QF's own engine (ADR-014): the coin is a Token-2022 mint and the quote may be wrapped SOL. What these bind to
+  // is in qf-engine.ts: exactly the instructions @project-qf/engine builds from the terms, byte for byte.
+  | (Common & QfCoin & { kind: 'QF_CREATE'; creator: string; ammConfig: string; name: string; symbol: string; uri: string })
+  | (Common & QfCoin & { kind: 'QF_SWAP'; user: string; direction: 'QUOTE_TO_BASE' | 'BASE_TO_QUOTE'; amountIn: string; minimumAmountOut: string })
+  | (Common & QfCoin & { kind: 'QF_POOL_SWAP'; user: string; ammConfig: string; direction: 'QUOTE_TO_BASE' | 'BASE_TO_QUOTE'; amountIn: string; minimumAmountOut: string })
+  | (Common & QfCoin & { kind: 'QF_CLAIM_CREATOR_FEES'; creator: string })
+  | (Common & QfCoin & { kind: 'QF_COLLECT_POOL_CREATOR_FEE'; creator: string; ammConfig: string });
+interface QfCoin { baseMint: string; quoteMint: string }
+export type QfTerms = Extract<ApprovedTerms, { kind: `QF_${string}` }>;
+export const QF_KINDS: readonly QfTerms['kind'][] = ['QF_CREATE', 'QF_SWAP', 'QF_POOL_SWAP', 'QF_CLAIM_CREATOR_FEES', 'QF_COLLECT_POOL_CREATOR_FEE'];
+export const isQfTerms = (t: { kind: string }): t is QfTerms => (QF_KINDS as readonly string[]).includes(t.kind);
+/** The engine's limits on a coin's name, ticker and metadata link, in UTF-8 bytes (qf-curve state.rs). */
+export const QF_TEXT_LIMITS = Object.freeze({ name: 32, symbol: 10, uri: 200 });
 interface TreasuryRef { multisig: string; transactionIndex: string }
 interface RewardsRef { from: string; quoteMint: string; quoteDecimals: number; quoteTokenProgram: string; launchMint: string; epochId: string }
 /** What a treasury vault may be asked to sign: claiming platform fees into its own accounts, a holder-rewards deposit
@@ -81,6 +94,11 @@ const KIND_FIELDS: Record<ApprovedTerms['kind'], { addrs: string[]; u64: string[
   TREASURY_EXECUTE: { addrs: ['multisig', 'vault', 'member'], u64: ['transactionIndex'], positive: ['transactionIndex'] },
   REWARDS_DEPOSIT: { addrs: ['from', 'to', 'quoteMint', 'quoteTokenProgram', 'launchMint'], u64: ['amountRaw'], positive: ['amountRaw'] },
   REWARDS_PAYOUT: { addrs: ['from', 'quoteMint', 'quoteTokenProgram', 'launchMint'], u64: [], positive: [] },
+  QF_CREATE: { addrs: ['creator', 'baseMint', 'quoteMint', 'ammConfig'], u64: [], positive: [] },
+  QF_SWAP: { addrs: ['user', 'baseMint', 'quoteMint'], u64: ['amountIn', 'minimumAmountOut'], positive: ['amountIn'] },
+  QF_POOL_SWAP: { addrs: ['user', 'baseMint', 'quoteMint', 'ammConfig'], u64: ['amountIn', 'minimumAmountOut'], positive: ['amountIn'] },
+  QF_CLAIM_CREATOR_FEES: { addrs: ['creator', 'baseMint', 'quoteMint'], u64: [], positive: [] },
+  QF_COLLECT_POOL_CREATOR_FEE: { addrs: ['creator', 'baseMint', 'quoteMint', 'ammConfig'], u64: [], positive: [] },
 };
 
 /** Runtime validation of terms. Returns violations; empty means structurally valid V0 terms. */
@@ -102,6 +120,7 @@ export function validateTerms(t: unknown): string[] {
   if (!c || !Number.isInteger(c.maxUnitLimit) || c.maxUnitLimit <= 0 || c.maxUnitLimit > MAX_COMPUTE_UNIT_LIMIT) v.push('TERMS_BAD_COMPUTE_LIMIT');
   if (!c || typeof c.maxUnitPriceMicroLamports !== 'string' || !/^(0|[1-9]\d*)$/.test(c.maxUnitPriceMicroLamports)
     || BigInt(c.maxUnitPriceMicroLamports) > MAX_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS) v.push('TERMS_BAD_COMPUTE_PRICE');
+  if (isQfTerms(o as { kind: string })) return [...v, ...qfViolations(o)];
   // V0 scope: SPL Token base and quote only; native-SOL quote flows (wrap/unwrap, temp wSOL) fail closed.
   for (const k of ['baseTokenProgram', 'quoteTokenProgram']) if (k in o && o[k] !== PROGRAM_IDS.TOKEN) v.push(`TERMS_UNSUPPORTED_V0 ${k} must be SPL Token`);
   if (o.quoteMint === NATIVE_MINT || o.baseMint === NATIVE_MINT) v.push('TERMS_UNSUPPORTED_V0 native SOL quote/base');
@@ -114,6 +133,24 @@ export function validateTerms(t: unknown): string[] {
   if (o.kind === 'TREASURY_PROPOSE' || o.kind === 'TREASURY_EXECUTE') v.push(...treasuryInnerViolations(o));
   if (o.kind === 'TREASURY_PROPOSE' && typeof o.approve !== 'boolean') v.push('TERMS_BAD_FLAG approve');
   if (o.kind === 'REWARDS_DEPOSIT' || o.kind === 'REWARDS_PAYOUT') v.push(...rewardsViolations(o));
+  return v;
+}
+
+/** Engine terms: the person who signs pays the fee; the coin is not the quote (it is a fresh Token-2022 mint, never wrapped
+ *  SOL); texts fit the engine's limits. Wrapped SOL is allowed as the quote: the binding wraps and unwraps it. */
+function qfViolations(o: Record<string, unknown>): string[] {
+  const v: string[] = [];
+  const signer = o.kind === 'QF_SWAP' || o.kind === 'QF_POOL_SWAP' ? o.user : o.creator;
+  if (o.feePayer !== signer) v.push('TERMS_QF_FEE_PAYER_IS_NOT_THE_SIGNER');
+  if (o.baseMint === o.quoteMint || o.baseMint === NATIVE_MINT) v.push('TERMS_QF_COIN_IS_THE_QUOTE');
+  if ((o.kind === 'QF_SWAP' || o.kind === 'QF_POOL_SWAP') && o.direction !== 'QUOTE_TO_BASE' && o.direction !== 'BASE_TO_QUOTE') v.push('TERMS_BAD_DIRECTION');
+  if (o.kind === 'QF_CREATE') {
+    for (const k of ['name', 'symbol', 'uri'] as const) {
+      const x = o[k];
+      if (typeof x !== 'string' || x.length === 0 || new TextEncoder().encode(x).length > QF_TEXT_LIMITS[k]) v.push(`TERMS_BAD_STRING ${k}`);
+    }
+    if (o.creator === o.baseMint) v.push('TERMS_QF_MINT_IS_THE_CREATOR');
+  }
   return v;
 }
 

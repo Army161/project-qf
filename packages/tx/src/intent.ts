@@ -6,7 +6,9 @@ import { CAPABILITY_FLAGS, READINESS, type Cluster } from '@project-qf/core';
 export type IntentKind = 'CREATE_CONFIG' | 'CREATE_POOL' | 'SWAP' | 'MIGRATE_DAMM_V2' | 'DAMM_SWAP' | 'DAMM_CLAIM_POSITION_FEE'
   | 'CLAIM_PARTNER_TRADING_FEE' | 'CLAIM_CREATOR_TRADING_FEE'
   | 'TREASURY_PROPOSE' | 'TREASURY_APPROVE' | 'TREASURY_EXECUTE'
-  | 'CREATE_CONFIG_TRANSFER_FEE' | 'CREATE_CONFIG_TRANSFER_HOOK';
+  | 'CREATE_CONFIG_TRANSFER_FEE' | 'CREATE_CONFIG_TRANSFER_HOOK'
+  // Project QF's own engine (ADR-014): every one is signed and paid for by the person's own wallet
+  | 'QF_CREATE' | 'QF_SWAP' | 'QF_POOL_SWAP' | 'QF_CLAIM_CREATOR_FEES' | 'QF_COLLECT_POOL_CREATOR_FEE';
 export type SignerRole = 'USER_WALLET' | 'CONFIG_OWNER' | 'FEE_CLAIMER' | 'MIGRATION_CRANK' | 'TREASURY_MEMBER';
 
 export interface TxIntent {
@@ -29,8 +31,9 @@ const ROLE_FOR: Record<IntentKind, SignerRole> = {
   CLAIM_PARTNER_TRADING_FEE: 'FEE_CLAIMER', CLAIM_CREATOR_TRADING_FEE: 'USER_WALLET',
   TREASURY_PROPOSE: 'TREASURY_MEMBER', TREASURY_APPROVE: 'TREASURY_MEMBER', TREASURY_EXECUTE: 'TREASURY_MEMBER',
   CREATE_CONFIG_TRANSFER_FEE: 'CONFIG_OWNER', CREATE_CONFIG_TRANSFER_HOOK: 'CONFIG_OWNER',
+  QF_CREATE: 'USER_WALLET', QF_SWAP: 'USER_WALLET', QF_POOL_SWAP: 'USER_WALLET', QF_CLAIM_CREATOR_FEES: 'USER_WALLET', QF_COLLECT_POOL_CREATOR_FEE: 'USER_WALLET',
 };
-const NEEDS_CONSENT = new Set<IntentKind>(['CREATE_CONFIG', 'CREATE_POOL']);
+const NEEDS_CONSENT = new Set<IntentKind>(['CREATE_CONFIG', 'CREATE_POOL', 'QF_CREATE']);
 const MULTISIG_ROLES = new Set<SignerRole>(['CONFIG_OWNER', 'FEE_CLAIMER', 'TREASURY_MEMBER']);
 const U64_MAX = 2n ** 64n - 1n;
 const SKEW_MS = 5_000;
@@ -53,7 +56,11 @@ export function validateIntent(i: TxIntent, ctx: IntentContext): { ok: boolean; 
   switch (i.cluster) {
     case 'mainnet-beta': if ((flags.MAINNET_WRITES as boolean) !== true) v.push('MAINNET_WRITES disabled'); break;
     case 'devnet': if (readiness.DEVNET_INTEGRATION.status !== 'ACTIVE') v.push('stage DEVNET_INTEGRATION is BLOCKED'); break;
-    case 'localnet': if (readiness.LOCALNET_INTEGRATION.status !== 'ACTIVE') v.push('stage LOCALNET_INTEGRATION is BLOCKED'); break;
+    case 'localnet':
+      if (readiness.LOCALNET_INTEGRATION.status !== 'ACTIVE') v.push('stage LOCALNET_INTEGRATION is BLOCKED');
+      // a local validator runs QF's own programs only; Meteora program copies need written permission (ADR-013)
+      if (!i.kind.startsWith('QF_')) v.push('LOCALNET_QF_ENGINE_ONLY');
+      break;
     case 'mock-offline': if (!i.mock) v.push('cluster mock-offline requires mock=true'); break;
     default: v.push(`UNKNOWN_CLUSTER ${String(i.cluster)}`);
   }

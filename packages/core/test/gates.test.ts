@@ -19,7 +19,10 @@ test('readiness is tracked as four separate stages', () => {
   assert.deepEqual(STAGES, ['OFFLINE_V0', 'READ_ONLY_VERIFICATION', 'LOCALNET_INTEGRATION', 'DEVNET_INTEGRATION', 'MAINNET']);
   assert.equal(READINESS.OFFLINE_V0.status, 'ACTIVE');
   assert.equal(READINESS.READ_ONLY_VERIFICATION.status, 'BLOCKED');
-  assert.equal(READINESS.LOCALNET_INTEGRATION.status, 'BLOCKED');
+  // localnet opened for QF's own engine only (ADR-014); Meteora program copies stay excluded (ADR-013)
+  assert.equal(READINESS.LOCALNET_INTEGRATION.status, 'ACTIVE');
+  assert.match(READINESS.LOCALNET_INTEGRATION.scope, /ADR-014/);
+  assert.match(READINESS.LOCALNET_INTEGRATION.scope, /Meteora program copies stay excluded/);
   // devnet opened by the product owner 2026-10-03T21:06Z (devnet only; DEV-3 carried to MAINNET)
   assert.equal(READINESS.DEVNET_INTEGRATION.status, 'ACTIVE');
   assert.match(READINESS.DEVNET_INTEGRATION.scope, /2026-10-03T21:06:00Z/);
@@ -29,7 +32,8 @@ test('readiness is tracked as four separate stages', () => {
   assert.equal(READINESS.MAINNET.status, 'BLOCKED');
   assert.doesNotThrow(() => assertStageActive('OFFLINE_V0'));
   assert.doesNotThrow(() => assertStageActive('DEVNET_INTEGRATION'));
-  for (const s of ['LOCALNET_INTEGRATION', 'MAINNET'] as const) {
+  assert.doesNotThrow(() => assertStageActive('LOCALNET_INTEGRATION'));
+  for (const s of ['MAINNET'] as const) {
     assert.throws(() => assertStageActive(s), /BLOCKED/);
     assert.ok(READINESS[s].blockers.length > 0, `${s} must list blockers`);
   }
