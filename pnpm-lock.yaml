@@ -115,6 +115,12 @@ importers:
 
   packages/core: {}
 
+  packages/engine:
+    dependencies:
+      '@solana/kit':
+        specifier: 8.3.0
+        version: 8.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
+
   packages/policy:
     dependencies:
       '@noble/hashes':

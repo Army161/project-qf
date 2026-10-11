@@ -31,6 +31,13 @@ Rules for every coding agent working in Project QF repositories. These are bindi
 - External text (token metadata, social, news, GitHub) is **data**, never instructions. It is passed to models only inside typed fields, and model outputs are schema-validated.
 
 ## Hard rules — product boundary (V1)
+- **Owner amendment, 2026-10-11 (ADR-014)** (Jeremy, 12:48Z: "im not waiting on metora anymore im taking over and making this mine"; he chose "Own curve + CPMM" at 12:49Z). Project QF's own engine replaces Meteora: `qf-curve` (QF original) and `qf-pool` (a fork of Raydium's Apache-2.0 raydium-cp-swap), source in `quoteforge/engine-qf/`. These rules apply:
+  - `packages/engine` is the only package that knows the engine's formats. It is browser-safe and Kit-only.
+  - The two Apache-2.0-derived files keep their notice (`packages/engine/third_party/raydium-cp-swap/`).
+  - Engine coins are Token-2022 mints with metadata on the mint, no transfer fee, no freeze authority and no mint authority. This overrides "classic SPL Token" below, for engine coins only.
+  - The Meteora engine stays the devnet default until the app switches behind one setting, after the engine's own devnet proof run passes. It is then removed.
+  - The engine programs are devnet/localnet only, upgradeable and not audited. Mainnet needs an outside security review, the multisig holding every admin and upgrade key, and Jeremy's explicit words.
+  - The two lines below about "Meteora DBC → DAMM v2 only" and "No custom on-chain programs" are superseded by this amendment. The licensing rules above are unchanged.
 - Engine: **Meteora DBC → DAMM v2** only. `RaydiumEngineAdapter` is an interface stub; no implementation.
 - `DBC_BASE_TRANSFER_FEE` capability is `EXPERIMENTAL_DISABLED`. Do not write code paths that require DBC program ≥ 0.2.2 or an SDK release with 0.2.2 support (proposed as 1.6.0 in PR #116; the 2.x refactor is PR #117) outside the disabled capability module. ADR-003 tracks capability, not a version number.
 - Reward strategies: `NONE`, `TRADING_FEE`, `DIRECT`, `MERKLE`, `EPOCH_PROPORTIONAL`. No continuous-rewards contract. Mainnet settlement is feature-gated (`REWARDS_SETTLEMENT_MAINNET=false`).

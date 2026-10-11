@@ -1,0 +1,14 @@
+Parts of @project-qf/engine are derived from raydium-cp-swap.
+
+Original work: raydium-cp-swap, Copyright Raydium, licensed under the Apache License,
+Version 2.0 (LICENSE in this folder). Source: https://github.com/raydium-io/raydium-cp-swap
+at commit b3187ae53a1b95a201f855a59024a12ca8f5b51a.
+
+Project QF deploys a fork of it as qf-pool (program FHG8GyPytpydCRFL6yvwu92vyWSk7bSYZknyLn3v6ewU,
+engine-qf programs/qf-cpmm; its own NOTICE lists every change). Derived files here:
+
+- idl/qf_pool.json: the Anchor IDL generated from the qf-pool fork (anchor idl build), unmodified.
+  Its account, type and instruction names and doc strings come from raydium-cp-swap.
+- src/pool-math.ts: a TypeScript port of the swap arithmetic in programs/cp-swap/src/curve/
+  {calculator,fees,constant_product}.rs and the swap parameter selection in states/pool.rs.
+  Modified by Project QF (2026-10-11): ported to TypeScript BigInt; exact-input swaps only.

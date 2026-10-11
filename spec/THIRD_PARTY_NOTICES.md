@@ -18,6 +18,7 @@ Generated from the lockfile in CI once code exists; this is the planned V1 set. 
 | @coral-xyz/anchor (transitive) | ^0.31.0 | MIT OR Apache-2.0 | Anchor contributors |
 | @pythnetwork/hermes-client | 3.1.0 | Apache-2.0 | Pyth Data Association / contributors |
 | Solana Foundation Rewards program (devnet/localnet deployment only) | `df7517d` | MIT | Copyright (c) 2026 Solana Foundation |
+| raydium-cp-swap (derived files in `packages/engine`: the qf-pool IDL and the swap-math port `src/pool-math.ts`) | `b3187ae` | Apache-2.0 | Copyright Raydium; modifications by Project QF (2026-10-11). LICENSE and NOTICE in `packages/engine/third_party/raydium-cp-swap/` |
 
 | rpc-websockets (transitive, server-side adapter only) | 9.3.9 | LGPL-3.0-only | Copyright (c) Elpheria j.d.o.o.; source https://github.com/elpheria/rpc-websockets — unmodified; exception QF-LIC-EX-001, not distributed in any browser, SDK, container or on-prem artifact (LICENSES.md §5) |
 | text-encoding-utf-8 (transitive) | 1.0.2 | Unlicense | public domain dedication |

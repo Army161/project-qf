@@ -1,0 +1,10 @@
+{
+  "name": "@project-qf/engine",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "description": "Project QF's own launch engine (qf-curve + qf-pool): addresses, instruction builders, account and event decoders, curve and pool math. Browser-safe (Solana Kit only).",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "@solana/kit": "8.3.0" }
+}

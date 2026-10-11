@@ -33,6 +33,7 @@ Run the launchpad (from `apps/launchpad`, devnet): `node --use-env-proxy src/mai
 - `packages/rewards` — TWAB, allocation, SF Rewards-format Merkle
 - `packages/tx` — transaction intent validation, independent Kit decoder, strict DBC Borsh decoding and binding of the decoded message to approved terms and consent (repair pass)
 - `packages/adapter-meteora-dbc` — **server-only** Meteora SDK adapter (the only web3.js v1 user)
+- `packages/engine` — Project QF's own launch engine (qf-curve + qf-pool): addresses, unsigned instruction builders, curve and pool math, account and event decoders; browser-safe, Kit only. Checked against the engine's own client and, on a local validator, against the real programs (`packages/engine/README.md`). Not wired into the app yet
 - `apps/launchpad` — **server-only** launchpad (`lp-api/1`): builds unsigned transactions for wallets, relays signed ones after exact-message checks, indexes trades, cranks graduation, keeps the books (`books.ts`, `verify.ts`); never signs for a user
 - `apps/web` — the launchpad's browser app (`launchpad.html`; talks only to the same-origin server and the user's wallet, and checks every transaction before the wallet signs it)
 - `tools/*` — licence check, chain proof, SBOM, boundary, econ-sim

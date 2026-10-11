@@ -3,7 +3,7 @@
   "specVersion": "1.6",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-11T13:19:43.924Z",
+    "timestamp": "2026-10-11T14:22:30.043Z",
     "tools": {
       "components": [
         {
@@ -26,7 +26,7 @@
       },
       {
         "name": "qf:pnpm-lock.sha256",
-        "value": "5c93d717f9f6056eacecd3850123de73bf6aff21ec0fb22506a8f0f6e6f1fe5b"
+        "value": "90c232b5d0f30cd23a7714bb4b9e5c569843a7f5f144dbe04cc82208d47b205e"
       },
       {
         "name": "qf:overrides",
@@ -1010,7 +1010,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/launchpad,@project-qf/rewards,@project-qf/tx"
+          "value": "@project-qf/engine,@project-qf/launchpad,@project-qf/rewards,@project-qf/tx"
         }
       ]
     },
@@ -5714,6 +5714,12 @@
       "ref": "workspace:@project-qf/econ-sim",
       "dependsOn": [
         "pkg:npm/%40noble/hashes@1.8.0"
+      ]
+    },
+    {
+      "ref": "workspace:@project-qf/engine",
+      "dependsOn": [
+        "pkg:npm/%40solana/kit@8.3.0"
       ]
     },
     {
