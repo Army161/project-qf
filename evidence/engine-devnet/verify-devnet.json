@@ -1,0 +1,129 @@
+{
+ "asOf": "2026-10-11T16:55:48.704Z",
+ "cluster": "devnet",
+ "quote": {
+  "mint": "So11111111111111111111111111111111111111112",
+  "decimals": 9,
+  "symbol": "SOL",
+  "label": "test SOL"
+ },
+ "checks": [
+  {
+   "verdict": "PASS",
+   "coin": "$QFP",
+   "mint": "9PxVfDqKVijSeZn1Y8qrzMk1TPBRT3wY3W55XuPfqPcu",
+   "check": "curve quote vault matches the curve",
+   "detail": "vault holds 0.000000000 SOL"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$QFP",
+   "mint": "9PxVfDqKVijSeZn1Y8qrzMk1TPBRT3wY3W55XuPfqPcu",
+   "check": "curve coin vault matches the curve",
+   "detail": "vault holds 0.000000 $QFP"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$QFP",
+   "mint": "9PxVfDqKVijSeZn1Y8qrzMk1TPBRT3wY3W55XuPfqPcu",
+   "check": "platform curve fees add up",
+   "detail": "3 trade(s) + graduation fee - claims = 0.000000000 SOL unclaimed"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$QFP",
+   "mint": "9PxVfDqKVijSeZn1Y8qrzMk1TPBRT3wY3W55XuPfqPcu",
+   "check": "creator curve fees add up",
+   "detail": "3 trade(s) - claims = 0.000000000 SOL unclaimed"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$QFP",
+   "mint": "9PxVfDqKVijSeZn1Y8qrzMk1TPBRT3wY3W55XuPfqPcu",
+   "check": "pool liquidity is locked for good",
+   "detail": "LP mint supply 0 (every LP token burned at graduation)"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$QFP",
+   "mint": "9PxVfDqKVijSeZn1Y8qrzMk1TPBRT3wY3W55XuPfqPcu",
+   "check": "pool creator fees add up",
+   "detail": "3 pool swap(s) - collected = 0.000001995 SOL unclaimed"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$ADOG",
+   "mint": "2PfA1sw3ZJ1DCnAmMPYwDR7vXmre5BHNjUhgcmBSVeJU",
+   "check": "curve quote vault matches the curve",
+   "detail": "vault holds 0.010000000 SOL"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$ADOG",
+   "mint": "2PfA1sw3ZJ1DCnAmMPYwDR7vXmre5BHNjUhgcmBSVeJU",
+   "check": "curve coin vault matches the curve",
+   "detail": "vault holds 965722168.441433 $ADOG"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$ADOG",
+   "mint": "2PfA1sw3ZJ1DCnAmMPYwDR7vXmre5BHNjUhgcmBSVeJU",
+   "check": "curve state follows its last trade",
+   "detail": "last trade left real quote 0.009900000 SOL and 34277831.558567 $ADOG sold; the account holds 0.009900000 SOL and 34277831.558567 $ADOG"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$ADOG",
+   "mint": "2PfA1sw3ZJ1DCnAmMPYwDR7vXmre5BHNjUhgcmBSVeJU",
+   "check": "platform curve fees add up",
+   "detail": "1 trade(s) - claims = 0.000070000 SOL unclaimed"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$ADOG",
+   "mint": "2PfA1sw3ZJ1DCnAmMPYwDR7vXmre5BHNjUhgcmBSVeJU",
+   "check": "creator curve fees add up",
+   "detail": "1 trade(s) - claims = 0.000030000 SOL unclaimed"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$ADOG",
+   "mint": "zFsrwHNb9CRKhychEnJWyMYLrVnxUj2vx9hCxwjwNW8",
+   "check": "curve quote vault matches the curve",
+   "detail": "vault holds 0.004869651 SOL"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$ADOG",
+   "mint": "zFsrwHNb9CRKhychEnJWyMYLrVnxUj2vx9hCxwjwNW8",
+   "check": "curve coin vault matches the curve",
+   "detail": "vault holds 982861084.220716 $ADOG"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$ADOG",
+   "mint": "zFsrwHNb9CRKhychEnJWyMYLrVnxUj2vx9hCxwjwNW8",
+   "check": "curve state follows its last trade",
+   "detail": "last trade left real quote 0.004869651 SOL and 17138915.779284 $ADOG sold; the account holds 0.004869651 SOL and 17138915.779284 $ADOG"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$ADOG",
+   "mint": "zFsrwHNb9CRKhychEnJWyMYLrVnxUj2vx9hCxwjwNW8",
+   "check": "platform curve fees add up",
+   "detail": "2 trade(s) - claims = 0.000000000 SOL unclaimed"
+  },
+  {
+   "verdict": "PASS",
+   "coin": "$ADOG",
+   "mint": "zFsrwHNb9CRKhychEnJWyMYLrVnxUj2vx9hCxwjwNW8",
+   "check": "creator curve fees add up",
+   "detail": "2 trade(s) - claims = 0.000000000 SOL unclaimed"
+  }
+ ],
+ "summary": {
+  "pass": 16,
+  "fail": 0,
+  "wait": 0
+ }
+}

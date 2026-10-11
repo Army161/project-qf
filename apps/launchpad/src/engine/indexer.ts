@@ -56,6 +56,33 @@ export function classifyTx(r: TxRecord, coin: Pick<CoinRow, 'mint' | 'quoteMint'
   return out;
 }
 
+/** Finds launches on the engine for this store's quote that the store does not know yet (made by another client, or before
+ *  this store existed), from each one's creation event, and queues its whole history. The engine's programs are QF's, so
+ *  every coin on them belongs on the launchpad. A coin whose creation cannot be read yet is tried again next pass. */
+export async function discoverCoins(d: EngineIndexerDeps): Promise<string[]> {
+  const quoteMint = d.store.bound('quote');
+  if (!quoteMint) return [];
+  const added: string[] = [];
+  for (const mint of await d.chain.launches(quoteMint)) {
+    if (d.store.getCoin(mint)) continue;
+    const sigs = await d.chain.signatures(await E.launchAddress(mint), null);
+    let created: { r: TxRecord; e: E.LaunchCreatedEvent } | null = null;
+    for (const s of sigs.filter((x) => !x.err).slice(0, 5)) {
+      const r = await d.chain.tx(s.signature).catch(() => null);
+      const e = r?.events.find((x): x is E.LaunchCreatedEvent & { program: string; depth: number } => x.name === 'LaunchCreated' && x.program === E.QF_CURVE && x.mint === mint);
+      if (r && e) { created = { r, e }; break; }
+    }
+    if (!created) { d.log?.(`discover ${mint}: its creation is not readable yet; tried again next pass`); continue; }
+    const { r, e } = created, at = nowOf(d).toISOString();
+    d.store.insertDiscoveredCoin({ mint, quoteMint, creator: e.creator, name: e.coinName, symbol: e.symbol, metadataUri: e.uri,
+      createdAt: r.blockTime === null ? at : new Date(r.blockTime * 1000).toISOString(), createSig: r.signature });
+    d.store.queueTxs(mint, 'CURVE', sigs.map((s) => ({ signature: s.signature, slot: s.slot })), at);
+    d.log?.(`found $${e.symbol} (${mint}) on the engine; reading its history`);
+    added.push(mint);
+  }
+  return added;
+}
+
 /** Lists new transactions on the coin's launch account, and after graduation on its pool, into the read queue. */
 export async function listNew(d: EngineIndexerDeps, c: CoinRow): Promise<number> {
   const at = nowOf(d).toISOString();
@@ -135,9 +162,20 @@ export async function settlePending(d: EngineIndexerDeps, olderThanMs: number): 
   }
 }
 
-/** One pass: list, read, crank. Each coin's failure is logged and never stops the others. */
+/** Read-only catch-up, for `verify` on any machine and any store, even a new one: finds every coin on the engine and
+ *  reads its whole history, curve then pool. Nothing is sent: no crank, no faucet. */
+export async function catchUp(d: EngineIndexerDeps, maxReads = 40): Promise<void> {
+  await discoverCoins(d);
+  for (let round = 0; round < 2; round++) {   // a coin found live may turn out graduated: then its pool's history too
+    for (const c of d.store.listCoins(['LIVE', 'GRADUATED'], 10_000)) await listNew(d, c).catch((e) => d.log?.(`list ${c.symbol}: ${(e as Error).message.slice(0, 200)}`));
+    for (let k = 0; k < maxReads && (await readDue(d)) > 0; k++);
+  }
+}
+
+/** One pass: settle, discover, list, read, crank. Each coin's failure is logged and never stops the others. */
 export async function indexPass(d: EngineIndexerDeps, pendingAfterMs = 180_000): Promise<void> {
   await settlePending(d, pendingAfterMs).catch((e) => d.log?.(`pending launches: ${(e as Error).message.slice(0, 200)}`));
+  await discoverCoins(d).catch((e) => d.log?.(`discover: ${(e as Error).message.slice(0, 200)}`));
   for (const c of d.store.listCoins(['LIVE', 'GRADUATED'])) await listNew(d, c).catch((e) => d.log?.(`list ${c.symbol}: ${(e as Error).message.slice(0, 200)}`));
   await readDue(d).catch((e) => d.log?.(`read: ${(e as Error).message.slice(0, 200)}`));
   await crankGraduations(d);

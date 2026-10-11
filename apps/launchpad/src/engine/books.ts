@@ -15,7 +15,7 @@ import { poolSides, readCoinSnapshot, type QuoteAsset } from './market.ts';
 import type { CoinRow, EngineStore } from './store.ts';
 
 export type Verdict = 'PASS' | 'FAIL' | 'WAIT';
-export interface BookCheck { verdict: Verdict; coin: string; check: string; detail: string }
+export interface BookCheck { verdict: Verdict; coin: string; mint: string; check: string; detail: string }
 export interface EngineBooks { asOf: string; cluster: string; quote: QuoteAsset; checks: BookCheck[]; summary: { pass: number; fail: number; wait: number } }
 
 const units = (raw: bigint, decimals: number) => {
@@ -27,7 +27,7 @@ const sum = (xs: bigint[]) => xs.reduce((a, b) => a + b, 0n);
 export async function coinChecks(store: EngineStore, chain: EngineChain, c: CoinRow, quote: QuoteAsset): Promise<BookCheck[]> {
   const coin = `$${c.symbol}`, q = (raw: bigint) => `${units(raw, quote.decimals)} ${quote.symbol}`, b = (raw: bigint) => `${units(raw, E.BASE_DECIMALS)} ${coin}`;
   const out: BookCheck[] = [];
-  const add = (verdict: Verdict, check: string, detail: string) => out.push({ verdict, coin, check, detail });
+  const add = (verdict: Verdict, check: string, detail: string) => out.push({ verdict, coin, mint: c.mint, check, detail });
   const exact = (check: string, want: bigint, got: bigint, fmt: (x: bigint) => string, what: string) =>
     add(want === got ? 'PASS' : 'FAIL', check, want === got ? `${what} ${fmt(got)}` : `${what}: expected ${fmt(want)}, chain holds ${fmt(got)} (off by ${fmt(got - want)})`);
 
@@ -89,7 +89,11 @@ export async function engineBooks(store: EngineStore, chain: EngineChain, quote:
 }
 
 export function engineBooksText(b: EngineBooks): string {
-  const w = Math.max(...b.checks.map((x) => x.coin.length), 4);
-  return [`Books checked ${b.asOf} (${b.cluster}, QF engine)`, '', ...b.checks.map((x) => `${x.verdict.padEnd(4)}  ${x.coin.padEnd(w)}  ${x.check}: ${x.detail}`), '',
+  // anyone can launch on the engine, so two coins can share a symbol: those are told apart by their mint's first characters
+  const mints = new Map<string, Set<string>>();
+  for (const x of b.checks) mints.set(x.coin, (mints.get(x.coin) ?? new Set()).add(x.mint));
+  const label = (x: BookCheck) => (mints.get(x.coin)!.size > 1 ? `${x.coin} ${x.mint.slice(0, 4)}…` : x.coin);
+  const w = Math.max(...b.checks.map((x) => label(x).length), 4);
+  return [`Books checked ${b.asOf} (${b.cluster}, QF engine)`, '', ...b.checks.map((x) => `${x.verdict.padEnd(4)}  ${label(x).padEnd(w)}  ${x.check}: ${x.detail}`), '',
     `${b.summary.pass} PASS, ${b.summary.fail} FAIL, ${b.summary.wait} WAIT`].join('\n');
 }

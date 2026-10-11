@@ -95,12 +95,24 @@ export class EngineStore {
     if (r.v !== value) throw new Error(`STORE_${k.toUpperCase()}_MISMATCH this database belongs to ${r.v}, not ${value}`);
   }
 
+  /** What `bind` tied this database to, or null before the first bind. */
+  bound(k: 'cluster' | 'genesis' | 'quote'): string | null {
+    return (this.db.prepare('SELECT v FROM settings WHERE k = ?').get(k) as { v: string } | undefined)?.v ?? null;
+  }
+
   // ---------- coins
   insertPendingCoin(c: Pick<CoinRow, 'mint' | 'quoteMint' | 'creator' | 'name' | 'symbol' | 'description' | 'website' | 'twitter' | 'telegram' | 'imageType' | 'metadataUri' | 'createdAt'>,
     image: Uint8Array | null) {
     this.db.prepare(`INSERT INTO coins (mint, quote_mint, creator, name, symbol, description, website, twitter, telegram, image_type, image, metadata_uri, status, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)`)
       .run(c.mint, c.quoteMint, c.creator, c.name, c.symbol, c.description, c.website, c.twitter, c.telegram, c.imageType, image, c.metadataUri, c.createdAt);
+  }
+  /** A coin found on the engine that this app did not launch (another client, or a store started after it): LIVE, with what
+   *  its creation event said. Its description, links and picture were never given to this app, so they stay empty.
+   *  Returns false when the store already has the coin. */
+  insertDiscoveredCoin(c: Pick<CoinRow, 'mint' | 'quoteMint' | 'creator' | 'name' | 'symbol' | 'metadataUri' | 'createdAt' | 'createSig'>): boolean {
+    return this.db.prepare(`INSERT OR IGNORE INTO coins (mint, quote_mint, creator, name, symbol, description, metadata_uri, status, created_at, create_sig, live_at)
+      VALUES (?, ?, ?, ?, ?, '', ?, 'LIVE', ?, ?, ?)`).run(c.mint, c.quoteMint, c.creator, c.name, c.symbol, c.metadataUri, c.createdAt, c.createSig, c.createdAt).changes > 0;
   }
   /** The launch landed: LIVE from PENDING, and its creating transaction once known. */
   markLive(mint: string, sig: string | null, at: string) {

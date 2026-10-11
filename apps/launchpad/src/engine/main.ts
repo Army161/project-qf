@@ -1,7 +1,9 @@
 // CLI for the launchpad on Project QF's own engine (QF_ENGINE=qf; ADR-014). No web3.js: Solana Kit only.
-//   node --use-env-proxy src/main.ts operator              prints the operator's PUBLIC address and SOL balance
+//   node --use-env-proxy src/main.ts operator              prints the operator's PUBLIC address and SOL balance (on devnet it
+//                                                          first makes a throwaway key if there is none)
 //   node --use-env-proxy src/main.ts serve                 starts the launchpad (indexer + graduation crank in the background)
-//   node --use-env-proxy src/main.ts verify [--json file]  checks every engine coin's books against the chain (PASS / FAIL / WAIT)
+//   node --use-env-proxy src/main.ts verify [--json file]  reads every coin on the engine and its history (sends nothing), then checks
+//                                                          each coin's books against the chain (PASS / FAIL / WAIT); a new store works
 // The engine's settings (its Global account and pool config) are set up by the engine's admin, not by this app.
 // Configuration (environment): QF_CLUSTER (devnet, the default, or localnet: a validator on 127.0.0.1 only), QF_RPC_URL
 // (default the public devnet endpoint, or http://127.0.0.1:8899 on localnet), QF_LP_DB (default
@@ -16,8 +18,8 @@ import { fileURLToPath } from 'node:url';
 import { createSolanaRpc } from '@solana/kit';
 import { CAPABILITY_FLAGS, READINESS } from '@project-qf/core';
 import { engineBooks, engineBooksText } from './books.ts';
-import { kitChain, loadOperator, proveCluster } from './chain.ts';
-import { startEngineBackground } from './indexer.ts';
+import { calmRpc, createOperatorKey, kitChain, loadOperator, proveCluster } from './chain.ts';
+import { catchUp, startEngineBackground } from './indexer.ts';
 import { SOL_QUOTE } from './market.ts';
 import { createEngineApp, type EngineProfile } from './server.ts';
 import { EngineStore } from './store.ts';
@@ -32,10 +34,12 @@ if (!wanted) { console.error(`QF_CLUSTER must be devnet or localnet (got ${env.Q
 const rpcUrl = env.QF_RPC_URL || (wanted === 'localnet' ? 'http://127.0.0.1:8899' : env.QF_RPC_DEVNET || 'https://api.devnet.solana.com');
 const stage = READINESS[wanted === 'devnet' ? 'DEVNET_INTEGRATION' : 'LOCALNET_INTEGRATION'];
 if (stage.status !== 'ACTIVE' && cmd !== 'operator') { console.error(`${wanted} is BLOCKED: ${stage.blockers.join('; ')}`); process.exit(78); }
-const rpc = createSolanaRpc(rpcUrl);
+const rpc = calmRpc(createSolanaRpc(rpcUrl));
 const genesis = async () => String(await rpc.getGenesisHash().send());
 const cluster = await proveCluster(rpcUrl, wanted, genesis, CAPABILITY_FLAGS.MAINNET_WRITES as boolean);
-const operator = await loadOperator(env.QF_DEVNET_KEY ?? join(homedir(), '.qf-devnet', 'operator.json'));
+const keyFile = env.QF_DEVNET_KEY ?? join(homedir(), '.qf-devnet', 'operator.json');
+if (cmd === 'operator' && cluster === 'devnet' && createOperatorKey(keyFile)) log(`made a throwaway devnet operator key in ${keyFile} (mode 0600)`);
+const operator = await loadOperator(keyFile);
 const chain = kitChain(rpcUrl, operator, log);
 const profile: EngineProfile = { cluster, writes: true, faucet: !!operator, writesLockedBecause: [],
   label: cluster === 'devnet' ? 'Test network: coins here have no value' : 'Local test validator: coins here have no value' };
@@ -60,6 +64,7 @@ if (cmd === 'operator') {
   process.once('SIGINT', () => stop('SIGINT'));
 } else if (cmd === 'verify') {
   const store = await openStore();
+  await catchUp({ store, chain, log });
   const books = await engineBooks(store, chain, SOL_QUOTE, cluster);
   console.log(engineBooksText(books));
   const k = process.argv.indexOf('--json');

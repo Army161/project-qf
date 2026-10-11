@@ -6,7 +6,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
-import { address, getAddressEncoder, type Instruction } from '@solana/kit';
+import { address, getAddressDecoder, getAddressEncoder, type Instruction } from '@solana/kit';
 import * as E from '@project-qf/engine';
 import type { EngineChain, TxRecord } from '../../src/engine/chain.ts';
 import type { QuoteAsset } from '../../src/engine/market.ts';
@@ -81,6 +81,12 @@ export function fakeChain(operator: string | null = ADDR.operator): FakeChain {
       return { lamports: (f.lamportsOf.get(owner) ?? 0n).toString(), tokens };
     },
     lamports: async (owner) => f.lamportsOf.get(owner) ?? 0n,
+    // the same search the real port makes: curve-owned accounts with the Launch discriminator and this quote mint
+    launches: async (quoteMint) => {
+      const L = E.LAUNCH_LAYOUT, q = Array.from(getAddressEncoder().encode(address(quoteMint)));
+      return [...f.accounts.values()].filter((a) => a.owner === E.QF_CURVE && L.discriminator.every((b, k) => a.data[k] === b)
+        && q.every((b, k) => a.data[L.quoteMintOffset + k] === b)).map((a) => getAddressDecoder().decode(a.data.subarray(L.mintOffset, L.mintOffset + 32)) as string);
+    },
     genesisHash: async () => 'TEST_ONLY',
     sendAsOperator: async (ixs) => { if (!operator) throw new Error('OPERATOR_KEY_UNAVAILABLE'); f.operatorSent.push(ixs); return sig(); },
   };

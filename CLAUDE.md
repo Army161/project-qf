@@ -35,7 +35,7 @@ Rules for every coding agent working in Project QF repositories. These are bindi
   - `packages/engine` is the only package that knows the engine's formats. It is browser-safe and Kit-only.
   - The two Apache-2.0-derived files keep their notice (`packages/engine/third_party/raydium-cp-swap/`).
   - Engine coins are Token-2022 mints with metadata on the mint, no transfer fee, no freeze authority and no mint authority. This overrides "classic SPL Token" below, for engine coins only.
-  - The Meteora engine stays the devnet default until the app switches behind one setting, after the engine's own devnet proof run passes. It is then removed.
+  - The Meteora engine stays the devnet default until the app switches behind one setting, after the engine's own devnet proof run passes. It is then removed. (The proof run passed on 2026-10-11 and the app works on the engine on devnet; the switch itself waits on Jeremy's OK.)
   - The engine programs are devnet/localnet only, upgradeable and not audited. Mainnet needs an outside security review, the multisig holding every admin and upgrade key, and Jeremy's explicit words.
   - The two lines below about "Meteora DBC → DAMM v2 only" and "No custom on-chain programs" are superseded by this amendment. The licensing rules above are unchanged.
 - Engine: **Meteora DBC → DAMM v2** only. `RaydiumEngineAdapter` is an interface stub; no implementation.

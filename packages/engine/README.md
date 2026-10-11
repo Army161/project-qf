@@ -41,9 +41,10 @@ The programs live in the engine's own repository (`quoteforge/engine-qf/`). Its 
   QF_ENGINE_DIR=/mnt/project-files/quoteforge/engine-qf/src sh packages/engine/scripts/localnet.sh
   ```
 
-  It needs the Agave CLI on `PATH`. The keys are throwaway and live in `~/.qf-localnet`, outside the repo.
+  It needs the Agave CLI on `PATH`. The keys are throwaway and live in `~/.qf-localnet`, outside the repo. The curve binary it loads is pinned to the build that is live on devnet (sha256 `5d7a424e…dcbd`, the same bytes a clean rebuild of the engine gives).
 
 - With `QF_LOCALNET_THEN=apps/launchpad/scripts/engine-localnet.ts` the same validator runs the whole app instead: the launchpad server in engine mode, with the script acting as the browser and the wallet (it checks every built transaction with the web app's own checker before signing). It launches a coin, trades it on the curve, buys it out, cranks the graduation, trades on the pool, claims every fee and reconciles the books before and after the claims. Pass the evidence file as the argument, for example `evidence/engine-localnet/app-localnet.json`.
+- `apps/launchpad/scripts/engine-devnet.ts` runs the app against the engine on devnet, using the engine's devnet setup as it is. It finds the engine's own proof coin, launches a coin, trades on its curve and in the proof coin's pool, claims, and reconciles the books before and after the claims (`evidence/engine-devnet/`).
 
 ## Licence
 

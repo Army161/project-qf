@@ -21,6 +21,14 @@ test('Launch round-trips through the account decoder, enum included', () => {
   assert.equal(l.signerBump, 253);
 });
 
+test('LAUNCH_LAYOUT points at the discriminator, mint and quote mint a getProgramAccounts search filters on', () => {
+  const data = account('Launch', E.CURVE_IDL, { ...launchValues, mint: A(4), quote_mint: A(5) });
+  const at = (offset: number) => Array.from(data.subarray(offset, offset + 32));
+  assert.deepEqual(Array.from(data.subarray(0, 8)), [...E.LAUNCH_LAYOUT.discriminator]);
+  assert.deepEqual(at(E.LAUNCH_LAYOUT.mintOffset), Array.from(getAddressEncoder().encode(address(A(4)))));
+  assert.deepEqual(at(E.LAUNCH_LAYOUT.quoteMintOffset), Array.from(getAddressEncoder().encode(address(A(5)))));
+});
+
 test('account decoding refuses a wrong owner, discriminator, size or enum tag', () => {
   const data = account('Launch', E.CURVE_IDL, launchValues);
   assert.throws(() => E.decodeLaunch({ owner: E.QF_POOL, lamports: 1n, data }), CodecError);

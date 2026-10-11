@@ -3,12 +3,16 @@
 // test. No network. The real programs are exercised by scripts/engine-localnet.ts on a local validator.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { address, getAddressDecoder, getAddressEncoder } from '@solana/kit';
 import * as E from '@project-qf/engine';
 import { economicsDigest } from '@project-qf/policy';
 import { addSignature, bindTransactionToTerms, decodeTransactionBytes, fromBase64, generateMintKey, parseWire, toBase64 } from '@project-qf/tx';
-import { engineBooks } from '../src/engine/books.ts';
-import { GENESIS, proveCluster } from '../src/engine/chain.ts';
-import { classifyTx, crankGraduations, indexPass, readDue, settlePending, TX_RETRY } from '../src/engine/indexer.ts';
+import { engineBooks, engineBooksText } from '../src/engine/books.ts';
+import { calmRpc, createOperatorKey, GENESIS, loadOperator, proveCluster } from '../src/engine/chain.ts';
+import { catchUp, classifyTx, crankGraduations, discoverCoins, indexPass, readDue, settlePending, TX_RETRY } from '../src/engine/indexer.ts';
 import { ENGINE_FAUCET } from '../src/engine/server.ts';
 import { EngineStore } from '../src/engine/store.ts';
 import { ADDR, CFG, DEVNET, engineDir, engineHarness, fakeChain, putCurve, putPlatform, putPool, SOL, tokenAccountData, txRecord, type FakeChain } from './support/engine-fake.ts';
@@ -269,6 +273,55 @@ test('the indexer reads fees from the engine events, retries what the RPC does n
   store.close();
 });
 
+test('the indexer finds coins it did not launch from their creation event, for its own quote only, and reads their history', async () => {
+  const chain = fakeChain();
+  const store = new EngineStore(`${engineDir}/discover.sqlite`);
+  const d = { store, chain };
+  const creator = (await generateMintKey()).address, trader = (await generateMintKey()).address;
+  const [found, late, other] = await Promise.all([generateMintKey(), generateMintKey(), generateMintKey()]).then((ks) => ks.map((k) => k.address) as [string, string, string]);
+  for (const m of [found, late, other]) await putCurve(chain, m, creator);
+  // a launch quoted in another mint is not this launchpad's
+  const o = chain.accounts.get(await E.launchAddress(other))!;
+  o.data.set(getAddressEncoder().encode(address(trader)), E.LAUNCH_LAYOUT.quoteMintOffset);
+  assert.deepEqual(await discoverCoins(d), [], 'nothing before the store is bound to its quote');
+  store.bind('quote', E.NATIVE_MINT);
+  const created = (mint: string) => ev('LaunchCreated', E.QF_CURVE, { mint, creator, coinName: 'Found Dog', symbol: 'FDOG', uri: 'https://example.invalid/fdog.json', config: CFG });
+  chain.history.set(await E.launchAddress(found), [{ signature: 'tip', slot: 1, err: false }, { signature: 'mk', slot: 2, err: false }, { signature: 'buy', slot: 3, err: false }]);
+  chain.txs.set('tip', txRecord('tip', []));
+  chain.txs.set('mk', txRecord('mk', [ev('LaunchCreated', E.QF_CURVE, { mint: late, creator, coinName: 'X', symbol: 'X', uri: '', config: CFG }), created(found)], { blockTime: 1_760_000_050 }));
+  chain.txs.set('buy', txRecord('buy', [tradeEvent(found, trader, { isBuy: true, quote: 101n, base: 7n, platform: 0n, creator: 1n, realQuote: 100n, baseSold: 7n })]));
+  chain.history.set(await E.launchAddress(late), [{ signature: 'unserved', slot: 4, err: false }]);
+  await indexPass(d);
+  const c = store.getCoin(found)!;
+  assert.deepEqual([c.status, c.name, c.symbol, c.creator, c.description, c.metadataUri, c.createSig, c.createdAt],
+    ['LIVE', 'Found Dog', 'FDOG', creator, '', 'https://example.invalid/fdog.json', 'mk', '2025-10-09T08:54:10.000Z']);
+  assert.deepEqual(store.allTrades(found).map((t) => [t.sig, t.trader, t.quoteRaw]), [['buy', trader, '101']], 'its whole history is read like any other coin\'s');
+  assert.equal(store.getCoin(late), null, 'a coin whose creation is not served yet waits for the next pass');
+  assert.equal(store.getCoin(other), null);
+  chain.txs.set('unserved', txRecord('unserved', [created(late)]));
+  assert.deepEqual(await discoverCoins(d), [late]);
+  assert.deepEqual(await discoverCoins(d), [], 'a coin is found once');
+  store.close();
+});
+
+test('verify\'s catch-up rebuilds a new store from the chain alone, pool history included, and sends nothing', async () => {
+  const chain = fakeChain();
+  const store = new EngineStore(`${engineDir}/catchup.sqlite`);
+  store.bind('quote', E.NATIVE_MINT);
+  const creator = (await generateMintKey()).address, mint = (await generateMintKey()).address, pool = await E.launchPoolAddress(mint);
+  await putCurve(chain, mint, creator, { status: 'Graduated', pool });
+  await putPool(chain, mint, creator, { quoteReserve: 1_000n, baseReserve: 1_000n });
+  chain.history.set(await E.launchAddress(mint), [{ signature: 'mk', slot: 1, err: false }, { signature: 'grad', slot: 2, err: false }]);
+  chain.history.set(pool, [{ signature: 'swap', slot: 3, err: false }]);
+  chain.txs.set('mk', txRecord('mk', [ev('LaunchCreated', E.QF_CURVE, { mint, creator, coinName: 'Old Dog', symbol: 'ODOG', uri: '', config: CFG })]));
+  chain.txs.set('grad', txRecord('grad', [ev('Graduated', E.QF_CURVE, { mint, pool, quoteToPool: 1n, baseToPool: 1n, graduationFee: 10n, lpBurned: 1n })]));
+  chain.txs.set('swap', txRecord('swap', [ev('SwapEvent', E.QF_POOL, { poolId: pool, inputAmount: 100n, outputAmount: 7n, inputMint: E.NATIVE_MINT, outputMint: mint, tradeFee: 1n, creatorFee: 2n })]));
+  await catchUp({ store, chain });
+  assert.deepEqual([store.getCoin(mint)?.status, store.getCoin(mint)?.graduateSig, store.allTrades(mint).map((t) => [t.sig, t.venue])], ['GRADUATED', 'grad', [['swap', 'POOL']]]);
+  assert.deepEqual([chain.operatorSent.length, chain.sent.length], [0, 0]);
+  store.close();
+});
+
 test('the books reconcile every vault and fee with the events, fail on one raw unit, and wait for unread history', async () => {
   const chain = fakeChain();
   const store = new EngineStore(`${engineDir}/books.sqlite`);
@@ -293,7 +346,32 @@ test('the books reconcile every vault and fee with the events, fail on one raw u
   await putCurve(chain, mint, creator.address, { ...state, quoteVault: state.realQuote + state.platformFees + state.creatorFees - 1n });
   b = await engineBooks(store, chain, SOL, 'devnet');
   assert.deepEqual([b.summary.fail, b.checks.find((c) => c.verdict === 'FAIL')?.check], [1, 'curve quote vault matches the curve']);
+  const twin = { ...b.checks[0]!, mint: 'Twin1111111111111111111111111111111111111111' };
+  assert.match(engineBooksText({ ...b, checks: [b.checks[0]!, twin] }), new RegExp(`\\$MCAT ${mint.slice(0, 4)}…[\\s\\S]*\\$MCAT Twin…`), 'two coins with one symbol are told apart');
+  assert.doesNotMatch(engineBooksText(b), /\$MCAT \S+…/);
   store.close();
+});
+
+test('a busy RPC (429, dropped connection) is retried with a doubling wait; any other error reaches the caller at once', async () => {
+  let calls = 0;
+  const fail = (m: string, n: number) => ({ getBalance: () => ({ send: async () => { if (++calls <= n) throw new Error(m); return { value: 7n }; } }) });
+  assert.deepEqual(await calmRpc(fail('HTTP error (429): Too Many Requests', 1)).getBalance().send(), { value: 7n });
+  assert.equal(calls, 2);
+  calls = 0;
+  await assert.rejects(calmRpc(fail('Invalid param: WrongSize', 1)).getBalance().send(), /WrongSize/);
+  assert.equal(calls, 1);
+});
+
+test('a fresh machine gets a throwaway operator key once: mode 0600, outside any git checkout, never replaced', async () => {
+  const p = join(engineDir, 'keys', 'operator.json');
+  assert.equal(createOperatorKey(p), true);
+  assert.equal(statSync(p).mode & 0o777, 0o600);
+  const bytes = JSON.parse(readFileSync(p, 'utf8')) as number[];
+  assert.equal(bytes.length, 64);
+  assert.equal((await loadOperator(p))!.address, getAddressDecoder().decode(Uint8Array.from(bytes.slice(32))), 'the file is the 64-byte form wallets and the CLI use');
+  assert.equal(createOperatorKey(p), false);
+  assert.deepEqual(JSON.parse(readFileSync(p, 'utf8')), bytes);
+  assert.throws(() => createOperatorKey(fileURLToPath(new URL('never/operator.json', import.meta.url))), /inside a git checkout/);
 });
 
 test('the engine server proves its network first: devnet by genesis hash, localnet only on this machine, never mainnet', async () => {

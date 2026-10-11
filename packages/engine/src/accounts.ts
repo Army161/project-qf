@@ -38,6 +38,10 @@ export interface Launch {
   pool: string;
   createdAt: bigint; bump: number; signerBump: number;
 }
+/** Where a Launch account keeps what a getProgramAccounts search filters on: the discriminator at 0, the mint at 8 and the
+ *  quote mint at 72. Listing every launch for one quote this way is how the app finds coins it did not launch itself. */
+export const LAUNCH_LAYOUT = Object.freeze({ discriminator: Object.freeze([...CURVE_IDL.accounts.Launch!]) as readonly number[], mintOffset: 8, quoteMintOffset: 72 });
+
 export function decodeLaunch(acc: RawAccount): Launch {
   const d = decodeAccount(CURVE_IDL, QF_CURVE, 'Launch', acc);
   return { mint: str(d.mint!), creator: str(d.creator!), quoteMint: str(d.quote_mint!), ammConfig: str(d.amm_config!), config: launchConfig(d.config as Record<string, Value>),

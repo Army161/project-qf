@@ -69,7 +69,7 @@ It reads the chain and prints one line per check, then a total:
 - **FAIL**: they disagree. The exit code is 1.
 - **WAIT**: something could not be read yet (a transaction, a pool, the RPC was busy). Run it again later.
 
-In engine mode (`QF_ENGINE=qf … src/main.ts verify [--json]`) the checks are per coin and exact to the raw unit: each curve vault against the curve account, the curve against its last trade, platform and creator fees (every trade's fee − claims = unclaimed on chain), the pool's LP supply is 0 after graduation, and the pool's creator fee against every pool swap − collected.
+In engine mode (`QF_ENGINE=qf … src/main.ts verify [--json]`) it first reads every coin on the engine and its whole history from the chain, sending nothing, so it also works from a new, empty store on any machine. The checks are per coin and exact to the raw unit: each curve vault against the curve account, the curve against its last trade, platform and creator fees (every trade's fee − claims = unclaimed on chain), the pool's LP supply is 0 after graduation, and the pool's creator fee against every pool swap − collected.
 
 ## 6. Updates, take down, backups
 

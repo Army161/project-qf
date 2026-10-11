@@ -17,7 +17,7 @@ CURVE_SO="$ENGINE/target/deploy/qf_curve.so"
 POOL_SO="$ENGINE/target/deploy/raydium_cp_swap.so"
 
 check() { test "$(sha256sum "$1" | cut -d' ' -f1)" = "$2" || { echo "sha256 mismatch: $1"; exit 1; }; }
-check "$CURVE_SO" 5a350d74edbb08a601fb87e9b477cdd01f618d1c893015e569123ed48a28622a
+check "$CURVE_SO" 5d7a424e877a1d484f1580dea384c9b0e4ce97683cfa5c29c560928f9b52dcbd
 check "$POOL_SO" 0640371eb9565372e941deef6ea9cf34db3690793cb09460bc9a5fe4db4ee587
 
 mkdir -p "$KEYS"

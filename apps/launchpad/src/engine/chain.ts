@@ -1,10 +1,11 @@
 // The engine launchpad's chain port: every read and send the server, the indexer and the crank make, over plain JSON-RPC
 // with Solana Kit (no web3.js). Tests substitute an in-process double. The operator key signs only what the server
 // itself builds (graduating a sold-out coin, the devnet faucet); it is never asked to sign anything a user built.
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { generateKeyPairSync } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import {
-  address, createKeyPairSignerFromBytes, createSolanaRpc, getBase58Encoder, getBase64EncodedWireTransaction, getBase64Encoder, getTransactionDecoder,
+  address, createKeyPairSignerFromBytes, createSolanaRpc, getAddressDecoder, getBase58Decoder, getBase58Encoder, getBase64EncodedWireTransaction, getBase64Encoder, getTransactionDecoder,
   getTransactionEncoder, signTransaction, type Instruction, type KeyPairSigner,
 } from '@solana/kit';
 import * as E from '@project-qf/engine';
@@ -37,6 +38,8 @@ export interface EngineChain {
   /** Spendable SOL, and each mint's balance in the owner's associated token account (either token program). */
   balances(owner: string, mints: string[]): Promise<Balances>;
   lamports(owner: string): Promise<bigint>;
+  /** The mint of every launch on the engine for one quote (a getProgramAccounts search on the curve program). */
+  launches(quoteMint: string): Promise<string[]>;
   genesisHash(): Promise<string>;
   /** Operator only: signs and sends a transaction the server built. Throws OPERATOR_KEY_UNAVAILABLE without a key. */
   sendAsOperator(instructions: Instruction[], computeUnits: number): Promise<string>;
@@ -66,17 +69,45 @@ const busy = (e: unknown) => /\b429\b|Too Many Requests|rate limit|fetch failed|
 const CLOCK = 'SysvarC1ock11111111111111111111111111111111';
 const fromB64 = getBase64Encoder(), fromB58 = getBase58Encoder();
 
+function outsideGit(p: string) {
+  for (let d = dirname(p); d !== dirname(d); d = dirname(d)) if (existsSync(resolve(d, '.git'))) throw new Error(`refusing a key file inside a git checkout (${d})`);
+}
 /** The operator's devnet key, read from a file outside any git checkout with mode 0600. Missing file: no operator. */
 export async function loadOperator(path: string): Promise<KeyPairSigner | null> {
   const p = resolve(path);
-  for (let d = dirname(p); d !== dirname(d); d = dirname(d)) if (existsSync(resolve(d, '.git'))) throw new Error(`refusing to read a key inside a git checkout (${d})`);
+  outsideGit(p);
   if (!existsSync(p)) return null;
   if ((statSync(p).mode & 0o077) !== 0) throw new Error(`key file ${p} must be mode 0600`);
   return createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(readFileSync(p, 'utf8')) as number[]));
 }
 
+/** A fresh machine's throwaway devnet operator key, made when there is none: mode 0600 in a 0700 folder, outside any git
+ *  checkout. Only its public address is ever printed. Returns false when a key was already there (it is never replaced). */
+export function createOperatorKey(path: string): boolean {
+  const p = resolve(path);
+  outsideGit(p);
+  if (existsSync(p)) return false;
+  mkdirSync(dirname(p), { recursive: true, mode: 0o700 });
+  const jwk = generateKeyPairSync('ed25519').privateKey.export({ format: 'jwk' });
+  writeFileSync(p, JSON.stringify([...Buffer.from(jwk.d!, 'base64url'), ...Buffer.from(jwk.x!, 'base64url')]), { mode: 0o600, flag: 'wx' });
+  return true;
+}
+
+/** Every call through this RPC retries a busy node (HTTP 429, a dropped connection) with a doubling wait, about 15 seconds
+ *  in all, before the error reaches the caller. Free and public endpoints answer 429 under ordinary load. */
+export function calmRpc<T extends object>(rpc: T): T {
+  return new Proxy(rpc, { get: (target, method) => (...args: unknown[]) => {
+    const pending = (target as Record<PropertyKey, (...a: unknown[]) => { send(o?: unknown): Promise<unknown> }>)[method]!(...args);
+    return { send: async (o?: unknown) => {
+      for (let wait = 500, k = 0; ; k++, wait *= 2) {
+        try { return await pending.send(o); } catch (e) { if (!busy(e) || k >= 5) throw e; await sleep(wait); }
+      }
+    } };
+  } });
+}
+
 export function kitChain(rpcUrl: string, operator: KeyPairSigner | null, log: (m: string) => void = () => {}): EngineChain {
-  const rpc = createSolanaRpc(rpcUrl);
+  const rpc = calmRpc(createSolanaRpc(rpcUrl));
   const commitment = 'confirmed' as const;
   const read: E.AccountReader = async (addrs) => {
     const out: (E.RawAccount | null)[] = [];
@@ -167,6 +198,13 @@ export function kitChain(rpcUrl: string, operator: KeyPairSigner | null, log: (m
       return { lamports: lamports.toString(), tokens };
     },
     lamports: async (owner) => BigInt((await rpc.getBalance(address(owner), { commitment }).send()).value),
+    async launches(quoteMint) {
+      const L = E.LAUNCH_LAYOUT, b58 = (bytes: Uint8Array) => getBase58Decoder().decode(bytes) as never;
+      const found = await rpc.getProgramAccounts(address(E.QF_CURVE), { encoding: 'base64', commitment, dataSlice: { offset: L.mintOffset, length: 32 },
+        filters: [{ memcmp: { offset: 0n, bytes: b58(Uint8Array.from(L.discriminator)), encoding: 'base58' } },
+          { memcmp: { offset: BigInt(L.quoteMintOffset), bytes: quoteMint as never, encoding: 'base58' } }] }).send();
+      return found.map((a) => getAddressDecoder().decode(fromB64.encode(a.account.data[0])) as string);
+    },
     genesisHash: async () => String(await rpc.getGenesisHash().send()),
     async sendAsOperator(instructions, computeUnits) {
       if (!operator) throw new Error('OPERATOR_KEY_UNAVAILABLE');
