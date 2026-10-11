@@ -5,7 +5,6 @@
 // refused outright, and MAINNET_WRITES=false is re-checked here. User transactions are never signed by the server;
 // only operator-role transactions (config, test quote, faucet, migration crank) are signed with the local devnet key.
 import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import BN from 'bn.js';
 import {
@@ -47,79 +46,10 @@ export async function connectDevnet(url: string, fetchImpl?: typeof fetch): Prom
   return conn;
 }
 
-// ------------------------------------------------------------------ mainnet, read-only (staging)
-
-/** Mainnet USDC (Circle), the default quote token for a mainnet launchpad. Circle holds its mint and freeze authorities. */
-export const USDC_MAINNET = Object.freeze({ mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6, symbol: 'USDC' });
-/** Connection methods that send, airdrop or simulate. A read-only connection refuses every one of them. */
-export const WRITE_METHODS = Object.freeze(['sendRawTransaction', 'sendTransaction', 'sendEncodedTransaction', 'requestAirdrop', 'simulateTransaction', 'confirmTransaction']);
-
 function checkRpcUrl(url: string) {
   const u = new URL(url);
   if (u.protocol !== 'https:' && !(u.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(u.hostname))) throw new ClusterSafetyError('RPC URL must be https');
   if (u.username || u.password) throw new ClusterSafetyError('RPC URL must not carry credentials');
-}
-
-/** Wraps a Connection so that it can only read: every send, airdrop, simulation or confirmation method throws WRITES_LOCKED. */
-export function readOnlyConnection(conn: Connection): Connection {
-  const blocked = new Set<string>(WRITE_METHODS);
-  return new Proxy(conn, {
-    get(t, k) {
-      if (typeof k === 'string' && blocked.has(k)) {
-        return async () => { throw new ClusterSafetyError(`WRITES_LOCKED: ${k} is not available on a read-only mainnet connection (MAINNET_WRITES=false)`); };
-      }
-      const v = Reflect.get(t, k, t);
-      return typeof v === 'function' ? v.bind(t) : v;
-    },
-    set: () => false,
-  });
-}
-
-/** Opens a bounded, read-only Connection to mainnet-beta, proven by genesis hash. Reads default to `finalized`. This build
- *  has no mainnet write path: the connection refuses every send (see readOnlyConnection) and MAINNET_WRITES must be false. */
-export async function connectMainnetReadOnly(url: string, fetchImpl?: typeof fetch): Promise<Connection> {
-  if ((CAPABILITY_FLAGS.MAINNET_WRITES as boolean) !== false) throw new ClusterSafetyError('MAINNET_WRITES must stay false in this build');
-  checkRpcUrl(url);
-  const conn = new Connection(url, { commitment: 'finalized', fetch: createBoundedFetch(fetchImpl ? { fetchImpl } : {}) as never, disableRetryOnRateLimit: true });
-  const g = await conn.getGenesisHash();
-  if (g !== GENESIS['mainnet-beta']) throw new ClusterSafetyError(`genesis ${g} is not mainnet-beta`);
-  return readOnlyConnection(conn);
-}
-
-/** One account read from two RPC providers at `finalized` and compared on the fields a decision uses. */
-export interface CrossCheck { address: string; label: string; status: 'MATCH' | 'MISMATCH' | 'MISSING' | 'SINGLE_PROVIDER' | 'UNAVAILABLE';
-  value: unknown; slots: number[]; detail?: string }
-export interface CrossCheckItem { address: string; label: string; pick?: (info: { owner: string; executable: boolean; data: Buffer }) => unknown }
-const sha256Hex = (b: Uint8Array) => createHash('sha256').update(b).digest('hex');
-const defaultPick: NonNullable<CrossCheckItem['pick']> = (i) => ({ owner: i.owner, executable: i.executable, dataSha256: sha256Hex(i.data) });
-
-/** Reads every item from `a` (and from `b` when given) at `finalized` and compares the picked fields. With one provider the
- *  result is SINGLE_PROVIDER, never MATCH. A disagreement is retried once from the later slot before it is a MISMATCH. */
-export async function crossCheckAccounts(a: Connection, b: Connection | null, items: CrossCheckItem[]): Promise<CrossCheck[]> {
-  const keys = items.map((i) => new PublicKey(i.address));
-  const read = async (c: Connection, minContextSlot?: number) => {
-    const r = await c.getMultipleAccountsInfoAndContext(keys, { commitment: 'finalized', ...(minContextSlot ? { minContextSlot } : {}) });
-    return { slot: r.context.slot, values: r.value.map((v, k) => (v ? JSON.stringify((items[k]!.pick ?? defaultPick)({ owner: v.owner.toBase58(), executable: v.executable, data: v.data })) : null)) };
-  };
-  let ra: Awaited<ReturnType<typeof read>>, rb: Awaited<ReturnType<typeof read>> | null = null;
-  try { ra = await read(a); } catch (e) { return items.map((i) => ({ address: i.address, label: i.label, status: 'UNAVAILABLE', value: null, slots: [], detail: `provider A: ${(e as Error).message.slice(0, 160)}` })); }
-  if (b) {
-    try {
-      rb = await read(b);
-      if (rb.values.some((v, k) => v !== ra.values[k])) { // one provider may be behind: re-read both from the later slot
-        const at = Math.max(ra.slot, rb.slot);
-        [ra, rb] = await Promise.all([read(a, at), read(b, at)]);
-      }
-    } catch (e) { return items.map((i) => ({ address: i.address, label: i.label, status: 'UNAVAILABLE', value: null, slots: [ra.slot], detail: `provider B: ${(e as Error).message.slice(0, 160)}` })); }
-  }
-  return items.map((i, k) => {
-    const va = ra.values[k] ?? null, vb = rb ? rb.values[k] ?? null : undefined;
-    const value = va === null ? null : JSON.parse(va) as unknown;
-    const slots = rb ? [ra.slot, rb.slot] : [ra.slot];
-    if (vb === undefined) return { address: i.address, label: i.label, status: va === null ? 'MISSING' : 'SINGLE_PROVIDER', value, slots };
-    if (va === null && vb === null) return { address: i.address, label: i.label, status: 'MISSING', value: null, slots };
-    return { address: i.address, label: i.label, status: va === vb ? 'MATCH' : 'MISMATCH', value, slots, ...(va === vb ? {} : { detail: 'the two providers disagree' }) };
-  });
 }
 
 // ------------------------------------------------------------------ disposable operator key (DEV-2)
@@ -465,9 +395,10 @@ export async function readDammFeeAccounting(conn: Connection, p: LiveDammPool, a
   const cp = new CpAmm(conn), pool = new PublicKey(p.pool);
   const head = (ps: any) => `${u256le(ps.feeBPerLiquidity)}:${big(ps.metrics.totalLpBFee)}:${big(ps.liquidity)}:${big(ps.metrics.totalPosition)}`;
   for (let k = 0; k < attempts; k++) {
-    const before: any = await cp.fetchPoolState(pool);
-    const rows: any[] = await cp.getAllPositionsByPool(pool);
-    const after: any = await cp.fetchPoolState(pool);
+    // three reads in a row, one of them a program scan: the public RPC refuses bursts, so each waits out a busy answer
+    const before: any = await busyRetry(() => cp.fetchPoolState(pool));
+    const rows: any[] = await busyRetry(() => cp.getAllPositionsByPool(pool));
+    const after: any = await busyRetry(() => cp.fetchPoolState(pool));
     if (head(before) !== head(after)) continue; // a trade or position change landed between the reads
     if (after.tokenAMint.toBase58() !== p.baseMint || after.tokenBMint.toBase58() !== p.quoteMint) throw new Error(`DAMM_POOL_MISMATCH pool ${p.pool}`);
     return { pool: p.pool, collectFeeMode: Number(after.collectFeeMode), liquidity: big(after.liquidity).toString(), feePerLiquidityQuote: u256le(after.feeBPerLiquidity).toString(),

@@ -28,14 +28,14 @@ report.graph = { packages: names.length, forbidden: forbiddenInGraph, licensesNo
 if (forbiddenInGraph.length) failures.push(`forbidden packages in web graph: ${forbiddenInGraph.join('; ')}`);
 if (nonAllowed.length) failures.push(`non-ALLOW licenses in web graph: ${nonAllowed.map((x) => x.pkg).join(', ')}`);
 
-// 2. Bundled inputs (esbuild metafile) and 3. emitted artifacts (JS, worker JS, source maps, HTML, CSS, legal notes).
+// 2. Bundled inputs (esbuild metafile) and 3. emitted artifacts (JS, source maps, HTML, CSS, legal notes).
 const meta = JSON.parse(readFileSync(join(web, 'dist', 'meta.json'), 'utf8'));
 const m = scanMetafile(meta);
 const a = scanArtifacts(join(web, 'dist'));
 report.bundle = { bundledPackages: m.packages, metafileViolations: m.violations, artifacts: a.files, artifactViolations: a.violations };
 if (m.violations.length) failures.push(`metafile violations: ${m.violations.length}`);
 if (a.violations.length) failures.push(`artifact violations: ${a.violations.length}`);
-if (!a.files.some((f) => f.includes('worker'))) failures.push('worker bundle missing from artifacts (not audited)');
+if (!a.files.some((f) => f.endsWith('launchpad.js'))) failures.push('launchpad bundle missing from artifacts (not audited)');
 if (!a.files.some((f) => f.endsWith('.map'))) failures.push('no source maps emitted (not audited)');
 
 // 4. Canary A: a browser build that imports @solana/web3.js must be caught by the scanner.

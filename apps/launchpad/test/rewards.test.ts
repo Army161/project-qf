@@ -39,7 +39,7 @@ async function setup(o: { serveSend?: boolean; chainB?: bigint } = {}) {
 test('[TEST_ONLY] rewards: a direct transfer counts, the pool is excluded, and an earmark is shown but never allocated', async () => {
   const { h, mint, d0, d, epochId } = await setup();
   await syncAllHolders(d);
-  const r = await h.call('/api/lp/rewards?fresh=1');
+  const r = await h.call(`/api/lp/rewards/${mint}?fresh=1`);
   assert.equal(r.status, 200);
   assert.equal(r.body.rules.settlement.devnet, 'ONE_TEST_ROUND');
   assert.equal(r.body.rules.settlement.mainnet, false);
@@ -64,7 +64,7 @@ test('[TEST_ONLY] rewards: a direct transfer counts, the pool is excluded, and a
 
   // frozen on first sight, reproduced exactly on every later run
   assert.equal(e0.frozen.reproduced, true);
-  const again = (await h.call('/api/lp/rewards?fresh=1')).body.coins[0].epochs[0];
+  const again = (await h.call(`/api/lp/rewards/${mint}?fresh=1`)).body.coins[0].epochs[0];
   assert.deepEqual([again.artifactHash, again.frozen.hash, again.frozen.reproduced], [e0.artifactHash, e0.artifactHash, true]);
   const art = (await h.call(`/api/lp/rewards/${mint}/${epochId(0)}/artifact.json`)).body;
   assert.deepEqual(art, det.artifact);
@@ -75,7 +75,7 @@ test('[TEST_ONLY] rewards: a direct transfer counts, the pool is excluded, and a
 test('[TEST_ONLY] rewards: an epoch is not final while a transaction is unread or the history does not replay to the chain', async () => {
   const s = await setup({ serveSend: false });
   await syncAllHolders(s.d);
-  let c = (await s.h.call('/api/lp/rewards?fresh=1')).body.coins[0];
+  let c = (await s.h.call(`/api/lp/rewards/${s.mint}?fresh=1`)).body.coins[0];
   assert.equal(c.coverage, null, 'still reading: not checked against the chain yet');
   assert.deepEqual(c.epochs.map((e: any) => e.status), ['INCOMPLETE', 'INCOMPLETE', 'OPEN']);
   assert.match(c.epochs[0].reasons.join(' '), /not checked against the chain/);
@@ -84,13 +84,13 @@ test('[TEST_ONLY] rewards: an epoch is not final while a transaction is unread o
   s.h.holders.txs.set('send', { signature: 'send', slot: s.d0 + 300, blockTime: s.d0 + 300, err: false,
     balances: [{ account: 'ataA', owner: A, mint: s.mint, preRaw: 300n, postRaw: 100n }, { account: 'ataB', owner: B, mint: s.mint, preRaw: 0n, postRaw: 200n }] });
   await syncAllHolders(s.d);
-  c = (await s.h.call('/api/lp/rewards?fresh=1')).body.coins[0];
+  c = (await s.h.call(`/api/lp/rewards/${s.mint}?fresh=1`)).body.coins[0];
   assert.deepEqual([c.coverage.status, ...c.epochs.map((e: any) => e.status)], ['COMPLETE', 'FINAL', 'FINAL', 'OPEN']);
 
   // the chain disagrees with the replayed history: MISMATCH, and nothing becomes final
   const m = await setup({ chainB: 150n });
   await syncAllHolders(m.d);
-  c = (await m.h.call('/api/lp/rewards?fresh=1')).body.coins[0];
+  c = (await m.h.call(`/api/lp/rewards/${m.mint}?fresh=1`)).body.coins[0];
   assert.equal(c.coverage.status, 'MISMATCH');
   assert.deepEqual(c.coverage.checks.filter((x: any) => !x.ok).map((x: any) => x.id), ['REPLAY_EQUALS_CHAIN']);
   assert.deepEqual(c.epochs.map((e: any) => e.status), ['INCOMPLETE', 'INCOMPLETE', 'OPEN']);
@@ -100,7 +100,7 @@ test('[TEST_ONLY] rewards: an epoch is not final while a transaction is unread o
   const u = await setup();
   u.h.holders.supplyExtraRaw = 50n;
   await syncAllHolders(u.d);
-  c = (await u.h.call('/api/lp/rewards?fresh=1')).body.coins[0];
+  c = (await u.h.call(`/api/lp/rewards/${u.mint}?fresh=1`)).body.coins[0];
   assert.deepEqual([c.coverage.status, c.coverage.checks.filter((x: any) => !x.ok).map((x: any) => x.id)], ['MISMATCH', ['ACCOUNTS_ADD_UP_TO_SUPPLY']]);
 });
 

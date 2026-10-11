@@ -5,8 +5,8 @@
 // Settings (environment; never in Git, chat or logs):
 //   ALWAYSDATA_ACCOUNT      the account name (also the address: https://<account>.alwaysdata.net)
 //   ALWAYSDATA_API_TOKEN    Profile > Tokens in the alwaysdata admin (the profile needs two-factor login to make one)
-//   QF_ALCHEMY_API_KEY      optional: Alchemy Solana devnet key, the primary RPC
-//   QF_HELIUS_API_KEY       optional: Helius key, the second RPC (or the primary, if there is no Alchemy key)
+//   QF_ALCHEMY_API_KEY      optional: Alchemy Solana devnet key; the site's RPC when set
+//   QF_HELIUS_API_KEY       optional: Helius key; the site's RPC when there is no Alchemy key (one key is enough)
 //   ALWAYSDATA_WEBDAV_URL   optional override (default https://webdav-<account>.alwaysdata.net)
 // Without RPC keys the site uses the public devnet endpoint, which is rate-limited.
 //
@@ -109,7 +109,7 @@ function runApp(cmd, extraEnv) {
   return execFileSync(process.execPath, [...proxyFlag, '--no-warnings', join(app, 'server.mjs'), cmd], { cwd: app, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'],
     env: { PATH: env.PATH, HOME: initDir, ...(env.HTTPS_PROXY ? { HTTPS_PROXY: env.HTTPS_PROXY, HTTP_PROXY: env.HTTP_PROXY ?? env.HTTPS_PROXY } : {}),
       ...(env.NODE_EXTRA_CA_CERTS ? { NODE_EXTRA_CA_CERTS: env.NODE_EXTRA_CA_CERTS } : {}),
-      QF_CLUSTER: 'devnet', QF_DEVNET_KEY: join(initDir, 'operator.json'), QF_LP_DB: join(initDir, dbName), QF_PUBLIC_BASE_URL: publicUrl,
+      QF_DEVNET_KEY: join(initDir, 'operator.json'), QF_LP_DB: join(initDir, dbName), QF_PUBLIC_BASE_URL: publicUrl,
       ...(rpc[0] ? { QF_RPC_URL: rpc[0] } : {}), ...extraEnv } });
 }
 
@@ -146,12 +146,12 @@ async function initPlatform() {
 // ---------------------------------------------------------------- main
 if (!existsSync(join(app, 'server.mjs'))) fail('deploy/alwaysdata/out/app is missing: run `node deploy/alwaysdata/build.mjs` first');
 const build = JSON.parse(readFileSync(join(app, 'BUILD.json'), 'utf8'));
-say(`account ${account}, build ${build.commit}, ${build.files.length} files, RPC ${rpc.length ? `${rpc.length} provider(s)` : 'public devnet endpoint'}`);
+say(`account ${account}, build ${build.commit}, ${build.files.length} files, RPC ${rpc.length ? (env.QF_ALCHEMY_API_KEY ? 'Alchemy' : 'Helius') : 'public devnet endpoint'}`);
 
 const environment = Object.entries({
-  QF_CLUSTER: 'devnet', QF_LP_DB: `${dataDir}/${dbName}`, QF_DEVNET_KEY: `${dataDir}/operator.json`,
+  QF_LP_DB: `${dataDir}/${dbName}`, QF_DEVNET_KEY: `${dataDir}/operator.json`,
   QF_LP_HOST: '::', QF_LP_PORT: '8100', QF_STATIC_DIR: `${home}/${remoteRoot}/app/web`, QF_PUBLIC_BASE_URL: publicUrl,
-  QF_LP_INTERVAL_MS: '30000', ...(rpc[0] ? { QF_RPC_URL: rpc[0] } : {}), ...(rpc[1] ? { QF_RPC_URL_2: rpc[1] } : {}),
+  QF_LP_INTERVAL_MS: '30000', ...(rpc[0] ? { QF_RPC_URL: rpc[0] } : {}),
 }).map(([k, v]) => `${k}=${/[\s"'?&=]/.test(v) ? `"${v.replace(/"/g, '\\"')}"` : v}`).join(' ');
 const site = { type: 'nodejs', name: 'qf-launchpad-devnet', addresses: [host], working_directory: remoteRoot,
   command: 'node --max-old-space-size=160 --no-warnings app/server.mjs serve', nodejs_version: '22', environment, max_idle_time: 0, ssl_force: true };

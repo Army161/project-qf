@@ -9,21 +9,19 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { extname, join, sep } from 'node:path';
 import { economicsDigest } from '@project-qf/policy';
-import { READINESS } from '@project-qf/core';
 import {
   bindStoredVaultTransaction, bindTransactionToTerms, decodeTransactionBytes, fromBase64, parseWire, sameMessage, toBase64, toHex, validateIntent, verifyWireSignatures,
   MAX_REWARD_PAYOUTS_PER_TX, PROGRAM_IDS, vaultIndexFor, type ApprovedTerms, type BindingContext, type TreasuryInnerTerms, type TxIntent,
 } from '@project-qf/tx';
 import type { LaunchpadChain, LiveDammPool, LivePool } from './chain.ts';
 import { PoolCache, syncLaunch, tradeFromSummary, DammCache } from './indexer.ts';
-import { feeClaimerFor, isTreasuryConfig, type PlatformRecord } from './platform.ts';
-import type { ChainChecks, ClusterProfile } from './cluster.ts';
-import { claimIdentity, claimReceipt, resolveClaims } from './receipts.ts';
-import { explainLpResidual, type LpResidualProof } from './lp-residual.ts';
-import { storedCoverage, toBalanceChanges } from './holders.ts';
-import { coinRewards, DEVNET_TEST_PAYOUT_ROUNDS, epochDetail, rewardsOverview, type CoinRewards, type RewardsVaultView } from './rewards.ts';
-import { depositsFor, payoutsFor, rewardsVaultOf, storedVaultCoverage } from './rewards-vault.ts';
-import { sumFees, type ClaimRow, type FeeTotals, type LaunchRow, type LaunchpadStore, type StoredTrade } from './store.ts';
+import { isTreasuryConfig, type PlatformRecord } from './platform.ts';
+import { allCoinRewards, treasuryView } from './books.ts';
+import type { ClusterProfile } from './cluster.ts';
+import { claimIdentity, claimReceipt } from './receipts.ts';
+import { DEVNET_TEST_PAYOUT_ROUNDS, epochDetail, rewardsOverview, type CoinRewards, type RewardsVaultView } from './rewards.ts';
+import { rewardsVaultOf, storedVaultCoverage } from './rewards-vault.ts';
+import type { LaunchRow, LaunchpadStore, StoredTrade } from './store.ts';
 
 export const LP_API_VERSION = 'lp-api/1';
 export const BODY_LIMIT_BYTES = 16 * 1024;
@@ -41,10 +39,8 @@ export interface LaunchpadOptions {
   publicBaseUrl: string;
   now?: () => Date;
   log?: (m: string) => void;
-  /** network and what the server may do there; devnet when omitted */
+  /** what the server may do; devnet with writes on when omitted */
   profile?: ServerProfile;
-  /** latest startup checks of the chain this server reads (mainnet: quote mint and programs, two providers) */
-  chainChecks?: () => ChainChecks | null;
   /** Behind a hosting proxy every request comes from the proxy, so per-client rate limits need the header the proxy sets
    *  (Fly.io: fly-client-ip; X-Forwarded-For: the rightmost entry, the one the proxy added). Unset: the socket address. */
   clientIpHeader?: string;
@@ -59,9 +55,9 @@ export function clientIp(req: Pick<IncomingMessage, 'headers' | 'socket'>, heade
   return req.socket.remoteAddress ?? 'local';
 }
 /** The part of the cluster profile the HTTP layer needs (see cluster.ts). */
-export type ServerProfile = Pick<ClusterProfile, 'cluster' | 'mode' | 'writes' | 'faucet' | 'label' | 'writesLockedBecause' | 'quote'>;
-export const DEVNET_PROFILE: ServerProfile = Object.freeze({ cluster: 'devnet', mode: 'DEVNET', writes: true, faucet: true, label: 'TEST_ONLY devnet tokens with no value',
-  writesLockedBecause: [], quote: null });
+export type ServerProfile = Pick<ClusterProfile, 'cluster' | 'mode' | 'writes' | 'faucet' | 'label' | 'writesLockedBecause'>;
+export const DEVNET_PROFILE: ServerProfile = Object.freeze({ cluster: 'devnet', mode: 'DEVNET', writes: true, faucet: true, label: 'Test network: coins here have no value',
+  writesLockedBecause: [] });
 /** Requests that build a transaction for someone to sign, send one, or move tokens. All refused while writes are locked. */
 const WRITE_ROUTES = new Set(['POST /api/lp/launch', 'POST /api/lp/swap', 'POST /api/lp/submit', 'POST /api/lp/claim', 'POST /api/lp/treasury/propose',
   'POST /api/lp/treasury/approve', 'POST /api/lp/treasury/execute', 'POST /api/lp/faucet', 'POST /api/lp/rewards/deposit', 'POST /api/lp/rewards/payout']);
@@ -190,90 +186,22 @@ export function tradeView(t: StoredTrade) {
       lpRaw: t.feeLpRaw, protocolRaw: t.feeProtocolRaw, referralRaw: t.feeReferralRaw, compoundingRaw: t.feeCompoundingRaw } };
 }
 
-/** Per-coin check that the fees recorded trade by trade add up to what the chain holds and what was claimed:
- *    curve: creator and platform shares from trades = the pool's unclaimed counter + proven claims through the app;
- *    LP (after graduation): LP fees from trades = the positions' unclaimed fees + proven claims.
- *  MATCH only on an exact match. On the LP side the trades may say a few raw units more than the positions hold (the
- *  program rounds down when it shares a fee out to positions): such a difference, up to `residualBound`, is RESIDUAL, kept
- *  explicit with its amount. Its origin is NOT_PROVEN until the pool's own fee accounting explains it (lp-residual.ts);
- *  then it is PROVEN_ROUNDING, with the proof attached. A small difference is never relabelled as a match. Anything else is MISMATCH; missing inputs make it INCOMPLETE with the
- *  reasons. A claim made outside this app is not in the receipts and shows as a MISMATCH. */
-export type CheckStatus = 'MATCH' | 'RESIDUAL' | 'MISMATCH' | 'INCOMPLETE';
-export interface FeeCheck { fromTradesRaw: string; onChainRaw: string | null; claimedRaw: string; differenceRaw: string | null; status: CheckStatus; reasons: string[];
-  residual?: { raw: string; boundRaw: string; origin: 'NOT_PROVEN' | 'PROVEN_ROUNDING'; note: string; proof?: LpResidualProof } }
-/** Largest LP residual per DAMM v2 trade that is reported as RESIDUAL rather than MISMATCH. */
-export const LP_RESIDUAL_BOUND_PER_TRADE = 2n;
-export function feeCheck(fromTrades: bigint, unclaimed: string | null, claimed: bigint, reasons: string[], residualBound = 0n): FeeCheck {
-  const onChain = unclaimed === null ? null : BigInt(unclaimed) + claimed;
-  const diff = onChain === null ? null : fromTrades - onChain;
-  const why = [...reasons, ...(onChain === null ? ['the pool or positions could not be read'] : [])];
-  const base = { fromTradesRaw: fromTrades.toString(), onChainRaw: onChain === null ? null : onChain.toString(), claimedRaw: claimed.toString(), differenceRaw: diff === null ? null : diff.toString() };
-  if (why.length) return { ...base, status: 'INCOMPLETE', reasons: why };
-  if (diff === 0n) return { ...base, status: 'MATCH', reasons: [] };
-  if (diff! > 0n && diff! <= residualBound) return { ...base, status: 'RESIDUAL', reasons: [],
-    residual: { raw: diff!.toString(), boundRaw: residualBound.toString(), origin: 'NOT_PROVEN',
-      note: `${diff} raw unit(s) recorded in trades are in no known position or claim. Kept as an explicit residual; its origin is not yet proven from the pool's fee accumulator.` } };
-  return { ...base, status: 'MISMATCH', reasons: [] };
-}
-
-const lpOfCoin = (c: EarningsCoin) => (c.lp && c.lp !== 'UNAVAILABLE' ? c.lp : null);
-export const EARNINGS_TTL_MS = 30_000;
 export const REWARDS_TTL_MS = 30_000;
-/** Unresolved claim receipts checked against their transactions per uncached earnings request (the RPC is shared). */
-export const RECEIPT_CHECKS_PER_REQUEST = 5;
-type Unclaimed = { creatorQuoteRaw: string | null; platformQuoteRaw: string | null };
-interface EarningsCoin { mint: string; symbol: string; name: string; status: LaunchRow['status']; creator: string;
-  curve: Unclaimed | null; lp: Unclaimed | 'UNAVAILABLE' | null; platformWallet: string; treasury: boolean;
-  /** the config the coin launched on: CURRENT, or LEGACY (an earlier config, kept unchanged so its coins' fee entitlements hold) */
-  configRole: ConfigRole;
-  /** fees recorded trade by trade for this coin, and whether they add up to the chain (see feeCheck) */
-  fromTrades?: FeeTotals; checks?: { creatorCurve: FeeCheck; platformCurve: FeeCheck; lp: FeeCheck | null } }
 const TX_INDEX = /^[1-9]\d{0,18}$/;
-type ConfigRole = 'CURRENT' | 'LEGACY';
-const configRole = (p: PlatformRecord, config: string): ConfigRole => (config === p.config.config ? 'CURRENT' : 'LEGACY');
-/** What the devnet treasury's signers are. Shown wherever the treasury is, so the test setup is never read as production control. */
-export const TREASURY_SIGNERS_NOTE = 'Devnet stand-in. All three member keys are throwaway test keys held by one operator in one container, so this '
-  + 'demonstrates the approval flow, not separation of control. The real signers, threshold and time lock are decided before mainnet.';
-/** The vault's quote balance on chain against the proven treasury receipts: each receipt is counted once, in both places. */
-export interface VaultCheck { status: 'MATCH' | 'MISMATCH' | 'INCOMPLETE'; vaultQuoteRaw: string | null; receiptsRaw: string; differenceRaw: string | null; reasons: string[] }
-export function vaultCheck(vaultQuoteRaw: bigint | null, receiptsRaw: bigint, unresolvedReceipts: number): VaultCheck {
-  const reasons = [...(vaultQuoteRaw === null ? ['the vault balance could not be read'] : []),
-    ...(unresolvedReceipts ? [`${unresolvedReceipts} treasury receipt(s) not proven yet`] : [])];
-  const base = { vaultQuoteRaw: vaultQuoteRaw?.toString() ?? null, receiptsRaw: receiptsRaw.toString() };
-  if (reasons.length) return { status: 'INCOMPLETE', ...base, differenceRaw: null, reasons };
-  const d = vaultQuoteRaw! - receiptsRaw;
-  if (d === 0n) return { status: 'MATCH', ...base, differenceRaw: '0', reasons: [] };
-  return { status: 'MISMATCH', ...base, differenceRaw: (d < 0n ? -d : d).toString(), reasons: [d > 0n
-    ? 'the vault holds more than the proven receipts: tokens reached it outside a claim made in this app'
-    : 'the vault holds less than the proven receipts: tokens left it (this app has no route that moves funds out of the vault)'] };
-}
 const TREASURY_REFRESH_PER_REQUEST = 5;
 const FINAL_PROPOSAL = new Set(['Executed', 'Rejected', 'Cancelled']);
 
 export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: PoolCache; dammCache: DammCache } {
   const now = o.now ?? (() => new Date());
   const profile = o.profile ?? DEVNET_PROFILE;
-  const network = profile.cluster === 'devnet' ? 'devnet' : 'mainnet';
   const pools = new PoolCache(o.chain);
   const damms = new DammCache(o.chain);
   const rate = new Map<string, number[]>();
-  let earnings: { at: number; body: unknown } | null = null;
   let rewards: { at: number; coins: CoinRewards[] } | null = null;
   /** Every coin's reward epochs, recomputed from the stored history at most every REWARDS_TTL_MS (or on ?fresh=1). */
   const rewardCoins = async (fresh: boolean): Promise<CoinRewards[]> => {
     if (rewards && !fresh && now().getTime() - rewards.at < REWARDS_TTL_MS) return rewards.coins;
-    const p = platform(), coins: CoinRewards[] = [];
-    const rv = await rewardsVaultOf(p), vcov = storedVaultCoverage(o);
-    const vrows = rv ? o.store.listRewardVaultTxs(rv.quoteAccount) : [];
-    for (const l of o.store.listLaunches(['LIVE', 'MIGRATED'])) {
-      const deps = depositsFor(vrows, l.mint);
-      coins.push(await coinRewards({ store: o.store, chain: o.chain, platform: p, cluster: profile.cluster, nowSec: Math.floor(now().getTime() / 1000),
-        coverage: storedCoverage(o.store, l.mint), changes: toBalanceChanges(o.store.holderChanges(l.mint)), rewardsVault: rv?.vault ?? null,
-        deposits: (epochId) => deps.filter((x) => x.epochId === epochId), payouts: (epochId) => payoutsFor(vrows, l.mint, epochId),
-        // with a rewards vault, an epoch is final only once the vault's history is read past its end
-        ...(rv ? { depositsProvenToSlot: vcov?.account === rv.quoteAccount ? vcov.checkedToSlot : 0 } : {}) }, l));
-    }
-    coins.sort((a, b) => a.symbol.localeCompare(b.symbol));
+    const coins = await allCoinRewards({ store: o.store, chain: o.chain, platform: platform(), now, cluster: profile.cluster });
     rewards = { at: now().getTime(), coins };
     return coins;
   };
@@ -285,9 +213,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
   };
   const platform = () => {
     const p = o.platform();
-    if (!p) throw new HttpError(503, 'PLATFORM_NOT_READY', profile.cluster === 'devnet'
-      ? 'the devnet platform (test quote + DBC config) has not been set up yet; run `main.ts setup` once the operator wallet holds devnet SOL'
-      : 'there is no mainnet platform: mainnet is read-only until the owner approves it');
+    if (!p) throw new HttpError(503, 'PLATFORM_NOT_READY', 'the devnet platform (test quote + DBC config) has not been set up yet; run `main.ts setup` once the operator wallet holds devnet SOL');
     return p;
   };
   const imageUrl = (l: LaunchRow) => (l.imageType ? `/m/${l.mint}.img` : null);
@@ -298,6 +224,14 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
     live: liveView(await pools.get(l.pool, fresh).catch(() => null), l.status === 'MIGRATED', l.status === 'MIGRATED' ? await damms.get(l, fresh).catch(() => null) : null), stats: o.store.tradeStats(l.mint),
     history: (({ pending, unavailable }) => ({ complete: pending === 0 && unavailable === 0, pending, unavailable }))(o.store.backfillCounts(l.mint)),
   });
+  /** What a wallet can claim on one coin: the creator's share of curve fees, and after graduation the fees of any DAMM v2
+   *  position it holds (the creator's locked LP). */
+  const claimable = async (l: LaunchRow, wallet: string, fresh: boolean) => {
+    const isCreator = l.creator === wallet;
+    const pool = isCreator ? await pools.get(l.pool, fresh) : null;
+    const dp = l.status === 'MIGRATED' && l.dammPool ? await damms.get(l, fresh) : null;
+    return { isCreator, curve: pool ? { quoteRaw: pool.creatorQuoteFee, baseRaw: pool.creatorBaseFee } : null, positions: dp ? await o.chain.dammPositions(dp, wallet) : [] };
+  };
   const intentCheck = (i: Omit<TxIntent, 'intentId' | 'createdAt' | 'expiresAt' | 'cluster' | 'mock'>, approvedEconomicsDigest?: string) => {
     const t = now();
     const r = validateIntent({ ...i, intentId: 'pending', cluster: profile.cluster, mock: false, createdAt: t.toISOString(), expiresAt: new Date(t.getTime() + INTENT_TTL_MS).toISOString() },
@@ -316,21 +250,8 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
   };
 
   // ---------------------------------------------------------------- platform treasury helpers
-  const treasuryView = (p: PlatformRecord) => ({ multisig: p.treasury!.multisig, vault: p.treasury!.vault, threshold: p.treasury!.threshold, members: p.treasury!.members,
-    label: p.treasury!.label, signers: 'ONE_OPERATOR_TEST_KEYS' as const, separationOfControl: false, note: TREASURY_SIGNERS_NOTE });
   const innerVenue = (inner: TreasuryInnerTerms): 'CURVE' | 'DAMM_V2' | 'REWARDS_DEPOSIT' | 'REWARDS_PAYOUT' =>
     (inner.kind === 'CLAIM_PARTNER_TRADING_FEE' ? 'CURVE' : inner.kind === 'DAMM_CLAIM_POSITION_FEE' ? 'DAMM_V2' : inner.kind);
-  /** What reached the treasury vault through executed proposals (proven receipts only), what is still waiting, and whether
-   *  the vault's own balance equals those receipts. The receipts are part of "claimed through the app"; they are not added again. */
-  async function treasuryEarnings(p: PlatformRecord, claims: (ClaimRow & { byTreasury: boolean })[]) {
-    const mine = claims.filter((c) => c.byTreasury);
-    const paid = mine.filter((c) => c.status === 'RESOLVED').reduce((a, c) => a + BigInt(c.quoteRaw!), 0n);
-    const unresolvedReceipts = mine.filter((c) => c.status === 'UNKNOWN').length;
-    const held = await o.chain.balances(p.treasury!.vault, [p.quote.mint]).then((b) => BigInt(b.tokens[p.quote.mint] ?? '0')).catch(() => null);
-    return { ...treasuryView(p), paidToTreasuryQuoteRaw: paid.toString(), includedIn: 'claimedThroughApp' as const, unresolvedReceipts,
-      openProposals: o.store.listTreasuryProposals(p.treasury!.multisig).filter((r) => !FINAL_PROPOSAL.has(r.status)).length,
-      vaultCheck: vaultCheck(held, paid, unresolvedReceipts) };
-  }
   /** After a member's treasury transaction confirms: the app's record of the proposal, and for an execution the claim receipt. */
   async function recordTreasury(terms: Extract<ApprovedTerms, { kind: `TREASURY_${string}` }>, user: string, mint: string | null, signature: string) {
     const p = platform();
@@ -357,7 +278,6 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
     const id = await claimIdentity(terms.inner, l);
     o.store.insertClaim({ sig: signature, mint: l.mint, venue: terms.inner.kind === 'CLAIM_PARTNER_TRADING_FEE' ? 'CURVE' : 'DAMM_V2', claimer: terms.inner.feePayer, at: now().toISOString(), ...(id ?? {}) });
     if (id) o.store.setClaimEvidence(signature, claimReceipt(id, await o.chain.txSummary(signature).catch(() => null)));
-    earnings = null;
   }
 
   async function api(req: IncomingMessage, res: ServerResponse, path: string, query: URLSearchParams) {
@@ -366,22 +286,15 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
     if (path === '/api/lp/healthz' && method === 'GET') return send(res, 200, { ok: true, apiVersion: LP_API_VERSION, cluster: profile.cluster, mode: profile.mode });
     // one gate for everything that builds, sends or moves tokens: nothing below runs while writes are locked
     if (WRITE_ROUTES.has(`${method} ${path}`)) {
-      if (path === '/api/lp/faucet' && !profile.faucet) throw new HttpError(404, 'NO_FAUCET', `there is no faucet on ${network}`);
-      if (!profile.writes) throw new HttpError(423, 'WRITES_LOCKED', `${network} is read-only: launching, trading, claiming and treasury steps are locked until the owner approves ${network}`, profile.writesLockedBecause);
+      if (path === '/api/lp/faucet' && !profile.faucet) throw new HttpError(404, 'NO_FAUCET', 'the faucet is off');
+      if (!profile.writes) throw new HttpError(423, 'WRITES_LOCKED', 'launching, trading, claiming and treasury steps are switched off on this server', profile.writesLockedBecause);
     }
 
     if (path === '/api/lp/platform' && method === 'GET') {
       const p = o.platform();
       return send(res, 200, { apiVersion: LP_API_VERSION, cluster: profile.cluster, mode: profile.mode, writesEnabled: profile.writes, writesLockedBecause: profile.writesLockedBecause,
-        label: profile.label, mainnetQuote: profile.cluster === 'mainnet-beta' ? profile.quote : null, chainChecks: o.chainChecks?.() ?? null,
-        mainnetBlockers: READINESS.MAINNET.blockers, ready: !!p, readiness: { DEVNET_INTEGRATION: READINESS.DEVNET_INTEGRATION.status, MAINNET: READINESS.MAINNET.status },
-        operator: o.chain.operatorAddress, platform: p && { quote: p.quote, config: p.config.config, threshold: p.threshold, launchEconomics: p.launchEconomics,
-          launchEconomicsDigest: p.launchEconomicsDigest, economicsVersion: p.economicsVersion, templateVersion: p.templateVersion,
-          configs: [p.config, ...(p.legacyConfigs ?? [])].map((c) => ({ config: c.config, feeClaimer: c.feeClaimer, current: c.config === p.config.config,
-            role: configRole(p, c.config), treasury: isTreasuryConfig(p, c.config),
-            label: configRole(p, c.config) === 'LEGACY' ? 'Legacy config: coins launched on it keep it, and their platform fees still go to its fee claimer, unchanged'
-              : isTreasuryConfig(p, c.config) ? 'Current config: platform fees go to the treasury vault' : 'Current config' })),
-          treasury: p.treasury ? treasuryView(p) : null },
+        label: profile.label, ready: !!p, operator: o.chain.operatorAddress,
+        platform: p && { quote: p.quote, config: p.config.config, threshold: p.threshold, launchEconomics: p.launchEconomics, launchEconomicsDigest: p.launchEconomicsDigest },
         faucet: profile.faucet ? { quoteUi: FAUCET.quoteUi.toString(), lamports: FAUCET.lamports.toString(), claimsPerDay: FAUCET.claimsPerDay } : null });
     }
 
@@ -392,37 +305,21 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
     if (path === '/api/lp/trades/recent' && method === 'GET') {
       return send(res, 200, { trades: o.store.listRecentTrades(30).map((t) => ({ sig: t.sig, mint: t.mint, symbol: t.symbol, trader: t.trader, side: t.side, quoteRaw: t.quoteRaw, blockTime: t.blockTime })) });
     }
-    // Fees paid by traders, trade by trade, from each trade's own swap event. With ?wallet=: that wallet's trades and
-    // totals per coin. Without: totals per coin and per wallet. Read-only; every figure links back to a transaction.
-    if (path === '/api/lp/fees' && method === 'GET') {
-      limit(`fees:${ip}`, 60);
-      const wallet = query.get('wallet');
-      const symbols = new Map(o.store.listLaunches(['LIVE', 'MIGRATED']).map((l) => [l.mint, l.symbol]));
-      const coinRows = (rows: (FeeTotals & { mint?: string })[]) => rows.filter((r) => symbols.has(r.mint!)).map((r) => ({ ...r, symbol: symbols.get(r.mint!)! }))
-        .sort((a, b) => a.symbol.localeCompare(b.symbol));
-      const pending = (rows: StoredTrade[]) => rows.filter((t) => t.feeStatus === null).length;
-      if (wallet !== null) {
-        if (!B58.test(wallet)) throw new HttpError(400, 'INVALID_REQUEST', 'wallet must be an address');
-        const trades = o.store.listWalletTrades(wallet).filter((t) => symbols.has(t.mint));
-        return send(res, 200, { wallet, totals: sumFees(trades), notYetRead: pending(trades), coins: coinRows(o.store.feeTotals(['mint'], { trader: wallet })),
-          trades: trades.map((t) => ({ ...tradeView(t), symbol: t.symbol })) });
-      }
-      const wallets = o.store.feeTotals(['trader']).sort((a, b) => (BigInt(b.feesRaw) > BigInt(a.feesRaw) ? 1 : BigInt(b.feesRaw) < BigInt(a.feesRaw) ? -1 : a.trader!.localeCompare(b.trader!)));
-      const all = o.store.feeTotals([])[0] ?? sumFees([]);
-      return send(res, 200, { totals: all, coins: coinRows(o.store.feeTotals(['mint'])), wallets: wallets.slice(0, 200), walletCount: wallets.length });
-    }
-    // Holder rewards (devnet): each coin's holder history coverage and reward epochs (status, earmark from the fee
-    // ledger, deposits, allocation, artifact). Read-only: nothing here builds or sends a payout.
-    if (path === '/api/lp/rewards' && method === 'GET') {
+    // Holder rewards (devnet), one coin: its holder history coverage and reward epochs (status, earmark from the fee
+    // ledger, deposits, allocation, payout). Read-only: nothing here builds or sends a payout.
+    const rc = /^\/api\/lp\/rewards\/([1-9A-HJ-NP-Za-km-z]{32,44})$/.exec(path);
+    if (rc && method === 'GET') {
       limit(`rewards:${ip}`, 30);
       const coins = await rewardCoins(query.get('fresh') === '1');
+      const c = coins.find((x) => x.mint === rc[1]);
+      if (!c) throw new HttpError(404, 'NOT_FOUND', 'token not found');
       const p = platform(), rv = await rewardsVaultOf(p), vcov = storedVaultCoverage(o);
       const view: RewardsVaultView | null = rv && p.treasury ? { multisig: rv.multisig, vault: rv.vault, quoteAccount: rv.quoteAccount,
         balanceRaw: await o.chain.balances(rv.vault, [rv.quoteMint]).then((b) => b.tokens[rv.quoteMint] ?? '0').catch(() => null),
         checkedToSlot: vcov?.account === rv.quoteAccount ? vcov.checkedToSlot : null, caughtUp: vcov?.account === rv.quoteAccount && vcov.caughtUp,
         untagged: o.store.listRewardVaultTxs(rv.quoteAccount).filter((r) => r.kind === 'UNTAGGED').map((r) => ({ sig: r.sig, deltaRaw: r.deltaRaw! })),
         threshold: p.treasury.threshold, members: p.treasury.members.length, signers: 'ONE_OPERATOR_TEST_KEYS' } : null;
-      return send(res, 200, rewardsOverview(profile.cluster, coins, view));
+      return send(res, 200, rewardsOverview(profile.cluster, [c], view));
     }
     const rm = /^\/api\/lp\/rewards\/([1-9A-HJ-NP-Za-km-z]{32,44})\/(\d{4}-\d{2}-\d{2})(\/artifact\.json)?$/.exec(path);
     if (rm && method === 'GET') {
@@ -442,6 +339,24 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       const l = o.store.getLaunch(tm[1]!);
       if (!l || l.status === 'PENDING' || l.status === 'FAILED') throw new HttpError(404, 'NOT_FOUND', 'token not found');
       return send(res, 200, { token: await tokenView(l, query.get('fresh') === '1'), trades: o.store.listTrades(l.mint).map(tradeView) });
+    }
+    // My coins: the coins a wallet launched with what it can claim on each, and the holder rewards paid to it. Read-only.
+    if (path === '/api/lp/me' && method === 'GET') {
+      const wallet = query.get('wallet');
+      if (!wallet || !B58.test(wallet)) throw new HttpError(400, 'INVALID_REQUEST', 'wallet must be an address');
+      limit(`me:${ip}`, 30);
+      const fresh = query.get('fresh') === '1';
+      const coins = [];
+      for (const l of o.store.listLaunches(['LIVE', 'MIGRATED']).filter((x) => x.creator === wallet)) {
+        const c = await claimable(l, wallet, fresh);
+        coins.push({ token: await tokenView(l), curve: c.curve, positions: c.positions });
+      }
+      const p = o.platform(), rv = p ? await rewardsVaultOf(p) : null;
+      const symbols = new Map(o.store.listLaunches(['LIVE', 'MIGRATED']).map((l) => [l.mint, l.symbol]));
+      const rewardsPaid = (rv ? o.store.listRewardVaultTxs(rv.quoteAccount) : []).filter((r) => r.status === 'DONE' && r.kind === 'PAYOUT')
+        .flatMap((r) => (JSON.parse(r.transfersJson ?? '[]') as { owner: string; amountRaw: string }[]).filter((x) => x.owner === wallet)
+          .map((x) => ({ mint: r.mint!, symbol: symbols.get(r.mint!) ?? '?', epochId: r.epochId!, amountRaw: x.amountRaw, sig: r.sig, blockTime: r.blockTime })));
+      return send(res, 200, { wallet, coins, rewardsPaid });
     }
     const wm = /^\/api\/lp\/wallet\/([1-9A-HJ-NP-Za-km-z]{32,44})$/.exec(path);
     if (wm && method === 'GET') {
@@ -604,7 +519,6 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
         o.store.insertClaim({ sig: signature, mint: l.mint, venue: curve ? 'CURVE' : 'DAMM_V2', claimer: intent.user, at: now().toISOString(), ...(id ?? {}) });
         if (id) o.store.setClaimEvidence(signature, claimReceipt(id, await o.chain.txSummary(signature).catch(() => null)));
         else o.log?.(`claim ${signature}: its terms do not match ${l.symbol}'s ${curve ? 'curve' : 'DAMM v2'} pool; receipt left unknown`);
-        earnings = null;
       }
       if (terms.kind === 'TREASURY_PROPOSE' || terms.kind === 'TREASURY_APPROVE' || terms.kind === 'TREASURY_EXECUTE') await recordTreasury(terms, intent.user, intent.mint, signature);
       return send(res, 200, { signature, kind: intent.kind, mint: intent.mint, trade });
@@ -621,13 +535,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       const wallet = query.get('wallet');
       if (!wallet || !B58.test(wallet)) throw new HttpError(400, 'INVALID_REQUEST', 'wallet must be an address');
       limit(`fees:${ip}`, 60);
-      const fresh = query.get('fresh') === '1';
-      const isCreator = l.creator === wallet;
-      const pool = isCreator ? await pools.get(l.pool, fresh) : null;
-      const curve = pool ? { quoteRaw: pool.creatorQuoteFee, baseRaw: pool.creatorBaseFee } : null;
-      const dp = l.status === 'MIGRATED' && l.dammPool ? await damms.get(l, fresh) : null;
-      const positions = dp ? await o.chain.dammPositions(dp, wallet) : [];
-      return send(res, 200, { mint: l.mint, wallet, isCreator, curve, positions });
+      return send(res, 200, { mint: l.mint, wallet, ...(await claimable(l, wallet, query.get('fresh') === '1')) });
     }
     if (path === '/api/lp/claim' && method === 'POST') {
       limit(`build:${ip}`, BUILDS_PER_MINUTE);
@@ -815,95 +723,6 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
         amounts: built.amounts, rewardsVault: rv.vault, accountsCreated: accounts });
     }
 
-    // ---------------------------------------------------------------- earnings (read-only)
-    // Per coin: unclaimed curve fees (creator and platform counters in the DBC pool), unclaimed LP fees of the positions the
-    // creator and the platform fee claimer hold in the DAMM v2 pool, and the claims made through this app with what they
-    // paid out. Accrued is not claimed, and claimed is not retained revenue. Nothing here can move funds.
-    if (path === '/api/lp/earnings' && method === 'GET') {
-      const p = platform();
-      limit(`earnings:${ip}`, 30);
-      if (earnings && now().getTime() - earnings.at < EARNINGS_TTL_MS && query.get('fresh') !== '1') return send(res, 200, earnings.body);
-      const platformWallet = p.config.feeClaimer;
-      const vault = p.treasury?.vault ?? null;
-      const launches = o.store.listLaunches(['LIVE', 'MIGRATED']);
-      const sumQuote = (ps: { feeQuoteRaw: string }[] | null) => (ps === null ? null : ps.reduce((a, x) => a + BigInt(x.feeQuoteRaw), 0n).toString());
-      const coins: EarningsCoin[] = [];
-      const dammOf = new Map<string, LiveDammPool>();
-      for (const l of launches) {
-        const pool = await pools.get(l.pool).catch(() => null);
-        const dp = l.status === 'MIGRATED' ? await damms.get(l).catch(() => null) : null;
-        if (dp) dammOf.set(l.mint, dp);
-        const positions = async (owner: string) => (dp ? await o.chain.dammPositions(dp, owner).catch(() => null) : null);
-        // each coin's platform share belongs to the fee claimer of the config it launched on: the operator for earlier
-        // coins, the treasury vault for coins launched since the treasury config
-        const claimer = feeClaimerFor(p, l.config) ?? platformWallet;
-        coins.push({ mint: l.mint, symbol: l.symbol, name: l.name, status: l.status, creator: l.creator, platformWallet: claimer, treasury: claimer === vault, configRole: configRole(p, l.config),
-          curve: pool ? { creatorQuoteRaw: pool.creatorQuoteFee, platformQuoteRaw: pool.partnerQuoteFee } : null,
-          lp: l.status !== 'MIGRATED' ? null : dp ? { creatorQuoteRaw: sumQuote(await positions(l.creator)), platformQuoteRaw: sumQuote(await positions(claimer)) } : 'UNAVAILABLE' });
-      }
-      // receipts still waiting for evidence: each is checked against its own transaction and vaults (a few per request)
-      await resolveClaims(o, RECEIPT_CHECKS_PER_REQUEST);
-      const claims: (ClaimRow & { symbol: string; byCreator: boolean; byTreasury: boolean })[] = o.store.listClaims().map((c) => {
-        const l = launches.find((x) => x.mint === c.mint) ?? o.store.getLaunch(c.mint);
-        return { ...c, symbol: l?.symbol ?? '?', byCreator: l?.creator === c.claimer, byTreasury: c.claimer === vault };
-      });
-      const unresolvedClaims = claims.filter((c) => c.status === 'UNKNOWN').length;
-      for (const c of coins) {
-        const l = launches.find((x) => x.mint === c.mint)!;
-        const ft = o.store.feeTotals(['mint'], { mint: c.mint })[0] ?? sumFees([]);
-        const mine = claims.filter((x) => x.mint === c.mint);
-        const claimed = (venue: string, who: (x: (typeof claims)[number]) => boolean) =>
-          mine.filter((x) => x.venue === venue && x.status === 'RESOLVED' && who(x)).reduce((a, x) => a + BigInt(x.quoteRaw!), 0n);
-        const h = o.store.backfillCounts(c.mint);
-        const reasons = (venue: string) => [
-          ...(ft.unknownTrades ? [`${ft.unknownTrades} trade(s) whose fees are not read yet`] : []),
-          ...(h.pending || h.unavailable ? [`${h.pending + h.unavailable} transaction(s) still being read`] : []),
-          ...(mine.some((x) => x.venue === venue && x.status === 'UNKNOWN') ? ['a claim receipt is not proven yet'] : []),
-        ];
-        const lp = lpOfCoin(c);
-        const dammTrades = BigInt(o.store.listTrades(c.mint, 100_000).filter((t) => t.venue === 'DAMM_V2').length);
-        c.fromTrades = ft;
-        c.checks = {
-          creatorCurve: feeCheck(BigInt(ft.creatorRaw), c.curve?.creatorQuoteRaw ?? null, claimed('CURVE', (x) => x.claimer === l.creator), reasons('CURVE')),
-          platformCurve: feeCheck(BigInt(ft.platformRaw), c.curve?.platformQuoteRaw ?? null, claimed('CURVE', (x) => x.claimer === c.platformWallet), reasons('CURVE')),
-          lp: l.status !== 'MIGRATED' ? null : feeCheck(BigInt(ft.lpRaw), lp && lp.creatorQuoteRaw !== null && lp.platformQuoteRaw !== null
-            ? (BigInt(lp.creatorQuoteRaw) + BigInt(lp.platformQuoteRaw)).toString() : null, claimed('DAMM_V2', () => true), reasons('DAMM_V2'), LP_RESIDUAL_BOUND_PER_TRADE * dammTrades),
-        };
-        // an LP residual: try to prove where it comes from, from the pool's own fee accounting (one snapshot read)
-        const r = c.checks.lp?.residual, dp = dammOf.get(c.mint);
-        if (r && dp) {
-          const accounting = await o.chain.dammFeeAccounting(dp).catch(() => null);
-          const lpClaims = mine.filter((x) => x.venue === 'DAMM_V2' && x.status === 'RESOLVED');
-          const proof = accounting && explainLpResidual({ ledgerLpRaw: BigInt(ft.lpRaw), dammTrades: Number(dammTrades), accounting,
-            claimsRaw: lpClaims.reduce((a, x) => a + BigInt(x.quoteRaw!), 0n), claims: lpClaims.length });
-          if (proof && proof.residualRaw === r.raw) {
-            r.proof = proof;
-            if (proof.status === 'PROVEN_ROUNDING') {
-              r.origin = 'PROVEN_ROUNDING';
-              r.note = `${r.raw} raw unit(s) are rounding in the DAMM v2 program's own fee math: positions are paid whole units and each settlement drops the fraction `
-                + `(${proof.parts.settlementRaw} raw), and the fee accumulator keeps a little less than the fees (${proof.parts.accumulatorRaw} raw). Recomputed from the pool's accounting; every check passed.`;
-            } else r.note += ` Proof attempted: ${proof.checks.filter((x) => !x.ok).map((x) => x.id).join(', ')} did not pass.`;
-          } else if (proof) r.note += ` The pool's accounting snapshot gives ${proof.residualRaw} raw instead (it moved between reads); the proof is tried again on the next refresh.`;
-        }
-      }
-      const add = (pick: (c: EarningsCoin) => string | null | undefined) => coins.reduce((a, c) => a + BigInt(pick(c) ?? '0'), 0n).toString();
-      const lpOf = lpOfCoin;
-      // two separate questions: were all pools and positions read (unclaimed), and is every receipt proven (claims)
-      const unclaimedComplete = !coins.some((c) => !c.curve || c.lp === 'UNAVAILABLE' || (lpOf(c) && (lpOf(c)!.creatorQuoteRaw === null || lpOf(c)!.platformQuoteRaw === null)));
-      const body = { cluster: profile.cluster, label: profile.label, quote: p.quote, platformWallet, asOf: now().toISOString(),
-        totals: {
-          unclaimed: { creatorCurve: add((c) => c.curve?.creatorQuoteRaw), platformCurve: add((c) => c.curve?.platformQuoteRaw),
-            creatorLp: add((c) => lpOf(c)?.creatorQuoteRaw), platformLp: add((c) => lpOf(c)?.platformQuoteRaw) },
-          // only receipts proven from their transaction count; unresolved ones are reported in coverage, not added as 0
-          claimedThroughApp: claims.reduce((a, c) => a + (c.status === 'UNKNOWN' ? 0n : BigInt(c.quoteRaw!)), 0n).toString(),
-          coverage: { unclaimedComplete, claimsComplete: unresolvedClaims === 0, unresolvedClaims },
-          incomplete: !unclaimedComplete || unresolvedClaims > 0 },
-        treasury: p.treasury ? await treasuryEarnings(p, claims) : null,
-        coins, claims };
-      earnings = { at: now().getTime(), body };
-      return send(res, 200, body);
-    }
-
     if (path === '/api/lp/faucet' && method === 'POST') {
       limit(`faucet:${ip}`, 6);
       const p = platform();
@@ -972,7 +791,7 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       if (res.headersSent) { res.destroy(); return; }
       // The public devnet RPC rate-limits bursts; that is a retryable outage, not a server fault.
       const rpcBusy = !(e instanceof HttpError) && /\b429\b|Too Many Requests|rate limit/i.test((e as Error)?.message ?? '');
-      const err = e instanceof HttpError ? e : rpcBusy ? new HttpError(503, 'RPC_BUSY', `the ${network} RPC is busy; try again in a few seconds`) : new HttpError(500, 'INTERNAL', 'internal error');
+      const err = e instanceof HttpError ? e : rpcBusy ? new HttpError(503, 'RPC_BUSY', 'the devnet RPC is busy; try again in a few seconds') : new HttpError(500, 'INTERNAL', 'internal error');
       if (!(e instanceof HttpError)) o.log?.(rpcBusy ? `rpc busy on ${path}` : `internal error: ${(e as Error)?.stack?.slice(0, 800)}`);
       send(res, err.status, { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } });
     }

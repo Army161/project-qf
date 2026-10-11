@@ -14,9 +14,6 @@
     },
     "./treasury": {
       "node": "./src/treasury.ts"
-    },
-    "./mainnet-plan": {
-      "node": "./src/mainnet-plan.ts"
     }
   },
   "dependencies": {

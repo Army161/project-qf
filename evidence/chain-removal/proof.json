@@ -1,6 +1,6 @@
 {
   "tool": "tools/deps/prove-chain-absent.ts",
-  "generatedAt": "2026-10-06T00:05:06.190Z",
+  "generatedAt": "2026-10-11T13:19:42.763Z",
   "result": "PASS",
   "override": "\"@meteora-ag/cp-amm-sdk@1.4.10>chain\": \"-\"",
   "checks": [
@@ -27,7 +27,7 @@
     {
       "id": "resolved-graph",
       "status": "PASS",
-      "detail": "0 of 630 graph occurrences are named chain"
+      "detail": "0 of 612 graph occurrences are named chain"
     },
     {
       "id": "node_modules",
@@ -57,7 +57,7 @@
     {
       "id": "sbom:sbom/project-qf.cdx.json",
       "status": "PASS",
-      "detail": "133 components, none named chain"
+      "detail": "180 components, none named chain"
     },
     {
       "id": "sbom:sbom/apps-web.cdx.json",

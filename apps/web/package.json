@@ -4,17 +4,14 @@
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
-  "description": "Private read-only inspector and creator drafts (index.html, talks only to the same-origin @project-qf/api) plus the MOCK lifecycle UI (mock.html). Browser bundle: must never contain @solana/web3.js v1, rpc-websockets or @meteora-ag/*.",
+  "description": "The devnet launchpad's browser app (launchpad.html; talks only to the same-origin launchpad server and the user's wallet). Browser bundle: must never contain @solana/web3.js v1, rpc-websockets or @meteora-ag/*.",
   "scripts": {
     "build": "node build.ts"
   },
   "dependencies": {
-    "@project-qf/contracts": "workspace:*",
     "@project-qf/core": "workspace:*",
     "@project-qf/policy": "workspace:*",
-    "@project-qf/rewards": "workspace:*",
-    "@project-qf/tx": "workspace:*",
-    "@project-qf/validator": "workspace:*"
+    "@project-qf/tx": "workspace:*"
   },
   "devDependencies": {
     "@fontsource-variable/bricolage-grotesque": "5.3.0",

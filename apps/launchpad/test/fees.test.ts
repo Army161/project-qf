@@ -10,7 +10,7 @@ import type { TxSummary } from '../src/chain.ts';
 import { feesFromSummary } from '../src/fees.ts';
 import { FEES, fillTradeFees, PoolCache, syncLaunch } from '../src/indexer.ts';
 import { harness, seedLaunch } from './support/harness.ts';
-import { feeCheck } from '../src/server.ts';
+import { feeCheck } from '../src/books.ts';
 
 const fx = JSON.parse(readFileSync(new URL('../../../packages/adapter-meteora-dbc/test/fixtures/swap-events-devnet.json', import.meta.url), 'utf8')) as {
   transactions: { signature: string; feePayer: string; innerInstructions: { programId: string; dataHex: string }[] }[] };
@@ -91,7 +91,7 @@ test('[TEST_ONLY] the indexer records each trade\'s fees, fills in older trades,
   assert.deepEqual([totals.trades, totals.feesRaw, totals.unknownTrades], [2, '3751', 1]);
 });
 
-test('[TEST_ONLY] /api/lp/fees: one wallet\'s trades and totals per coin, and every wallet\'s totals', async () => {
+test('[TEST_ONLY] the fee ledger: totals per coin and per wallet, and each trade\'s fees on the coin page', async () => {
   const h = await harness();
   const mint = seedLaunch(h.store, h.platform);
   const a = 'A'.repeat(43), b = 'B'.repeat(43);
@@ -100,22 +100,17 @@ test('[TEST_ONLY] /api/lp/fees: one wallet\'s trades and totals per coin, and ev
   h.chain.newSignatures = async () => txs.map((t) => ({ signature: t.signature, slot: t.slot, err: false }));
   await syncLaunch({ store: h.store, chain: h.chain, poolCache: new PoolCache(h.chain) }, h.store.getLaunch(mint)!);
 
-  const w = await h.call(`/api/lp/fees?wallet=${a}`);
-  assert.equal(w.status, 200);
-  assert.deepEqual([w.body.totals.trades, w.body.totals.feesRaw, w.body.totals.unknownTrades, w.body.notYetRead], [2, '3750', 0, 0]);
-  assert.deepEqual(w.body.coins.map((c: any) => [c.symbol, c.feesRaw]), [['MOCK', '3750']]);
-  assert.deepEqual(w.body.trades.map((t: any) => [t.sig, t.fees.status, t.fees.totalRaw]), [['s3', 'RESOLVED', '2500'], ['s1', 'RESOLVED', '1250']]);
-  assert.equal(BigInt(w.body.totals.creatorRaw) + BigInt(w.body.totals.platformRaw) + BigInt(w.body.totals.protocolRaw), 3750n);
-
-  const all = await h.call('/api/lp/fees');
-  assert.deepEqual(all.body.wallets.map((x: any) => [x.trader, x.feesRaw]), [[b, '10000'], [a, '3750']], 'largest fee payer first');
-  assert.equal(all.body.totals.feesRaw, '13750');
-  assert.equal((await h.call('/api/lp/fees?wallet=not-an-address')).body.error.code, 'INVALID_REQUEST');
+  const mine = h.store.feeTotals(['mint'], { trader: a });
+  assert.deepEqual(mine.map((c) => [c.mint, c.trades, c.feesRaw, c.unknownTrades]), [[mint, 2, '3750', 0]]);
+  assert.equal(BigInt(mine[0]!.creatorRaw) + BigInt(mine[0]!.platformRaw) + BigInt(mine[0]!.protocolRaw), 3750n);
+  const wallets = h.store.feeTotals(['trader']).sort((x, y) => Number(BigInt(y.feesRaw) - BigInt(x.feesRaw)));
+  assert.deepEqual(wallets.map((x) => [x.trader, x.feesRaw]), [[b, '10000'], [a, '3750']]);
+  assert.equal((await h.books()).coins[0].fromTrades.feesRaw, '13750');
   const tok = await h.call(`/api/lp/tokens/${mint}`);
   assert.equal(tok.body.trades[0].fees.totalRaw, '2500');
 });
 
-test('[TEST_ONLY] earnings check: fees from trades must add up to the pool\'s unclaimed counters plus proven claims', async () => {
+test('[TEST_ONLY] books check: fees from trades must add up to the pool\'s unclaimed counters plus proven claims', async () => {
   const h = await harness();
   const mint = seedLaunch(h.store, h.platform);
   const pool = (await h.chain.readPool(K.pool.toBase58()))!;
@@ -126,17 +121,17 @@ test('[TEST_ONLY] earnings check: fees from trades must add up to the pool\'s un
       : { venue: null, status, evidence: 'NO_TX_DETAILS', totalRaw: null, protocolRaw: null, referralRaw: null, creatorRaw: null, platformRaw: null, lpRaw: null, compoundingRaw: null });
   };
   record('t1', pool.creatorQuoteFee, pool.partnerQuoteFee);
-  let e = (await h.call('/api/lp/earnings?fresh=1')).body.coins[0];
+  let e = (await h.books()).coins[0];
   assert.deepEqual([e.checks.creatorCurve.status, e.checks.platformCurve.status, e.checks.lp], ['MATCH', 'MATCH', null]);
   assert.equal(e.fromTrades.platformRaw, pool.partnerQuoteFee);
 
   record('t2', '0', '5');
-  e = (await h.call('/api/lp/earnings?fresh=1')).body.coins[0];
+  e = (await h.books()).coins[0];
   assert.deepEqual([e.checks.platformCurve.status, e.checks.platformCurve.differenceRaw], ['MISMATCH', '5'], 'the trades say 5 more was earned than the chain holds plus claims');
   assert.equal(e.checks.creatorCurve.status, 'MATCH');
 
   record('t3', '0', '0', 'UNKNOWN');
-  e = (await h.call('/api/lp/earnings?fresh=1')).body.coins[0];
+  e = (await h.books()).coins[0];
   assert.equal(e.checks.platformCurve.status, 'INCOMPLETE');
   assert.match(e.checks.platformCurve.reasons[0], /1 trade\(s\) whose fees are not read yet/);
 });

@@ -16,6 +16,7 @@ import { accountsForPool, fixtures, K, thresholdRecord } from '../../../../packa
 import { createMockConnection } from '../../../../packages/adapter-meteora-dbc/test/support/mockRpc.ts';
 import type { LaunchpadChain, TokenBalanceChanges } from '../../src/chain.ts';
 import { launchEconomicsFor, type PlatformRecord } from '../../src/platform.ts';
+import { computeBooks } from '../../src/books.ts';
 import { createLaunchpadApp, type ServerProfile } from '../../src/server.ts';
 import { LaunchpadStore } from '../../src/store.ts';
 
@@ -49,7 +50,7 @@ export function withMigrationPrice<T extends { raw: { config: unknown } } | null
 }
 
 /** A fresh store, chain double and running app. `dbPath` lets a test reopen the same database to simulate a restart. */
-export async function harness(opts: { profile?: ServerProfile } = {}) {
+export async function harness(opts: { profile?: ServerProfile; staticDir?: string } = {}) {
   const conn = await mockConn();
   const sent: Uint8Array[] = [];
   const faucetCalls: unknown[] = [];
@@ -139,7 +140,10 @@ export async function harness(opts: { profile?: ServerProfile } = {}) {
     const r = await fetch(base + path, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     return { status: r.status, body: await r.json().catch(() => null) as any, headers: r.headers };
   };
-  return { conn, store, dbPath, platform, call, sent, faucetCalls, quoteAccountCalls, chain, app, tre, holders, tick: (ms: number) => { clock += ms; }, now: () => new Date(clock) };
+  // the books as `main.ts verify` computes them, in their JSON form (amounts as strings)
+  const books = async () => JSON.parse(JSON.stringify(await computeBooks({ store, chain, platform, pools: app.poolCache, damms: app.dammCache, now: () => new Date(clock), cluster: 'devnet' }),
+    (_k, v) => (typeof v === 'bigint' ? v.toString() : v)));
+  return { conn, store, dbPath, platform, call, books, sent, faucetCalls, quoteAccountCalls, chain, app, tre, holders, tick: (ms: number) => { clock += ms; }, now: () => new Date(clock) };
 }
 
 /** Records the fixture coin (mint K.baseMint on pool K.pool) as LIVE, and optionally graduated to the fixture DAMM v2 pool. */

@@ -53,7 +53,7 @@ async function legacyClaim(h: H, venue: 'CURVE' | 'DAMM_V2', sig = 'claim-1') {
   h.store.insertClaim({ sig, mint: K.baseMint.toBase58(), venue, claimer: K.creator.toBase58(), quoteRaw: null, baseRaw: null, at: t });
   return sig;
 }
-const earnings = async (h: H) => (await h.call('/api/lp/earnings?fresh=1')).body;
+const books = async (h: H) => h.books();
 
 // ------------------------------------------------------------------ reproductions (APIs present at 6617acd)
 
@@ -89,10 +89,10 @@ for (const venue of ['CURVE', 'DAMM_V2'] as const) {
     const [readPool, readDammPool] = [h.chain.readPool, h.chain.readDammPool];
     h.chain.readPool = async () => { throw new Error('429 Too Many Requests'); };
     h.chain.readDammPool = async () => { throw new Error('429 Too Many Requests'); };
-    const during = (await earnings(h)).claims.find((c: { sig: string }) => c.sig === sig);
+    const during = (await books(h)).claims.find((c: { sig: string }) => c.sig === sig);
     assert.notEqual(during.quoteRaw, '0', 'missing pool evidence must stay unknown, not become a stored zero');
     Object.assign(h.chain, { readPool, readDammPool });
-    const e = await earnings(h);
+    const e = await books(h);
     assert.equal(e.claims.find((c: { sig: string }) => c.sig === sig).quoteRaw, PAID.toString(), 'after recovery the receipt shows what left its own vault');
     assert.equal(e.totals.claimedThroughApp, PAID.toString());
   });
@@ -102,11 +102,11 @@ test('M5-R2 reproduces: a receipt whose transaction details are missing marks th
   const h = await harness();
   seedLaunch(h.store, h.platform);
   const sig = await legacyClaim(h, 'CURVE');
-  const e = await earnings(h);
+  const e = await books(h);
   assert.equal(e.claims[0].quoteRaw, null);
   assert.equal(e.totals.incomplete, true, 'an unresolved receipt is counted as 0, so the total must say it is incomplete');
   h.chain.txSummary = async (s) => (s === sig ? claimTx(s, curveVaults) : null);
-  const later = await earnings(h);
+  const later = await books(h);
   assert.deepEqual([later.claims[0].quoteRaw, later.totals.claimedThroughApp, later.totals.incomplete], [PAID.toString(), PAID.toString(), false]);
 });
 
@@ -115,7 +115,7 @@ test('M5-R2 reproduces: a transaction without a balance observation for the clai
   seedLaunch(h.store, h.platform);
   await legacyClaim(h, 'CURVE');
   h.chain.txSummary = async (s) => summary(s, { CREATOR_ATA: PAID }); // details served, but nothing about the pool's vaults
-  const e = await earnings(h);
+  const e = await books(h);
   assert.equal(e.claims[0].quoteRaw, null);
   assert.equal(e.totals.incomplete, true);
 });
@@ -221,14 +221,14 @@ test('claim receipts: a DAMM v2 position claim is bound to the DAMM vaults, not 
   let c = h.store.getClaim(s.body.signature)!;
   assert.deepEqual([c.venue, c.pool, c.quoteVault, c.baseVault, c.status, c.evidence, c.quoteRaw],
     ['DAMM_V2', K.dammPool.toBase58(), dammVaults.quote, dammVaults.base, 'UNKNOWN', 'NO_TX_DETAILS', null]);
-  let e = await earnings(h);
+  let e = await books(h);
   assert.deepEqual([e.totals.coverage.claimsComplete, e.totals.coverage.unresolvedClaims, e.totals.claimedThroughApp], [false, 1, '0']);
   // a curve outflow in the same transaction is not this claim's evidence
   h.chain.txSummary = async (sig) => summary(sig, { [curveVaults.quote]: -PAID, [curveVaults.base]: 0n });
-  e = await earnings(h);
+  e = await books(h);
   assert.equal(h.store.getClaim(s.body.signature)!.status, 'UNKNOWN');
   h.chain.txSummary = async (sig) => claimTx(sig, dammVaults, 500_000n);
-  e = await earnings(h);
+  e = await books(h);
   c = h.store.getClaim(s.body.signature)!;
   assert.deepEqual([c.status, c.quoteRaw, e.totals.coverage.claimsComplete, e.totals.claimedThroughApp], ['RESOLVED', '500000', true, '500000']);
 });
@@ -239,7 +239,7 @@ test('claim receipts: a zero is stored only with complete evidence, and resoluti
   const zero = await legacyClaim(h, 'CURVE', 'claim-zero');
   const later = await legacyClaim(h, 'CURVE', 'claim-later');
   h.chain.txSummary = async (s) => (s === zero ? claimTx(s, curveVaults, 0n) : null);
-  const e = await earnings(h);
+  const e = await books(h);
   assert.deepEqual([h.store.getClaim(zero)!.status, h.store.getClaim(zero)!.quoteRaw], ['RESOLVED', '0'], 'both vaults observed, nothing left them: a real zero');
   assert.deepEqual([h.store.getClaim(later)!.status, h.store.getClaim(later)!.quoteRaw], ['UNKNOWN', null]);
   assert.deepEqual([e.totals.coverage.unclaimedComplete, e.totals.coverage.claimsComplete, e.totals.coverage.unresolvedClaims, e.totals.incomplete], [true, false, 1, true]);

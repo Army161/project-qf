@@ -105,7 +105,7 @@ test('[TEST_ONLY] Earnings: an LP residual is labelled the pool\'s rounding only
     h.store.setTradeFees(sig, { venue: 'DAMM_V2', status: 'RESOLVED', evidence: 'SWAP_EVENT', totalRaw: lpRaw, protocolRaw: '0', referralRaw: '0',
       creatorRaw: null, platformRaw: null, lpRaw, compoundingRaw: null });
   }
-  const lp = async () => (await h.call('/api/lp/earnings?fresh=1')).body.coins[0].checks.lp;
+  const lp = async () => (await h.books()).coins[0].checks.lp;
 
   // the harness accounting (no fees accrued) does not describe this pool: the residual stays unproven and says so
   let c = await lp();

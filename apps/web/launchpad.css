@@ -27,7 +27,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 /* devnet bar + header */
 #netbar { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; text-align: center; padding: 8px 16px; background: var(--devnet-ground); color: var(--devnet); font-size: 13px; font-weight: 500; }
-#netbar.mainnet { background: color-mix(in srgb, #3d7cff 18%, var(--ground)); color: #a9c4ff; }
 #netbar a { color: inherit; text-decoration: underline; }
 #netbar .pill { border: 1px solid currentColor; border-radius: 999px; padding: 1px 10px; font-weight: 700; letter-spacing: .08em; font-size: 11px; }
 header.top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 24px; padding: 14px 32px; background: color-mix(in srgb, var(--ground) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line-soft); }
@@ -329,54 +328,9 @@ ul.checks li.bad { color: var(--sell); } ul.checks li.bad::before { content: "âœ
 .axis-x { display: flex; justify-content: space-between; }
 .chart-box figcaption { margin: 0; }
 
-/* Earnings (read-only) */
-.earnings { display: flex; flex-direction: column; gap: 16px; max-width: 1200px; margin: 0 auto; width: 100%; }
-.earn-head h1 { margin: 0 0 4px; font-size: 40px; }
-.earn-head p { margin: 0; }
-.earnings .kpis > div { display: flex; flex-direction: column; gap: 2px; }
-.earnings .notes { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; color: var(--dim); }
-.earn-head .asof { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
-.btn.sm { height: 34px; padding: 0 12px; font-size: 14px; border-radius: 10px; }
-.scroll-hint { display: none; margin: 0 0 8px; }
-.earnings td .reason { display: block; font-size: 12px; white-space: normal; min-width: 160px; max-width: 240px; margin-left: auto; }
 .hist-note { margin: 0 0 12px; }
-@media (max-width: 720px) { .scroll-hint { display: block; } }
-.cov-notes { display: flex; flex-direction: column; gap: 6px; }
-.cov-notes p { margin: 0; }
-
-/* platform treasury (milestone 7) */
-.chip.pay-to { margin-left: 8px; vertical-align: 1px; font-size: 10px; padding: 2px 7px; }
-.chip.legacy { background: var(--surface2); color: var(--dim); border: 1px solid var(--line); }
-.card.treasury .tr-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 12px; }
-.card.treasury .tr-head h3 { margin: 0 auto 0 0; }
-.card.treasury .kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-.card.treasury .kpis > div { background: transparent; }
-
-/* trading fees (fee ledger) */
-.fee-lookup { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-.fee-lookup input { flex: 1 1 320px; height: 44px; font-family: var(--mono, ui-monospace, monospace); font-size: 14px; }
-.fee-lookup .btn { height: 44px; }
-.check-ok { color: var(--buy, #b6f35c); font-weight: 600; }
-.check-bad { color: var(--sell, #ff8a3d); font-weight: 600; }
-.check-residual { color: var(--devnet); font-weight: 600; }
-
-/* holder rewards (read-only) */
-.rw-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 8px; }
-.rw-head h3 { margin: 0; }
-.rw-head > :last-child { margin-left: auto; }
-.rw-checks { margin: 0 0 12px; }
-.rw-checks summary { cursor: pointer; overflow-wrap: anywhere; }
-.rw-checks .notes { margin-top: 8px; }
-.rw-checks .notes li { overflow-wrap: anywhere; }
-.earnings .notes.err { color: var(--sell); }
 @media (max-width: 520px) {
   nav { flex: 1 1 100%; order: 4; overflow-x: auto; scrollbar-width: none; }
   nav::-webkit-scrollbar { display: none; }
   nav a { flex: none; padding: 8px 9px; }
-}
-.rw-title span { white-space: nowrap; }
-@media (max-width: 520px) {
-  .earn-head h1 { font-size: 32px; }
-  nav { mask-image: linear-gradient(to right, #000 85%, transparent); }
-  nav:has(a[href="#/status"].on) { mask-image: none; }
 }

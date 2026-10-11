@@ -37,12 +37,16 @@ function positionBytes(x: typeof A) {
   s.metrics.totalClaimedBFee = new BN(x.claimed.toString());
   return encode('position', s);
 }
-/** MOCK_RPC serving the pool (its LP fee total from `lpAt(read number)`) and the two positions. */
-function conn(lpAt: (read: number) => bigint) {
+/** MOCK_RPC serving the pool (its LP fee total from `lpAt(read number)`) and the two positions; the first `busyScans`
+ *  position scans are refused with the public RPC's 429. */
+function conn(lpAt: (read: number) => bigint, busyScans = 0) {
   let reads = 0;
   const acct = (data: Buffer) => ({ data: [data.toString('base64'), 'base64'], executable: false, lamports: 10_000_000, owner: DAMM.toBase58(), rentEpoch: 0, space: data.length });
   const fetch = async (_u: unknown, init?: { body?: unknown }) => {
     const r = JSON.parse(String(init?.body));
+    if (r.method === 'getProgramAccounts' && busyScans-- > 0) {
+      return new Response(JSON.stringify({ jsonrpc: '2.0', error: { code: 429, message: 'Connection rate limits exceeded' }, id: r.id }), { status: 429, statusText: 'Too Many Requests' });
+    }
     const ctx = { slot: 1000 };
     const result = r.method === 'getAccountInfo' && r.params[0] === K.dammPool.toBase58() ? { context: ctx, value: acct(poolBytes(lpAt(reads++))) }
       : r.method === 'getProgramAccounts' ? [B, A].map((x) => ({ pubkey: x.key.toBase58(), account: acct(positionBytes(x)) }))
@@ -81,4 +85,9 @@ test('[MOCK_RPC] a pool that changes between the reads is read again, and an alw
   await assert.rejects(readDammFeeAccounting(moving.connection, live), /DAMM_ACCOUNTING_MOVING/);
   assert.equal(moving.reads(), 6);
   await assert.rejects(readDammFeeAccounting(conn(() => 999n).connection, { ...live, quoteMint: new PublicKey(mockKey('other')).toBase58() }), /DAMM_POOL_MISMATCH/);
+});
+
+test('[MOCK_RPC] a position scan the RPC refuses as busy (429) is waited out, not reported as unreadable', async () => {
+  const c = conn(() => 999n, 1);
+  assert.equal((await readDammFeeAccounting(c.connection, live)).positions.length, 2);
 });

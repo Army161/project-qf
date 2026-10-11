@@ -17,13 +17,13 @@ import { BLOCKHASH, harness, mockConn } from './support/harness.ts';
 
 const PNG = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
 
-test('the launchpad reports the current readiness gate and platform', async () => {
+test('the launchpad reports its network, whether it can launch, and the platform', async () => {
   const { call, platform } = await harness();
   const r = await call('/api/lp/platform');
   assert.equal(r.status, 200);
   assert.equal(r.body.cluster, 'devnet');
-  assert.equal(r.body.readiness.DEVNET_INTEGRATION, READINESS.DEVNET_INTEGRATION.status);
-  assert.equal(r.body.readiness.MAINNET, 'BLOCKED');
+  assert.equal(r.body.writesEnabled, READINESS.DEVNET_INTEGRATION.status === 'ACTIVE');
+  assert.equal(r.body.ready, true);
   assert.equal(r.body.platform.launchEconomicsDigest, platform.launchEconomicsDigest);
   assert.equal(economicsDigest(r.body.platform.launchEconomics), platform.launchEconomicsDigest, 'browser can recompute the consented digest');
 });
@@ -270,6 +270,23 @@ test('creators claim their curve fees and, after graduation, their locked positi
   assert.equal((await checkBuiltTransaction(fromBase64(d.body.transaction), d.body.terms, { kind: 'CLAIM_CREATOR_TRADING_FEE', wallet: creator, shown: {}, fields: {} })).ok, false);
 });
 
+test('My coins lists the coins a wallet launched with what it can claim, and nothing for anyone else', async () => {
+  const { call, store, platform } = await harness();
+  const t = new Date().toISOString(), mint = K.baseMint.toBase58(), creator = K.creator.toBase58(), stranger = K.attacker.toBase58();
+  store.insertPendingLaunch({ mint, pool: K.pool.toBase58(), config: platform.config.config, quoteMint: platform.quote.mint, creator,
+    name: 'MOCK', symbol: 'MOCK', description: '', website: null, twitter: null, telegram: null, imageType: null, metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: t }, null);
+  assert.deepEqual((await call(`/api/lp/me?wallet=${creator}`)).body.coins, [], 'a launch that is not live yet is not listed');
+  store.markLaunchLive(mint, 'sig', t);
+  const me = (await call(`/api/lp/me?wallet=${creator}`)).body;
+  assert.deepEqual(me.coins.map((c: any) => [c.token.mint, c.curve.quoteRaw, c.positions.length]), [[mint, '1000000', 0]]);
+  assert.deepEqual(me.rewardsPaid, []);
+  const theirs = (await call(`/api/lp/me?wallet=${stranger}`)).body;
+  assert.deepEqual([theirs.coins, theirs.rewardsPaid], [[], []]);
+  assert.equal((await call('/api/lp/me?wallet=not-an-address')).status, 400);
+  assert.equal((await call('/api/lp/me')).status, 400);
+  assert.equal((await call(`/api/lp/rewards/${stranger}`)).status, 404, 'rewards are per coin; an unknown coin has none');
+});
+
 test('the indexer queues a trade whose details the RPC has not served yet, keeps indexing newer ones, and picks it up next pass', async () => {
   const { store, platform, chain, now, tick } = await harness();
   const t = new Date().toISOString(), mint = K.baseMint.toBase58();
@@ -314,13 +331,13 @@ test('after graduation an unreadable DAMM v2 pool shows the price as unavailable
   assert.equal((await call(`/api/lp/tokens/${mint}?fresh=1`)).body.token.status, 'MIGRATED');
 });
 
-test('the earnings view separates creator and platform, curve and LP, and claim receipts count what left the vaults', async () => {
-  const { call, store, platform, chain } = await harness();
+test('the books separate creator and platform, curve and LP, and claim receipts count what left the vaults', async () => {
+  const { books, store, platform, chain } = await harness();
   const t = new Date().toISOString(), mint = K.baseMint.toBase58();
   store.insertPendingLaunch({ mint, pool: K.pool.toBase58(), config: platform.config.config, quoteMint: platform.quote.mint, creator: K.creator.toBase58(),
     name: 'MOCK', symbol: 'MOCK', description: '', website: null, twitter: null, telegram: null, imageType: null, metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: t }, null);
   store.markLaunchLive(mint, 'sig', t);
-  let e = (await call('/api/lp/earnings?fresh=1')).body;
+  let e = await books();
   assert.deepEqual(e.coins[0].curve, { creatorQuoteRaw: '1000000', platformQuoteRaw: '1000000' });
   assert.equal(e.coins[0].lp, null, 'not graduated: no LP positions yet');
   store.markLaunchMigrated(mint, 'mig', K.dammPool.toBase58(), t);
@@ -328,7 +345,7 @@ test('the earnings view separates creator and platform, curve and LP, and claim 
     quoteVault: K.dammQuoteVault.toBase58(), baseVault: K.dammBaseVault.toBase58() });
   chain.txSummary = async (signature) => ({ signature, slot: 1, blockTime: 1, err: false, feePayer: 'x', logMessages: [],
     accountKeys: [K.dammQuoteVault.toBase58(), K.dammBaseVault.toBase58()], tokenDeltas: { [K.dammQuoteVault.toBase58()]: -250_000n, [K.dammBaseVault.toBase58()]: 0n } });
-  e = (await call('/api/lp/earnings?fresh=1')).body;
+  e = await books();
   assert.deepEqual(e.coins[0].lp, { creatorQuoteRaw: '500000', platformQuoteRaw: '0' });
   assert.deepEqual(e.totals.unclaimed, { creatorCurve: '1000000', platformCurve: '1000000', creatorLp: '500000', platformLp: '0' });
   assert.equal(e.totals.claimedThroughApp, '250000');

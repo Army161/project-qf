@@ -277,11 +277,6 @@ export class LaunchpadStore {
     return (this.db.prepare('SELECT * FROM trades WHERE mint = ? ORDER BY slot DESC, sig LIMIT ?').all(mint, limit) as Record<string, unknown>[])
       .map((r) => camel(r) as unknown as StoredTrade);
   }
-  /** Every trade a wallet made (all coins), newest first. */
-  listWalletTrades(trader: string, limit = 500): (StoredTrade & { symbol: string })[] {
-    return (this.db.prepare(`SELECT t.*, l.symbol AS symbol FROM trades t JOIN launches l ON l.mint = t.mint WHERE t.trader = ? ORDER BY t.slot DESC, t.sig LIMIT ?`)
-      .all(trader, limit) as Record<string, unknown>[]).map((r) => camel(r) as unknown as StoredTrade & { symbol: string });
-  }
   /** Fee totals grouped by `by` ('trader', 'mint' or both), from every stored trade. bigint sums in JS (SQLite has no u64 text sum). */
   feeTotals(by: ('trader' | 'mint')[], where: { trader?: string; mint?: string } = {}): (FeeTotals & { trader?: string; mint?: string })[] {
     const cond = [where.trader ? 'trader = ?' : null, where.mint ? 'mint = ?' : null].filter(Boolean);

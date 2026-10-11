@@ -61,8 +61,7 @@ copyTree(web3, EXTERNAL, false);
 if (copied.get(EXTERNAL).version !== EXTERNAL_VERSION) throw new Error(`${EXTERNAL} is ${copied.get(EXTERNAL).version}; QF-LIC-EX-001 covers ${EXTERNAL_VERSION} only`);
 
 // 3. the browser app and the notices
-// only the launchpad's own files (not the private inspector or the mock lifecycle), and no source maps: they would publish
-// the proprietary source
+// only the launchpad's own files, and no source maps: they would publish the proprietary source
 const WEB = /^(launchpad\.(html|css|js|js\.LEGAL\.txt)|fonts(\/.*)?)$/;
 cpSync(webDist, join(out, 'web'), { recursive: true, filter: (s) => s === webDist || WEB.test(relative(webDist, s)) });
 if (!existsSync(join(out, 'web', 'launchpad.js'))) throw new Error('the launchpad bundle was not copied');

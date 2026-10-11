@@ -1,6 +1,6 @@
 {
   "tool": "tools/license-check/check-licenses.ts",
-  "generatedAt": "2026-10-06T00:05:04.806Z",
+  "generatedAt": "2026-10-11T13:19:41.345Z",
   "manifestVersion": "2",
   "packages": 211,
   "tally": {
@@ -423,14 +423,13 @@
       "class": "ALLOW",
       "devOnly": false,
       "importers": [
-        "@project-qf/api",
         "@project-qf/econ-sim",
         "@project-qf/launchpad",
         "@project-qf/policy",
         "@project-qf/rewards"
       ],
       "note": "",
-      "sampleChain": "@project-qf/api > @project-qf/policy@link:../../packages/policy > @noble/hashes@1.8.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/rewards@link:../../packages/rewards > @noble/hashes@1.8.0"
     },
     {
       "package": "@solana/accounts@8.3.0",

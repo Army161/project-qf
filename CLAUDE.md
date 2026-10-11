@@ -40,15 +40,12 @@ Rules for every coding agent working in Project QF repositories. These are bindi
 
 ## Engineering conventions
 - Node ≥ 22.12, pnpm 10, TypeScript strict. Exact version pins (no `^`) for Solana/Meteora packages.
-- `@solana/web3.js` v1 is allowed **only** in `packages/adapter-meteora-dbc`, runs server-side only, and must never reach `apps/web` (its transitive `rpc-websockets` is LGPL-3.0; exception QF-LIC-EX-001 is server-side only). `pnpm boundary` checks the browser dependency graph, bundles, worker bundles and source maps. The verifier (`tools/program-verify`) uses `@solana/addresses` and plain JSON-RPC, not web3.js. Keep the targeted override `"@meteora-ag/cp-amm-sdk@1.4.10>chain": "-"` in `pnpm-workspace.yaml` (ADR-012); never replace it with a stub or pin. Other packages use QF domain types and `@solana/kit`.
+- `@solana/web3.js` v1 is allowed **only** in `packages/adapter-meteora-dbc`, runs server-side only, and must never reach `apps/web` (its transitive `rpc-websockets` is LGPL-3.0; exception QF-LIC-EX-001 is server-side only). `pnpm boundary` checks the browser dependency graph, bundles and source maps. The verifier (`tools/program-verify`) uses `@solana/addresses` and plain JSON-RPC, not web3.js. Keep the targeted override `"@meteora-ag/cp-amm-sdk@1.4.10>chain": "-"` in `pnpm-workspace.yaml` (ADR-012); never replace it with a stub or pin. Other packages use QF domain types and `@solana/kit`.
 - Mocks and fixtures carry `MOCK_BANNER` / `TEST_ONLY` labels and are never presented as live results. Synthetic assets live in the `test-only:` namespace and cannot be promoted to the production registry.
 - All policies (validator thresholds, economics, exclusions, allocation) are versioned objects; every result records the policy version it used.
 - Money math in integer base units (`bigint`); never JS `number` for token amounts.
-- `apps/api` (private read-only API) may read chain state only through `apps/api/src/rpc.ts`.
-  - That client has three methods (`getGenesisHash`, `getAccountInfo`, `getTokenLargestAccounts`), uses finalized commitment, proves the cluster by genesis hash, and bounds response size and time. Never add a send, simulate or signing method there.
-  - Live reads never fall back to fixtures. TEST_ONLY fixtures answer only the explicit `test-only` network.
-  - Missing data is SKIP or UNAVAILABLE with a reason, never a default.
-  - The browser talks only to the same-origin API (CSP `connect-src 'self'`) and never calls an RPC.
+- The launchpad (`apps/launchpad`) runs on devnet only and proves the cluster by genesis hash before it starts. Live reads never fall back to fixtures. Missing data is INCOMPLETE, UNAVAILABLE or WAIT with a reason, never a default and never a zero.
+- The browser (`apps/web`) talks only to the same-origin launchpad server (CSP `connect-src 'self'`) and the user's wallet, and never calls an RPC.
 - Before any PR: `pnpm typecheck && pnpm test && pnpm license:check && pnpm deps:chain && pnpm boundary && pnpm audit --prod` (install with `--ignore-scripts` in a secret-free environment).
 
 ## Stop conditions

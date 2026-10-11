@@ -91,13 +91,13 @@ test('[TEST_ONLY] rewards round: deposit up to the earmark, read back from the v
   assert.equal(h.store.listClaims().length, 0, 'a rewards transfer is not a fee claim');
 
   // nothing counts until the vault's own transaction is read: the executed proposal alone funds nothing
-  let o = await h.call('/api/lp/rewards?fresh=1');
+  let o = await h.call(`/api/lp/rewards/${mint}?fresh=1`);
   assert.equal(o.body.coins[0].epochs.at(-1).funding.fundedRaw, '0');
   s.add(s.tx(depSig, Math.floor(h.now().getTime() / 1000), [[s.rewardsAta, s.rewards, 0n, 500n, s.quote], ['tv', s.vault, 1_000_000n, 999_500n, s.quote]],
     [rewardsMemo({ kind: 'REWARDS_DEPOSIT', launchMint: mint, epochId: epoch })]), [s.rewardsAta]);
   h.tick(5_000);
   await s.sync();
-  o = await h.call('/api/lp/rewards?fresh=1');
+  o = await h.call(`/api/lp/rewards/${mint}?fresh=1`);
   const open = o.body.coins[0].epochs.at(-1);
   assert.equal(open.status, 'OPEN');
   assert.deepEqual([open.funding.fundedRaw, open.funding.deposits[0].sig], ['500', depSig]);
@@ -108,7 +108,7 @@ test('[TEST_ONLY] rewards round: deposit up to the earmark, read back from the v
   // the day ends; history and the vault are read past its end: the epoch is final and frozen, allocating the 500
   h.tick((s.today + DAY + 120) * 1000 - h.now().getTime());
   await s.sync();
-  o = await h.call('/api/lp/rewards?fresh=1');
+  o = await h.call(`/api/lp/rewards/${mint}?fresh=1`);
   const fin = o.body.coins[0].epochs.find((e: any) => e.epochId === epoch);
   assert.equal(fin.status, 'FINAL', JSON.stringify(fin.reasons));
   assert.equal(fin.settlement.status, 'NOT_PAID');
@@ -144,11 +144,19 @@ test('[TEST_ONLY] rewards round: deposit up to the earmark, read back from the v
     [rewardsMemo({ kind: 'REWARDS_PAYOUT', launchMint: mint, epochId: epoch, artifactHash: fin.frozen.hash })]), [s.rewardsAta]);
   h.tick(5_000);
   await s.sync();
-  await h.call('/api/lp/rewards?fresh=1'); // the epoch views are kept for 30 seconds; refresh them
+  await h.call(`/api/lp/rewards/${mint}?fresh=1`); // the epoch views are kept for 30 seconds; refresh them
   const paid = (await h.call(`/api/lp/rewards/${mint}/${epoch}`)).body.epoch;
   assert.equal(paid.settlement.status, 'PAID', JSON.stringify(paid.settlement));
   assert.deepEqual(paid.settlement.txs.map((t: any) => t.sig), [paySig]);
   assert.equal(paid.frozen.reproduced, true, 'paying does not change the frozen record');
+
+  // each holder's "My coins" page lists what reached them, read from the payout's own transaction
+  for (const x of due) {
+    const me = (await h.call(`/api/lp/me?wallet=${x.owner}`)).body;
+    assert.deepEqual(me.rewardsPaid.map((r: any) => [r.mint, r.epochId, r.amountRaw, r.sig]), [[mint, epoch, x.amountRaw, paySig]]);
+  }
+  // the books count the deposit as having left the treasury vault
+  assert.equal((await h.books()).treasury.vaultCheck.depositsOutRaw, '500');
 });
 
 test('[TEST_ONLY] rewards vault: classification from balances and memo; late and untagged deposits fund nothing', () => {

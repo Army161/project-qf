@@ -3,7 +3,7 @@
   "specVersion": "1.6",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-03T10:04:21.710Z",
+    "timestamp": "2026-10-11T13:19:43.924Z",
     "tools": {
       "components": [
         {
@@ -26,7 +26,7 @@
       },
       {
         "name": "qf:pnpm-lock.sha256",
-        "value": "f5c8d2e908297ad6dd140ba72ba2c42ee1716690f7e80b97093b95f4b36bc42b"
+        "value": "5c93d717f9f6056eacecd3850123de73bf6aff21ec0fb22506a8f0f6e6f1fe5b"
       },
       {
         "name": "qf:overrides",
@@ -60,7 +60,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -85,7 +85,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -110,7 +110,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -135,7 +135,82 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40metaplex-foundation/beet-solana@0.4.0",
+      "name": "@metaplex-foundation/beet-solana",
+      "version": "0.4.0",
+      "purl": "pkg:npm/%40metaplex-foundation/beet-solana@0.4.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "0752fde0ddd918ca39ddbd2e392a339dbb8ce4604d27c2f049ece7c41c49f8e4e1bdf1d0e01e68314a9bfb4cdd2d17e42864bb43ab691caf4ff902b48f7c3671"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40metaplex-foundation/beet@0.7.1",
+      "name": "@metaplex-foundation/beet",
+      "version": "0.7.1",
+      "purl": "pkg:npm/%40metaplex-foundation/beet@0.7.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "84d0849d2d96c82898ca4a3cdabc2e212b01637298a5ef36f2e6ec7767247aa66beed9745952e2bc6928c80fea76269a1c404674697bd4ea5f59adaba8bdc388"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40metaplex-foundation/cusper@0.0.2",
+      "name": "@metaplex-foundation/cusper",
+      "version": "0.0.2",
+      "purl": "pkg:npm/%40metaplex-foundation/cusper@0.0.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4bd46e942d9f14214e42b6b3eb56e28fee580878523bd96525e80af1cf18ebbdf57d28bab2751240974252a612f002204744ca6d0bddbe04b220875b0c565b04"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -160,7 +235,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc,@project-qf/econ-sim"
+          "value": "@project-qf/adapter-meteora-dbc,@project-qf/launchpad"
         }
       ]
     },
@@ -185,7 +260,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc,@project-qf/econ-sim"
+          "value": "@project-qf/adapter-meteora-dbc,@project-qf/launchpad"
         }
       ]
     },
@@ -210,7 +285,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -235,7 +310,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc,@project-qf/api,@project-qf/econ-sim,@project-qf/policy,@project-qf/rewards,@project-qf/web"
+          "value": "@project-qf/econ-sim,@project-qf/launchpad,@project-qf/policy,@project-qf/rewards"
         }
       ]
     },
@@ -260,7 +335,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -285,7 +360,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -310,7 +385,32 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/buffer-layout-utils@0.2.0",
+      "name": "@solana/buffer-layout-utils",
+      "version": "0.2.0",
+      "purl": "pkg:npm/%40solana/buffer-layout-utils@0.2.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "b331b8b318091a4b5bb9960383615f36690c8b40d842856337687bb5ad56d613ebc336ab7052c1abd5295f5523357b0da53f5d9fe721829aed5868a8500af8fe"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -335,7 +435,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -360,7 +460,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -385,7 +485,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -410,7 +510,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -435,7 +535,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -460,7 +560,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -485,7 +585,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -510,7 +610,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -535,7 +635,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -560,7 +660,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -585,7 +685,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -610,7 +710,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -635,7 +735,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -660,7 +760,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -685,7 +785,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -710,7 +810,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -735,7 +835,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -760,7 +860,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -785,7 +885,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -810,7 +910,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -835,7 +935,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -860,7 +960,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -885,7 +985,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -910,7 +1010,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/rewards,@project-qf/tx,@project-qf/web"
+          "value": "@project-qf/launchpad,@project-qf/rewards,@project-qf/tx"
         }
       ]
     },
@@ -935,7 +1035,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -960,7 +1060,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -985,7 +1085,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1010,7 +1110,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1035,7 +1135,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1060,7 +1160,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1085,7 +1185,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1110,7 +1210,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1135,7 +1235,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1160,7 +1260,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1185,7 +1285,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1210,7 +1310,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1235,7 +1335,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1260,7 +1360,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1285,7 +1385,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1310,7 +1410,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1335,7 +1435,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1360,7 +1460,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1385,7 +1485,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1410,7 +1510,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1435,7 +1535,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1460,7 +1560,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1485,7 +1585,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1510,7 +1610,32 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40solana/spl-token@0.3.11",
+      "name": "@solana/spl-token",
+      "version": "0.3.11",
+      "purl": "pkg:npm/%40solana/spl-token@0.3.11",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "6efa213b7ac831254bdb83dbf88e0461327a70bf36785a489c45c3fc8f0af2ea4e1a3a6a1ec294a007a6a51fd19d4948d6a4853721655897eee8c35481f6c241"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1535,7 +1660,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1560,7 +1685,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1585,7 +1710,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1610,7 +1735,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1635,7 +1760,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1660,7 +1785,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1685,7 +1810,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1710,7 +1835,32 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc,@project-qf/econ-sim"
+          "value": "@project-qf/adapter-meteora-dbc,@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40sqds/multisig@2.1.4",
+      "name": "@sqds/multisig",
+      "version": "2.1.4",
+      "purl": "pkg:npm/%40sqds/multisig@2.1.4",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e70f8d9b01cece5f7a9c8e7447f7e3483eae1727512cd52aba1a049a659b19ea52e03f439d0c85d9329c5017d3cb1577b2026dd34ca906ded25c1df2f163b351"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/adapter-meteora-dbc,@project-qf/launchpad"
         }
       ]
     },
@@ -1735,7 +1885,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1760,7 +1910,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1785,7 +1935,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1810,7 +1960,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1835,7 +1985,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1860,7 +2010,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1885,7 +2035,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1910,7 +2060,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1935,7 +2085,82 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/ansicolors@0.3.2",
+      "name": "ansicolors",
+      "version": "0.3.2",
+      "purl": "pkg:npm/ansicolors@0.3.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "417bbb04facfdbd565951c47f06c01ef1e625f9a9628000c2ea2901964de2d656534734ea55309f7576cc50008597a63b96e70aafc6edc977f9d18eb27ed29aa"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/assert@2.1.0",
+      "name": "assert",
+      "version": "2.1.0",
+      "purl": "pkg:npm/assert@2.1.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "78b1e948afd8e2784c274ee00da033a17fd700a4bc3d26a88e69773340cce09a55d4b022e49389fe9e87fd75ab97c2fe0f3544bd5096d73def580681f684ec43"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/available-typed-arrays@1.0.7",
+      "name": "available-typed-arrays",
+      "version": "1.0.7",
+      "purl": "pkg:npm/available-typed-arrays@1.0.7",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c2f52306d48637bfbb4a3369abff4cd93837e745190f7abad881592db4404756d23250a8d5969e5be049f83d3dd1ee2120864b05c4c359ee0c8788ef5036a3cd"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1960,7 +2185,32 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/base-x@4.0.1",
+      "name": "base-x",
+      "version": "4.0.1",
+      "purl": "pkg:npm/base-x@4.0.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "b8067cc7aafa4b769433dadb1c654e22c475e54fd949cf366f7ca69c23ec4f8e469350c3be10cf748801e4cae18ab656b7ee4ad0410f407f7ce6436a66034f17"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -1985,7 +2235,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2010,7 +2260,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2035,7 +2285,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2060,7 +2310,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2085,7 +2335,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc,@project-qf/econ-sim"
+          "value": "@project-qf/adapter-meteora-dbc,@project-qf/launchpad"
         }
       ]
     },
@@ -2110,7 +2360,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2135,7 +2385,32 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/bs58@5.0.0",
+      "name": "bs58",
+      "version": "5.0.0",
+      "purl": "pkg:npm/bs58@5.0.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "afe8a1bd026f6a18184f9d090f4e5dc8934a96699294ca0e1b09f5942704cda9cf82583b4f16238a841461e850f66011ffe84e49dda345cfd9db2e54c41ca6bd"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2160,7 +2435,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2185,7 +2460,82 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/call-bind-apply-helpers@1.0.2",
+      "name": "call-bind-apply-helpers",
+      "version": "1.0.2",
+      "purl": "pkg:npm/call-bind-apply-helpers@1.0.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4a9d5a6e52748af0e44b38dc68977112e9cde7f5ef92c149dac30115fabac74af285057fd9bfcac057b6d5c329987b4f3928a3f0af7dff049fa04b9339b9ae31"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/call-bind@1.0.9",
+      "name": "call-bind",
+      "version": "1.0.9",
+      "purl": "pkg:npm/call-bind@1.0.9",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "6bf872fa936c1544d1f88cfc4c226f5ee74a54b027cff0f2792528d74239caf143409045536b3dbaa429a12ac996ba0750aa0aab383e7a9c723fd96a15dcdf05"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/call-bound@1.0.4",
+      "name": "call-bound",
+      "version": "1.0.4",
+      "purl": "pkg:npm/call-bound@1.0.4",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "fb2b3df7b53dea9a382b1fc0069042aa103d12ec49690583420ef6f791f8841a61bf72198346e804abb0629b78617a7a319e4099942753fb72313951a5a49e8e"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2210,7 +2560,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2235,7 +2585,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc,@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2260,7 +2610,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2285,7 +2635,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2310,7 +2660,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2335,7 +2685,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2360,7 +2710,32 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/debug@4.4.3",
+      "name": "debug",
+      "version": "4.4.3",
+      "purl": "pkg:npm/debug@4.4.3",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "446c305a7c10be455f6af295b76d8518bc3ec5849dcc04709b4aeee83853540dee994e6165cdbc57790ee2cb6062bcab4e52e9baf808f468a28e5b408cd6dca8"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2385,7 +2760,57 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/define-data-property@1.1.4",
+      "name": "define-data-property",
+      "version": "1.1.4",
+      "purl": "pkg:npm/define-data-property@1.1.4",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ac132f23396903cbfa13e489668a3ef87018aac2eb920ecc49f2229cc3c5866928af0ed7f9d39754942cf904faf731a4cccc9f0e720c3765a2775f8d6cbdd3f8"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/define-properties@1.2.1",
+      "name": "define-properties",
+      "version": "1.2.1",
+      "purl": "pkg:npm/define-properties@1.2.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "f109902aa10048b7799f1d14d41d6890b1256d4baeb6d27f0276264576db6c60d687ab92db4f048c3e17aaafc8f702bbbb4bfa3b4f178535a7b795ed11b47a0e"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2410,7 +2835,107 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/dunder-proto@1.0.1",
+      "name": "dunder-proto",
+      "version": "1.0.1",
+      "purl": "pkg:npm/dunder-proto@1.0.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "28837f9c3241411717c3430b561644f62407986ebca80548060f42aa65188e64088608a3f54e4c16faea9142f915bb72cb366e39e3add3375e45ee1463b72df8"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/es-define-property@1.0.1",
+      "name": "es-define-property",
+      "version": "1.0.1",
+      "purl": "pkg:npm/es-define-property@1.0.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7b79d17e07d4678acd18bdb7da05205f4e90372c9ecf4e0a76316b17e2d34683979ab3a014a0e0e0109db235bc1274faf5ea9d606991a49c223d560dac2696de"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/es-errors@1.3.0",
+      "name": "es-errors",
+      "version": "1.3.0",
+      "purl": "pkg:npm/es-errors@1.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "65fe47d8ac6ddb18d3bdb26f3f66562c4202c40ea3fa1026333225ca9cb8c5c060d6f2959f1f3d5b2d066d2fa47f9730095145cdd0858765d20853542d2e9cb3"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/es-object-atoms@1.1.2",
+      "name": "es-object-atoms",
+      "version": "1.1.2",
+      "purl": "pkg:npm/es-object-atoms@1.1.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1d6701a0de8d8a57aab52c9d2b616a1db4bf2e80ddda9aab9d01cbc89cc18f890ea7f932d8c58c37af78c4e7e42bcfd29d4b16d831fb11fc9597274a0ac9b567"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2435,7 +2960,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2460,7 +2985,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2485,7 +3010,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2510,7 +3035,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2535,7 +3060,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2560,7 +3085,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2585,7 +3110,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc,@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2610,7 +3135,257 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/for-each@0.3.5",
+      "name": "for-each",
+      "version": "0.3.5",
+      "purl": "pkg:npm/for-each@0.3.5",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "74ac75d9e442548cea0b1146a65c8528930fbcb11682636d52ba53889211e6ef7bcc48511bcc92aed6e83c7657c7b75a2f1415ae5eb8ddc4f36da6f6b64423c6"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/function-bind@1.1.2",
+      "name": "function-bind",
+      "version": "1.1.2",
+      "purl": "pkg:npm/function-bind@1.1.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ed71cdc47eea5fdc46e66230c6486e993a31fcc21135c3a00ebc56b0cb76a40af6dd61e9e8cad194dec50521690a9afea153b417be38894811f369c931f1b648"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/generator-function@2.0.1",
+      "name": "generator-function",
+      "version": "2.0.1",
+      "purl": "pkg:npm/generator-function@2.0.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "485745988262fb26c2d2f8e51cdd191951877379601340f13c04f47638d583e9233a74aa725aa68f4290ef291338b3fa631a2a3afb8038319d707267fb8deade"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/get-intrinsic@1.3.0",
+      "name": "get-intrinsic",
+      "version": "1.3.0",
+      "purl": "pkg:npm/get-intrinsic@1.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "f5f4a349aa2cfdf448548a7ec5226513a95fc21112ecb36d29a08121a987b23af69dad418800493e8d263a38f3f062435116ab9823c6a9a89583999f8dbf7c09"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/get-proto@1.0.1",
+      "name": "get-proto",
+      "version": "1.0.1",
+      "purl": "pkg:npm/get-proto@1.0.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "b1349f063a17069f3d26f20a21e7eac3b53608279bb1cef892263a6b0886a202ada1219b823604fc6ffe97db05dcc5853cd73d21ca0e0b83837ca1dfc459a9d2"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/gopd@1.2.0",
+      "name": "gopd",
+      "version": "1.2.0",
+      "purl": "pkg:npm/gopd@1.2.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "65429187afe4505a0089302d4d83d9277870f70371c7e04804e8a39e51bd3e7ac9b027128ecd70cb20fabc9a5a62d827cc3aca6114aa7f738ee917daf77c6c46"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/has-property-descriptors@1.0.2",
+      "name": "has-property-descriptors",
+      "version": "1.0.2",
+      "purl": "pkg:npm/has-property-descriptors@1.0.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e7924d2ae216fafab829ed418ce4e333661cb5022f093ec61731f099f64f1a8e709eb82489dd1842d9c095e152aae9999b86b3de7d814be7ab6f2e62a49760ae"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/has-symbols@1.1.0",
+      "name": "has-symbols",
+      "version": "1.1.0",
+      "purl": "pkg:npm/has-symbols@1.1.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d5c0cd77027625aa2199bdec8383a629a301c2e0b8f2c6278b91d4c360efb02f0b8c64cb2bd87e79bd57e91cae3877b8853d142c25baf22a26863528294aa53d"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/has-tostringtag@1.0.2",
+      "name": "has-tostringtag",
+      "version": "1.0.2",
+      "purl": "pkg:npm/has-tostringtag@1.0.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "36a00307c5633c52ccd95d15bc751ec30c2cc3465605a21d828fa2787b4ade16ac2f3e2a78246361ca9f07a010ac182044aa69285f0be76fd5a9d56c3b8ec397"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/hasown@2.0.4",
+      "name": "hasown",
+      "version": "2.0.4",
+      "purl": "pkg:npm/hasown@2.0.4",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4f651b7db044177db089ea5722c3254d6f7e743602eb0321fedfef600e2db8e30aa96cff9f7bebd4d152c508b23fece4da65eca0c03f8bfeea57a2cabadd6dd4"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2635,7 +3410,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2660,7 +3435,32 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/inherits@2.0.4",
+      "name": "inherits",
+      "version": "2.0.4",
+      "purl": "pkg:npm/inherits@2.0.4",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "ISC"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "93fbc6697e3f6256b75b3c8c0af4d039761e207bea38ab67a8176ecd31e9ce9419cc0b2428c859d8af849c189233dcc64a820578ca572b16b8758799210a9ec1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2685,7 +3485,157 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/is-arguments@1.2.0",
+      "name": "is-arguments",
+      "version": "1.2.0",
+      "purl": "pkg:npm/is-arguments@1.2.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "edb55b8b486e8ffc2b2003b36fc5356acce0f64762dca37f0b2535f424c8eed028658119a0bf720835e96d737eb8fb2e5a73f4d9ccae8358257aaabe4d4f9808"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/is-callable@1.2.7",
+      "name": "is-callable",
+      "version": "1.2.7",
+      "purl": "pkg:npm/is-callable@1.2.7",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d410b40551614bfa74aadc3a7a7a7c7bef0e0f452b2b4a052f3b528cdce170a037583b89c7100f5f33ee3ed2a48c463d514a045a55fff1f80a7aed92f22f494c"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/is-generator-function@1.1.2",
+      "name": "is-generator-function",
+      "version": "1.1.2",
+      "purl": "pkg:npm/is-generator-function@1.1.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ba9aadd5290690e0d6f6db06346e66b574d7b440a2cf0b52da4035eb533e8093dcd7175bfc0c7adbd69fe98ad3c1c39e4076dec2b3cd944e43c7b933bd74e2cc"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/is-nan@1.3.2",
+      "name": "is-nan",
+      "version": "1.3.2",
+      "purl": "pkg:npm/is-nan@1.3.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "13ecc12a9436b7a304a3556ca2762696e93d3711ab6f3a5e78b0b6c48562b8ed848d4db1b17b013f04ebdd892ff65d3c51811511d59e459368b9a66a17a44dd3"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/is-regex@1.2.1",
+      "name": "is-regex",
+      "version": "1.2.1",
+      "purl": "pkg:npm/is-regex@1.2.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "32362c2873b93bb982b26446c5670b5a1785a8df4327fd939a782f8ca5e285ee9e7d588fa9cdbbe3e171ff87d88ffaf4dfe112bc17535cad15ead037ae07b3d6"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/is-typed-array@1.1.15",
+      "name": "is-typed-array",
+      "version": "1.1.15",
+      "purl": "pkg:npm/is-typed-array@1.1.15",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a7711cb227178e2b7b49ab245c7b35840f75431813c38e85bfa10528a192e434452c3f322a7a218c5de1c688eef786ff39c319a10ba4ce93e9044f6e2d52b381"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2710,7 +3660,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2735,7 +3685,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2760,7 +3710,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2785,7 +3735,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2810,7 +3760,32 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/math-intrinsics@1.1.0",
+      "name": "math-intrinsics",
+      "version": "1.1.0",
+      "purl": "pkg:npm/math-intrinsics@1.1.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "fc85ed6f0124e474cfc84c32297ea11a4617c4cf676e3eb807e8a55499c2fd1e81d291f91b85776f4a556cbec3063e2d921040a696d05257fa17a5e5f4b1eed6"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2835,7 +3810,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2860,7 +3835,82 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/object-is@1.1.6",
+      "name": "object-is",
+      "version": "1.1.6",
+      "purl": "pkg:npm/object-is@1.1.6",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "17c719f8a7c69521a2d3d9494fbfcd77a28967dca0b6f602d3f51860b23d9e640a2cc9f276907dcaf6eff4ad6e4a412eec553dbd83e65702e0df6f2d5fea2ddd"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/object-keys@1.1.1",
+      "name": "object-keys",
+      "version": "1.1.1",
+      "purl": "pkg:npm/object-keys@1.1.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "36e00449439432b9485ce7c72b30fa6e93eeded62ddf1be335d44843e15e4f494d6f82bc591ef409a0f186e360b92d971be1a39323303b3b0de5992d2267e12c"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/object.assign@4.1.7",
+      "name": "object.assign",
+      "version": "4.1.7",
+      "purl": "pkg:npm/object.assign@4.1.7",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "9cadbc58ea3e4088c190376e4c8344e09905fd42492b27f6109c6f24a7db943a7283443ea643873532f4430cba34fe85844fc49f357bdc1c71a9c25a5d8f5a9f"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2885,7 +3935,32 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/possible-typed-array-names@1.1.0",
+      "name": "possible-typed-array-names",
+      "version": "1.1.0",
+      "purl": "pkg:npm/possible-typed-array-names@1.1.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ffee55153721243a158f76e1a2a8ba51eca6703d340c0c1bd672706a6ccfbc712ccc9e05a45e9234d6d46ce4bcc88e7aa87cdd57c78ad2a11f3928a87644ddc6"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2910,7 +3985,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2935,7 +4010,57 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/safe-regex-test@1.1.0",
+      "name": "safe-regex-test",
+      "version": "1.1.0",
+      "purl": "pkg:npm/safe-regex-test@1.1.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c7ff82cf862b8a643141c7097f998a11b21ad4dcde091348e44725fde92695869a9a974d2cf6a557221c09934d1f732f9aa06e815e53318657bf4963b255256b"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/set-function-length@1.2.2",
+      "name": "set-function-length",
+      "version": "1.2.2",
+      "purl": "pkg:npm/set-function-length@1.2.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a6045ce21278fec363582492f409a74b8d31ddb34c0d39271e02f951a3014ccc899d4f741205a1d51cfe302f5e16ee01b8dfd4c198ca42e63fd6fdeb33b1cc7e"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2960,7 +4085,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -2985,7 +4110,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3010,7 +4135,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3035,7 +4160,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3056,7 +4181,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         },
         {
           "name": "qf:license",
@@ -3085,7 +4210,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3110,7 +4235,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3135,7 +4260,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3160,7 +4285,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc,@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3185,7 +4310,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3210,7 +4335,32 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/web"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/util@0.12.5",
+      "name": "util",
+      "version": "0.12.5",
+      "purl": "pkg:npm/util@0.12.5",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "9197ff2ba84422b58723a5ea38552288c6beefdc04fc3f10f8d08d0167259328376f877693bb344067a936388005cf9a4773753c0c872fba7a51c2d8e8b9ab9c"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3235,7 +4385,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3260,7 +4410,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3285,7 +4435,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3310,7 +4460,32 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/which-typed-array@1.1.24",
+      "name": "which-typed-array",
+      "version": "1.1.24",
+      "purl": "pkg:npm/which-typed-array@1.1.24",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c24e0c7f8a51e6644fede62eb93042210f5dd2e77616fda344b4297e09d18db3b10051e68ca1556a5813a62b552b32494bc6a39d8415d83bb5499f23e9bfc451"
+        }
+      ],
+      "properties": [
+        {
+          "name": "qf:importers",
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3335,7 +4510,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc"
+          "value": "@project-qf/launchpad"
         }
       ]
     },
@@ -3360,7 +4535,7 @@
       "properties": [
         {
           "name": "qf:importers",
-          "value": "@project-qf/adapter-meteora-dbc,@project-qf/web"
+          "value": "@project-qf/launchpad"
         }
       ]
     }
@@ -3390,6 +4565,23 @@
         "pkg:npm/%40solana/web3.js@1.99.0",
         "pkg:npm/bn.js@5.2.5",
         "pkg:npm/buffer-layout@1.2.2"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40metaplex-foundation/beet-solana@0.4.0",
+      "dependsOn": [
+        "pkg:npm/%40metaplex-foundation/beet@0.7.1",
+        "pkg:npm/%40solana/web3.js@1.99.0",
+        "pkg:npm/bs58@5.0.0",
+        "pkg:npm/debug@4.4.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40metaplex-foundation/beet@0.7.1",
+      "dependsOn": [
+        "pkg:npm/ansicolors@0.3.2",
+        "pkg:npm/bn.js@5.2.5",
+        "pkg:npm/debug@4.4.3"
       ]
     },
     {
@@ -3427,6 +4619,7 @@
         "pkg:npm/%40meteora-ag/cp-amm-sdk@1.4.10",
         "pkg:npm/%40meteora-ag/dynamic-bonding-curve-sdk@1.5.13",
         "pkg:npm/%40solana/web3.js@1.99.0",
+        "pkg:npm/%40sqds/multisig@2.1.4",
         "pkg:npm/bn.js@5.2.5"
       ]
     },
@@ -3477,6 +4670,15 @@
       "dependsOn": [
         "pkg:npm/%40solana/errors@8.3.0",
         "pkg:npm/typescript@5.9.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40solana/buffer-layout-utils@0.2.0",
+      "dependsOn": [
+        "pkg:npm/%40solana/buffer-layout@4.0.1",
+        "pkg:npm/%40solana/web3.js@1.99.0",
+        "pkg:npm/bigint-buffer@1.1.5",
+        "pkg:npm/bignumber.js@9.3.1"
       ]
     },
     {
@@ -3970,6 +5172,16 @@
       ]
     },
     {
+      "ref": "pkg:npm/%40solana/spl-token@0.3.11",
+      "dependsOn": [
+        "pkg:npm/%40solana/buffer-layout-utils@0.2.0",
+        "pkg:npm/%40solana/buffer-layout@4.0.1",
+        "pkg:npm/%40solana/spl-token-metadata@0.1.6",
+        "pkg:npm/%40solana/web3.js@1.99.0",
+        "pkg:npm/buffer@6.0.3"
+      ]
+    },
+    {
       "ref": "pkg:npm/%40solana/spl-token@0.4.15",
       "dependsOn": [
         "pkg:npm/%40solana/buffer-layout-utils@0.3.0",
@@ -4084,6 +5296,21 @@
       ]
     },
     {
+      "ref": "pkg:npm/%40sqds/multisig@2.1.4",
+      "dependsOn": [
+        "pkg:npm/%40metaplex-foundation/beet-solana@0.4.0",
+        "pkg:npm/%40metaplex-foundation/beet@0.7.1",
+        "pkg:npm/%40metaplex-foundation/cusper@0.0.2",
+        "pkg:npm/%40solana/spl-token@0.3.11",
+        "pkg:npm/%40solana/web3.js@1.99.0",
+        "pkg:npm/%40types/bn.js@5.2.0",
+        "pkg:npm/assert@2.1.0",
+        "pkg:npm/bn.js@5.2.5",
+        "pkg:npm/buffer@6.0.3",
+        "pkg:npm/invariant@2.2.4"
+      ]
+    },
+    {
       "ref": "pkg:npm/%40swc/helpers@0.5.23",
       "dependsOn": [
         "pkg:npm/tslib@2.8.1"
@@ -4126,6 +5353,22 @@
       ]
     },
     {
+      "ref": "pkg:npm/assert@2.1.0",
+      "dependsOn": [
+        "pkg:npm/call-bind@1.0.9",
+        "pkg:npm/is-nan@1.3.2",
+        "pkg:npm/object-is@1.1.6",
+        "pkg:npm/object.assign@4.1.7",
+        "pkg:npm/util@0.12.5"
+      ]
+    },
+    {
+      "ref": "pkg:npm/available-typed-arrays@1.0.7",
+      "dependsOn": [
+        "pkg:npm/possible-typed-array-names@1.1.0"
+      ]
+    },
+    {
       "ref": "pkg:npm/base-x@3.0.11",
       "dependsOn": [
         "pkg:npm/safe-buffer@5.2.1"
@@ -4158,10 +5401,39 @@
       ]
     },
     {
+      "ref": "pkg:npm/bs58@5.0.0",
+      "dependsOn": [
+        "pkg:npm/base-x@4.0.1"
+      ]
+    },
+    {
       "ref": "pkg:npm/buffer@6.0.3",
       "dependsOn": [
         "pkg:npm/base64-js@1.5.1",
         "pkg:npm/ieee754@1.2.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/call-bind-apply-helpers@1.0.2",
+      "dependsOn": [
+        "pkg:npm/es-errors@1.3.0",
+        "pkg:npm/function-bind@1.1.2"
+      ]
+    },
+    {
+      "ref": "pkg:npm/call-bind@1.0.9",
+      "dependsOn": [
+        "pkg:npm/call-bind-apply-helpers@1.0.2",
+        "pkg:npm/es-define-property@1.0.1",
+        "pkg:npm/get-intrinsic@1.3.0",
+        "pkg:npm/set-function-length@1.2.2"
+      ]
+    },
+    {
+      "ref": "pkg:npm/call-bound@1.0.4",
+      "dependsOn": [
+        "pkg:npm/call-bind-apply-helpers@1.0.2",
+        "pkg:npm/get-intrinsic@1.3.0"
       ]
     },
     {
@@ -4171,9 +5443,91 @@
       ]
     },
     {
+      "ref": "pkg:npm/debug@4.4.3",
+      "dependsOn": [
+        "pkg:npm/ms@2.1.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/define-data-property@1.1.4",
+      "dependsOn": [
+        "pkg:npm/es-define-property@1.0.1",
+        "pkg:npm/es-errors@1.3.0",
+        "pkg:npm/gopd@1.2.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/define-properties@1.2.1",
+      "dependsOn": [
+        "pkg:npm/define-data-property@1.1.4",
+        "pkg:npm/has-property-descriptors@1.0.2",
+        "pkg:npm/object-keys@1.1.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/dunder-proto@1.0.1",
+      "dependsOn": [
+        "pkg:npm/call-bind-apply-helpers@1.0.2",
+        "pkg:npm/es-errors@1.3.0",
+        "pkg:npm/gopd@1.2.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/es-object-atoms@1.1.2",
+      "dependsOn": [
+        "pkg:npm/es-errors@1.3.0"
+      ]
+    },
+    {
       "ref": "pkg:npm/es6-promisify@5.0.0",
       "dependsOn": [
         "pkg:npm/es6-promise@4.2.8"
+      ]
+    },
+    {
+      "ref": "pkg:npm/for-each@0.3.5",
+      "dependsOn": [
+        "pkg:npm/is-callable@1.2.7"
+      ]
+    },
+    {
+      "ref": "pkg:npm/get-intrinsic@1.3.0",
+      "dependsOn": [
+        "pkg:npm/call-bind-apply-helpers@1.0.2",
+        "pkg:npm/es-define-property@1.0.1",
+        "pkg:npm/es-errors@1.3.0",
+        "pkg:npm/es-object-atoms@1.1.2",
+        "pkg:npm/function-bind@1.1.2",
+        "pkg:npm/get-proto@1.0.1",
+        "pkg:npm/gopd@1.2.0",
+        "pkg:npm/has-symbols@1.1.0",
+        "pkg:npm/hasown@2.0.4",
+        "pkg:npm/math-intrinsics@1.1.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/get-proto@1.0.1",
+      "dependsOn": [
+        "pkg:npm/dunder-proto@1.0.1",
+        "pkg:npm/es-object-atoms@1.1.2"
+      ]
+    },
+    {
+      "ref": "pkg:npm/has-property-descriptors@1.0.2",
+      "dependsOn": [
+        "pkg:npm/es-define-property@1.0.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/has-tostringtag@1.0.2",
+      "dependsOn": [
+        "pkg:npm/has-symbols@1.1.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/hasown@2.0.4",
+      "dependsOn": [
+        "pkg:npm/function-bind@1.1.2"
       ]
     },
     {
@@ -4186,6 +5540,45 @@
       "ref": "pkg:npm/invariant@2.2.4",
       "dependsOn": [
         "pkg:npm/loose-envify@1.4.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/is-arguments@1.2.0",
+      "dependsOn": [
+        "pkg:npm/call-bound@1.0.4",
+        "pkg:npm/has-tostringtag@1.0.2"
+      ]
+    },
+    {
+      "ref": "pkg:npm/is-generator-function@1.1.2",
+      "dependsOn": [
+        "pkg:npm/call-bound@1.0.4",
+        "pkg:npm/generator-function@2.0.1",
+        "pkg:npm/get-proto@1.0.1",
+        "pkg:npm/has-tostringtag@1.0.2",
+        "pkg:npm/safe-regex-test@1.1.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/is-nan@1.3.2",
+      "dependsOn": [
+        "pkg:npm/call-bind@1.0.9",
+        "pkg:npm/define-properties@1.2.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/is-regex@1.2.1",
+      "dependsOn": [
+        "pkg:npm/call-bound@1.0.4",
+        "pkg:npm/gopd@1.2.0",
+        "pkg:npm/has-tostringtag@1.0.2",
+        "pkg:npm/hasown@2.0.4"
+      ]
+    },
+    {
+      "ref": "pkg:npm/is-typed-array@1.1.15",
+      "dependsOn": [
+        "pkg:npm/which-typed-array@1.1.24"
       ]
     },
     {
@@ -4224,6 +5617,24 @@
       ]
     },
     {
+      "ref": "pkg:npm/object-is@1.1.6",
+      "dependsOn": [
+        "pkg:npm/call-bind@1.0.9",
+        "pkg:npm/define-properties@1.2.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/object.assign@4.1.7",
+      "dependsOn": [
+        "pkg:npm/call-bind@1.0.9",
+        "pkg:npm/call-bound@1.0.4",
+        "pkg:npm/define-properties@1.2.1",
+        "pkg:npm/es-object-atoms@1.1.2",
+        "pkg:npm/has-symbols@1.1.0",
+        "pkg:npm/object-keys@1.1.1"
+      ]
+    },
+    {
       "ref": "pkg:npm/rpc-websockets@9.3.9",
       "dependsOn": [
         "pkg:npm/%40swc/helpers@0.5.23",
@@ -4236,9 +5647,38 @@
       ]
     },
     {
+      "ref": "pkg:npm/safe-regex-test@1.1.0",
+      "dependsOn": [
+        "pkg:npm/call-bound@1.0.4",
+        "pkg:npm/es-errors@1.3.0",
+        "pkg:npm/is-regex@1.2.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/set-function-length@1.2.2",
+      "dependsOn": [
+        "pkg:npm/define-data-property@1.1.4",
+        "pkg:npm/es-errors@1.3.0",
+        "pkg:npm/function-bind@1.1.2",
+        "pkg:npm/get-intrinsic@1.3.0",
+        "pkg:npm/gopd@1.2.0",
+        "pkg:npm/has-property-descriptors@1.0.2"
+      ]
+    },
+    {
       "ref": "pkg:npm/stream-json@1.9.1",
       "dependsOn": [
         "pkg:npm/stream-chain@2.2.5"
+      ]
+    },
+    {
+      "ref": "pkg:npm/util@0.12.5",
+      "dependsOn": [
+        "pkg:npm/inherits@2.0.4",
+        "pkg:npm/is-arguments@1.2.0",
+        "pkg:npm/is-generator-function@1.1.2",
+        "pkg:npm/is-typed-array@1.1.15",
+        "pkg:npm/which-typed-array@1.1.24"
       ]
     },
     {
@@ -4249,11 +5689,24 @@
       ]
     },
     {
+      "ref": "pkg:npm/which-typed-array@1.1.24",
+      "dependsOn": [
+        "pkg:npm/available-typed-arrays@1.0.7",
+        "pkg:npm/call-bind@1.0.9",
+        "pkg:npm/call-bound@1.0.4",
+        "pkg:npm/for-each@0.3.5",
+        "pkg:npm/get-proto@1.0.1",
+        "pkg:npm/gopd@1.2.0",
+        "pkg:npm/has-tostringtag@1.0.2"
+      ]
+    },
+    {
       "ref": "workspace:@project-qf/adapter-meteora-dbc",
       "dependsOn": [
         "pkg:npm/%40meteora-ag/cp-amm-sdk@1.4.10",
         "pkg:npm/%40meteora-ag/dynamic-bonding-curve-sdk@1.5.13",
         "pkg:npm/%40solana/web3.js@1.99.0",
+        "pkg:npm/%40sqds/multisig@2.1.4",
         "pkg:npm/bn.js@5.2.5"
       ]
     },

@@ -9,7 +9,7 @@ import { storedVaultTransaction } from '../../../packages/adapter-meteora-dbc/te
 import { proposeTransaction, partnerCurveClaim } from '@project-qf/adapter-meteora-dbc/treasury';
 import { harness, seedLaunch } from './support/harness.ts';
 import { syncLaunch } from '../src/indexer.ts';
-import { vaultCheck } from '../src/server.ts';
+import { vaultCheck } from '../src/books.ts';
 
 type H = Awaited<ReturnType<typeof harness>>;
 type Member = Awaited<ReturnType<typeof generateMintKey>>;
@@ -70,10 +70,10 @@ test('[TEST_ONLY] a platform fee claim goes propose (with the proposer\'s approv
   const c = h.store.getClaim(ex.body.signature)!;
   assert.equal(c.claimer, vault); assert.equal(c.venue, 'CURVE'); assert.equal(c.pool, K.pool.toBase58()); assert.equal(c.quoteVault, K.quoteVault.toBase58());
   assert.equal(c.status, 'UNKNOWN', 'no transaction details in the double: the receipt waits for evidence, never a zero');
-  const earn = await h.call('/api/lp/earnings?fresh=1');
-  assert.equal(earn.body.coins[0].platformWallet, vault); assert.equal(earn.body.coins[0].treasury, true);
-  assert.equal(earn.body.claims[0].byTreasury, true);
-  assert.equal(earn.body.treasury.unresolvedReceipts, 1); assert.equal(earn.body.treasury.paidToTreasuryQuoteRaw, '0');
+  const b = await h.books();
+  assert.equal(b.coins[0].platformWallet, vault); assert.equal(b.coins[0].treasury, true);
+  assert.equal(b.claims[0].byTreasury, true);
+  assert.equal(b.treasury.unresolvedReceipts, 1); assert.equal(b.treasury.paidToTreasuryQuoteRaw, '0');
 });
 
 test('[TEST_ONLY] treasury routes refuse non-members, legacy coins and a stored transaction that is not the proposed claim', async () => {
@@ -99,8 +99,8 @@ test('[TEST_ONLY] treasury routes refuse non-members, legacy coins and a stored 
   // a coin on the earlier config: its platform fees belong to the operator wallet, not the treasury
   h.store.db.prepare('UPDATE launches SET config = ? WHERE mint = ?').run(K.attacker.toBase58(), mint);
   assert.equal((await h.call('/api/lp/treasury/propose', { mint, venue: 'curve', member: m1!.address })).body.error.code, 'NOT_TREASURY_COIN');
-  const earn = await h.call('/api/lp/earnings?fresh=1');
-  assert.equal(earn.body.coins[0].platformWallet, K.partner.toBase58()); assert.equal(earn.body.coins[0].treasury, false);
+  const b = await h.books();
+  assert.equal(b.coins[0].platformWallet, K.partner.toBase58()); assert.equal(b.coins[0].treasury, false);
   assert.ok(vault);
 });
 
@@ -114,7 +114,7 @@ test('[TEST_ONLY] a treasury receipt is counted once: in claimed-through-the-app
     fees: { venue: 'CURVE', status: 'RESOLVED', evidence: 'SWAP_EVENT', totalRaw: '2500000', protocolRaw: '500000', referralRaw: '0', creatorRaw: '1000000', platformRaw: '1000000', lpRaw: null, compoundingRaw: null } });
   let vaultHolds = 0n;
   h.chain.balances = async (owner, mints) => ({ lamports: '0', tokens: owner === vault ? Object.fromEntries(mints.map((m) => [m, m === quote ? vaultHolds.toString() : '0'])) : {} });
-  const before = (await h.call('/api/lp/earnings?fresh=1')).body;
+  const before = await h.books();
   assert.deepEqual([before.coins[0].checks.platformCurve.status, before.coins[0].checks.platformCurve.onChainRaw, before.treasury.vaultCheck.status], ['MATCH', '1000000', 'MATCH']);
 
   // the required approvals: m1 proposes (and approves), m2 approves, m3 executes
@@ -146,7 +146,7 @@ test('[TEST_ONLY] a treasury receipt is counted once: in claimed-through-the-app
   h.chain.newSignatures = async () => [{ signature: sig, slot: 5, err: false }];
   assert.equal((await syncLaunch({ store: h.store, chain: h.chain, poolCache: h.app.poolCache }, h.store.getLaunch(mint)!)).trades, 0, 'a fee claim is not a trade');
 
-  const after = (await h.call('/api/lp/earnings?fresh=1')).body;
+  const after = await h.books();
   assert.equal(after.claims.length, 1);
   assert.deepEqual([after.claims[0].status, after.claims[0].quoteRaw, after.claims[0].byTreasury], ['RESOLVED', '1000000', true]);
   assert.equal(after.totals.claimedThroughApp, '1000000', 'the receipt is in the app-wide claimed total once');
@@ -163,33 +163,35 @@ test('[TEST_ONLY] a treasury receipt is counted once: in claimed-through-the-app
 test('the vault check: equal is MATCH, any difference says which way, missing evidence is never a match', () => {
   assert.equal(vaultCheck(5n, 5n, 0).status, 'MATCH');
   const more = vaultCheck(7n, 5n, 0), less = vaultCheck(3n, 5n, 0);
-  assert.deepEqual([more.status, more.differenceRaw], ['MISMATCH', '2']); assert.match(more.reasons[0]!, /more than the proven receipts/);
-  assert.deepEqual([less.status, less.differenceRaw], ['MISMATCH', '2']); assert.match(less.reasons[0]!, /less than the proven receipts/);
+  assert.deepEqual([more.status, more.differenceRaw], ['MISMATCH', '2']); assert.match(more.reasons[0]!, /more than/);
+  assert.deepEqual([less.status, less.differenceRaw], ['MISMATCH', '2']); assert.match(less.reasons[0]!, /less than/);
   assert.equal(vaultCheck(null, 5n, 0).status, 'INCOMPLETE');
   assert.equal(vaultCheck(5n, 5n, 1).status, 'INCOMPLETE', 'an unproven receipt leaves the check open');
 });
 
-test('[TEST_ONLY] the earlier config is labelled legacy, and the test treasury says it is not separation of control', async () => {
+test('the vault check: proven rewards deposits left the vault, so the vault holds receipts minus deposits', () => {
+  const ok = vaultCheck(3n, 5n, 0, 2n);
+  assert.deepEqual([ok.status, ok.differenceRaw, ok.depositsOutRaw], ['MATCH', '0', '2']);
+  assert.equal(vaultCheck(5n, 5n, 0, 2n).status, 'MISMATCH', 'a deposit that left must not be counted as still there');
+  assert.equal(vaultCheck(3n, 5n, 0, 2n, 1).status, 'INCOMPLETE', 'a deposit whose own transaction is not read leaves the check open');
+});
+
+test('[TEST_ONLY] a coin on the earlier config is legacy, and the test treasury says it is not separation of control', async () => {
   const h = await harness();
   await withTreasury(h);
   const mint = seedLaunch(h.store, h.platform);
-  const pl = (await h.call('/api/lp/platform')).body.platform;
-  const [cur, old] = pl.configs;
-  assert.deepEqual([cur.role, cur.treasury, old.role, old.treasury, old.feeClaimer], ['CURRENT', true, 'LEGACY', false, K.partner.toBase58()]);
-  assert.match(old.label, /^Legacy config/);
-  assert.equal(pl.treasury.separationOfControl, false);
-  assert.equal(pl.treasury.signers, 'ONE_OPERATOR_TEST_KEYS');
-  assert.match(pl.treasury.note, /held by one operator/); assert.match(pl.treasury.note, /not separation of control/);
-  assert.equal((await h.call('/api/lp/earnings?fresh=1')).body.coins[0].configRole, 'CURRENT');
-  h.store.db.prepare('UPDATE launches SET config = ? WHERE mint = ?').run(old.config, mint);
-  h.tick(31_000);
-  const earn = (await h.call('/api/lp/earnings?fresh=1')).body;
-  assert.deepEqual([earn.coins[0].configRole, earn.coins[0].treasury, earn.coins[0].platformWallet], ['LEGACY', false, K.partner.toBase58()]);
-  assert.equal(earn.treasury.separationOfControl, false);
+  const t = (await h.call('/api/lp/treasury')).body.treasury;
+  assert.deepEqual([t.separationOfControl, t.signers, t.threshold], [false, 'ONE_OPERATOR_TEST_KEYS', 2]);
+  assert.match(t.note, /held by one operator/); assert.match(t.note, /not separation of control/);
+  assert.equal((await h.books()).coins[0].configRole, 'CURRENT');
+  h.store.db.prepare('UPDATE launches SET config = ? WHERE mint = ?').run(K.attacker.toBase58(), mint);
+  const b = await h.books();
+  assert.deepEqual([b.coins[0].configRole, b.coins[0].treasury, b.coins[0].platformWallet], ['LEGACY', false, K.partner.toBase58()]);
+  assert.equal(b.treasury.separationOfControl, false);
 });
 
 test('only the member signer loads member keys: the server process has no path to them', () => {
-  for (const f of ['../src/server.ts', '../src/main.ts', '../src/chain.ts', '../src/indexer.ts', '../src/platform.ts']) {
+  for (const f of ['../src/server.ts', '../src/main.ts', '../src/chain.ts', '../src/indexer.ts', '../src/platform.ts', '../src/books.ts', '../src/verify.ts']) {
     const src = readFileSync(new URL(f, import.meta.url), 'utf8');
     assert.ok(!/signAsMember|member-\$\{|member-[123]\.json|QF_TREASURY_DIR/.test(src), `${f} must not load or sign with member keys`);
   }
