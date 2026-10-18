@@ -8,6 +8,8 @@
 //   QF_ALCHEMY_API_KEY      optional: Alchemy Solana devnet key; the site's RPC when set
 //   QF_HELIUS_API_KEY       optional: Helius key; the site's RPC when there is no Alchemy key (one key is enough)
 //   ALWAYSDATA_WEBDAV_URL   optional override (default https://webdav-<account>.alwaysdata.net)
+//   QF_ENGINE               optional: `qf` deploys the launchpad on Project QF's own engine (SOL-quoted, its own store, no
+//                           platform setup: the engine is already set up on devnet); `meteora` or unset deploys the Meteora one
 // Without RPC keys the site uses the public devnet endpoint, which is rate-limited.
 //
 // What it does:
@@ -41,7 +43,10 @@ const app = resolve(dirname(fileURLToPath(import.meta.url)), 'out', 'app');
 const remoteRoot = 'qf-launchpad';               // relative to the account's home
 const home = `/home/${account}`;
 const dataDir = `${home}/${remoteRoot}/data`;
-const dbName = 'qf-launchpad-devnet.sqlite';
+const engine = env.QF_ENGINE?.trim() || 'meteora';
+if (engine !== 'qf' && engine !== 'meteora') fail(`QF_ENGINE must be qf or meteora (got ${JSON.stringify(engine)})`);
+// each engine keeps its own store (the two refuse each other's files); the operator key is shared
+const dbName = engine === 'qf' ? 'qf-launchpad-engine-devnet.sqlite' : 'qf-launchpad-devnet.sqlite';
 const initDir = join(homedir(), '.qf-alwaysdata-init', account);
 const proxyFlag = env.HTTPS_PROXY ? ['--use-env-proxy'] : [];
 
@@ -110,7 +115,7 @@ function runApp(cmd, extraEnv) {
     env: { PATH: env.PATH, HOME: initDir, ...(env.HTTPS_PROXY ? { HTTPS_PROXY: env.HTTPS_PROXY, HTTP_PROXY: env.HTTP_PROXY ?? env.HTTPS_PROXY } : {}),
       ...(env.NODE_EXTRA_CA_CERTS ? { NODE_EXTRA_CA_CERTS: env.NODE_EXTRA_CA_CERTS } : {}),
       QF_DEVNET_KEY: join(initDir, 'operator.json'), QF_LP_DB: join(initDir, dbName), QF_PUBLIC_BASE_URL: publicUrl,
-      ...(rpc[0] ? { QF_RPC_URL: rpc[0] } : {}), ...extraEnv } });
+      QF_ENGINE: engine, ...(rpc[0] ? { QF_RPC_URL: rpc[0] } : {}), ...extraEnv } });
 }
 
 /** First deploy: a throwaway operator key and the test platform, made here and uploaded to the site's data folder. */
@@ -129,16 +134,19 @@ async function initPlatform() {
     console.log(`\nThe operator needs devnet SOL before the test platform can be made. Send about 1 devnet SOL (free, no value) to\n  ${operator}\nfrom https://faucet.solana.com (choose Devnet), then run this again. The key stays in ${initDir} until then.`);
     process.exit(2);
   }
-  // setup is idempotent: on a re-run after funding it reuses what the store already records
-  say(`making the test quote token and DBC config (operator balance ${Number(lamports) / 1e9} SOL)`);
-  say(runApp('setup').trim().split('\n').slice(-12).join(' ').slice(0, 400));
-  // one clean file to upload (no WAL)
   const clean = join(initDir, 'upload');
   rmSync(clean, { recursive: true, force: true });
   mkdirSync(clean, { mode: 0o700 });
-  const db = new DatabaseSync(join(initDir, dbName));
-  db.exec(`VACUUM INTO '${join(clean, dbName).replace(/'/g, "''")}'`);
-  db.close();
+  if (engine === 'meteora') {
+    // setup is idempotent: on a re-run after funding it reuses what the store already records
+    say(`making the test quote token and DBC config (operator balance ${Number(lamports) / 1e9} SOL)`);
+    say(runApp('setup').trim().split('\n').slice(-12).join(' ').slice(0, 400));
+    // one clean file to upload (no WAL)
+    const db = new DatabaseSync(join(initDir, dbName));
+    db.exec(`VACUUM INTO '${join(clean, dbName).replace(/'/g, "''")}'`);
+    db.close();
+  }
+  // engine mode: no setup and no store to upload; the site makes its store on first start and reads the coins from the chain
   execFileSync('cp', [join(initDir, 'operator.json'), join(clean, 'operator.json')]);
   return { clean, operator };
 }
@@ -151,7 +159,7 @@ say(`account ${account}, build ${build.commit}, ${build.files.length} files, RPC
 const environment = Object.entries({
   QF_LP_DB: `${dataDir}/${dbName}`, QF_DEVNET_KEY: `${dataDir}/operator.json`,
   QF_LP_HOST: '::', QF_LP_PORT: '8100', QF_STATIC_DIR: `${home}/${remoteRoot}/app/web`, QF_PUBLIC_BASE_URL: publicUrl,
-  QF_LP_INTERVAL_MS: '30000', ...(rpc[0] ? { QF_RPC_URL: rpc[0] } : {}),
+  QF_LP_INTERVAL_MS: '30000', ...(engine === 'qf' ? { QF_ENGINE: 'qf' } : {}), ...(rpc[0] ? { QF_RPC_URL: rpc[0] } : {}),
 }).map(([k, v]) => `${k}=${/[\s"'?&=]/.test(v) ? `"${v.replace(/"/g, '\\"')}"` : v}`).join(' ');
 const site = { type: 'nodejs', name: 'qf-launchpad-devnet', addresses: [host], working_directory: remoteRoot,
   command: 'node --max-old-space-size=160 --no-warnings app/server.mjs serve', nodejs_version: '22', environment, max_idle_time: 0, ssl_force: true };
@@ -167,7 +175,8 @@ const created = await api('POST', '/webdav/', { name: davUser, password: davPass
 const davId = idFrom(created.location) || idFrom((await api('GET', '/webdav/')).json.find((u) => u.name === davUser));
 let init = null;
 try {
-  const first = (await dav('PROPFIND', `${remoteRoot}/data/${dbName}`, davUser, davPass, undefined, { depth: '0' })).status === 404;
+  // first deploy: no store (Meteora) or no operator key (engine; it reuses a key an earlier Meteora deploy left there)
+  const first = (await dav('PROPFIND', `${remoteRoot}/data/${engine === 'qf' ? 'operator.json' : dbName}`, davUser, davPass, undefined, { depth: '0' })).status === 404;
   if (first) init = await initPlatform();
   await upload(app, `${remoteRoot}/app`, davUser, davPass);
   if (init) await upload(init.clean, `${remoteRoot}/data`, davUser, davPass);
@@ -190,5 +199,5 @@ for (let i = 0; i < 36 && !ok; i++) {
 }
 if (!ok) fail(`${publicUrl}/api/lp/healthz did not answer ok within 3 minutes; check the site's log in the alwaysdata admin (Logs)`);
 const platform = await fetch(`${publicUrl}/api/lp/platform`).then((r) => r.json()).catch(() => null);
-say(`live: ${publicUrl} (${platform?.mode ?? '?'}; launching ${platform?.writesEnabled ? 'on' : 'off'})`);
+say(`live: ${publicUrl} (${engine === 'qf' ? 'QF engine' : 'Meteora'}, ${platform?.mode ?? '?'}; launching ${platform?.writesEnabled ? 'on' : 'off'})`);
 if (init) { rmSync(initDir, { recursive: true, force: true }); say(`deleted the local copy of the operator key (${initDir}); the site's copy is in ~/${remoteRoot}/data`); }

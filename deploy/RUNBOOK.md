@@ -25,7 +25,7 @@ node --no-warnings --use-env-proxy deploy/alwaysdata/deploy.mjs --dry-run   # pr
 node --no-warnings --use-env-proxy deploy/alwaysdata/deploy.mjs
 ```
 
-`deploy.mjs` checks the token. On the first deploy it makes a throwaway devnet operator key and this host's test token and config on the deploying machine. The operator needs about 1 devnet SOL: the script asks the devnet faucet, and when the faucet refuses (it refuses the cloud container) it prints the operator's public address and stops with exit code 2. Send it about 1 devnet SOL from https://faucet.solana.com (choose Devnet), or from the launchpad operator, then run it again.
+`deploy.mjs` checks the token. With `QF_ENGINE=qf` in the deploying environment it deploys the launchpad on Project QF's own engine instead (its own store, no platform setup: the engine is already set up on devnet; a key from an earlier Meteora deploy is reused). On the first deploy it makes a throwaway devnet operator key and this host's test token and config on the deploying machine. The operator needs about 1 devnet SOL: the script asks the devnet faucet, and when the faucet refuses (it refuses the cloud container) it prints the operator's public address and stops with exit code 2. Send it about 1 devnet SOL from https://faucet.solana.com (choose Devnet), or from the launchpad operator, then run it again.
 
 It then uploads the app (and, the first time, the data folder with the key and the store) through a temporary WebDAV login that it deletes at the end, creates or updates the Node.js site (Node 22, never idle, listening on `::` port 8100, settings in the site's environment), restarts it and waits for `/api/lp/healthz`. On success it deletes the local copy of the key; the host's copy is in `~/qf-launchpad/data` (outside the web folder, not served).
 
@@ -35,7 +35,7 @@ Not yet confirmed against the live service, so check on the first run: the API's
 
 ## 3. After every deploy
 
-1. `https://<account>.alwaysdata.net/api/lp/healthz` returns `{"ok":true,...,"mode":"DEVNET"}`.
+1. `https://<account>.alwaysdata.net/api/lp/healthz` returns `{"ok":true,...}`, and `/api/lp/platform` says `"mode":"DEVNET"`.
 2. The home page loads with no console errors and offers Create and the test faucet. The server sends a strict Content-Security-Policy; nothing loads from another site.
 3. The books add up: `verify` (§5) prints no FAIL.
 

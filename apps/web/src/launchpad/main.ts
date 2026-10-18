@@ -3,7 +3,7 @@
 import { economicsDigest } from '@project-qf/policy';
 import { addSignature, fromBase64, generateMintKey, toBase64, type ApprovedTerms } from '@project-qf/tx';
 import { ago, compact, explorer, parseUnits, pct, price, setExplorerCluster, short, units } from './format.ts';
-import { checkBuiltTransaction, type Check, type Expectation } from './txcheck.ts';
+import { checkBuiltTransaction, slippageFloor, type Check, type Expectation } from './txcheck.ts';
 import { connect, disconnect, listWallets, onWalletsChanged, setWalletCluster, signTransaction, startWalletDiscovery, type Connected } from './wallet.ts';
 
 // ------------------------------------------------------------------ types from lp-api/1
@@ -91,6 +91,8 @@ const POOL = () => (isQf() ? 'its own pool' : 'a Meteora DAMM v2 pool');
 const POOL_SHORT = () => (isQf() ? 'its pool' : 'DAMM v2');
 /** Fraction digits worth showing for quote amounts: SOL moves in smaller steps than the 6-decimal test dollar. */
 const QD = () => (Q().decimals >= 9 ? 4 : 2);
+/** Every engine coin has 6 decimals (packages/engine BASE_DECIMALS, qf-curve state.rs); SOL has 9. */
+const QF_BASE_DECIMALS = 6;
 const gradPool = (t: Pick<Token, 'dammPool' | 'graduatedPool'>) => t.graduatedPool ?? t.dammPool ?? null;
 /** Market cap text; after graduation it is unknown (not the old curve's) while the DAMM v2 pool cannot be read. */
 const mcapText = (l: Live | null) => (l?.marketCapQuoteRaw ? `${compact(l.marketCapQuoteRaw, Q().decimals)} ${Q().symbol}` : '—');
@@ -260,7 +262,7 @@ function featureCard(t: Token) {
     h('div', { class: 'feature-id' }, avatar(t, 'xl'), h('div', { class: 'names' }, h('b', {}, t.name), h('span', { class: 'dim' }, `$${t.symbol}`)),
       h('div', { class: 'mcap' }, h('div', { class: 'num' }, mcapText(l)), h('div', { class: 'dim small' }, 'market cap'))),
     progressBar(l.progressBps, false, true),
-    h('div', { class: 'tc-foot' }, h('span', {}, h('b', { class: 'num' }, units(l.quoteReserve, q.decimals, 0)), ` of ${units(l.migrationQuoteThreshold, q.decimals, 0)} ${q.symbol} raised`), h('b', { class: 'up' }, pct(l.progressBps))));
+    h('div', { class: 'tc-foot' }, h('span', {}, h('b', { class: 'num' }, units(l.quoteReserve, q.decimals, QD())), ` of ${units(l.migrationQuoteThreshold, q.decimals, QD())} ${q.symbol} raised`), h('b', { class: 'up' }, pct(l.progressBps))));
 }
 
 async function renderTape() {
@@ -486,7 +488,9 @@ async function renderToken(mint: string) {
   const balanceLine = h('p', { class: 'dim small', id: 'bal', style: { margin: '0' } });
   const panelCard = h('div', { class: 'card trade' });
   const unitOf = () => (side === 'buy' ? q.decimals : bd);
-  let lastQuote: any = null, qTimer: number | undefined;
+  // lastQuote is only ever the answer for what is on screen now: cleared on every edit, and a late answer to an older
+  // request (quoteSeq) is dropped. The click re-checks amount, side and slippage against it before building.
+  let lastQuote: any = null, qTimer: number | undefined, quoteSeq = 0;
   const setSide = (s: typeof side) => {
     side = s; amount.value = ''; quoteBox.replaceChildren(); lastQuote = null;
     panelCard.classList.toggle('sell', s === 'sell');
@@ -503,21 +507,25 @@ async function renderToken(mint: string) {
   };
   const requote = () => {
     clearTimeout(qTimer);
+    lastQuote = null;
+    const seq = ++quoteSeq;
     qTimer = window.setTimeout(async () => {
-      lastQuote = null;
       let raw: bigint;
       try { raw = parseUnits(amount.value || '0', unitOf()); } catch (e) { quoteBox.replaceChildren(h('p', { class: 'err' }, (e as Error).message)); return; }
       if (raw === 0n) { quoteBox.replaceChildren(); return; }
       try {
-        const { quote } = await api<{ quote: any }>('/api/lp/quote', { mint: t.mint, side, amountIn: raw.toString(), slippageBps: Number(slip.value) });
-        lastQuote = { ...quote, raw };
+        const asked = { side, slippageBps: Number(slip.value) };
+        const { quote } = await api<{ quote: any }>('/api/lp/quote', { mint: t.mint, side, amountIn: raw.toString(), slippageBps: asked.slippageBps });
+        if (seq !== quoteSeq) return;
+        lastQuote = { ...quote, raw, ...asked };
         const outDec = side === 'buy' ? bd : q.decimals, outSym = side === 'buy' ? `$${t.symbol}` : q.symbol;
         quoteBox.replaceChildren(h('dl', {},
           h('dt', {}, 'You receive'), h('dd', { class: 'big' }, `${units(quote.expectedOut, outDec, side === 'buy' ? 2 : QD())} ${outSym}`),
-          h('dt', {}, 'At least'), h('dd', {}, `${units(quote.minimumAmountOut, outDec, 2)} ${outSym}`),
+          h('dt', {}, 'At least'), h('dd', {}, `${units(quote.minimumAmountOut, outDec, side === 'buy' ? 2 : QD())} ${outSym}`),
           h('dt', {}, 'Fee'), h('dd', {}, feeText(quote, bd, t.symbol)),
           h('dt', {}, 'Price impact'), h('dd', { class: Number(quote.priceImpactBps) > 500 ? 'err' : '' }, pct(Number(quote.priceImpactBps)))));
       } catch (e) {
+        if (seq !== quoteSeq) return;
         const max = e instanceof ApiError && e.code === 'AMOUNT_NOT_FILLABLE' ? e.details.find((d) => d.startsWith('maxAmountIn:'))?.slice(12) : undefined;
         if (max && side === 'buy') {
           const ui = units(max, q.decimals, q.decimals).replace(/,/g, '');
@@ -535,13 +543,22 @@ async function renderToken(mint: string) {
     if (!w) return;
     if (!lastQuote) { toast('Enter an amount first', 'err'); amount.focus(); return; }
     const shownQuote = lastQuote;
+    const slipBps = Number(slip.value);
+    let typed: bigint;
+    try { typed = parseUnits(amount.value || '0', unitOf()); } catch { typed = -1n; }
+    if (typed !== shownQuote.raw || shownQuote.side !== side || shownQuote.slippageBps !== slipBps) { toast('The quote is out of date. Check the new one, then press again.', 'err'); requote(); return; }
+    // Our own engine's decimals are fixed (SOL 9, every coin 6); a server that says otherwise would scale the amount.
+    if (isQf() && (q.decimals !== 9 || bd !== QF_BASE_DECIMALS || !l)) { toast('This coin\'s details do not match the engine. Nothing was sent.', 'err'); return; }
+    // The slippage floor is computed here from what you were shown, not taken from the server.
+    const floor = slippageFloor(BigInt(shownQuote.expectedOut ?? '0'), slipBps);
+    if (floor <= 0n || BigInt(shownQuote.minimumAmountOut ?? '0') < floor) { toast('The quote\'s minimum received is below your slippage. Nothing was sent.', 'err'); return; }
     const dir = side === 'buy' ? 'QUOTE_TO_BASE' : 'BASE_TO_QUOTE';
     go.disabled = true;
     const out = await runSigningFlow<{ trade: unknown }>(`${side === 'buy' ? 'Buy' : 'Sell'} $${t.symbol}`,
-      () => api<Built>('/api/lp/swap', { mint: t.mint, user: w.account.address, side, amountIn: shownQuote.raw.toString(), slippageBps: Number(slip.value) }),
+      () => api<Built>('/api/lp/swap', { mint: t.mint, user: w.account.address, side, amountIn: shownQuote.raw.toString(), slippageBps: slipBps }),
       () => ({ kind: isQf() ? (onPool ? 'QF_POOL_SWAP' : 'QF_SWAP') : onPool ? 'DAMM_SWAP' : 'SWAP', wallet: w.account.address, shown: { quote: { ...shownQuote, raw: shownQuote.raw.toString() } },
         fields: { user: w.account.address, ...(isQf() ? {} : { pool: onPool ? gradPool(t) : t.pool }), baseMint: t.mint, quoteMint: q.mint, direction: dir, amountIn: shownQuote.raw.toString() },
-        minimumAmountOutAtLeast: shownQuote.minimumAmountOut }));
+        minimumAmountOutAtLeast: floor.toString() }));
     go.disabled = false;
     if (out) { toast('Trade confirmed', 'ok'); renderToken(t.mint); }
   });
@@ -627,7 +644,7 @@ async function renderToken(mint: string) {
           h('div', { class: 'grad-top' }, h('b', {}, 'Graduation'), h('span', { class: 'num' }, graduated ? 'Done' : pct(l.progressBps))),
           progressBar(l.progressBps, l.curveComplete || l.isMigrated, true),
           h('p', { class: 'dim small' }, graduated ? `Graduated to ${POOL()}.${lockedText(l) ? ` ${lockedText(l)} of the pool's liquidity is locked forever.` : ''}`
-            : `${units(l.quoteReserve, q.decimals, QD() - 2)} of ${units(l.migrationQuoteThreshold, q.decimals, QD() - 2)} ${q.symbol} raised. At ${units(l.migrationQuoteThreshold, q.decimals, QD() - 2)} the coin moves to ${POOL()} and its liquidity is locked forever.${toGo > 0n ? ` About ${units(toGo, q.decimals, QD() - 2)} ${q.symbol} of buying to go.` : ''}`)) : null,
+            : `${units(l.quoteReserve, q.decimals, QD())} of ${units(l.migrationQuoteThreshold, q.decimals, QD())} ${q.symbol} raised. At ${units(l.migrationQuoteThreshold, q.decimals, QD())} the coin moves to ${POOL()} and its liquidity is locked forever.${toGo > 0n ? ` About ${units(toGo, q.decimals, QD())} ${q.symbol} of buying to go.` : ''}`)) : null,
         h('div', { class: 'card' }, h('h3', {}, 'Trades'), historyNote(t), trades.length ? h('div', { class: 'scroll' }, h('table', { class: 'trades' },
           h('thead', {}, h('tr', {}, ...[['Side', ''], ['Trader', ''], [q.symbol, 'num'], [`$${t.symbol}`, 'num'], ['When', '']].map(([c, cls]) => h('th', { class: cls }, c)))), h('tbody', {}, ...tradeRows))) : h('p', { class: 'dim', style: { margin: '0' } }, 'No trades yet. Be the first.'))),
       h('aside', {}, panel, feesCard, rewardsCard(t),

@@ -1,4 +1,4 @@
-// SEC-A: version-bound assertions for the five advisories against the INSTALLED artifacts (not repository HEAD).
+// SEC-A: version-bound assertions for the advisories against the INSTALLED artifacts (not repository HEAD).
 // Each test pins what evidence/sec-a/dispositions.json claims; if an install drifts, these fail.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -112,6 +112,24 @@ test('GHSA-528h-pc64-c93x stream-json 1.9.1: jayson uses StreamValues/Verifier o
   const uses = walk(join(jayson, 'lib')).filter((f) => f.endsWith('.js')).flatMap((f) => [...readFileSync(f, 'utf8').matchAll(/require\('(stream-json[^']*)'\)/g)].map((m) => m[1]));
   assert.deepEqual([...new Set(uses)].sort(), ['stream-json/streamers/StreamValues', 'stream-json/utils/Verifier']);
   assert.ok(!probe.some((p) => /stream-json/.test(p)), 'web3.js uses the jayson browser client, which does not load stream-json');
+});
+
+// GHSA-hqr4-qq8f-hg3x (JSONC parser/Verifier comment re-scan) and GHSA-mjw6-4jj6-33hc (Assembler prototype pollution), both
+// published after the 2026-09-27 review. Same path, same reason: only jayson/lib/utils.js requires stream-json, and the jayson
+// browser client that web3.js uses never requires utils.js. Proposed records (PENDING_OWNER) in evidence/sec-a/dispositions.json.
+test('GHSA-hqr4-qq8f-hg3x / GHSA-mjw6-4jj6-33hc stream-json 1.9.1: only jayson/lib/utils.js requires it, and the browser client never loads utils.js', () => {
+  const files = walk(join(jayson, 'lib')).filter((f) => f.endsWith('.js'));
+  const requirers = files.filter((f) => /require\('stream-json/.test(readFileSync(f, 'utf8'))).map((f) => f.slice(join(jayson, 'lib').length + 1));
+  assert.deepEqual(requirers, ['utils.js']);
+  const browser = readFileSync(join(jayson, 'lib/client/browser/index.js'), 'utf8') + readFileSync(join(jayson, 'lib/generateRequest.js'), 'utf8');
+  assert.deepEqual([...browser.matchAll(/require\('([^']+)'\)/g)].map((m) => m[1]).sort(), ['../../generateRequest', 'uuid', 'uuid']);
+  assert.ok(!probe.some((p) => /stream-json|jayson\/lib\/utils\.js/.test(p)), JSON.stringify(probe.filter((p) => /jayson|stream-json/.test(p))));
+  const records = JSON.parse(readFileSync(join(pkgDir, '../../evidence/sec-a/dispositions.json'), 'utf8')).records;
+  for (const id of ['GHSA-hqr4-qq8f-hg3x', 'GHSA-mjw6-4jj6-33hc']) {
+    const r = records.find((x: { advisory: string }) => x.advisory === id);
+    assert.equal(r?.disposition, 'NOT_AFFECTED_PATH_SPECIFIC', id);
+    assert.equal(r?.approval.status, 'PENDING_OWNER', `${id}: a proposal until the owner adopts it`);
+  }
 });
 
 test('input bounds regardless of disposition: live RPC responses are size- and depth-limited before parsing', async () => {

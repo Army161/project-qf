@@ -216,6 +216,33 @@ test('the faucet gives test SOL only to a low wallet, a limited number of times,
   assert.equal((await noOperator.call('/api/lp/faucet', { wallet: w })).body.error.code, 'FAUCET_EMPTY');
 });
 
+test('parallel faucet claims for one wallet cannot pass the per-day limit', async () => {
+  const h = await engineHarness();
+  const w = (await generateMintKey()).address;
+  h.chain.lamportsOf.set(ADDR.operator, 100_000_000_000n);
+  const send = h.chain.sendAsOperator;
+  h.chain.sendAsOperator = async (...a) => { await new Promise((r) => setTimeout(r, 20)); return send(...a); };   // a real send takes a while
+  const all = await Promise.all(Array.from({ length: 6 }, () => h.call('/api/lp/faucet', { wallet: w })));
+  assert.equal(all.filter((r) => r.status === 200).length, ENGINE_FAUCET.claimsPerDay, JSON.stringify(all.map((r) => r.status)));
+  assert.equal(h.chain.operatorSent.length, ENGINE_FAUCET.claimsPerDay);
+});
+
+test('coins built but never sent, and coins that never landed, are purged with their image; coins with history stay', async () => {
+  const h = await engineHarness();
+  const st = h.store;
+  const old = '2026-01-01T00:00:00.000Z', later = '2026-01-01T00:02:00.000Z';
+  const coin = (mint: string) => st.insertPendingCoin({ mint, quoteMint: E.NATIVE_MINT, creator: ADDR.operator, name: 'MOCK', symbol: 'MOCK', description: '', website: null,
+    twitter: null, telegram: null, imageType: 'image/png', metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: old }, new Uint8Array(1000));
+  const intent = (mint: string) => st.insertIntent({ kind: 'QF_CREATE', mint, user: ADDR.operator, createdAt: old, expiresAt: later, messageHex: '00', termsJson: '{}', lastValidBlockHeight: '1' });
+  coin('UNSENT'); intent('UNSENT');
+  coin('SENT'); st.claimIntent(intent('SENT').id);
+  coin('NEVERLANDED'); st.markFailed('NEVERLANDED');
+  assert.deepEqual(st.purgeUnsent('2026-01-01T03:00:00.000Z'), { coins: 2, intents: 1 });
+  assert.equal(st.getCoin('UNSENT'), null);
+  assert.equal(st.getCoin('NEVERLANDED'), null);
+  assert.ok(st.getCoin('SENT'));
+});
+
 test('the SOL balance a trader can spend is their SOL plus any wrapped SOL the next trade unwraps', async () => {
   const h = await engineHarness();
   const w = (await generateMintKey()).address;

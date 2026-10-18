@@ -196,12 +196,16 @@ export class DammCache {
 
 /** Background loop: index and crank every `intervalMs`, one pass at a time. The holder balance history (rewards) is read
  *  every `holdersEvery` passes, so the public RPC's rate limit is shared with the trade indexer. */
+/** Built transactions nobody sent are deleted this long after they expire (they can never land). */
+export const PURGE_AFTER_MS = 3_600_000;
+
 export function startBackground(d: IndexerDeps, intervalMs = 15_000, holdersEvery = 4): () => void {
   let stopped = false, running = false, passes = 0;
   const pass = async () => {
     if (running || stopped) return;
     running = true;
     try {
+      try { d.store.purgeUnsent(new Date(nowOf(d).getTime() - PURGE_AFTER_MS).toISOString()); } catch (e) { d.log?.(`purge: ${(e as Error).message.slice(0, 200)}`); }
       for (const l of d.store.listLaunches(['LIVE', 'MIGRATED'])) {
         if (l.status === 'MIGRATED' && l.dammPool) await syncDamm(d, l).catch((e) => d.log?.(`index damm ${l.mint}: ${(e as Error).message.slice(0, 200)}`));
         if (l.status === 'MIGRATED' && l.lastIndexedSig) { await backfillCurve(d, l).catch((e) => d.log?.(`backfill ${l.mint}: ${(e as Error).message.slice(0, 200)}`)); continue; }

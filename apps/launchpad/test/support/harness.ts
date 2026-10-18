@@ -54,6 +54,7 @@ export async function harness(opts: { profile?: ServerProfile; staticDir?: strin
   const conn = await mockConn();
   const sent: Uint8Array[] = [];
   const faucetCalls: unknown[] = [];
+  const operatorLamports = { value: 100_000_000_000n };
   const quoteAccountCalls: string[][] = [];
   // TEST_ONLY Squads double: proposals advance when the recorder "sends" a member transaction, as the program would.
   const tre = { multisig: '', vault: '', members: [] as string[], threshold: 2, nextIndex: 1n, proposals: new Map<string, NonNullable<ProposalState> & { stored: Uint8Array }>() };
@@ -110,7 +111,7 @@ export async function harness(opts: { profile?: ServerProfile; staticDir?: strin
     txSummary: async () => null,
     newSignatures: async () => [],
     balances: async () => ({ lamports: '0', tokens: {} }),
-    lamports: async () => 0n,
+    lamports: async (a: string) => (a === K.partner.toBase58() ? operatorLamports.value : 0n),
     faucet: async (...a) => { faucetCalls.push(a); return 'faucet-sig'; },
     ensureQuoteAccounts: async (owners) => { quoteAccountCalls.push(owners); return { created: [], signature: null }; },
     finalizedSlot: async () => holders.slot,
@@ -143,7 +144,7 @@ export async function harness(opts: { profile?: ServerProfile; staticDir?: strin
   // the books as `main.ts verify` computes them, in their JSON form (amounts as strings)
   const books = async () => JSON.parse(JSON.stringify(await computeBooks({ store, chain, platform, pools: app.poolCache, damms: app.dammCache, now: () => new Date(clock), cluster: 'devnet' }),
     (_k, v) => (typeof v === 'bigint' ? v.toString() : v)));
-  return { conn, store, dbPath, platform, call, books, sent, faucetCalls, quoteAccountCalls, chain, app, tre, holders, tick: (ms: number) => { clock += ms; }, now: () => new Date(clock) };
+  return { conn, store, dbPath, platform, call, books, sent, faucetCalls, operatorLamports, quoteAccountCalls, chain, app, tre, holders, tick: (ms: number) => { clock += ms; }, now: () => new Date(clock) };
 }
 
 /** Records the fixture coin (mint K.baseMint on pool K.pool) as LIVE, and optionally graduated to the fixture DAMM v2 pool. */

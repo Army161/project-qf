@@ -213,6 +213,18 @@ export class EngineStore {
     const r = this.db.prepare('SELECT * FROM intents WHERE id = ?').get(id) as Record<string, unknown> | undefined;
     return r ? (camel(r) as unknown as IntentRow) : null;
   }
+  /** Housekeeping, so built-but-never-sent transactions cannot fill the disk: deletes coins that never landed (FAILED, or
+   *  PENDING with a launch transaction never submitted) created before `beforeIso`, with their stored image, then every
+   *  BUILT intent that expired before `beforeIso`. A coin with any recorded history is kept. */
+  purgeUnsent(beforeIso: string): { coins: number; intents: number } {
+    const mints = (this.db.prepare(`SELECT c.mint FROM coins c WHERE c.created_at < ? AND (c.status = 'FAILED' OR (c.status = 'PENDING'
+        AND EXISTS (SELECT 1 FROM intents i WHERE i.mint = c.mint AND i.status = 'BUILT' AND i.expires_at < ?)
+        AND NOT EXISTS (SELECT 1 FROM intents j WHERE j.mint = c.mint AND j.status <> 'BUILT')))`).all(beforeIso, beforeIso) as { mint: string }[]).map((r) => r.mint);
+    let coins = 0;
+    for (const m of mints) { try { coins += Number(this.db.prepare("DELETE FROM coins WHERE mint = ? AND status IN ('FAILED', 'PENDING')").run(m).changes); } catch { /* referenced: keep */ } }
+    const intents = Number(this.db.prepare("DELETE FROM intents WHERE status = 'BUILT' AND expires_at < ?").run(beforeIso).changes);
+    return { coins, intents };
+  }
   /** One submit per intent: only the first caller moves it from BUILT to SUBMITTED. */
   claimIntent(id: string): boolean {
     return Number(this.db.prepare("UPDATE intents SET status = 'SUBMITTED' WHERE id = ? AND status = 'BUILT'").run(id).changes) === 1;

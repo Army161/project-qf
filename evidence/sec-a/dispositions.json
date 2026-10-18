@@ -267,6 +267,98 @@
       ],
       "ownerConditions": "Valid only while the affected pick/ignore/filter/replace filters stay outside the executed path. Does NOT cover general response-resource exhaustion; that is handled separately by the streaming limits (BODY-LIMIT).",
       "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)"
+    },
+    {
+      "advisory": "GHSA-hqr4-qq8f-hg3x",
+      "npmAdvisoryId": 1241262,
+      "severity": "moderate",
+      "package": "stream-json",
+      "installedVersion": "1.9.1",
+      "integrity": "sha512-uWkjJ+2Nt/LO9Z/JyKZbMusL8Dkh97uUBTv3AJQ74y07lVahLY4eEFsPsE97pxYBwr8nnjMAIch5eqI0gPShyw==",
+      "patchedUpstream": ">=3.6.0",
+      "resolvedPaths": [
+        "packages__adapter-meteora-dbc>@solana/web3.js>jayson>stream-json"
+      ],
+      "target": "Server-side Meteora adapter (packages/adapter-meteora-dbc) under Node v22.22.2 only; excluded from browser/worker/customer builds by tools/boundary (QF-LIC-EX-001 boundary).",
+      "callPath": "The advisory concerns the JSONC parser and the Verifier re-scanning comments on every chunk. stream-json 1.9.1 has no JSONC mode; jayson@4.3.0 requires stream-json/utils/Verifier only from lib/utils.js (its server/stream parsing), and @solana/web3.js uses only jayson/lib/client/browser, so the Verifier is never loaded in the QF runtime.",
+      "inputReachability": "Not loaded in the runtime probe (sec-a.test.ts); jayson requires only StreamValues and Verifier, from lib/utils.js, which the jayson browser client used by @solana/web3.js never requires.",
+      "disposition": "NOT_AFFECTED_PATH_SPECIFIC",
+      "mitigation": "None needed on this path. Independently, every live RPC response is bounded before parsing by createBoundedFetch/createBoundedConnection (maxBytes 8 MiB, maxDepth 64).",
+      "evidence": [
+        "evidence/sec-a/audit-prod-2026-10-18.json (still listed, by design)"
+      ],
+      "tests": [
+        "packages/adapter-meteora-dbc/test/sec-a.test.ts :: GHSA-528h-pc64-c93x / GHSA-hqr4-qq8f-hg3x / GHSA-mjw6-4jj6-33hc stream-json",
+        "packages/adapter-meteora-dbc/test/sec-a.test.ts :: input bounds regardless of disposition"
+      ],
+      "approval": {
+        "status": "PENDING_OWNER",
+        "proposedBy": "Claude (thread \"Full product review and fixes\")",
+        "proposedAt": "2026-10-18",
+        "note": "Proposed, not adopted. The owner adopts or rejects it; until then the raw audit stays red and this record is a proposal only."
+      },
+      "expiry": "2026-12-27",
+      "recheckTriggers": [
+        "QF uses the jayson Node client or server",
+        "any version bump of @solana/web3.js, @meteora-ag/cp-amm-sdk, @meteora-ag/dynamic-bonding-curve-sdk or @coral-xyz/anchor",
+        "deployment target changes (anything other than server-side Node adapter)",
+        "expiry date reached",
+        "jayson version changes",
+        "mitigating control changes (patch, override, response bounds, browser boundary)",
+        "new or revised GHSA for this package",
+        "package licence change",
+        "pnpm-lock.yaml sha256 changes",
+        "stream-json appears in the runtime module list"
+      ],
+      "ownerConditions": "Valid only while jayson/lib/utils.js (and so the Verifier) stays outside the executed path.",
+      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)",
+      "retiredWhen": "The Meteora adapter (packages/adapter-meteora-dbc) is removed after the QF engine switch: @solana/web3.js, jayson and stream-json then leave the install."
+    },
+    {
+      "advisory": "GHSA-mjw6-4jj6-33hc",
+      "npmAdvisoryId": 1241263,
+      "severity": "moderate",
+      "package": "stream-json",
+      "installedVersion": "1.9.1",
+      "integrity": "sha512-uWkjJ+2Nt/LO9Z/JyKZbMusL8Dkh97uUBTv3AJQ74y07lVahLY4eEFsPsE97pxYBwr8nnjMAIch5eqI0gPShyw==",
+      "patchedUpstream": ">=3.6.0",
+      "resolvedPaths": [
+        "packages__adapter-meteora-dbc>@solana/web3.js>jayson>stream-json"
+      ],
+      "target": "Server-side Meteora adapter (packages/adapter-meteora-dbc) under Node v22.22.2 only; excluded from browser/worker/customer builds by tools/boundary (QF-LIC-EX-001 boundary).",
+      "callPath": "The advisory concerns stream-json Assembler writing this.current[this.key] on plain objects. jayson@4.3.0 never requires the Assembler (only StreamValues and Verifier, from lib/utils.js), and @solana/web3.js uses only jayson/lib/client/browser, so no stream-json module is loaded in the QF runtime.",
+      "inputReachability": "Not loaded in the runtime probe (sec-a.test.ts); jayson requires only StreamValues and Verifier, from lib/utils.js, which the jayson browser client used by @solana/web3.js never requires.",
+      "disposition": "NOT_AFFECTED_PATH_SPECIFIC",
+      "mitigation": "None needed on this path. Independently, every live RPC response is bounded before parsing by createBoundedFetch/createBoundedConnection (maxBytes 8 MiB, maxDepth 64).",
+      "evidence": [
+        "evidence/sec-a/audit-prod-2026-10-18.json (still listed, by design)"
+      ],
+      "tests": [
+        "packages/adapter-meteora-dbc/test/sec-a.test.ts :: GHSA-528h-pc64-c93x / GHSA-hqr4-qq8f-hg3x / GHSA-mjw6-4jj6-33hc stream-json",
+        "packages/adapter-meteora-dbc/test/sec-a.test.ts :: input bounds regardless of disposition"
+      ],
+      "approval": {
+        "status": "PENDING_OWNER",
+        "proposedBy": "Claude (thread \"Full product review and fixes\")",
+        "proposedAt": "2026-10-18",
+        "note": "Proposed, not adopted. The owner adopts or rejects it; until then the raw audit stays red and this record is a proposal only."
+      },
+      "expiry": "2026-12-27",
+      "recheckTriggers": [
+        "QF uses the jayson Node client or server",
+        "any version bump of @solana/web3.js, @meteora-ag/cp-amm-sdk, @meteora-ag/dynamic-bonding-curve-sdk or @coral-xyz/anchor",
+        "deployment target changes (anything other than server-side Node adapter)",
+        "expiry date reached",
+        "jayson version changes",
+        "mitigating control changes (patch, override, response bounds, browser boundary)",
+        "new or revised GHSA for this package",
+        "package licence change",
+        "pnpm-lock.yaml sha256 changes",
+        "stream-json appears in the runtime module list"
+      ],
+      "ownerConditions": "Valid only while no stream-json Assembler (directly or through StreamValues) is on the executed path.",
+      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)",
+      "retiredWhen": "The Meteora adapter (packages/adapter-meteora-dbc) is removed after the QF engine switch: @solana/web3.js, jayson and stream-json then leave the install."
     }
   ],
   "observations": [

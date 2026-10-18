@@ -142,6 +142,33 @@ test('the faucet is rate limited per wallet and sends SOL only to empty wallets'
   assert.equal((faucetCalls[0] as unknown[])[3], FAUCET.lamports);
 });
 
+test('the faucet keeps the operator\'s SOL above its floor, and parallel claims cannot pass the per-wallet limit', async () => {
+  const { call, faucetCalls, operatorLamports, store, now } = await harness();
+  operatorLamports.value = FAUCET.lamports + FAUCET.operatorFloorLamports - 1n;
+  const w = (await generateMintKey()).address;
+  assert.equal((await call('/api/lp/faucet', { wallet: w })).status, 200);
+  assert.equal((faucetCalls[0] as unknown[])[3], 0n, 'test token only: the operator\'s SOL stays for graduations');
+  operatorLamports.value = 100_000_000_000n;
+  const v = (await generateMintKey()).address;
+  const all = await Promise.all(Array.from({ length: 6 }, () => call('/api/lp/faucet', { wallet: v })));
+  assert.equal(all.filter((r) => r.status === 200).length, FAUCET.claimsPerDay, JSON.stringify(all.map((r) => r.status)));
+  assert.equal(store.faucetClaimsSince(v, new Date(now().getTime() - 86_400_000).toISOString()), FAUCET.claimsPerDay);
+});
+
+test('launches built but never sent are purged once expired, with their image; sent ones stay', async () => {
+  const { store, platform } = await harness();
+  const old = '2026-01-01T00:00:00.000Z', later = '2026-01-01T00:02:00.000Z';
+  const pending = (mint: string) => store.insertPendingLaunch({ mint, pool: `${mint}P`, config: platform.config.config, quoteMint: platform.quote.mint, creator: K.creator.toBase58(),
+    name: 'MOCK', symbol: 'MOCK', description: '', website: null, twitter: null, telegram: null, imageType: 'image/png', metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: old }, new Uint8Array(1000));
+  const intent = (mint: string) => store.insertIntent({ kind: 'CREATE_POOL', mint, user: K.creator.toBase58(), createdAt: old, expiresAt: later, messageHex: '00', termsJson: '{}', lastValidBlockHeight: 1 });
+  pending('UNSENT'); intent('UNSENT');
+  pending('SENT'); store.claimIntent(intent('SENT').id);
+  assert.deepEqual(store.purgeUnsent('2026-01-01T00:01:00.000Z'), { launches: 0, intents: 0 }, 'not expired yet');
+  assert.deepEqual(store.purgeUnsent('2026-01-01T03:00:00.000Z'), { launches: 1, intents: 1 });
+  assert.equal(store.getLaunch('UNSENT'), null);
+  assert.ok(store.getLaunch('SENT'));
+});
+
 test('quotes come from the curve, and amounts the curve cannot fill are refused as input errors, not server faults', async () => {
   const { call, store, platform } = await harness();
   const t = new Date().toISOString();

@@ -1,6 +1,6 @@
 {
   "tool": "tools/deps/prove-chain-absent.ts",
-  "generatedAt": "2026-10-11T17:00:07.437Z",
+  "generatedAt": "2026-10-18T05:07:28.805Z",
   "result": "PASS",
   "override": "\"@meteora-ag/cp-amm-sdk@1.4.10>chain\": \"-\"",
   "checks": [

@@ -18,6 +18,30 @@ export function clientIp(req: Pick<IncomingMessage, 'headers' | 'socket'>, heade
   }
   return req.socket.remoteAddress ?? 'local';
 }
+/** Per-key sliding one-minute limits. Keys idle for a minute are swept, and the map never holds more than maxKeys
+ *  (beyond that, new keys share one overflow bucket), so rotating client addresses cannot grow memory without bound. */
+export function rateLimiter(now: () => Date, maxKeys = 10_000) {
+  const hits = new Map<string, number[]>();
+  let swept = 0;
+  return (key: string, max: number) => {
+    const t = now().getTime();
+    if (t - swept > 60_000) { for (const [k, v] of hits) if (!v.some((x) => t - x < 60_000)) hits.delete(k); swept = t; }
+    const k = hits.has(key) || hits.size < maxKeys ? key : `overflow:${key.split(':')[0]}`;
+    const recent = (hits.get(k) ?? []).filter((x) => t - x < 60_000);
+    if (recent.length >= max) throw new HttpError(429, 'RATE_LIMITED', `at most ${max} requests per minute`);
+    recent.push(t);
+    hits.set(k, recent);
+  };
+}
+/** Runs one job at a time, in arrival order: check-then-send sequences (the faucet) cannot interleave. */
+export function serial() {
+  let tail: Promise<unknown> = Promise.resolve();
+  return <T>(job: () => Promise<T>): Promise<T> => {
+    const run = tail.then(job, job);
+    tail = run.catch(() => undefined);
+    return run;
+  };
+}
 export class HttpError extends Error {
   status: number; code: string; details: string[] | undefined;
   constructor(status: number, code: string, message: string, details?: string[]) { super(message); this.status = status; this.code = code; this.details = details; }

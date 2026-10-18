@@ -20,14 +20,18 @@ import { claimIdentity, claimReceipt } from './receipts.ts';
 import { DEVNET_TEST_PAYOUT_ROUNDS, epochDetail, rewardsOverview, type CoinRewards, type RewardsVaultView } from './rewards.ts';
 import { rewardsVaultOf, storedVaultCoverage } from './rewards-vault.ts';
 import type { LaunchRow, LaunchpadStore, StoredTrade } from './store.ts';
-import { addr, B58, BODY_LIMIT_BYTES, clientIp, HttpError, image, LAUNCH_BODY_LIMIT_BYTES, onlyKeys, rawAmount, readJson, send, serveStatic, text, url } from './http.ts';
+import { addr, B58, BODY_LIMIT_BYTES, clientIp, HttpError, image, LAUNCH_BODY_LIMIT_BYTES, onlyKeys, rateLimiter, rawAmount, readJson, send, serial, serveStatic, text, url } from './http.ts';
 
 export { BODY_LIMIT_BYTES, clientIp, IMAGE_LIMIT_BYTES, LAUNCH_BODY_LIMIT_BYTES, onlyKeys, sniffImage } from './http.ts';
 
 export const LP_API_VERSION = 'lp-api/1';
 export const INTENT_TTL_MS = 120_000;
 export const BUILDS_PER_MINUTE = 30;
-export const FAUCET = Object.freeze({ quoteUi: 10_000n, lamports: 100_000_000n, minLamportsBeforeTopUp: 50_000_000n, claimsPerDay: 3 });
+export const FAUCET = Object.freeze({ quoteUi: 10_000n, lamports: 100_000_000n, minLamportsBeforeTopUp: 50_000_000n, claimsPerDay: 3, operatorFloorLamports: 300_000_000n });
+/** Reads that skip the cache (?fresh=1), per visitor per minute. */
+export const FRESH_READS_PER_MINUTE = 30;
+/** All faucet claims together, per minute, whoever asks: the operator's SOL also pays for graduations. */
+export const FAUCET_GLOBAL_PER_MINUTE = 10;
 
 export interface LaunchpadOptions {
   store: LaunchpadStore;
@@ -101,7 +105,6 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
   const profile = o.profile ?? DEVNET_PROFILE;
   const pools = new PoolCache(o.chain);
   const damms = new DammCache(o.chain);
-  const rate = new Map<string, number[]>();
   let rewards: { at: number; coins: CoinRewards[] } | null = null;
   /** Every coin's reward epochs, recomputed from the stored history at most every REWARDS_TTL_MS (or on ?fresh=1). */
   const rewardCoins = async (fresh: boolean): Promise<CoinRewards[]> => {
@@ -110,12 +113,8 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
     rewards = { at: now().getTime(), coins };
     return coins;
   };
-  const limit = (key: string, max: number) => {
-    const t = now().getTime();
-    const recent = (rate.get(key) ?? []).filter((x) => t - x < 60_000);
-    if (recent.length >= max) throw new HttpError(429, 'RATE_LIMITED', `at most ${max} requests per minute`);
-    rate.set(key, [...recent, t]);
-  };
+  const limit = rateLimiter(now);
+  const faucetQueue = serial();
   const platform = () => {
     const p = o.platform();
     if (!p) throw new HttpError(503, 'PLATFORM_NOT_READY', 'the devnet platform (test quote + DBC config) has not been set up yet; run `main.ts setup` once the operator wallet holds devnet SOL');
@@ -189,6 +188,8 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
     const method = req.method ?? 'GET';
     const ip = clientIp(req, o.clientIpHeader);
     if (path === '/api/lp/healthz' && method === 'GET') return send(res, 200, { ok: true, apiVersion: LP_API_VERSION, cluster: profile.cluster, mode: profile.mode });
+    // ?fresh=1 skips the read caches and goes straight to the chain: its own budget, so it cannot burn the RPC quota
+    if (query.get('fresh') === '1') limit(`fresh:${ip}`, FRESH_READS_PER_MINUTE);
     // one gate for everything that builds, sends or moves tokens: nothing below runs while writes are locked
     if (WRITE_ROUTES.has(`${method} ${path}`)) {
       if (path === '/api/lp/faucet' && !profile.faucet) throw new HttpError(404, 'NO_FAUCET', 'the faucet is off');
@@ -634,12 +635,19 @@ export function createLaunchpadApp(o: LaunchpadOptions): Server & { poolCache: P
       const b = await readJson(req, BODY_LIMIT_BYTES);
       onlyKeys(b, ['wallet']);
       const wallet = addr(b, 'wallet');
-      const since = new Date(now().getTime() - 86_400_000).toISOString();
-      if (o.store.faucetClaimsSince(wallet, since) >= FAUCET.claimsPerDay) throw new HttpError(429, 'FAUCET_LIMIT', `at most ${FAUCET.claimsPerDay} faucet claims per wallet per day`);
-      const lamports = (await o.chain.lamports(wallet)) < FAUCET.minLamportsBeforeTopUp ? FAUCET.lamports : 0n;
+      limit('faucet:all', FAUCET_GLOBAL_PER_MINUTE);
       const quoteRaw = FAUCET.quoteUi * 10n ** BigInt(p.quote.decimals);
-      const signature = await o.chain.faucet(p.quote.mint, wallet, quoteRaw, lamports);
-      o.store.insertFaucetClaim(wallet, now().toISOString(), signature);
+      // one claim at a time: the checks below and the send cannot interleave with another claim's
+      const { signature, lamports } = await faucetQueue(async () => {
+        const since = new Date(now().getTime() - 86_400_000).toISOString();
+        if (o.store.faucetClaimsSince(wallet, since) >= FAUCET.claimsPerDay) throw new HttpError(429, 'FAUCET_LIMIT', `at most ${FAUCET.claimsPerDay} faucet claims per wallet per day`);
+        let lamports = (await o.chain.lamports(wallet)) < FAUCET.minLamportsBeforeTopUp ? FAUCET.lamports : 0n;
+        // test SOL only while the operator keeps enough for graduations and its own fees; the test token is minted, so it never runs out
+        if (lamports > 0n && (!o.chain.operatorAddress || (await o.chain.lamports(o.chain.operatorAddress)) < lamports + FAUCET.operatorFloorLamports)) lamports = 0n;
+        const signature = await o.chain.faucet(p.quote.mint, wallet, quoteRaw, lamports);
+        o.store.insertFaucetClaim(wallet, now().toISOString(), signature);
+        return { signature, lamports };
+      });
       return send(res, 200, { signature, quoteRaw: quoteRaw.toString(), lamports: lamports.toString(), label: 'TEST_ONLY devnet tokens' });
     }
 

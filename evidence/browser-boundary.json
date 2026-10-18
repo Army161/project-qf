@@ -1,6 +1,6 @@
 {
   "tool": "tools/boundary/check-browser-boundary.ts",
-  "generatedAt": "2026-10-11T17:00:08.428Z",
+  "generatedAt": "2026-10-18T05:10:31.625Z",
   "graph": {
     "packages": 55,
     "forbidden": [],
@@ -112,7 +112,7 @@
       },
       {
         "where": "stdin.js.map sources",
-        "what": "../../home/user/qf/node_modules/.pnpm/jayson@4.3.0/node_modules/jayson/lib/generateRequest.js"
+        "what": "../../root/ws/app/node_modules/.pnpm/jayson@4.3.0/node_modules/jayson/lib/generateRequest.js"
       }
     ],
     "rpcWebsocketsBundled": true

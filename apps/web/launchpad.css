@@ -313,7 +313,7 @@ ul.checks li.bad { color: var(--sell); } ul.checks li.bad::before { content: "âœ
 
 /* Creator earnings: curve fees and, after graduation, the locked LP position's fees. */
 .fees { display: flex; flex-direction: column; gap: 12px; }
-.fees[hidden] { display: none; }
+.card[hidden] { display: none; }
 .fee-row { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 14px; background: var(--buy-tint); }
 .fee-row > div:first-child { display: flex; flex-direction: column; gap: 2px; }
 .fee-amt { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

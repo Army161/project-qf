@@ -1,6 +1,6 @@
 {
   "tool": "tools/license-check/check-licenses.ts",
-  "generatedAt": "2026-10-11T17:00:06.007Z",
+  "generatedAt": "2026-10-18T05:07:27.329Z",
   "manifestVersion": "2",
   "packages": 211,
   "tally": {

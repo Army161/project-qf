@@ -16,7 +16,7 @@ import {
   bindTransactionToTerms, decodeTransactionBytes, fromBase64, parseWire, qfInstructions, toBase64, toHex, validateIntent, verifyWireSignatures, TX_BINDING_POLICY_VERSION,
   type ApprovedTerms, type TxIntent,
 } from '@project-qf/tx';
-import { addr, B58, BODY_LIMIT_BYTES, clientIp, HttpError, image, LAUNCH_BODY_LIMIT_BYTES, onlyKeys, rawAmount, readJson, send, serveStatic, text, url } from '../http.ts';
+import { addr, B58, BODY_LIMIT_BYTES, clientIp, HttpError, image, LAUNCH_BODY_LIMIT_BYTES, onlyKeys, rateLimiter, rawAmount, readJson, send, serial, serveStatic, text, url } from '../http.ts';
 import type { EngineChain } from './chain.ts';
 import { classifyTx, listNew, readDue } from './indexer.ts';
 import { liveView, quoteCurve, quotePool, readCoinSnapshots, readPlatform, poolSides, type CoinSnapshot, type EnginePlatform, type LiveView, type QuoteAsset } from './market.ts';
@@ -83,16 +83,16 @@ const poolRefusal = (e: unknown) => {
   return new HttpError(409, 'AMOUNT_NOT_FILLABLE', 'the pool cannot fill this amount; try a smaller one');
 };
 
+/** Reads that skip the cache (?fresh=1), per visitor per minute. */
+export const FRESH_READS_PER_MINUTE = 30;
+/** All faucet claims together, per minute, whoever asks: the operator's SOL also pays for graduations. */
+export const FAUCET_GLOBAL_PER_MINUTE = 10;
+
 export function createEngineApp(o: EngineAppOptions): Server {
   const now = o.now ?? (() => new Date());
   const { profile, quote } = o;
-  const rate = new Map<string, number[]>();
-  const limit = (key: string, max: number) => {
-    const t = now().getTime();
-    const recent = (rate.get(key) ?? []).filter((x) => t - x < 60_000);
-    if (recent.length >= max) throw new HttpError(429, 'RATE_LIMITED', `at most ${max} requests per minute`);
-    rate.set(key, [...recent, t]);
-  };
+  const limit = rateLimiter(now);
+  const faucetQueue = serial();
 
   // ---------------------------------------------------------------- chain reads, briefly cached
   let platformCache: { at: number; p: EnginePlatform | null } | null = null;
@@ -183,6 +183,8 @@ export function createEngineApp(o: EngineAppOptions): Server {
     const ip = clientIp(req, o.clientIpHeader);
     const fresh = query.get('fresh') === '1';
     if (path === '/api/lp/healthz' && method === 'GET') return send(res, 200, { ok: true, apiVersion: LP_API_VERSION, engine: 'qf', cluster: profile.cluster });
+    // ?fresh=1 skips the read caches and goes straight to the chain: its own budget, so it cannot burn the RPC quota
+    if (query.get('fresh') === '1') limit(`fresh:${ip}`, FRESH_READS_PER_MINUTE);
     if (WRITE_ROUTES.has(`${method} ${path}`)) {
       if (path === '/api/lp/faucet' && !profile.faucet) throw new HttpError(404, 'NO_FAUCET', 'the faucet is off');
       if (!profile.writes) throw new HttpError(423, 'WRITES_LOCKED', 'launching, trading and claiming are switched off on this server', profile.writesLockedBecause);
@@ -366,14 +368,19 @@ export function createEngineApp(o: EngineAppOptions): Server {
       onlyKeys(b, ['wallet']);
       const wallet = addr(b, 'wallet');
       if (!o.chain.operatorAddress) throw new HttpError(503, 'FAUCET_EMPTY', 'the faucet has no operator key on this server');
-      const since = new Date(now().getTime() - 86_400_000).toISOString();
-      if (o.store.faucetClaimsSince(wallet, since) >= ENGINE_FAUCET.claimsPerDay) throw new HttpError(429, 'FAUCET_LIMIT', `at most ${ENGINE_FAUCET.claimsPerDay} faucet claims per wallet per day`);
-      if ((await o.chain.lamports(wallet)) >= ENGINE_FAUCET.belowLamports) throw new HttpError(409, 'FAUCET_NOT_NEEDED', 'this wallet already has enough test SOL');
-      if ((await o.chain.lamports(o.chain.operatorAddress)) < ENGINE_FAUCET.lamports + ENGINE_FAUCET.operatorFloorLamports) {
-        throw new HttpError(503, 'FAUCET_EMPTY', 'the faucet is out of test SOL for now; try again later');
-      }
-      const signature = await o.chain.sendAsOperator([E.transferSolIx(o.chain.operatorAddress, wallet, ENGINE_FAUCET.lamports)], 10_000);
-      o.store.insertFaucetClaim(wallet, now().toISOString(), signature);
+      limit('faucet:all', FAUCET_GLOBAL_PER_MINUTE);
+      // one claim at a time: the checks below and the send cannot interleave with another claim's
+      const signature = await faucetQueue(async () => {
+        const since = new Date(now().getTime() - 86_400_000).toISOString();
+        if (o.store.faucetClaimsSince(wallet, since) >= ENGINE_FAUCET.claimsPerDay) throw new HttpError(429, 'FAUCET_LIMIT', `at most ${ENGINE_FAUCET.claimsPerDay} faucet claims per wallet per day`);
+        if ((await o.chain.lamports(wallet)) >= ENGINE_FAUCET.belowLamports) throw new HttpError(409, 'FAUCET_NOT_NEEDED', 'this wallet already has enough test SOL');
+        if ((await o.chain.lamports(o.chain.operatorAddress!)) < ENGINE_FAUCET.lamports + ENGINE_FAUCET.operatorFloorLamports) {
+          throw new HttpError(503, 'FAUCET_EMPTY', 'the faucet is out of test SOL for now; try again later');
+        }
+        const sig = await o.chain.sendAsOperator([E.transferSolIx(o.chain.operatorAddress!, wallet, ENGINE_FAUCET.lamports)], 10_000);
+        o.store.insertFaucetClaim(wallet, now().toISOString(), sig);
+        return sig;
+      });
       return send(res, 200, { signature, quoteRaw: '0', lamports: ENGINE_FAUCET.lamports.toString(), label: 'TEST_ONLY devnet SOL' });
     }
 

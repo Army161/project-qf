@@ -172,9 +172,13 @@ export async function catchUp(d: EngineIndexerDeps, maxReads = 40): Promise<void
   }
 }
 
-/** One pass: settle, discover, list, read, crank. Each coin's failure is logged and never stops the others. */
+/** Built transactions nobody sent are deleted this long after they expire (they can never land). */
+export const PURGE_AFTER_MS = 3_600_000;
+
+/** One pass: settle, purge, discover, list, read, crank. Each coin's failure is logged and never stops the others. */
 export async function indexPass(d: EngineIndexerDeps, pendingAfterMs = 180_000): Promise<void> {
   await settlePending(d, pendingAfterMs).catch((e) => d.log?.(`pending launches: ${(e as Error).message.slice(0, 200)}`));
+  try { d.store.purgeUnsent(new Date(nowOf(d).getTime() - PURGE_AFTER_MS).toISOString()); } catch (e) { d.log?.(`purge: ${(e as Error).message.slice(0, 200)}`); }
   await discoverCoins(d).catch((e) => d.log?.(`discover: ${(e as Error).message.slice(0, 200)}`));
   for (const c of d.store.listCoins(['LIVE', 'GRADUATED'])) await listNew(d, c).catch((e) => d.log?.(`list ${c.symbol}: ${(e as Error).message.slice(0, 200)}`));
   await readDue(d).catch((e) => d.log?.(`read: ${(e as Error).message.slice(0, 200)}`));

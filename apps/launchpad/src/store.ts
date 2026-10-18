@@ -310,6 +310,18 @@ export class LaunchpadStore {
     const r = this.db.prepare('SELECT * FROM intents WHERE id = ?').get(id) as Record<string, unknown> | undefined;
     return r ? (camel(r) as unknown as IntentRow) : null;
   }
+  /** Housekeeping, so built-but-never-sent transactions cannot fill the disk: deletes launches still PENDING whose launch
+   *  transaction was never submitted and expired before `beforeIso` (its blockhash is long dead, it can never land), with
+   *  their stored image, then every BUILT intent that expired before `beforeIso`. Submitted or confirmed ones are kept. */
+  purgeUnsent(beforeIso: string): { launches: number; intents: number } {
+    const mints = (this.db.prepare(`SELECT l.mint FROM launches l JOIN intents i ON i.mint = l.mint AND i.kind = 'CREATE_POOL'
+      WHERE l.status = 'PENDING' AND i.status = 'BUILT' AND i.expires_at < ?
+        AND NOT EXISTS (SELECT 1 FROM intents j WHERE j.mint = l.mint AND j.status <> 'BUILT')`).all(beforeIso) as { mint: string }[]).map((r) => r.mint);
+    let launches = 0;
+    for (const m of mints) { try { launches += Number(this.db.prepare("DELETE FROM launches WHERE mint = ? AND status = 'PENDING'").run(m).changes); } catch { /* referenced: keep */ } }
+    const intents = Number(this.db.prepare("DELETE FROM intents WHERE status = 'BUILT' AND expires_at < ?").run(beforeIso).changes);
+    return { launches, intents };
+  }
   /** BUILT -> SUBMITTED exactly once (a replayed submit cannot send twice). */
   claimIntent(id: string): boolean {
     return Number(this.db.prepare("UPDATE intents SET status = 'SUBMITTED' WHERE id = ? AND status = 'BUILT'").run(id).changes) === 1;

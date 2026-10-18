@@ -5,6 +5,16 @@
 import { canonicalJson } from '@project-qf/core';
 import { decodeTransactionBytes, isQfTerms, sha256Hex, termsDigest, verifyTransactionPreview, TOP_LEVEL_ALLOWLIST, type ApprovedTerms, type ConsentRecord } from '@project-qf/tx';
 
+/** The most compute a transaction built for this page may ask for: 400k units, priority fee at most 0.00004 SOL. */
+export const PAGE_COMPUTE = Object.freeze({ maxUnitLimit: 400_000, maxUnitPriceMicroLamports: 100_000n });
+
+/** The least a swap may pay out at this slippage, computed in the page from the amount shown, never taken from the server.
+ *  Same rounding as the servers' quotes (floor), so an honest quote's minimum equals it. 0 means there is no safe floor. */
+export function slippageFloor(expectedOut: bigint, slippageBps: number): bigint {
+  if (!Number.isInteger(slippageBps) || slippageBps < 0 || slippageBps >= 10_000 || expectedOut <= 0n) return 0n;
+  return (expectedOut * BigInt(10_000 - slippageBps)) / 10_000n;
+}
+
 export interface Check { label: string; ok: boolean; detail?: string }
 export interface Expectation {
   kind: 'CREATE_POOL' | 'SWAP' | 'DAMM_SWAP' | 'CLAIM_CREATOR_TRADING_FEE' | 'DAMM_CLAIM_POSITION_FEE'
@@ -35,6 +45,11 @@ export async function checkBuiltTransaction(bytes: Uint8Array, terms: ApprovedTe
   checks.push({ label: 'Operation matches', ok: terms.kind === e.kind, detail: terms.kind });
   checks.push({ label: 'Your wallet pays the fee and signs', ok: terms.feePayer === e.wallet });
   for (const [k, want] of Object.entries(e.fields)) checks.push({ label: FIELD_LABELS[k] ?? `${k} is what you entered`, ok: t[k] === want, detail: String(t[k]) });
+  // The terms' own compute caps come from the server, so the page holds its own ceiling: what the server asks for today
+  // (400k units, no priority fee) with room to spare, far below what packages/tx allows in general.
+  const c = terms.compute;
+  checks.push({ label: 'Network fee stays small', ok: !!c && c.maxUnitLimit <= PAGE_COMPUTE.maxUnitLimit && BigInt(c.maxUnitPriceMicroLamports) <= PAGE_COMPUTE.maxUnitPriceMicroLamports,
+    detail: c ? `${c.maxUnitLimit} units at most ${c.maxUnitPriceMicroLamports} µlamports each` : 'no compute caps' });
   if (e.minimumAmountOutAtLeast !== undefined) {
     const got = BigInt(String(t.minimumAmountOut ?? '0'));
     checks.push({ label: 'Minimum received is not below the quote you saw', ok: got >= BigInt(e.minimumAmountOutAtLeast) });
