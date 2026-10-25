@@ -10,12 +10,12 @@ import type { KeyPairSigner } from '@solana/kit';
 import * as E from '@project-qf/engine';
 import { addSignature, fromBase64, toBase64, type ApprovedTerms } from '@project-qf/tx';
 import { checkBuiltTransaction, type Expectation } from '../../web/src/launchpad/txcheck.ts';
-import { engineBooks, engineBooksText, type EngineBooks } from '../src/engine/books.ts';
-import type { EngineChain } from '../src/engine/chain.ts';
-import { indexPass } from '../src/engine/indexer.ts';
-import { SOL_QUOTE } from '../src/engine/market.ts';
-import { createEngineApp } from '../src/engine/server.ts';
-import { EngineStore } from '../src/engine/store.ts';
+import { engineBooks, engineBooksText, type EngineBooks } from '../src/books.ts';
+import type { EngineChain } from '../src/chain.ts';
+import { indexPass } from '../src/indexer.ts';
+import { SOL_QUOTE } from '../src/market.ts';
+import { createEngineApp } from '../src/server.ts';
+import { EngineStore } from '../src/store.ts';
 
 export const s = (v: unknown) => (typeof v === 'bigint' ? v.toString() : JSON.stringify(v, (_, x) => (typeof x === 'bigint' ? x.toString() : x)));
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

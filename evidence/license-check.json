@@ -1,60 +1,16 @@
 {
   "tool": "tools/license-check/check-licenses.ts",
-  "generatedAt": "2026-10-18T05:07:27.329Z",
+  "generatedAt": "2026-10-25T06:18:48.653Z",
   "manifestVersion": "2",
-  "packages": 211,
+  "packages": 83,
   "tally": {
-    "ALLOW": 181,
     "NOT_INSTALLED": 25,
-    "ALLOW_EXCEPTION": 5
+    "ALLOW": 55,
+    "ALLOW_EXCEPTION": 3
   },
   "failures": [],
   "reviewRequired": [],
   "results": [
-    {
-      "package": "@babel/runtime@7.29.7",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > @babel/runtime@7.29.7"
-    },
-    {
-      "package": "@coral-xyz/anchor-errors@0.31.1",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/anchor-errors@0.31.1"
-    },
-    {
-      "package": "@coral-xyz/anchor@0.31.1",
-      "license": "(MIT OR Apache-2.0)",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/dynamic-bonding-curve-sdk@1.5.13 > @coral-xyz/anchor@0.31.1"
-    },
-    {
-      "package": "@coral-xyz/borsh@0.31.1",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1"
-    },
     {
       "package": "@esbuild/aix-ppc64@0.28.2",
       "license": "n/a",
@@ -350,86 +306,17 @@
       "sampleChain": "@project-qf/web > @fontsource-variable/geist@5.3.0"
     },
     {
-      "package": "@metaplex-foundation/beet-solana@0.4.0",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @metaplex-foundation/beet-solana@0.4.0"
-    },
-    {
-      "package": "@metaplex-foundation/beet@0.7.1",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @metaplex-foundation/beet@0.7.1"
-    },
-    {
-      "package": "@metaplex-foundation/cusper@0.0.2",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @metaplex-foundation/cusper@0.0.2"
-    },
-    {
-      "package": "@meteora-ag/cp-amm-sdk@1.4.10",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/adapter-meteora-dbc",
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10"
-    },
-    {
-      "package": "@meteora-ag/dynamic-bonding-curve-sdk@1.5.13",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/adapter-meteora-dbc",
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/dynamic-bonding-curve-sdk@1.5.13"
-    },
-    {
-      "package": "@noble/curves@1.9.7",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > @noble/curves@1.9.7"
-    },
-    {
       "package": "@noble/hashes@1.8.0",
       "license": "MIT",
       "class": "ALLOW",
       "devOnly": false,
       "importers": [
-        "@project-qf/econ-sim",
         "@project-qf/launchpad",
         "@project-qf/policy",
         "@project-qf/rewards"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/rewards@link:../../packages/rewards > @noble/hashes@1.8.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/policy@link:../../packages/policy > @noble/hashes@1.8.0"
     },
     {
       "package": "@solana/accounts@8.3.0",
@@ -440,7 +327,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/sysvars@8.3.0 > @solana/accounts@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/sysvars@8.3.0 > @solana/accounts@8.3.0"
     },
     {
       "package": "@solana/addresses@8.3.0",
@@ -451,7 +338,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/addresses@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/addresses@8.3.0"
     },
     {
       "package": "@solana/assertions@8.3.0",
@@ -462,62 +349,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/instruction-plans@8.3.0 > @solana/keys@8.3.0 > @solana/assertions@8.3.0"
-    },
-    {
-      "package": "@solana/buffer-layout-utils@0.2.0",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @solana/spl-token@0.3.11 > @solana/buffer-layout-utils@0.2.0"
-    },
-    {
-      "package": "@solana/buffer-layout-utils@0.3.0",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/buffer-layout-utils@0.3.0"
-    },
-    {
-      "package": "@solana/buffer-layout@4.0.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @solana/spl-token@0.3.11 > @solana/buffer-layout@4.0.1"
-    },
-    {
-      "package": "@solana/codecs-core@2.0.0-rc.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/spl-token-group@0.0.7 > @solana/codecs@2.0.0-rc.1 > @solana/codecs-strings@2.0.0-rc.1 > @solana/codecs-core@2.0.0-rc.1"
-    },
-    {
-      "package": "@solana/codecs-core@5.5.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > @solana/codecs-numbers@5.5.1 > @solana/codecs-core@5.5.1"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/instruction-plans@8.3.0 > @solana/keys@8.3.0 > @solana/assertions@8.3.0"
     },
     {
       "package": "@solana/codecs-core@8.3.0",
@@ -528,18 +360,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/offchain-messages@8.3.0 > @solana/codecs-core@8.3.0"
-    },
-    {
-      "package": "@solana/codecs-data-structures@2.0.0-rc.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/spl-token-group@0.0.7 > @solana/codecs@2.0.0-rc.1 > @solana/options@2.0.0-rc.1 > @solana/codecs-data-structures@2.0.0-rc.1"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/offchain-messages@8.3.0 > @solana/codecs-core@8.3.0"
     },
     {
       "package": "@solana/codecs-data-structures@8.3.0",
@@ -550,29 +371,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/offchain-messages@8.3.0 > @solana/codecs-data-structures@8.3.0"
-    },
-    {
-      "package": "@solana/codecs-numbers@2.0.0-rc.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/spl-token-group@0.0.7 > @solana/codecs@2.0.0-rc.1 > @solana/codecs-numbers@2.0.0-rc.1"
-    },
-    {
-      "package": "@solana/codecs-numbers@5.5.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > @solana/codecs-numbers@5.5.1"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/offchain-messages@8.3.0 > @solana/codecs-data-structures@8.3.0"
     },
     {
       "package": "@solana/codecs-numbers@8.3.0",
@@ -583,18 +382,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/offchain-messages@8.3.0 > @solana/codecs-numbers@8.3.0"
-    },
-    {
-      "package": "@solana/codecs-strings@2.0.0-rc.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/spl-token-group@0.0.7 > @solana/codecs@2.0.0-rc.1 > @solana/codecs-strings@2.0.0-rc.1"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/offchain-messages@8.3.0 > @solana/codecs-numbers@8.3.0"
     },
     {
       "package": "@solana/codecs-strings@8.3.0",
@@ -605,18 +393,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/offchain-messages@8.3.0 > @solana/codecs-strings@8.3.0"
-    },
-    {
-      "package": "@solana/codecs@2.0.0-rc.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/spl-token-metadata@0.1.6 > @solana/codecs@2.0.0-rc.1"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/offchain-messages@8.3.0 > @solana/codecs-strings@8.3.0"
     },
     {
       "package": "@solana/codecs@8.3.0",
@@ -627,29 +404,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/codecs@8.3.0"
-    },
-    {
-      "package": "@solana/errors@2.0.0-rc.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/spl-token-group@0.0.7 > @solana/codecs@2.0.0-rc.1 > @solana/codecs-strings@2.0.0-rc.1 > @solana/errors@2.0.0-rc.1"
-    },
-    {
-      "package": "@solana/errors@5.5.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > @solana/codecs-numbers@5.5.1 > @solana/errors@5.5.1"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/codecs@8.3.0"
     },
     {
       "package": "@solana/errors@8.3.0",
@@ -660,7 +415,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/errors@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/errors@8.3.0"
     },
     {
       "package": "@solana/fast-stable-stringify@8.3.0",
@@ -671,7 +426,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc@8.3.0 > @solana/fast-stable-stringify@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc@8.3.0 > @solana/fast-stable-stringify@8.3.0"
     },
     {
       "package": "@solana/fixed-points@8.3.0",
@@ -682,7 +437,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/codecs@8.3.0 > @solana/fixed-points@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/codecs@8.3.0 > @solana/fixed-points@8.3.0"
     },
     {
       "package": "@solana/functional@8.3.0",
@@ -693,7 +448,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/functional@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/functional@8.3.0"
     },
     {
       "package": "@solana/instruction-plans@8.3.0",
@@ -704,7 +459,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/instruction-plans@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/instruction-plans@8.3.0"
     },
     {
       "package": "@solana/instructions@8.3.0",
@@ -715,7 +470,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/instructions@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/instructions@8.3.0"
     },
     {
       "package": "@solana/keys@8.3.0",
@@ -726,7 +481,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/keys@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/keys@8.3.0"
     },
     {
       "package": "@solana/kit@8.3.0",
@@ -751,7 +506,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/offchain-messages@8.3.0 > @solana/nominal-types@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/offchain-messages@8.3.0 > @solana/nominal-types@8.3.0"
     },
     {
       "package": "@solana/offchain-messages@8.3.0",
@@ -762,18 +517,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/offchain-messages@8.3.0"
-    },
-    {
-      "package": "@solana/options@2.0.0-rc.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/spl-token-group@0.0.7 > @solana/codecs@2.0.0-rc.1 > @solana/options@2.0.0-rc.1"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/offchain-messages@8.3.0"
     },
     {
       "package": "@solana/options@8.3.0",
@@ -784,7 +528,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/codecs@8.3.0 > @solana/options@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/codecs@8.3.0 > @solana/options@8.3.0"
     },
     {
       "package": "@solana/plugin-core@8.3.0",
@@ -795,7 +539,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/plugin-core@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/plugin-core@8.3.0"
     },
     {
       "package": "@solana/plugin-interfaces@8.3.0",
@@ -806,7 +550,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/plugin-interfaces@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/plugin-interfaces@8.3.0"
     },
     {
       "package": "@solana/program-client-core@8.3.0",
@@ -817,7 +561,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/program-client-core@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/program-client-core@8.3.0"
     },
     {
       "package": "@solana/programs@8.3.0",
@@ -828,7 +572,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/programs@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/programs@8.3.0"
     },
     {
       "package": "@solana/promises@8.3.0",
@@ -839,7 +583,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/promises@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/promises@8.3.0"
     },
     {
       "package": "@solana/rpc-api@8.3.0",
@@ -850,7 +594,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc-api@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc-api@8.3.0"
     },
     {
       "package": "@solana/rpc-parsed-types@8.3.0",
@@ -861,7 +605,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc-parsed-types@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc-parsed-types@8.3.0"
     },
     {
       "package": "@solana/rpc-spec-types@8.3.0",
@@ -872,7 +616,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc-spec-types@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc-spec-types@8.3.0"
     },
     {
       "package": "@solana/rpc-spec@8.3.0",
@@ -883,7 +627,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/plugin-interfaces@8.3.0 > @solana/rpc-spec@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/plugin-interfaces@8.3.0 > @solana/rpc-spec@8.3.0"
     },
     {
       "package": "@solana/rpc-subscriptions-api@8.3.0",
@@ -894,7 +638,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc-subscriptions@8.3.0 > @solana/rpc-subscriptions-api@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc-subscriptions@8.3.0 > @solana/rpc-subscriptions-api@8.3.0"
     },
     {
       "package": "@solana/rpc-subscriptions-channel-websocket@8.3.0",
@@ -905,7 +649,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc-subscriptions@8.3.0 > @solana/rpc-subscriptions-channel-websocket@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc-subscriptions@8.3.0 > @solana/rpc-subscriptions-channel-websocket@8.3.0"
     },
     {
       "package": "@solana/rpc-subscriptions-spec@8.3.0",
@@ -916,7 +660,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/plugin-interfaces@8.3.0 > @solana/rpc-subscriptions-spec@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/plugin-interfaces@8.3.0 > @solana/rpc-subscriptions-spec@8.3.0"
     },
     {
       "package": "@solana/rpc-subscriptions@8.3.0",
@@ -927,7 +671,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/transaction-confirmation@8.3.0 > @solana/rpc-subscriptions@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/transaction-confirmation@8.3.0 > @solana/rpc-subscriptions@8.3.0"
     },
     {
       "package": "@solana/rpc-transformers@8.3.0",
@@ -938,7 +682,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc@8.3.0 > @solana/rpc-transformers@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc@8.3.0 > @solana/rpc-transformers@8.3.0"
     },
     {
       "package": "@solana/rpc-transport-http@8.3.0",
@@ -949,7 +693,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc@8.3.0 > @solana/rpc-transport-http@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc@8.3.0 > @solana/rpc-transport-http@8.3.0"
     },
     {
       "package": "@solana/rpc-types@8.3.0",
@@ -960,7 +704,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc-types@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc-types@8.3.0"
     },
     {
       "package": "@solana/rpc@8.3.0",
@@ -971,7 +715,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/transaction-confirmation@8.3.0 > @solana/rpc@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/transaction-confirmation@8.3.0 > @solana/rpc@8.3.0"
     },
     {
       "package": "@solana/signers@8.3.0",
@@ -982,51 +726,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/signers@8.3.0"
-    },
-    {
-      "package": "@solana/spl-token-group@0.0.7",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/spl-token-group@0.0.7"
-    },
-    {
-      "package": "@solana/spl-token-metadata@0.1.6",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @solana/spl-token@0.3.11 > @solana/spl-token-metadata@0.1.6"
-    },
-    {
-      "package": "@solana/spl-token@0.3.11",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @solana/spl-token@0.3.11"
-    },
-    {
-      "package": "@solana/spl-token@0.4.15",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/dynamic-bonding-curve-sdk@1.5.13 > @solana/spl-token@0.4.15"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/signers@8.3.0"
     },
     {
       "package": "@solana/subscribable@8.3.0",
@@ -1037,7 +737,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/subscribable@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/subscribable@8.3.0"
     },
     {
       "package": "@solana/sysvars@8.3.0",
@@ -1048,7 +748,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/sysvars@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/sysvars@8.3.0"
     },
     {
       "package": "@solana/transaction-confirmation@8.3.0",
@@ -1059,7 +759,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/transaction-confirmation@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/transaction-confirmation@8.3.0"
     },
     {
       "package": "@solana/transaction-introspection@8.3.0",
@@ -1070,7 +770,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/transaction-introspection@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/transaction-introspection@8.3.0"
     },
     {
       "package": "@solana/transaction-messages@8.3.0",
@@ -1081,7 +781,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/transaction-messages@8.3.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/transaction-messages@8.3.0"
     },
     {
       "package": "@solana/transactions@8.3.0",
@@ -1092,342 +792,18 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/transactions@8.3.0"
-    },
-    {
-      "package": "@solana/web3.js@1.99.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/adapter-meteora-dbc",
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @solana/web3.js@1.99.0"
-    },
-    {
-      "package": "@sqds/multisig@2.1.4",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/adapter-meteora-dbc",
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4"
-    },
-    {
-      "package": "@swc/helpers@0.5.23",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > rpc-websockets@9.3.9 > @swc/helpers@0.5.23"
-    },
-    {
-      "package": "@types/bn.js@5.2.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/adapter-meteora-dbc",
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @types/bn.js@5.2.0"
-    },
-    {
-      "package": "@types/connect@3.4.38",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > @types/connect@3.4.38"
-    },
-    {
-      "package": "@types/node@12.20.55",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > @types/node@12.20.55"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/transactions@8.3.0"
     },
     {
       "package": "@types/node@22.20.4",
       "license": "MIT",
       "class": "ALLOW",
-      "devOnly": false,
+      "devOnly": true,
       "importers": [
-        "@project-qf/launchpad",
         "project-qf"
       ],
       "note": "",
       "sampleChain": "project-qf > @types/node@22.20.4"
-    },
-    {
-      "package": "@types/uuid@10.0.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > rpc-websockets@9.3.9 > @types/uuid@10.0.0"
-    },
-    {
-      "package": "@types/ws@7.4.7",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > @types/ws@7.4.7"
-    },
-    {
-      "package": "@types/ws@8.18.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > rpc-websockets@9.3.9 > @types/ws@8.18.1"
-    },
-    {
-      "package": "agentkeepalive@4.6.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > agentkeepalive@4.6.0"
-    },
-    {
-      "package": "ansicolors@0.3.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @metaplex-foundation/beet@0.7.1 > ansicolors@0.3.2"
-    },
-    {
-      "package": "assert@2.1.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0"
-    },
-    {
-      "package": "available-typed-arrays@1.0.7",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5 > is-typed-array@1.1.15 > which-typed-array@1.1.24 > available-typed-arrays@1.0.7"
-    },
-    {
-      "package": "base-x@3.0.11",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > borsh@0.7.0 > bs58@4.0.1 > base-x@3.0.11"
-    },
-    {
-      "package": "base-x@4.0.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @metaplex-foundation/beet-solana@0.4.0 > bs58@5.0.0 > base-x@4.0.1"
-    },
-    {
-      "package": "base64-js@1.5.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > @solana/buffer-layout@4.0.1 > buffer@6.0.3 > base64-js@1.5.1"
-    },
-    {
-      "package": "bigint-buffer@1.1.5",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @solana/spl-token@0.3.11 > @solana/buffer-layout-utils@0.2.0 > bigint-buffer@1.1.5"
-    },
-    {
-      "package": "bignumber.js@9.3.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @solana/spl-token@0.3.11 > @solana/buffer-layout-utils@0.2.0 > bignumber.js@9.3.1"
-    },
-    {
-      "package": "bindings@1.5.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/buffer-layout-utils@0.3.0 > bigint-buffer@1.1.5 > bindings@1.5.0"
-    },
-    {
-      "package": "bn.js@5.2.5",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/adapter-meteora-dbc",
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > bn.js@5.2.5"
-    },
-    {
-      "package": "borsh@0.7.0",
-      "license": "Apache-2.0",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > borsh@0.7.0"
-    },
-    {
-      "package": "bs58@4.0.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > bs58@4.0.1"
-    },
-    {
-      "package": "bs58@5.0.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @metaplex-foundation/beet-solana@0.4.0 > bs58@5.0.0"
-    },
-    {
-      "package": "buffer-layout@1.2.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > buffer-layout@1.2.2"
-    },
-    {
-      "package": "buffer@6.0.3",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > buffer@6.0.3"
-    },
-    {
-      "package": "call-bind-apply-helpers@1.0.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > object.assign@4.1.7 > call-bound@1.0.4 > call-bind-apply-helpers@1.0.2"
-    },
-    {
-      "package": "call-bind@1.0.9",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > object-is@1.1.6 > call-bind@1.0.9"
-    },
-    {
-      "package": "call-bound@1.0.4",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > object.assign@4.1.7 > call-bound@1.0.4"
-    },
-    {
-      "package": "camelcase@6.3.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > camelcase@6.3.0"
     },
     {
       "package": "chalk@5.6.2",
@@ -1438,29 +814,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/spl-token-group@0.0.7 > @solana/codecs@2.0.0-rc.1 > @solana/codecs-core@2.0.0-rc.1 > @solana/errors@2.0.0-rc.1 > chalk@5.6.2"
-    },
-    {
-      "package": "commander@12.1.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/spl-token-group@0.0.7 > @solana/codecs@2.0.0-rc.1 > @solana/codecs-core@2.0.0-rc.1 > @solana/errors@2.0.0-rc.1 > commander@12.1.0"
-    },
-    {
-      "package": "commander@14.0.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > @solana/codecs-numbers@5.5.1 > @solana/codecs-core@5.5.1 > @solana/errors@5.5.1 > commander@14.0.2"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/accounts@8.3.0 > @solana/addresses@8.3.0 > @solana/assertions@8.3.0 > @solana/errors@8.3.0 > chalk@5.6.2"
     },
     {
       "package": "commander@15.0.0",
@@ -1471,150 +825,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/accounts@8.3.0 > @solana/addresses@8.3.0 > @solana/assertions@8.3.0 > @solana/errors@8.3.0 > commander@15.0.0"
-    },
-    {
-      "package": "commander@2.20.3",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > commander@2.20.3"
-    },
-    {
-      "package": "cross-fetch@3.2.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > cross-fetch@3.2.0"
-    },
-    {
-      "package": "debug@4.4.3",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @metaplex-foundation/beet@0.7.1 > debug@4.4.3"
-    },
-    {
-      "package": "decimal.js@10.6.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/dynamic-bonding-curve-sdk@1.5.13 > decimal.js@10.6.0"
-    },
-    {
-      "package": "define-data-property@1.1.4",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > is-nan@1.3.2 > define-properties@1.2.1 > define-data-property@1.1.4"
-    },
-    {
-      "package": "define-properties@1.2.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > object-is@1.1.6 > define-properties@1.2.1"
-    },
-    {
-      "package": "delay@5.0.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > delay@5.0.0"
-    },
-    {
-      "package": "dunder-proto@1.0.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > call-bind@1.0.9 > get-intrinsic@1.3.0 > get-proto@1.0.1 > dunder-proto@1.0.1"
-    },
-    {
-      "package": "es-define-property@1.0.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > call-bind@1.0.9 > es-define-property@1.0.1"
-    },
-    {
-      "package": "es-errors@1.3.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > call-bind@1.0.9 > call-bind-apply-helpers@1.0.2 > es-errors@1.3.0"
-    },
-    {
-      "package": "es-object-atoms@1.1.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > object.assign@4.1.7 > es-object-atoms@1.1.2"
-    },
-    {
-      "package": "es6-promise@4.2.8",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > es6-promisify@5.0.0 > es6-promise@4.2.8"
-    },
-    {
-      "package": "es6-promisify@5.0.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > es6-promisify@5.0.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/accounts@8.3.0 > @solana/addresses@8.3.0 > @solana/assertions@8.3.0 > @solana/errors@8.3.0 > commander@15.0.0"
     },
     {
       "package": "esbuild@0.28.2",
@@ -1629,50 +840,6 @@
       "sampleChain": "project-qf > esbuild@0.28.2"
     },
     {
-      "package": "eventemitter3@4.0.7",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > eventemitter3@4.0.7"
-    },
-    {
-      "package": "eventemitter3@5.0.4",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > rpc-websockets@9.3.9 > eventemitter3@5.0.4"
-    },
-    {
-      "package": "eyes@0.1.8",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > eyes@0.1.8"
-    },
-    {
-      "package": "fast-stable-stringify@1.0.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > fast-stable-stringify@1.0.0"
-    },
-    {
       "package": "fastestsmallesttextencoderdecoder@1.0.22",
       "license": "CC0-1.0",
       "class": "ALLOW",
@@ -1681,370 +848,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/spl-token-group@0.0.7 > @solana/codecs@2.0.0-rc.1 > @solana/codecs-strings@2.0.0-rc.1 > fastestsmallesttextencoderdecoder@1.0.22"
-    },
-    {
-      "package": "file-uri-to-path@1.0.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @solana/spl-token@0.4.15 > @solana/buffer-layout-utils@0.3.0 > bigint-buffer@1.1.5 > bindings@1.5.0 > file-uri-to-path@1.0.0"
-    },
-    {
-      "package": "for-each@0.3.5",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5 > is-typed-array@1.1.15 > which-typed-array@1.1.24 > for-each@0.3.5"
-    },
-    {
-      "package": "function-bind@1.1.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > call-bind@1.0.9 > call-bind-apply-helpers@1.0.2 > function-bind@1.1.2"
-    },
-    {
-      "package": "generator-function@2.0.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5 > is-generator-function@1.1.2 > generator-function@2.0.1"
-    },
-    {
-      "package": "get-intrinsic@1.3.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > object.assign@4.1.7 > call-bound@1.0.4 > get-intrinsic@1.3.0"
-    },
-    {
-      "package": "get-proto@1.0.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > call-bind@1.0.9 > get-intrinsic@1.3.0 > get-proto@1.0.1"
-    },
-    {
-      "package": "gopd@1.2.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > call-bind@1.0.9 > set-function-length@1.2.2 > gopd@1.2.0"
-    },
-    {
-      "package": "has-property-descriptors@1.0.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > is-nan@1.3.2 > define-properties@1.2.1 > has-property-descriptors@1.0.2"
-    },
-    {
-      "package": "has-symbols@1.1.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > object.assign@4.1.7 > has-symbols@1.1.0"
-    },
-    {
-      "package": "has-tostringtag@1.0.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5 > is-arguments@1.2.0 > has-tostringtag@1.0.2"
-    },
-    {
-      "package": "hasown@2.0.4",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > call-bind@1.0.9 > get-intrinsic@1.3.0 > hasown@2.0.4"
-    },
-    {
-      "package": "humanize-ms@1.2.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > agentkeepalive@4.6.0 > humanize-ms@1.2.1"
-    },
-    {
-      "package": "ieee754@1.2.1",
-      "license": "BSD-3-Clause",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > @solana/buffer-layout@4.0.1 > buffer@6.0.3 > ieee754@1.2.1"
-    },
-    {
-      "package": "inherits@2.0.4",
-      "license": "ISC",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5 > inherits@2.0.4"
-    },
-    {
-      "package": "invariant@2.2.4",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > invariant@2.2.4"
-    },
-    {
-      "package": "is-arguments@1.2.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5 > is-arguments@1.2.0"
-    },
-    {
-      "package": "is-callable@1.2.7",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5 > is-typed-array@1.1.15 > which-typed-array@1.1.24 > for-each@0.3.5 > is-callable@1.2.7"
-    },
-    {
-      "package": "is-generator-function@1.1.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5 > is-generator-function@1.1.2"
-    },
-    {
-      "package": "is-nan@1.3.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > is-nan@1.3.2"
-    },
-    {
-      "package": "is-regex@1.2.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5 > is-generator-function@1.1.2 > safe-regex-test@1.1.0 > is-regex@1.2.1"
-    },
-    {
-      "package": "is-typed-array@1.1.15",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5 > is-typed-array@1.1.15"
-    },
-    {
-      "package": "isomorphic-ws@4.0.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > isomorphic-ws@4.0.1"
-    },
-    {
-      "package": "jayson@4.3.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0"
-    },
-    {
-      "package": "js-tokens@4.0.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > invariant@2.2.4 > loose-envify@1.4.0 > js-tokens@4.0.0"
-    },
-    {
-      "package": "json-stringify-safe@5.0.1",
-      "license": "ISC",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > json-stringify-safe@5.0.1"
-    },
-    {
-      "package": "loose-envify@1.4.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > invariant@2.2.4 > loose-envify@1.4.0"
-    },
-    {
-      "package": "math-intrinsics@1.1.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > call-bind@1.0.9 > get-intrinsic@1.3.0 > math-intrinsics@1.1.0"
-    },
-    {
-      "package": "ms@2.1.3",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > @metaplex-foundation/beet@0.7.1 > debug@4.4.3 > ms@2.1.3"
-    },
-    {
-      "package": "node-fetch@2.7.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > cross-fetch@3.2.0 > node-fetch@2.7.0"
-    },
-    {
-      "package": "object-is@1.1.6",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > object-is@1.1.6"
-    },
-    {
-      "package": "object-keys@1.1.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > is-nan@1.3.2 > define-properties@1.2.1 > object-keys@1.1.1"
-    },
-    {
-      "package": "object.assign@4.1.7",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > object.assign@4.1.7"
-    },
-    {
-      "package": "pako@2.2.0",
-      "license": "(MIT AND Zlib)",
-      "class": "ALLOW_EXCEPTION",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "QF-LIC-EX-002 conditions hold (exact version, integrity, licence expression, unmodified, notices preserved verbatim)",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > pako@2.2.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/accounts@8.3.0 > @solana/addresses@8.3.0 > @solana/codecs-strings@8.3.0 > fastestsmallesttextencoderdecoder@1.0.22"
     },
     {
       "package": "playwright-core@1.56.1",
@@ -2057,149 +861,6 @@
       ],
       "note": "",
       "sampleChain": "project-qf > playwright-core@1.56.1"
-    },
-    {
-      "package": "possible-typed-array-names@1.1.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5 > is-typed-array@1.1.15 > which-typed-array@1.1.24 > available-typed-arrays@1.0.7 > possible-typed-array-names@1.1.0"
-    },
-    {
-      "package": "rpc-websockets@9.3.9",
-      "license": "LGPL-3.0-only",
-      "class": "ALLOW_EXCEPTION",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "QF-LIC-EX-001 conditions hold (integrity, adapter-only paths, no browser importer)",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > rpc-websockets@9.3.9"
-    },
-    {
-      "package": "safe-buffer@5.2.1",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > borsh@0.7.0 > bs58@4.0.1 > base-x@3.0.11 > safe-buffer@5.2.1"
-    },
-    {
-      "package": "safe-regex-test@1.1.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5 > is-generator-function@1.1.2 > safe-regex-test@1.1.0"
-    },
-    {
-      "package": "set-function-length@1.2.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > call-bind@1.0.9 > set-function-length@1.2.2"
-    },
-    {
-      "package": "stream-chain@2.2.5",
-      "license": "BSD-3-Clause",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > stream-json@1.9.1 > stream-chain@2.2.5"
-    },
-    {
-      "package": "stream-json@1.9.1",
-      "license": "BSD-3-Clause",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > stream-json@1.9.1"
-    },
-    {
-      "package": "superstruct@0.15.5",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > superstruct@0.15.5"
-    },
-    {
-      "package": "superstruct@2.0.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > superstruct@2.0.2"
-    },
-    {
-      "package": "text-encoding-utf-8@1.0.2",
-      "license": "NONE",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "exception text-encoding-utf-8 ALLOWED",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > borsh@0.7.0 > text-encoding-utf-8@1.0.2"
-    },
-    {
-      "package": "toml@4.2.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > toml@4.2.0"
-    },
-    {
-      "package": "tr46@0.0.3",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > node-fetch@2.7.0 > whatwg-url@5.0.0 > tr46@0.0.3"
-    },
-    {
-      "package": "tslib@2.8.1",
-      "license": "0BSD",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > rpc-websockets@9.3.9 > @swc/helpers@0.5.23 > tslib@2.8.1"
     },
     {
       "package": "typescript@5.9.3",
@@ -2233,84 +894,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @project-qf/tx@link:../../packages/tx > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc@8.3.0 > @solana/rpc-transport-http@8.3.0 > undici-types@8.11.2"
-    },
-    {
-      "package": "util@0.12.5",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5"
-    },
-    {
-      "package": "uuid@14.0.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > rpc-websockets@9.3.9 > uuid@14.0.2"
-    },
-    {
-      "package": "uuid@8.3.2",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > uuid@8.3.2"
-    },
-    {
-      "package": "webidl-conversions@3.0.1",
-      "license": "BSD-2-Clause",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > node-fetch@2.7.0 > whatwg-url@5.0.0 > webidl-conversions@3.0.1"
-    },
-    {
-      "package": "whatwg-url@5.0.0",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > node-fetch@2.7.0 > whatwg-url@5.0.0"
-    },
-    {
-      "package": "which-typed-array@1.1.24",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @sqds/multisig@2.1.4 > assert@2.1.0 > util@0.12.5 > which-typed-array@1.1.24"
-    },
-    {
-      "package": "ws@7.5.13",
-      "license": "MIT",
-      "class": "ALLOW",
-      "devOnly": false,
-      "importers": [
-        "@project-qf/launchpad"
-      ],
-      "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > jayson@4.3.0 > ws@7.5.13"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc@8.3.0 > @solana/rpc-transport-http@8.3.0 > undici-types@8.11.2"
     },
     {
       "package": "ws@8.22.0",
@@ -2321,7 +905,7 @@
         "@project-qf/launchpad"
       ],
       "note": "",
-      "sampleChain": "@project-qf/launchpad > @project-qf/adapter-meteora-dbc@link:../../packages/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > @coral-xyz/borsh@0.31.1 > @solana/web3.js@1.99.0 > rpc-websockets@9.3.9 > ws@8.22.0"
+      "sampleChain": "@project-qf/launchpad > @project-qf/engine@link:../../packages/engine > @solana/kit@8.3.0 > @solana/rpc-subscriptions@8.3.0 > @solana/rpc-subscriptions-channel-websocket@8.3.0 > ws@8.22.0"
     }
   ]
 }

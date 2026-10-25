@@ -8,10 +8,10 @@ import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { address, getAddressDecoder, getAddressEncoder, type Instruction } from '@solana/kit';
 import * as E from '@project-qf/engine';
-import type { EngineChain, TxRecord } from '../../src/engine/chain.ts';
-import type { QuoteAsset } from '../../src/engine/market.ts';
-import { createEngineApp, type EngineProfile } from '../../src/engine/server.ts';
-import { EngineStore } from '../../src/engine/store.ts';
+import type { EngineChain, TxRecord } from '../../src/chain.ts';
+import type { QuoteAsset } from '../../src/market.ts';
+import { createEngineApp, type EngineProfile } from '../../src/server.ts';
+import { EngineStore } from '../../src/store.ts';
 
 export const engineDir = mkdtempSync(join(tmpdir(), 'qf-engine-test-'));
 after(() => rmSync(engineDir, { recursive: true, force: true }));

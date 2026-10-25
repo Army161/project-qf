@@ -8,35 +8,27 @@ import { connect, disconnect, listWallets, onWalletsChanged, setWalletCluster, s
 
 // ------------------------------------------------------------------ types from lp-api/1
 interface Platform {
-  /** which launch engine the server runs: Meteora (the default until the switch) or Project QF's own */
-  engine?: 'qf' | 'meteora';
   ready: boolean; cluster: 'devnet' | 'localnet'; writesEnabled: boolean; writesLockedBecause: string[]; label: string; operator: string | null;
-  platform: null | { quote: { mint: string; decimals: number; symbol: string; label: string }; config?: string; ammConfig?: string; threshold: { rawQuoteThreshold: string };
+  platform: null | { quote: { mint: string; decimals: number; symbol: string; label: string }; ammConfig?: string; threshold: { rawQuoteThreshold: string };
     launchEconomics: any; launchEconomicsDigest: string };
   faucet: { quoteUi: string; lamports: string; claimsPerDay: number } | null;
 }
 interface Live { priceQuotePerBase: string | null; marketCapQuoteRaw: string | null; priceUnavailable?: boolean; launchPriceQuotePerBase?: string; lockedBps?: number | null; quoteReserve: string; migrationQuoteThreshold: string; progressBps: number;
-  curveComplete: boolean; isMigrated: boolean; baseDecimals: number; quoteDecimals: number; totalSupplyRaw: string; creatorQuoteFee: string; venue?: 'CURVE' | 'DAMM_V2' | 'POOL';
-  /** QF engine: the creator's uncollected pool fee after graduation */
+  curveComplete: boolean; isMigrated: boolean; baseDecimals: number; quoteDecimals: number; totalSupplyRaw: string; creatorQuoteFee: string; venue?: 'CURVE' | 'POOL';
+  /** the creator's uncollected pool fee after graduation */
   creatorPoolFee?: string | null }
 interface Token { mint: string; pool: string; name: string; symbol: string; description: string; imageUrl: string | null; creator: string; status: string;
   createdAt: string; liveAt: string | null; website: string | null; twitter: string | null; telegram: string | null; createSig: string | null;
-  /** the pool a graduated coin trades in: `dammPool` on Meteora, `graduatedPool` on the QF engine */
-  migrationSig: string | null; dammPool?: string | null; graduatedPool?: string | null; live: Live | null; stats: { count: number; volumeQuoteRaw: string; traders: number };
+  /** the pool a graduated coin trades in */
+  migrationSig: string | null; graduatedPool?: string | null; live: Live | null; stats: { count: number; volumeQuoteRaw: string; traders: number };
   /** transactions the indexer has listed but not read yet (pending) or could not read after many tries (unavailable) */
   history?: { complete: boolean; pending: number; unavailable: number } }
 interface Fees { isCreator: boolean; curve: { quoteRaw: string; baseRaw: string } | null;
-  positions: { position: string; nftMint: string; feeBaseRaw: string; feeQuoteRaw: string; permanentlyLocked: boolean }[];
-  /** QF engine: the creator's fee on every pool trade after graduation */
+  /** the creator's fee on every pool trade after graduation */
   poolCreatorFee?: { quoteRaw: string } | null }
 interface Trade { sig: string; trader: string; side: 'BUY' | 'SELL'; quoteRaw: string; baseRaw: string; slot: number; blockTime: number | null }
-/** One coin's holder-reward days (lp-api/1 GET /api/lp/rewards/:mint): the holders' share of the fees, and what was paid. */
-interface RewardDay { epochId: string; status: 'FINAL' | 'OPEN' | 'INCOMPLETE'; holders: number; funding: { earmarkedRaw: string };
-  artifactHash: string | null; settlement: { status: string; paidRaw: string; txs: string[] } }
-interface CoinRewardsView { coins: { mint: string; symbol: string; epochs: RewardDay[] }[] }
-/** My coins (GET /api/lp/me): the coins a wallet launched with what it can claim, and the holder rewards paid to it. */
-interface Me { wallet: string; coins: ({ token: Token } & Pick<Fees, 'curve' | 'positions' | 'poolCreatorFee'>)[];
-  rewardsPaid: { mint: string; symbol: string; epochId: string; amountRaw: string; sig: string; blockTime: number | null }[] }
+/** My coins (GET /api/lp/me): the coins a wallet launched with what it can claim. */
+interface Me { wallet: string; coins: ({ token: Token } & Pick<Fees, 'curve' | 'poolCreatorFee'>)[] }
 
 class ApiError extends Error { code: string; details: string[]; constructor(code: string, m: string, d: string[] = []) { super(m); this.code = code; this.details = d; } }
 async function api<T>(path: string, body?: unknown): Promise<T> {
@@ -81,20 +73,17 @@ const ICON = {
 type Sort = 'traded' | 'new' | 'progress' | 'graduated';
 const state: { platform: Platform | null; wallet: Connected | null; balances: { lamports: string; tokens: Record<string, string> } | null; tokens: Token[]; sort: Sort; query: string } =
   { platform: null, wallet: null, balances: null, tokens: [], sort: 'traded', query: '' };
-const Q = () => state.platform?.platform?.quote ?? { mint: '', decimals: 6, symbol: 'qUSD', label: 'test' };
+const Q = () => state.platform?.platform?.quote ?? { mint: '', decimals: 9, symbol: 'SOL', label: 'test' };
 const hasFaucet = () => !!state.platform?.faucet;
-/** Project QF's own engine (coins graduate into their own pool, quoted in SOL) rather than Meteora. */
-const isQf = () => state.platform?.engine === 'qf';
 const cluster = () => state.platform?.cluster ?? 'devnet';
 /** Where a coin goes when it graduates, in words. */
-const POOL = () => (isQf() ? 'its own pool' : 'a Meteora DAMM v2 pool');
-const POOL_SHORT = () => (isQf() ? 'its pool' : 'DAMM v2');
-/** Fraction digits worth showing for quote amounts: SOL moves in smaller steps than the 6-decimal test dollar. */
+const POOL = 'its own pool';
+/** Fraction digits worth showing for quote amounts: SOL moves in smaller steps than a 6-decimal token. */
 const QD = () => (Q().decimals >= 9 ? 4 : 2);
 /** Every engine coin has 6 decimals (packages/engine BASE_DECIMALS, qf-curve state.rs); SOL has 9. */
 const QF_BASE_DECIMALS = 6;
-const gradPool = (t: Pick<Token, 'dammPool' | 'graduatedPool'>) => t.graduatedPool ?? t.dammPool ?? null;
-/** Market cap text; after graduation it is unknown (not the old curve's) while the DAMM v2 pool cannot be read. */
+const gradPool = (t: Pick<Token, 'graduatedPool'>) => t.graduatedPool ?? null;
+/** Market cap text; after graduation it is unknown (not the old curve's) while the pool cannot be read. */
 const mcapText = (l: Live | null) => (l?.marketCapQuoteRaw ? `${compact(l.marketCapQuoteRaw, Q().decimals)} ${Q().symbol}` : '—');
 const lockedText = (l: Live | null) => (l?.lockedBps == null ? null : `${(l.lockedBps / 100).toFixed(2)}%`);
 
@@ -131,8 +120,7 @@ function renderWallet() {
   const q = Q();
   const b = state.balances;
   box.append(...[
-    b ? h('span', { class: 'bal', title: `${cluster()} balances` }, `${units(b.tokens[q.mint] ?? '0', q.decimals, isQf() ? 3 : 0)} ${q.symbol}`,
-      isQf() ? null : h('span', { class: 'dim' }, ` · ${units(b.lamports, 9, 3)} SOL`)) : null,
+    b ? h('span', { class: 'bal', title: `${cluster()} balances` }, `${units(b.tokens[q.mint] ?? '0', q.decimals, 3)} ${q.symbol}`) : null,
     hasFaucet() ? h('button', { class: 'btn ghost', onclick: claimFaucet, title: 'Free test tokens with no value' }, `Get test ${q.symbol}`) : null,
     h('button', { class: 'btn wallet', onclick: async () => { if (state.wallet) await disconnect(state.wallet); state.wallet = null; renderWallet(); walletChanged(); }, title: 'Disconnect' },
       h('img', { src: state.wallet.wallet.icon, alt: '', class: 'wicon' }), short(state.wallet.account.address)),
@@ -155,7 +143,7 @@ async function claimFaucet() {
   try {
     pending = toast(`Requesting test ${q.symbol}…`);
     const r = await api<{ signature: string; quoteRaw: string; lamports: string }>('/api/lp/faucet', { wallet: state.wallet.account.address });
-    const got = [BigInt(r.quoteRaw) > 0n ? `${units(r.quoteRaw, q.decimals, 0)} ${q.symbol}` : null, BigInt(r.lamports) > 0n ? `${units(r.lamports, 9, 3)} SOL${isQf() ? '' : ' for fees'}` : null];
+    const got = [BigInt(r.quoteRaw) > 0n ? `${units(r.quoteRaw, q.decimals, 0)} ${q.symbol}` : null, BigInt(r.lamports) > 0n ? `${units(r.lamports, 9, 3)} SOL` : null];
     toast(`Received ${got.filter(Boolean).join(' and ')}`, 'ok');
     await refreshBalances(currentMint());
   } catch (e) { toast(`Faucet: ${(e as Error).message}`, 'err'); } finally { pending?.(); }
@@ -238,7 +226,7 @@ function statusChip(t: Token) {
 function progressLabel(t: Token) {
   const l = t.live;
   if (!l) return '';
-  return isGraduated(t) ? `Trading on ${POOL_SHORT()}` : l.curveComplete ? 'Curve full, graduating' : `${pct(l.progressBps)} to graduation`;
+  return isGraduated(t) ? 'Trading on its pool' : l.curveComplete ? 'Curve full, graduating' : `${pct(l.progressBps)} to graduation`;
 }
 
 function tokenCard(t: Token) {
@@ -294,16 +282,16 @@ let paintGrid: (() => void) | null = null;
 async function renderHome() {
   const main = $('#view');
   const q = Q();
-  const threshold = state.platform?.platform ? units(state.platform.platform.threshold.rawQuoteThreshold, q.decimals, isQf() ? 2 : 0) : null;
+  const threshold = state.platform?.platform ? units(state.platform.platform.threshold.rawQuoteThreshold, q.decimals, 2) : null;
   const target = threshold ? `${threshold} ${q.symbol}` : 'its graduation target';
   const grid = h('div', { class: 'grid' }, h('div', { class: 'empty' }, 'Loading coins…'));
   const side = h('div', { class: 'how' }, h('span', { class: 'eyebrow' }, 'How it works'), h('ol', {},
     h('li', {}, h('span', {}, 'Make a coin with a name, a ticker and a picture. One signature.')),
     h('li', {}, h('span', {}, `Anyone can buy and sell it on its bonding curve, priced in ${q.symbol}.`)),
-    h('li', {}, h('span', {}, `At ${target} raised it graduates to ${POOL()} and its liquidity is locked forever.`))));
+    h('li', {}, h('span', {}, `At ${target} raised it graduates to ${POOL} and its liquidity is locked forever.`))));
   const hero = h('section', { class: 'hero' },
     h('div', { class: 'hero-copy' }, h('h1', {}, 'Launch a coin', h('br'), 'in one signature.'),
-      h('p', { class: 'lead' }, `Every coin starts on a bonding curve priced in ${q.symbol}. When ${target} is raised it graduates to ${POOL()}, and its liquidity is locked for good.`),
+      h('p', { class: 'lead' }, `Every coin starts on a bonding curve priced in ${q.symbol}. When ${target} is raised it graduates to ${POOL}, and its liquidity is locked for good.`),
       h('div', { class: 'cta' }, state.platform?.writesEnabled ? h('a', { class: 'btn primary lg', href: '#/create' }, 'Create a coin') : null,
         hasFaucet() ? h('button', { class: 'btn ghost lg', onclick: claimFaucet }, `Get test ${q.symbol}`) : null)),
     side);
@@ -376,13 +364,7 @@ function renderCreate() {
   updatePreview();
   const digestOk = economicsDigest(e) === p.launchEconomicsDigest;
   const tile = (k: string, v: string) => h('div', {}, h('span', {}, k), h('b', {}, v));
-  const econ = h('div', { class: 'econ-tiles' }, ...(isQf() ? engineTiles(e, tile) : [
-    tile('Supply', `${units(BigInt(e.totalSupply) * 10n ** BigInt(e.baseDecimals), e.baseDecimals, 0)}, fixed forever`),
-    tile('Trading fee', `${e.economics.baseFeeBps / 100}% on every trade, paid in ${q.symbol}`),
-    tile('Your cut', `${e.economics.creatorTradingFeePct}% of fees, after Meteora’s 20%`),
-    tile('Graduates at', `${units(e.migrationQuoteThresholdRaw, q.decimals, 0)} ${q.symbol} raised`),
-    tile('After graduation', `Meteora DAMM v2, ${e.percentageSupplyOnMigration}% of supply paired`),
-    tile('Liquidity', `Locked forever (${e.economics.lp.creatorPermanentLockedPct}% creator, ${e.economics.lp.partnerPermanentLockedPct}% platform)`)]));
+  const econ = h('div', { class: 'econ-tiles' }, ...engineTiles(e, tile));
   const form = h('form', { class: 'create-form', novalidate: true },
     h('div', {}, h('h1', {}, 'Make a coin.'), h('p', { class: 'lead' }, 'One signature creates the token, its picture and its bonding curve. Nobody, including you, can mint more later.')),
     h('label', { class: 'drop' }, pic, h('span', {}, h('strong', {}, 'Drop a picture or tap to choose'), h('span', { class: 'dim small' }, 'PNG, JPEG, GIF or WebP. Resized to 512 px.')), file),
@@ -393,7 +375,7 @@ function renderCreate() {
       digestOk ? null : h('p', { class: 'err small', style: { margin: '0' } }, 'These terms do not match what the server will use. Reload the page before launching.')),
     h('label', { class: 'consent' }, consent, h('span', {}, `I’ve read what I’m launching. This is ${cluster()}, so the coin and ${q.symbol} have no value.`)),
     submit,
-    h('p', { class: 'dim small', style: { textAlign: 'center', margin: '0' } }, isQf() ? 'No fee to launch. You pay rent and network fees in test SOL.' : 'No platform fee. You pay devnet rent and network fees, about 0.03 SOL.'));
+    h('p', { class: 'dim small', style: { textAlign: 'center', margin: '0' } }, 'No fee to launch. You pay rent and network fees in test SOL.'));
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const sym = symbol.value.trim().toUpperCase();
@@ -415,9 +397,9 @@ function renderCreate() {
       const r = await api<Built & { metadataUri: string }>('/api/lp/launch', body);
       metadataUri = r.metadataUri;
       return r;
-    }, () => ({ kind: isQf() ? 'QF_CREATE' : 'CREATE_POOL', wallet: w.account.address, shown: { body: { ...body, imageDataUrl: !!body.imageDataUrl }, economicsDigest: p.launchEconomicsDigest },
+    }, () => ({ kind: 'QF_CREATE', wallet: w.account.address, shown: { body: { ...body, imageDataUrl: !!body.imageDataUrl }, economicsDigest: p.launchEconomicsDigest },
       fields: { name: body.name, symbol: body.symbol, uri: metadataUri, creator: w.account.address, baseMint: mintKey.address, quoteMint: q.mint,
-        ...(isQf() ? { ammConfig: p.ammConfig ?? null } : { config: p.config ?? null }) } }),
+        ammConfig: p.ammConfig ?? null } }),
     { address: mintKey.address, key: mintKey.privateKey });
     submit.disabled = false;
     if (out) { toast(`$${sym} is live`, 'ok'); location.hash = `#/t/${mintKey.address}`; }
@@ -473,7 +455,7 @@ async function renderToken(mint: string) {
   void refreshBalances(t.mint);
   const graduated = isGraduated(t);
   // After graduation the same panel trades on the coin's pool (the server says which venue it priced).
-  const onPool = graduated && (l?.venue === 'DAMM_V2' || l?.venue === 'POOL') && !!gradPool(t);
+  const onPool = graduated && l?.venue === 'POOL' && !!gradPool(t);
   const tradeable = onPool || (!graduated && !l?.curveComplete);
 
   // trade panel
@@ -548,7 +530,7 @@ async function renderToken(mint: string) {
     try { typed = parseUnits(amount.value || '0', unitOf()); } catch { typed = -1n; }
     if (typed !== shownQuote.raw || shownQuote.side !== side || shownQuote.slippageBps !== slipBps) { toast('The quote is out of date. Check the new one, then press again.', 'err'); requote(); return; }
     // Our own engine's decimals are fixed (SOL 9, every coin 6); a server that says otherwise would scale the amount.
-    if (isQf() && (q.decimals !== 9 || bd !== QF_BASE_DECIMALS || !l)) { toast('This coin\'s details do not match the engine. Nothing was sent.', 'err'); return; }
+    if (q.decimals !== 9 || bd !== QF_BASE_DECIMALS || !l) { toast('This coin\'s details do not match the engine. Nothing was sent.', 'err'); return; }
     // The slippage floor is computed here from what you were shown, not taken from the server.
     const floor = slippageFloor(BigInt(shownQuote.expectedOut ?? '0'), slipBps);
     if (floor <= 0n || BigInt(shownQuote.minimumAmountOut ?? '0') < floor) { toast('The quote\'s minimum received is below your slippage. Nothing was sent.', 'err'); return; }
@@ -556,8 +538,8 @@ async function renderToken(mint: string) {
     go.disabled = true;
     const out = await runSigningFlow<{ trade: unknown }>(`${side === 'buy' ? 'Buy' : 'Sell'} $${t.symbol}`,
       () => api<Built>('/api/lp/swap', { mint: t.mint, user: w.account.address, side, amountIn: shownQuote.raw.toString(), slippageBps: slipBps }),
-      () => ({ kind: isQf() ? (onPool ? 'QF_POOL_SWAP' : 'QF_SWAP') : onPool ? 'DAMM_SWAP' : 'SWAP', wallet: w.account.address, shown: { quote: { ...shownQuote, raw: shownQuote.raw.toString() } },
-        fields: { user: w.account.address, ...(isQf() ? {} : { pool: onPool ? gradPool(t) : t.pool }), baseMint: t.mint, quoteMint: q.mint, direction: dir, amountIn: shownQuote.raw.toString() },
+      () => ({ kind: onPool ? 'QF_POOL_SWAP' : 'QF_SWAP', wallet: w.account.address, shown: { quote: { ...shownQuote, raw: shownQuote.raw.toString() } },
+        fields: { user: w.account.address, baseMint: t.mint, quoteMint: q.mint, direction: dir, amountIn: shownQuote.raw.toString() },
         minimumAmountOutAtLeast: floor.toString() }));
     go.disabled = false;
     if (out) { toast('Trade confirmed', 'ok'); renderToken(t.mint); }
@@ -587,18 +569,17 @@ async function renderToken(mint: string) {
   const trust = h('div', { class: 'trust' }, icon(ICON.shield, 18, 'var(--buy)'), h('span', {}, 'Your browser checks every account and amount in the transaction before your wallet is asked to sign.'));
   let panel: HTMLElement;
   if (onPool) {
-    const its = isQf() ? 'its own pool' : 'its Meteora DAMM v2 pool';
-    panelCard.append(h('p', { class: 'venue' }, icon(ICON.shield, 16, 'var(--grad)'), h('span', {}, l?.priceUnavailable ? `Graduated. ${isQf() ? 'Its pool' : 'Its Meteora DAMM v2 pool'} could not be read just now, so there is no current price. Try again in a moment.`
-        : `Graduated. Trades on ${its}${lockedText(l) ? `, ${lockedText(l)} of liquidity permanently locked` : ''}.`)),
+    panelCard.append(h('p', { class: 'venue' }, icon(ICON.shield, 16, 'var(--grad)'), h('span', {}, l?.priceUnavailable ? 'Graduated. Its pool could not be read just now, so there is no current price. Try again in a moment.'
+        : `Graduated. Trades on ${POOL}${lockedText(l) ? `, ${lockedText(l)} of liquidity permanently locked` : ''}.`)),
       tabs, h('label', {}, 'You pay', h('span', { class: 'payfield' }, amount, payUnit)), presets,
       h('div', { class: 'slip-row' }, h('span', {}, 'Slippage'), slip), quoteBox, go, balanceLine, trust);
     panel = panelCard;
   } else if (graduated) {
-    panel = h('div', { class: 'card graduated-panel' }, h('h3', {}, 'Graduated'), h('p', { style: { margin: '0' } }, `This coin filled its bonding curve and now trades on ${POOL()} with permanently locked liquidity.`),
-      gradPool(t) ? ext(explorer('address', gradPool(t)!), `Open ${isQf() ? 'the pool' : 'the DAMM v2 pool'} on Explorer`, 'btn wide') : null,
+    panel = h('div', { class: 'card graduated-panel' }, h('h3', {}, 'Graduated'), h('p', { style: { margin: '0' } }, `This coin filled its bonding curve and now trades on ${POOL} with permanently locked liquidity.`),
+      gradPool(t) ? ext(explorer('address', gradPool(t)!), 'Open the pool on Explorer', 'btn wide') : null,
       t.migrationSig ? h('p', { class: 'dim small', style: { margin: '0' } }, 'Migration tx: ', ext(explorer('tx', t.migrationSig), short(t.migrationSig, 8))) : null);
   } else if (l?.curveComplete) {
-    panel = h('div', { class: 'card graduated-panel' }, h('h3', {}, 'Curve full'), h('p', { style: { margin: '0' } }, `The bonding curve is full. The move to ${POOL()} runs automatically within a minute.`));
+    panel = h('div', { class: 'card graduated-panel' }, h('h3', {}, 'Curve full'), h('p', { style: { margin: '0' } }, `The bonding curve is full. The move to ${POOL} runs automatically within a minute.`));
   } else {
     panelCard.append(tabs, h('label', {}, 'You pay', h('span', { class: 'payfield' }, amount, payUnit)), presets,
       h('div', { class: 'slip-row' }, h('span', {}, 'Slippage'), slip), quoteBox, go, balanceLine, trust);
@@ -643,14 +624,14 @@ async function renderToken(mint: string) {
         l ? h('div', { class: `card grad-card${graduated ? ' done' : ''}` },
           h('div', { class: 'grad-top' }, h('b', {}, 'Graduation'), h('span', { class: 'num' }, graduated ? 'Done' : pct(l.progressBps))),
           progressBar(l.progressBps, l.curveComplete || l.isMigrated, true),
-          h('p', { class: 'dim small' }, graduated ? `Graduated to ${POOL()}.${lockedText(l) ? ` ${lockedText(l)} of the pool's liquidity is locked forever.` : ''}`
-            : `${units(l.quoteReserve, q.decimals, QD())} of ${units(l.migrationQuoteThreshold, q.decimals, QD())} ${q.symbol} raised. At ${units(l.migrationQuoteThreshold, q.decimals, QD())} the coin moves to ${POOL()} and its liquidity is locked forever.${toGo > 0n ? ` About ${units(toGo, q.decimals, QD())} ${q.symbol} of buying to go.` : ''}`)) : null,
+          h('p', { class: 'dim small' }, graduated ? `Graduated to ${POOL}.${lockedText(l) ? ` ${lockedText(l)} of the pool's liquidity is locked forever.` : ''}`
+            : `${units(l.quoteReserve, q.decimals, QD())} of ${units(l.migrationQuoteThreshold, q.decimals, QD())} ${q.symbol} raised. At ${units(l.migrationQuoteThreshold, q.decimals, QD())} the coin moves to ${POOL} and its liquidity is locked forever.${toGo > 0n ? ` About ${units(toGo, q.decimals, QD())} ${q.symbol} of buying to go.` : ''}`)) : null,
         h('div', { class: 'card' }, h('h3', {}, 'Trades'), historyNote(t), trades.length ? h('div', { class: 'scroll' }, h('table', { class: 'trades' },
           h('thead', {}, h('tr', {}, ...[['Side', ''], ['Trader', ''], [q.symbol, 'num'], [`$${t.symbol}`, 'num'], ['When', '']].map(([c, cls]) => h('th', { class: cls }, c)))), h('tbody', {}, ...tradeRows))) : h('p', { class: 'dim', style: { margin: '0' } }, 'No trades yet. Be the first.'))),
-      h('aside', {}, panel, feesCard, rewardsCard(t),
+      h('aside', {}, panel, feesCard,
         h('div', { class: 'card about' }, h('span', { class: 'eyebrow' }, 'About'), t.description ? h('p', {}, t.description) : null,
           h('dl', { class: 'facts' },
-            h('dt', {}, gradPool(t) || !isQf() ? 'Pool' : 'Curve'), h('dd', { class: 'num' }, ext(explorer('address', gradPool(t) ?? t.pool), short(gradPool(t) ?? t.pool, 4))),
+            h('dt', {}, gradPool(t) ? 'Pool' : 'Curve'), h('dd', { class: 'num' }, ext(explorer('address', gradPool(t) ?? t.pool), short(gradPool(t) ?? t.pool, 4))),
             h('dt', {}, 'Launch tx'), h('dd', { class: 'num' }, t.createSig ? ext(explorer('tx', t.createSig), short(t.createSig, 4)) : '—'),
             ...(t.migrationSig ? [h('dt', {}, 'Graduation tx'), h('dd', { class: 'num' }, ext(explorer('tx', t.migrationSig), short(t.migrationSig, 4)))] : []),
             ...(lockedText(l) ? [h('dt', {}, 'Liquidity locked'), h('dd', { class: 'num', title: 'read from the pool account' }, lockedText(l)!)] : []))))),
@@ -705,11 +686,11 @@ function engineTiles(e: any, tile: (k: string, v: string) => HTMLElement): HTMLE
 }
 
 // ------------------------------------------------------------------ claims
-// A creator's share of curve fees, and after graduation the fees of any DAMM v2 position the wallet holds (the creator's
-// locked LP). Built by the server, checked in this browser, signed in the wallet; the fees go straight to the wallet.
-function claimRows(t: Pick<Token, 'mint' | 'pool' | 'dammPool' | 'graduatedPool' | 'symbol'>, f: Pick<Fees, 'curve' | 'positions' | 'poolCreatorFee'>, bd: number, after: () => void): HTMLElement[] {
+// A creator's share of curve fees, and after graduation the creator's fee on every pool trade. Built by the server,
+// checked in this browser, signed in the wallet; the fees go straight to the wallet.
+function claimRows(t: Pick<Token, 'mint' | 'symbol'>, f: Pick<Fees, 'curve' | 'poolCreatorFee'>, bd: number, after: () => void): HTMLElement[] {
   const q = Q();
-  const label = (quoteRaw: string, baseRaw: string) => [BigInt(quoteRaw) > 0n || BigInt(baseRaw) === 0n ? `${units(quoteRaw, q.decimals, isQf() ? 6 : 2)} ${q.symbol}` : null,
+  const label = (quoteRaw: string, baseRaw: string) => [BigInt(quoteRaw) > 0n || BigInt(baseRaw) === 0n ? `${units(quoteRaw, q.decimals, 6)} ${q.symbol}` : null,
     BigInt(baseRaw) > 0n ? `${units(baseRaw, bd, 2)} $${t.symbol}` : null].filter(Boolean).join(' + ');
   const claim = async (title: string, body: Record<string, string>, expect: (w: Connected) => Pick<Expectation, 'kind' | 'fields'>) => {
     const w = requireWallet();
@@ -727,42 +708,13 @@ function claimRows(t: Pick<Token, 'mint' | 'pool' | 'dammPool' | 'graduatedPool'
   };
   if (f.curve) row('Bonding curve', 'Your share of every trade on the curve', f.curve.quoteRaw, f.curve.baseRaw,
     () => claim(`Claim ${label(f.curve!.quoteRaw, f.curve!.baseRaw)}`, { venue: 'curve' },
-      (w): Pick<Expectation, 'kind' | 'fields'> => (isQf() ? { kind: 'QF_CLAIM_CREATOR_FEES', fields: { creator: w.account.address, baseMint: t.mint, quoteMint: q.mint } }
-        : { kind: 'CLAIM_CREATOR_TRADING_FEE', fields: { creator: w.account.address, receiver: w.account.address, pool: t.pool, baseMint: t.mint, quoteMint: q.mint } })));
+      (w) => ({ kind: 'QF_CLAIM_CREATOR_FEES', fields: { creator: w.account.address, baseMint: t.mint, quoteMint: q.mint } })));
   if (f.poolCreatorFee) row('Pool', 'Your fee on every trade in the pool', f.poolCreatorFee.quoteRaw, '0',
     () => claim(`Claim ${label(f.poolCreatorFee!.quoteRaw, '0')}`, { venue: 'pool' },
       (w) => ({ kind: 'QF_COLLECT_POOL_CREATOR_FEE', fields: { creator: w.account.address, baseMint: t.mint, quoteMint: q.mint } })));
-  for (const p of f.positions) row(p.permanentlyLocked ? 'Locked LP position' : 'LP position', 'Fees from trades after graduation', p.feeQuoteRaw, p.feeBaseRaw,
-    () => claim(`Claim ${label(p.feeQuoteRaw, p.feeBaseRaw)}`, { venue: 'damm', nftMint: p.nftMint },
-      (w) => ({ kind: 'DAMM_CLAIM_POSITION_FEE', fields: { owner: w.account.address, pool: t.dammPool ?? null, positionNftMint: p.nftMint, baseMint: t.mint, quoteMint: q.mint } })));
   return rows;
 }
 const claimNote = () => h('p', { class: 'dim small', style: { margin: '0' } }, 'Claims pay this wallet directly. Your wallet signs; the server never holds your key.');
-
-// ------------------------------------------------------------------ holder rewards (read-only)
-/** A coin's holder rewards in brief: the holders' share of today's fees, and what has been paid out, with its record. */
-function rewardsCard(t: Pick<Token, 'mint'>): HTMLElement {
-  const q = Q();
-  const box = h('div', { class: 'card about', hidden: true });
-  if (isQf()) return box; // holder rewards are not on the QF engine yet
-  const amt = (raw: string | bigint) => `${units(raw, q.decimals, 2)} ${q.symbol}`;
-  void api<CoinRewardsView>(`/api/lp/rewards/${t.mint}`).then((r) => {
-    const c = r.coins[0];
-    if (!c || currentMint() !== t.mint) return;
-    const today = c.epochs.find((e) => e.status === 'OPEN');
-    const paidRaw = c.epochs.reduce((s, e) => s + BigInt(e.settlement.paidRaw), 0n);
-    const last = c.epochs.filter((e) => e.settlement.txs.length).at(-1);
-    box.replaceChildren(h('span', { class: 'eyebrow' }, 'Holder rewards'),
-      h('dl', { class: 'facts' },
-        h('dt', {}, 'Holders’ share of today’s fees'), h('dd', { class: 'num' }, today ? amt(today.funding.earmarkedRaw) : '—'),
-        h('dt', {}, 'Holders today'), h('dd', { class: 'num' }, today ? String(today.holders) : '—'),
-        h('dt', {}, 'Paid to holders so far'), h('dd', { class: 'num' }, amt(paidRaw)),
-        ...(last ? [h('dt', {}, 'Last payout'), h('dd', {}, ext(`/api/lp/rewards/${t.mint}/${last.epochId}/artifact.json`, `${last.epochId} record`))] : [])),
-      h('p', { class: 'dim small', style: { margin: '0' } }, 'Holders earn a share of the platform’s fees each day, weighted by how much they held and for how long. Paying it out takes 2 of 3 treasury approvals.'));
-    box.hidden = false;
-  }).catch(() => {});
-  return box;
-}
 
 // ------------------------------------------------------------------ my coins
 async function renderMe(fresh = false) {
@@ -770,7 +722,7 @@ async function renderMe(fresh = false) {
   const w = state.wallet;
   if (!w) {
     main.replaceChildren(h('section', { class: 'me' }, h('h1', {}, 'My coins'),
-      h('p', { class: 'lead' }, isQf() ? 'Connect your wallet to see the coins you launched and claim your fees.' : 'Connect your wallet to see the coins you launched, claim your fees, and see the holder rewards paid to you.'),
+      h('p', { class: 'lead' }, 'Connect your wallet to see the coins you launched and claim your fees.'),
       h('button', { class: 'btn primary lg', onclick: openWalletPicker }, 'Connect wallet')));
     return;
   }
@@ -786,18 +738,12 @@ async function renderMe(fresh = false) {
       h('a', { class: 'tc-top', href: `#/t/${t.mint}` }, avatar(t), h('div', { class: 'tc-id' }, h('span', { class: 'tc-name' }, t.name), h('span', { class: 'tc-sym' }, `$${t.symbol}`, statusChip(t)))),
       ...(rows.length ? rows : [h('p', { class: 'dim small', style: { margin: '0' } }, 'Nothing to claim yet.')]));
   };
-  const paid = d.rewardsPaid.map((r) => h('tr', {}, h('td', {}, h('a', { href: `#/t/${r.mint}` }, `$${r.symbol}`)), h('td', {}, r.epochId),
-    h('td', { class: 'num' }, `${units(r.amountRaw, q.decimals, 2)} ${q.symbol}`), h('td', {}, ext(explorer('tx', r.sig), r.blockTime ? ago(r.blockTime) : 'tx', 'dim'))));
   main.replaceChildren(h('section', { class: 'me' },
     h('h1', {}, 'My coins'),
     h('h3', {}, 'Coins you launched'),
     d.coins.length ? h('div', { class: 'grid' }, ...d.coins.map(coin))
       : h('div', { class: 'empty' }, 'You have not launched a coin with this wallet yet. ', h('a', { href: '#/create' }, 'Make one.')),
-    d.coins.length ? claimNote() : null,
-    ...(isQf() ? [] : [h('h3', {}, 'Holder rewards paid to you'),
-      paid.length ? h('div', { class: 'card' }, h('div', { class: 'scroll' }, h('table', { class: 'trades' },
-        h('thead', {}, h('tr', {}, h('th', {}, 'Coin'), h('th', {}, 'Day'), h('th', { class: 'num' }, 'Amount'), h('th', {}, 'When'))), h('tbody', {}, ...paid))))
-        : h('div', { class: 'empty' }, 'No holder rewards have been paid to this wallet yet.')])));
+    d.coins.length ? claimNote() : null));
 }
 
 // ------------------------------------------------------------------ router + boot
@@ -824,7 +770,7 @@ async function boot() {
   const q = Q();
   setExplorerCluster(state.platform.cluster);
   setWalletCluster(state.platform.cluster);
-  $('#netnote').textContent = state.platform.ready ? `Test network. ${isQf() ? 'Test SOL' : q.symbol} and every coin here have no value.` : 'Test network. Launching opens once the platform is set up.';
+  $('#netnote').textContent = state.platform.ready ? 'Test network. Test SOL and every coin here have no value.' : 'Test network. Launching opens once the platform is set up.';
   renderWallet();
   window.addEventListener('hashchange', route);
   const search = $('#q') as HTMLInputElement;

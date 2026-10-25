@@ -23,4 +23,3 @@
 **/.env
 **/.env.*
 apps/launchpad/.preview
-tools/econ-sim/traces

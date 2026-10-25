@@ -5,8 +5,7 @@ import assert from 'node:assert/strict';
 import { AccountRole, type Instruction } from '@solana/kit';
 import * as E from '@project-qf/engine';
 import { decodeTransactionBytes, verifyTransactionPreview } from '../src/decoder.ts';
-import { bindTransactionToTerms } from '../src/semantic.ts';
-import { qfInstructions } from '../src/qf-engine.ts';
+import { bindTransactionToTerms, qfInstructions } from '../src/qf-engine.ts';
 import { TX_BINDING_POLICY_VERSION, validateTerms, type QfTerms } from '../src/terms.ts';
 
 const USER = 'A7U7bbWZH4d1gxhLoWq5aku74mSMKsU1BJZjRmhYayB9', COIN = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';

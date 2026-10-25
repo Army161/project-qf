@@ -1,112 +1,218 @@
-// The launchpad's chain port. The server and indexer talk to Solana only through this interface; the real
-// implementation delegates to the server-only Meteora adapter (the only package allowed to use web3.js), and tests
-// substitute an in-process fake.
+// The engine launchpad's chain port: every read and send the server, the indexer and the crank make, over plain JSON-RPC
+// with Solana Kit (no web3.js). Tests substitute an in-process double. The operator key signs only what the server
+// itself builds (graduating a sold-out coin, the devnet faucet); it is never asked to sign anything a user built.
+import { generateKeyPairSync } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import {
-  buildCreatePool, buildCreatorCurveClaim, buildDammClaim, buildDammSwap, dammPositionsOf, readDammFeeAccounting, buildSwap, dammCurrentPoint, dammV2PoolFor, quoteDammSwap, readDammPool, getNewSignatures, getTxSummary, getWalletBalances, getLamports, quoteSwap, readPool,
-  firstSlotAtOrAfter, getMintSupply, getMintTokenAccounts, getTokenBalanceChanges,
-  common, runMigration, sendFromTreasury, sendSignedTransaction, publicKeyOf,
-  type BuiltTx, type CreatePoolRequest, type DammFeeAccounting, type DammPosition, type DevnetConnection, type DevnetSigner, type Direction, type LiveDammPool, type LivePool, type SwapQuote, type SwapRequest,
-  type TokenBalanceChanges, type TxSummary,
-} from '@project-qf/adapter-meteora-dbc/launchpad';
-import {
-  buildTreasuryApprove, buildTreasuryExecute, buildTreasuryPropose, ensureQuoteAccounts, partnerCurveClaim, readProposal, readTreasury, readVaultTransactionAccount, rewardsTransferInner, vaultDammClaim,
-  type ProposalState, type TreasuryState,
-} from '@project-qf/adapter-meteora-dbc/treasury';
-import type { RewardsInnerTerms, TreasuryInnerTerms } from '@project-qf/tx';
+  address, createKeyPairSignerFromBytes, createSolanaRpc, getAddressDecoder, getBase58Decoder, getBase58Encoder, getBase64EncodedWireTransaction, getBase64Encoder, getTransactionDecoder,
+  getTransactionEncoder, signTransaction, type Instruction, type KeyPairSigner,
+} from '@solana/kit';
+import * as E from '@project-qf/engine';
 
-export type { ProposalState, TreasuryState };
-/** What a treasury proposal asks the vault to claim: the partner share of a curve's fees, or a vault-held DAMM v2 position's fees. */
-export type TreasuryClaimRequest = { venue: 'CURVE'; pool: LivePool } | { venue: 'DAMM_V2'; pool: LiveDammPool; nftMint: string; amounts: { baseRaw: string; quoteRaw: string } }
-  | { venue: 'REWARDS'; inner: RewardsRequest };
-/** A rewards deposit or payout as the server asks for it; the adapter adds the binding fields (cluster, policy, fee payer, compute caps). */
-export type RewardsRequest = RewardsInnerTerms extends infer T ? T extends unknown ? Omit<T, 'cluster' | 'policyVersion' | 'feePayer' | 'compute'> : never : never;
-export type { BuiltTx, CreatePoolRequest, DammPosition, Direction, LiveDammPool, LivePool, SwapQuote, SwapRequest, TokenBalanceChanges, TxSummary };
+export interface TxRecord {
+  signature: string; slot: number; blockTime: number | null; err: boolean; feePayer: string;
+  /** the transaction's own (top-level) instructions */
+  instructions: { programAddress: string; dataHex: string }[];
+  /** the engine's events, attributed to the program that wrote them */
+  events: E.EngineEvent[];
+  /** the node cut the log short: events after the cut are missing */
+  logsTruncated: boolean;
+  /** every token account whose balance the transaction changed */
+  tokenChanges: { account: string; mint: string; owner: string | null; preRaw: bigint; postRaw: bigint }[];
+}
+export interface Balances { lamports: string; tokens: Record<string, string> }
 
-export interface LaunchpadChain {
+export interface EngineChain {
   operatorAddress: string | null;
-  readPool(pool: string): Promise<LivePool | null>;
-  buildCreatePool(r: CreatePoolRequest): Promise<BuiltTx & { pool: string }>;
-  buildSwap(pool: LivePool, r: SwapRequest, nowSeconds: number): Promise<BuiltTx & { quote: SwapQuote }>;
-  quoteSwap(pool: LivePool, direction: Direction, amountIn: bigint, slippageBps: number, nowSeconds: number): SwapQuote;
-  /** After graduation: the launch's DAMM v2 pool (refused unless it holds exactly base/quote as token A/B). */
-  readDammPool(pool: string, expected: { baseMint: string; quoteMint: string }): Promise<LiveDammPool | null>;
-  dammNow(pool: LiveDammPool): Promise<bigint>;
-  quoteDammSwap(pool: LiveDammPool, direction: Direction, amountIn: bigint, slippageBps: number, currentPoint: bigint): SwapQuote;
-  buildDammSwap(pool: LiveDammPool, r: SwapRequest, currentPoint: bigint): Promise<BuiltTx & { quote: SwapQuote }>;
-  /** Creator fees: the curve's creator share (DBC), and after graduation the fees of DAMM v2 positions whose NFT the wallet holds. */
-  buildCreatorCurveClaim(pool: LivePool, creator: string): Promise<BuiltTx & { maxBaseAmount: string; maxQuoteAmount: string }>;
-  dammPositions(pool: LiveDammPool, owner: string): Promise<DammPosition[]>;
-  /** The pool's own fee accounting (accumulator, LP fee total, every position), read as one snapshot: explains LP residuals. */
-  dammFeeAccounting(pool: LiveDammPool): Promise<DammFeeAccounting>;
-  buildDammClaim(pool: LiveDammPool, owner: string, nftMint: string): Promise<BuiltTx>;
-  send(bytes: Uint8Array, blockhash: string, lastValidBlockHeight: number): Promise<string>;
-  txSummary(signature: string): Promise<TxSummary | null>;
-  newSignatures(address: string, until: string | null): Promise<{ signature: string; slot: number; err: boolean }[]>;
-  balances(owner: string, mints: string[]): Promise<{ lamports: string; tokens: Record<string, string> }>;
+  /** Account reads at `confirmed`, for the engine package's decoders. */
+  read: E.AccountReader;
+  blockhash(): Promise<{ blockhash: string; lastValidBlockHeight: bigint }>;
+  /** The chain's clock (the Clock sysvar's unix time): a pool opens by this clock, not the server's. */
+  now(): Promise<bigint>;
+  /** Sends signed wire bytes and waits for `confirmed`; throws if it failed or its blockhash expired. */
+  send(signed: Uint8Array, lastValidBlockHeight: bigint): Promise<string>;
+  tx(signature: string): Promise<TxRecord | null>;
+  /** Signatures that touched `address` after `until`, oldest first. */
+  signatures(address: string, until: string | null): Promise<{ signature: string; slot: number; err: boolean }[]>;
+  /** Spendable SOL, and each mint's balance in the owner's associated token account (either token program). */
+  balances(owner: string, mints: string[]): Promise<Balances>;
   lamports(owner: string): Promise<bigint>;
-  /** Holder balance history (rewards), all at finalized: the mint's token accounts and supply at one slot, a token
-   *  account's signatures, a transaction's token balances before and after, and an epoch's first slot. */
-  mintTokenAccounts(mint: string): Promise<{ slot: number; accounts: { account: string; owner: string; amountRaw: bigint }[] }>;
-  mintSupply(mint: string): Promise<{ slot: number; supplyRaw: bigint }>;
-  finalizedSignatures(address: string, until: string | null): Promise<{ signature: string; slot: number; err: boolean }[]>;
-  tokenBalanceChanges(signature: string): Promise<TokenBalanceChanges | null>;
-  firstSlotAtOrAfter(unixSec: number): Promise<{ slot: number; blockTime: number } | null>;
-  finalizedSlot(): Promise<number>;
-  /** Platform treasury (Squads multisig): reads, and UNSIGNED transactions for a member to check and sign. The server holds
-   *  no member key, so none of these can approve or execute anything by themselves. */
-  readTreasury(multisig: string): Promise<TreasuryState>;
-  buildTreasuryPropose(multisig: string, vault: string, member: string, claim: TreasuryClaimRequest): Promise<BuiltTx & { transactionIndex: string; amounts: { baseRaw: string; quoteRaw: string } }>;
-  buildTreasuryApprove(multisig: string, member: string, transactionIndex: string): Promise<BuiltTx>;
-  buildTreasuryExecute(r: { multisig: string; vault: string; member: string; transactionIndex: string; inner: TreasuryInnerTerms; stored: Uint8Array }): Promise<BuiltTx>;
-  vaultTransaction(multisig: string, transactionIndex: string): Promise<Uint8Array | null>;
-  proposal(multisig: string, transactionIndex: string): Promise<ProposalState>;
-  /** operator-only */
-  /** creates any missing quote token account of these owners; the operator pays the rent, no tokens move */
-  ensureQuoteAccounts(owners: string[], quoteMint: string): Promise<{ created: string[]; signature: string | null }>;
-  faucet(quoteMint: string, to: string, quoteRaw: bigint, lamports: bigint): Promise<string>;
-  migrate(pool: string): Promise<string>;
-  dammPoolFor(baseMint: string, quoteMint: string): Promise<string>;
+  /** The mint of every launch on the engine for one quote (a getProgramAccounts search on the curve program). */
+  launches(quoteMint: string): Promise<string[]>;
+  genesisHash(): Promise<string>;
+  /** Operator only: signs and sends a transaction the server built. Throws OPERATOR_KEY_UNAVAILABLE without a key. */
+  sendAsOperator(instructions: Instruction[], computeUnits: number): Promise<string>;
 }
 
-export function realChain(conn: DevnetConnection, operator: DevnetSigner | null, log?: (m: string) => void): LaunchpadChain {
-  const needOperator = () => { if (!operator) throw new Error('OPERATOR_KEY_UNAVAILABLE'); return operator; };
+/** Genesis hashes the engine launchpad knows. A local validator has a fresh genesis each run, so it is accepted only on a
+ *  loopback RPC with QF_CLUSTER=localnet said explicitly. */
+export const GENESIS = Object.freeze({ devnet: 'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG', 'mainnet-beta': '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d' });
+const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
+/** Proves which network an RPC serves, before anything else talks to it. Mainnet is refused (MAINNET_WRITES=false). */
+export async function proveCluster(rpcUrl: string, wanted: 'devnet' | 'localnet', genesisHash: () => Promise<string>, mainnetWrites: boolean): Promise<'devnet' | 'localnet'> {
+  if (mainnetWrites !== false) throw new Error('MAINNET_WRITES must stay false in this build');
+  const u = new URL(rpcUrl), loopback = LOOPBACK.has(u.hostname);
+  if (u.username || u.password) throw new Error('the RPC URL must not carry credentials');
+  if (u.protocol !== 'https:' && !(u.protocol === 'http:' && loopback)) throw new Error('the RPC URL must be https (plain http only on this machine)');
+  if (wanted === 'localnet' && !loopback) throw new Error('localnet runs only against a validator on this machine (127.0.0.1)');
+  const g = await genesisHash();
+  if (g === GENESIS['mainnet-beta']) throw new Error('refusing mainnet-beta: the engine launchpad runs on devnet or a local validator only');
+  if (wanted === 'devnet' && g !== GENESIS.devnet) throw new Error(`genesis ${g} is not devnet`);
+  if (wanted === 'localnet' && g === GENESIS.devnet) throw new Error('QF_CLUSTER=localnet, but this RPC serves devnet');
+  return wanted;
+}
+
+const hex = (b: ArrayLike<number>) => Array.from(b, (x: number) => x.toString(16).padStart(2, '0')).join('');
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const busy = (e: unknown) => /\b429\b|Too Many Requests|rate limit|fetch failed|ECONNRESET|ETIMEDOUT/i.test((e as Error)?.message ?? '');
+const CLOCK = 'SysvarC1ock11111111111111111111111111111111';
+const fromB64 = getBase64Encoder(), fromB58 = getBase58Encoder();
+
+function outsideGit(p: string) {
+  for (let d = dirname(p); d !== dirname(d); d = dirname(d)) if (existsSync(resolve(d, '.git'))) throw new Error(`refusing a key file inside a git checkout (${d})`);
+}
+/** The operator's devnet key, read from a file outside any git checkout with mode 0600. Missing file: no operator. */
+export async function loadOperator(path: string): Promise<KeyPairSigner | null> {
+  const p = resolve(path);
+  outsideGit(p);
+  if (!existsSync(p)) return null;
+  if ((statSync(p).mode & 0o077) !== 0) throw new Error(`key file ${p} must be mode 0600`);
+  return createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(readFileSync(p, 'utf8')) as number[]));
+}
+
+/** A fresh machine's throwaway devnet operator key, made when there is none: mode 0600 in a 0700 folder, outside any git
+ *  checkout. Only its public address is ever printed. Returns false when a key was already there (it is never replaced). */
+export function createOperatorKey(path: string): boolean {
+  const p = resolve(path);
+  outsideGit(p);
+  if (existsSync(p)) return false;
+  mkdirSync(dirname(p), { recursive: true, mode: 0o700 });
+  const jwk = generateKeyPairSync('ed25519').privateKey.export({ format: 'jwk' });
+  writeFileSync(p, JSON.stringify([...Buffer.from(jwk.d!, 'base64url'), ...Buffer.from(jwk.x!, 'base64url')]), { mode: 0o600, flag: 'wx' });
+  return true;
+}
+
+/** Every call through this RPC retries a busy node (HTTP 429, a dropped connection) with a doubling wait, about 15 seconds
+ *  in all, before the error reaches the caller. Free and public endpoints answer 429 under ordinary load. */
+export function calmRpc<T extends object>(rpc: T): T {
+  return new Proxy(rpc, { get: (target, method) => (...args: unknown[]) => {
+    const pending = (target as Record<PropertyKey, (...a: unknown[]) => { send(o?: unknown): Promise<unknown> }>)[method]!(...args);
+    return { send: async (o?: unknown) => {
+      for (let wait = 500, k = 0; ; k++, wait *= 2) {
+        try { return await pending.send(o); } catch (e) { if (!busy(e) || k >= 5) throw e; await sleep(wait); }
+      }
+    } };
+  } });
+}
+
+export function kitChain(rpcUrl: string, operator: KeyPairSigner | null, log: (m: string) => void = () => {}): EngineChain {
+  const rpc = calmRpc(createSolanaRpc(rpcUrl));
+  const commitment = 'confirmed' as const;
+  const read: E.AccountReader = async (addrs) => {
+    const out: (E.RawAccount | null)[] = [];
+    for (let k = 0; k < addrs.length; k += 100) {
+      const r = await rpc.getMultipleAccounts(addrs.slice(k, k + 100).map((a) => address(a)), { encoding: 'base64', commitment }).send();
+      out.push(...r.value.map((a) => (a ? { owner: a.owner as string, lamports: BigInt(a.lamports), data: fromB64.encode(a.data[0]) as Uint8Array } : null)));
+    }
+    return out;
+  };
+  const blockhash = async () => { const { value } = await rpc.getLatestBlockhash({ commitment }).send(); return { blockhash: value.blockhash as string, lastValidBlockHeight: BigInt(value.lastValidBlockHeight) }; };
+  async function send(signed: Uint8Array, lastValidBlockHeight: bigint): Promise<string> {
+    const wire = getBase64EncodedWireTransaction(getTransactionDecoder().decode(signed));
+    const signature = await rpc.sendTransaction(wire, { encoding: 'base64', preflightCommitment: commitment, maxRetries: 3n }).send();
+    let wait = 500;
+    for (let i = 0; ; i++) {
+      try {
+        const { value: [s] } = await rpc.getSignatureStatuses([signature]).send();
+        if (s?.err) throw new Error(`TRANSACTION_FAILED ${JSON.stringify(s.err, (_k, v) => (typeof v === 'bigint' ? v.toString() : v))}`);
+        if (s?.confirmationStatus === 'confirmed' || s?.confirmationStatus === 'finalized') return signature;
+        if (i % 4 === 3 && (await rpc.getBlockHeight({ commitment }).send()) > lastValidBlockHeight) {
+          throw new Error('TRANSACTION_EXPIRED: the blockhash expired before the transaction confirmed; nothing was charged, try again');
+        }
+        wait = 500;
+      } catch (e) {
+        if (!busy(e)) throw e;
+        wait = Math.min(wait * 2, 8_000);
+      }
+      await sleep(wait);
+    }
+  }
   return {
-    operatorAddress: operator ? publicKeyOf(operator) : null,
-    readPool: (p) => readPool(conn, p),
-    buildCreatePool: (r) => buildCreatePool(conn, r),
-    buildSwap: (pool, r, now) => buildSwap(conn, pool, r, now),
-    quoteSwap,
-    readDammPool: (p, e) => readDammPool(conn, p, e),
-    dammNow: (p) => dammCurrentPoint(conn, p),
-    quoteDammSwap,
-    buildDammSwap: (p, r, now) => buildDammSwap(conn, p, r, now),
-    buildCreatorCurveClaim: (p, c) => buildCreatorCurveClaim(conn, p, c),
-    dammPositions: (p, owner) => dammPositionsOf(conn, p, owner),
-    dammFeeAccounting: (p) => readDammFeeAccounting(conn, p),
-    buildDammClaim: (p, owner, nft) => buildDammClaim(conn, p, owner, nft),
-    send: (b, bh, h) => sendSignedTransaction(conn, b, bh, h),
-    txSummary: (s) => getTxSummary(conn, s),
-    newSignatures: (a, u) => getNewSignatures(conn, a, u, { ...(log ? { onTruncated: log } : {}) }),
-    balances: (o, m) => getWalletBalances(conn, o, m),
-    lamports: (o) => getLamports(conn, o),
-    mintTokenAccounts: (m) => getMintTokenAccounts(conn, m),
-    mintSupply: (m) => getMintSupply(conn, m),
-    finalizedSignatures: (a, u) => getNewSignatures(conn, a, u, { commitment: 'finalized', ...(log ? { onTruncated: log } : {}) }),
-    tokenBalanceChanges: (s) => getTokenBalanceChanges(conn, s),
-    firstSlotAtOrAfter: (t) => firstSlotAtOrAfter(conn, t),
-    finalizedSlot: () => conn.getSlot('finalized'),
-    readTreasury: (m) => readTreasury(conn, m),
-    buildTreasuryPropose: async (multisig, vault, member, c) => {
-      const claim = c.venue === 'REWARDS' ? rewardsTransferInner({ ...common(c.inner.from), ...c.inner } as RewardsInnerTerms) : c.venue === 'CURVE' ? await partnerCurveClaim(conn, c.pool, vault) : await vaultDammClaim(conn, c.pool, vault, c.nftMint, c.amounts);
-      return { ...(await buildTreasuryPropose(conn, { multisig, member, claim })), amounts: claim.amounts };
+    operatorAddress: operator?.address ?? null,
+    read,
+    blockhash,
+    async now() {
+      const [c] = await read([CLOCK]);
+      if (!c || c.data.length < 40) throw new Error('CLOCK_UNAVAILABLE');
+      return new DataView(c.data.buffer, c.data.byteOffset).getBigInt64(32, true);
     },
-    buildTreasuryApprove: (multisig, member, transactionIndex) => buildTreasuryApprove(conn, { multisig, member, transactionIndex }),
-    buildTreasuryExecute: (r) => buildTreasuryExecute(conn, r),
-    vaultTransaction: (m, i) => readVaultTransactionAccount(conn, m, i),
-    proposal: (m, i) => readProposal(conn, m, i),
-    faucet: (q, to, raw, lamports) => sendFromTreasury(conn, needOperator(), q, to, raw, lamports),
-    ensureQuoteAccounts: (owners, q) => ensureQuoteAccounts(conn, needOperator(), owners, q),
-    migrate: (pool) => runMigration(conn, needOperator(), pool),
-    dammPoolFor: (b, q) => dammV2PoolFor(b, q),
+    send,
+    async tx(signature) {
+      const t = await rpc.getTransaction(signature as never, { encoding: 'json', maxSupportedTransactionVersion: 0, commitment }).send();
+      if (!t || !t.meta) return null;
+      const m = t.transaction.message;
+      const loaded = t.meta.loadedAddresses ?? { writable: [], readonly: [] };
+      const keys = [...m.accountKeys, ...loaded.writable, ...loaded.readonly].map(String);
+      const logs = (t.meta.logMessages ?? []) as string[];
+      const parsed = E.parseEngineEvents(logs);
+      const bal = new Map<number, { mint: string; owner: string | null; pre: bigint; post: bigint }>();
+      for (const b of t.meta.preTokenBalances ?? []) bal.set(b.accountIndex, { mint: b.mint, owner: b.owner ?? null, pre: BigInt(b.uiTokenAmount.amount), post: 0n });
+      for (const b of t.meta.postTokenBalances ?? []) {
+        const x = bal.get(b.accountIndex) ?? { mint: b.mint, owner: b.owner ?? null, pre: 0n, post: 0n };
+        bal.set(b.accountIndex, { ...x, owner: x.owner ?? b.owner ?? null, post: BigInt(b.uiTokenAmount.amount) });
+      }
+      return {
+        signature, slot: Number(t.slot), blockTime: t.blockTime === null ? null : Number(t.blockTime), err: t.meta.err !== null, feePayer: keys[0]!,
+        instructions: m.instructions.map((ix) => ({ programAddress: keys[ix.programIdIndex]!, dataHex: hex(fromB58.encode(ix.data)) })),
+        events: parsed.events, logsTruncated: parsed.truncated,
+        tokenChanges: [...bal.entries()].filter(([, x]) => x.pre !== x.post).map(([k, x]) => ({ account: keys[k]!, mint: x.mint, owner: x.owner, preRaw: x.pre, postRaw: x.post })),
+      };
+    },
+    async signatures(addr, until) {
+      const out: { signature: string; slot: number; err: boolean }[] = [];
+      const pageSize = 1000, maxPages = 10;
+      let before: string | undefined;
+      for (let page = 0; ; page++) {
+        const list = await rpc.getSignaturesForAddress(address(addr), { limit: pageSize, commitment, ...(until ? { until: until as never } : {}), ...(before ? { before: before as never } : {}) }).send();
+        out.push(...list.map((s) => ({ signature: s.signature as string, slot: Number(s.slot), err: s.err !== null })));
+        if (list.length < pageSize) break;
+        if (page + 1 >= maxPages) { log(`signature list for ${addr} stopped at ${maxPages * pageSize} transactions; older ones in that window are not indexed (IDX-1)`); break; }
+        before = list.at(-1)!.signature;
+      }
+      return out.reverse();
+    },
+    async balances(owner, mints) {
+      const lamports = (await rpc.getBalance(address(owner), { commitment }).send()).value;
+      const atas = await Promise.all(mints.flatMap((m) => [E.ata(owner, m, E.TOKEN), E.ata(owner, m, E.TOKEN_2022)]));
+      const accounts = await read(atas);
+      const tokens: Record<string, string> = {};
+      mints.forEach((m, k) => {
+        let sum = 0n;
+        for (const a of [accounts[2 * k], accounts[2 * k + 1]]) {
+          if (!a) continue;
+          try { const t = E.decodeTokenAccount(a); if (t.mint === m && t.owner === owner) sum += t.amount; } catch { /* not a token account */ }
+        }
+        tokens[m] = sum.toString();
+      });
+      return { lamports: lamports.toString(), tokens };
+    },
+    lamports: async (owner) => BigInt((await rpc.getBalance(address(owner), { commitment }).send()).value),
+    async launches(quoteMint) {
+      const L = E.LAUNCH_LAYOUT, b58 = (bytes: Uint8Array) => getBase58Decoder().decode(bytes) as never;
+      const found = await rpc.getProgramAccounts(address(E.QF_CURVE), { encoding: 'base64', commitment, dataSlice: { offset: L.mintOffset, length: 32 },
+        filters: [{ memcmp: { offset: 0n, bytes: b58(Uint8Array.from(L.discriminator)), encoding: 'base58' } },
+          { memcmp: { offset: BigInt(L.quoteMintOffset), bytes: quoteMint as never, encoding: 'base58' } }] }).send();
+      return found.map((a) => getAddressDecoder().decode(fromB64.encode(a.account.data[0])) as string);
+    },
+    genesisHash: async () => String(await rpc.getGenesisHash().send()),
+    async sendAsOperator(instructions, computeUnits) {
+      if (!operator) throw new Error('OPERATOR_KEY_UNAVAILABLE');
+      const bh = await blockhash();
+      const unsigned = E.compileUnsigned({ feePayer: operator.address, blockhash: bh.blockhash, lastValidBlockHeight: bh.lastValidBlockHeight, instructions, computeUnits });
+      if (unsigned.signers.length !== 1 || unsigned.signers[0] !== operator.address) throw new Error('OPERATOR_TX_NEEDS_OTHER_SIGNERS');
+      const signed = await signTransaction([operator.keyPair], getTransactionDecoder().decode(unsigned.bytes));
+      return send(new Uint8Array(getTransactionEncoder().encode(signed)), bh.lastValidBlockHeight);
+    },
   };
 }

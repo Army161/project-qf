@@ -67,7 +67,13 @@
         "pnpm-lock.yaml sha256 changes"
       ],
       "ownerConditions": "Patched entrypoint must remain the runtime entrypoint; no native loader; integers range-checked to their exact IDL width (u8..u128, i8..i128) in packages/tx normalizeToIdl, and amounts to u64 in terms/intent. Not an upstream fixed release.",
-      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)"
+      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)",
+      "closed": {
+        "status": "RESOLVED_BY_REMOVAL",
+        "on": "2026-10-25",
+        "why": "the Meteora adapter, the only path to this package, was deleted when the owner chose Project QF's own engine; the package is no longer installed",
+        "evidence": "evidence/sec-a/audit-prod-2026-10-25.json"
+      }
     },
     {
       "advisory": "GHSA-82x6-q7mm-w9cf",
@@ -116,7 +122,13 @@
         "pnpm-lock.yaml sha256 changes"
       ],
       "ownerConditions": "Keep the anchor-scoped 4.2.0 override with the Buffer-input parity and depth regression tests; revalidate whenever anchor or its toml range changes.",
-      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)"
+      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)",
+      "closed": {
+        "status": "RESOLVED_BY_REMOVAL",
+        "on": "2026-10-25",
+        "why": "the Meteora adapter, the only path to this package, was deleted when the owner chose Project QF's own engine; the package is no longer installed",
+        "evidence": "evidence/sec-a/audit-prod-2026-10-25.json"
+      }
     },
     {
       "advisory": "GHSA-v5mp-jgw5-2x6j",
@@ -164,7 +176,13 @@
         "pnpm-lock.yaml sha256 changes"
       ],
       "ownerConditions": "Keep the prototype-pollution regression and installed-version proof.",
-      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)"
+      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)",
+      "closed": {
+        "status": "RESOLVED_BY_REMOVAL",
+        "on": "2026-10-25",
+        "why": "the Meteora adapter, the only path to this package, was deleted when the owner chose Project QF's own engine; the package is no longer installed",
+        "evidence": "evidence/sec-a/audit-prod-2026-10-25.json"
+      }
     },
     {
       "advisory": "GHSA-w5hq-g745-h8pq",
@@ -214,7 +232,13 @@
         "pnpm-lock.yaml sha256 changes"
       ],
       "ownerConditions": "Valid only while the reviewed path calls v4() without a caller buffer; any v3/v5/v6 call or new dependant of uuid<11.1.1 invalidates it.",
-      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)"
+      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)",
+      "closed": {
+        "status": "RESOLVED_BY_REMOVAL",
+        "on": "2026-10-25",
+        "why": "the Meteora adapter, the only path to this package, was deleted when the owner chose Project QF's own engine; the package is no longer installed",
+        "evidence": "evidence/sec-a/audit-prod-2026-10-25.json"
+      }
     },
     {
       "advisory": "GHSA-528h-pc64-c93x",
@@ -266,7 +290,13 @@
         "stream-json appears in the runtime module list"
       ],
       "ownerConditions": "Valid only while the affected pick/ignore/filter/replace filters stay outside the executed path. Does NOT cover general response-resource exhaustion; that is handled separately by the streaming limits (BODY-LIMIT).",
-      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)"
+      "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)",
+      "closed": {
+        "status": "RESOLVED_BY_REMOVAL",
+        "on": "2026-10-25",
+        "why": "the Meteora adapter, the only path to this package, was deleted when the owner chose Project QF's own engine; the package is no longer installed",
+        "evidence": "evidence/sec-a/audit-prod-2026-10-25.json"
+      }
     },
     {
       "advisory": "GHSA-hqr4-qq8f-hg3x",
@@ -312,7 +342,13 @@
       ],
       "ownerConditions": "Valid only while jayson/lib/utils.js (and so the Verifier) stays outside the executed path.",
       "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)",
-      "retiredWhen": "The Meteora adapter (packages/adapter-meteora-dbc) is removed after the QF engine switch: @solana/web3.js, jayson and stream-json then leave the install."
+      "retiredWhen": "The Meteora adapter (packages/adapter-meteora-dbc) is removed after the QF engine switch: @solana/web3.js, jayson and stream-json then leave the install.",
+      "closed": {
+        "status": "RESOLVED_BY_REMOVAL",
+        "on": "2026-10-25",
+        "why": "the Meteora adapter, the only path to this package, was deleted when the owner chose Project QF's own engine; the package is no longer installed",
+        "evidence": "evidence/sec-a/audit-prod-2026-10-25.json"
+      }
     },
     {
       "advisory": "GHSA-mjw6-4jj6-33hc",
@@ -358,7 +394,13 @@
       ],
       "ownerConditions": "Valid only while no stream-json Assembler (directly or through StreamValues) is on the executed path.",
       "reviewBy": "2026-12-27 (latest date, not guaranteed validity; earlier triggers apply)",
-      "retiredWhen": "The Meteora adapter (packages/adapter-meteora-dbc) is removed after the QF engine switch: @solana/web3.js, jayson and stream-json then leave the install."
+      "retiredWhen": "The Meteora adapter (packages/adapter-meteora-dbc) is removed after the QF engine switch: @solana/web3.js, jayson and stream-json then leave the install.",
+      "closed": {
+        "status": "RESOLVED_BY_REMOVAL",
+        "on": "2026-10-25",
+        "why": "the Meteora adapter, the only path to this package, was deleted when the owner chose Project QF's own engine; the package is no longer installed",
+        "evidence": "evidence/sec-a/audit-prod-2026-10-25.json"
+      }
     }
   ],
   "observations": [
@@ -382,6 +424,12 @@
     "advisoryPackagesUnchanged": "bigint-buffer 1.1.5 (patched), toml 4.2.0, uuid 8.3.2, stream-json 1.9.1, jayson 4.3.0: same versions and integrities",
     "tests": "packages/adapter-meteora-dbc/test/sec-a.test.ts 9/9 on the new lockfile (evidence/readonly-readiness/green/sec-a-and-natives.txt)",
     "rawAudit": "evidence/sec-a/audit-prod-raw-natives-removed.json (high 1, moderate 2, exit 1)",
-    "ownerNote": "The owner adopted these dispositions for lockfile 307d35\u2026 and in the same decision asked for the natives removal and an evidence refresh. The refreshed evidence shows the five records unchanged. Whether the adoption carries to lockfile c2bb276af21b\u2026 is the owner's to confirm; it is not assumed silently."
+    "ownerNote": "The owner adopted these dispositions for lockfile 307d35… and in the same decision asked for the natives removal and an evidence refresh. The refreshed evidence shows the five records unchanged. Whether the adoption carries to lockfile c2bb276af21b… is the owner's to confirm; it is not assumed silently."
+  },
+  "closedAt": {
+    "on": "2026-10-25",
+    "lockfileSha256": "73c8e1f0d039a01b77578a4939348ec19c36ec46cbd37f92dc786524b7bcd115",
+    "audit": "pnpm audit --prod: no known vulnerabilities",
+    "evidence": "evidence/sec-a/audit-prod-2026-10-25.json"
   }
 }

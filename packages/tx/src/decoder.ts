@@ -4,7 +4,7 @@ import { getCompiledTransactionMessageDecoder, getTransactionDecoder, getTransac
 import type { IntentKind } from './intent.ts';
 import { PROGRAM_IDS } from './programs.ts';
 import { QF_CURVE, QF_POOL } from '@project-qf/engine';
-import { bindTransactionToTerms } from './semantic.ts';
+import { bindTransactionToTerms } from './qf-engine.ts';
 import { verifyConsentBinding, termsDigest, consentDigest, sha256Hex, type ApprovedTerms, type ConsentRecord } from './terms.ts';
 export { PROGRAM_IDS };
 
@@ -57,12 +57,7 @@ const P = PROGRAM_IDS;
 const BASE = [P.COMPUTE_BUDGET, P.SYSTEM, P.ASSOCIATED_TOKEN, P.TOKEN, P.TOKEN_2022];
 /** Coarse first filter only. QF-SEC-01: an allowlist is never sufficient; bindTransactionToTerms decides. */
 export const TOP_LEVEL_ALLOWLIST: Record<IntentKind, readonly string[]> = {
-  CREATE_CONFIG: [...BASE, P.DBC], CREATE_POOL: [...BASE, P.DBC], SWAP: [...BASE, P.DBC], DAMM_SWAP: [...BASE, P.DAMM_V2], DAMM_CLAIM_POSITION_FEE: [...BASE, P.DAMM_V2],
-  MIGRATE_DAMM_V2: [...BASE, P.DBC], CLAIM_PARTNER_TRADING_FEE: [...BASE, P.DBC], CLAIM_CREATOR_TRADING_FEE: [...BASE, P.DBC],
-  // a treasury transaction calls Squads only; what the vault runs is bound inside the proposal
-  TREASURY_PROPOSE: [P.COMPUTE_BUDGET, P.SQUADS_V4], TREASURY_APPROVE: [P.COMPUTE_BUDGET, P.SQUADS_V4], TREASURY_EXECUTE: [P.COMPUTE_BUDGET, P.SQUADS_V4],
-  CREATE_CONFIG_TRANSFER_FEE: [], CREATE_CONFIG_TRANSFER_HOOK: [],
-  // Project QF's own engine: the curve before graduation, its pool after (wrapped SOL uses the system and token programs)
+  // the curve before graduation, its pool after (wrapped SOL uses the system and token programs)
   QF_CREATE: [...BASE, QF_CURVE], QF_SWAP: [...BASE, QF_CURVE], QF_CLAIM_CREATOR_FEES: [...BASE, QF_CURVE],
   QF_POOL_SWAP: [...BASE, QF_POOL], QF_COLLECT_POOL_CREATOR_FEE: [...BASE, QF_POOL],
 };

@@ -3,13 +3,9 @@
 import { isAddress } from '@solana/kit';
 import { CAPABILITY_FLAGS, READINESS, type Cluster } from '@project-qf/core';
 
-export type IntentKind = 'CREATE_CONFIG' | 'CREATE_POOL' | 'SWAP' | 'MIGRATE_DAMM_V2' | 'DAMM_SWAP' | 'DAMM_CLAIM_POSITION_FEE'
-  | 'CLAIM_PARTNER_TRADING_FEE' | 'CLAIM_CREATOR_TRADING_FEE'
-  | 'TREASURY_PROPOSE' | 'TREASURY_APPROVE' | 'TREASURY_EXECUTE'
-  | 'CREATE_CONFIG_TRANSFER_FEE' | 'CREATE_CONFIG_TRANSFER_HOOK'
-  // Project QF's own engine (ADR-014): every one is signed and paid for by the person's own wallet
-  | 'QF_CREATE' | 'QF_SWAP' | 'QF_POOL_SWAP' | 'QF_CLAIM_CREATOR_FEES' | 'QF_COLLECT_POOL_CREATOR_FEE';
-export type SignerRole = 'USER_WALLET' | 'CONFIG_OWNER' | 'FEE_CLAIMER' | 'MIGRATION_CRANK' | 'TREASURY_MEMBER';
+// Project QF's own engine (ADR-014): every one is signed and paid for by the person's own wallet.
+export type IntentKind = 'QF_CREATE' | 'QF_SWAP' | 'QF_POOL_SWAP' | 'QF_CLAIM_CREATOR_FEES' | 'QF_COLLECT_POOL_CREATOR_FEE';
+export type SignerRole = 'USER_WALLET';
 
 export interface TxIntent {
   intentId: string;
@@ -26,15 +22,8 @@ export interface TxIntent {
   amounts?: Record<string, string>;
 }
 
-const ROLE_FOR: Record<IntentKind, SignerRole> = {
-  CREATE_CONFIG: 'CONFIG_OWNER', CREATE_POOL: 'USER_WALLET', SWAP: 'USER_WALLET', MIGRATE_DAMM_V2: 'MIGRATION_CRANK', DAMM_SWAP: 'USER_WALLET', DAMM_CLAIM_POSITION_FEE: 'USER_WALLET',
-  CLAIM_PARTNER_TRADING_FEE: 'FEE_CLAIMER', CLAIM_CREATOR_TRADING_FEE: 'USER_WALLET',
-  TREASURY_PROPOSE: 'TREASURY_MEMBER', TREASURY_APPROVE: 'TREASURY_MEMBER', TREASURY_EXECUTE: 'TREASURY_MEMBER',
-  CREATE_CONFIG_TRANSFER_FEE: 'CONFIG_OWNER', CREATE_CONFIG_TRANSFER_HOOK: 'CONFIG_OWNER',
-  QF_CREATE: 'USER_WALLET', QF_SWAP: 'USER_WALLET', QF_POOL_SWAP: 'USER_WALLET', QF_CLAIM_CREATOR_FEES: 'USER_WALLET', QF_COLLECT_POOL_CREATOR_FEE: 'USER_WALLET',
-};
-const NEEDS_CONSENT = new Set<IntentKind>(['CREATE_CONFIG', 'CREATE_POOL', 'QF_CREATE']);
-const MULTISIG_ROLES = new Set<SignerRole>(['CONFIG_OWNER', 'FEE_CLAIMER', 'TREASURY_MEMBER']);
+const KINDS = new Set<string>(['QF_CREATE', 'QF_SWAP', 'QF_POOL_SWAP', 'QF_CLAIM_CREATOR_FEES', 'QF_COLLECT_POOL_CREATOR_FEE']);
+const NEEDS_CONSENT = new Set<IntentKind>(['QF_CREATE']);
 const U64_MAX = 2n ** 64n - 1n;
 const SKEW_MS = 5_000;
 
@@ -50,25 +39,19 @@ export function validateIntent(i: TxIntent, ctx: IntentContext): { ok: boolean; 
   const readiness = ctx.readiness ?? READINESS;
   const v: string[] = [];
 
-  if (i.kind === 'CREATE_CONFIG_TRANSFER_FEE' && flags.DBC_BASE_TRANSFER_FEE !== ('ENABLED' as string)) v.push('CAPABILITY_DISABLED DBC_BASE_TRANSFER_FEE');
-  if (i.kind === 'CREATE_CONFIG_TRANSFER_HOOK') v.push('NOT_IN_V1_SCOPE transfer-hook configs');
+  if (!KINDS.has(i.kind)) v.push(`UNKNOWN_KIND ${String(i.kind)}`);
 
   switch (i.cluster) {
     case 'mainnet-beta': if ((flags.MAINNET_WRITES as boolean) !== true) v.push('MAINNET_WRITES disabled'); break;
     case 'devnet': if (readiness.DEVNET_INTEGRATION.status !== 'ACTIVE') v.push('stage DEVNET_INTEGRATION is BLOCKED'); break;
-    case 'localnet':
-      if (readiness.LOCALNET_INTEGRATION.status !== 'ACTIVE') v.push('stage LOCALNET_INTEGRATION is BLOCKED');
-      // a local validator runs QF's own programs only; Meteora program copies need written permission (ADR-013)
-      if (!i.kind.startsWith('QF_')) v.push('LOCALNET_QF_ENGINE_ONLY');
-      break;
+    case 'localnet': if (readiness.LOCALNET_INTEGRATION.status !== 'ACTIVE') v.push('stage LOCALNET_INTEGRATION is BLOCKED'); break;
     case 'mock-offline': if (!i.mock) v.push('cluster mock-offline requires mock=true'); break;
     default: v.push(`UNKNOWN_CLUSTER ${String(i.cluster)}`);
   }
   if (i.mock && i.cluster !== 'mock-offline') v.push('MOCK_INTENT_ON_REAL_CLUSTER');
 
-  if (i.signer.role !== ROLE_FOR[i.kind]) v.push(`ROLE_MISMATCH ${i.kind} requires ${ROLE_FOR[i.kind]}`);
-  if (i.signer.role === 'USER_WALLET' && i.signer.serverHeld) v.push('SERVER_NEVER_SIGNS_FOR_USER');
-  if (MULTISIG_ROLES.has(i.signer.role) && i.signer.serverHeld) v.push(`MULTISIG_ROLE_SERVER_HELD ${i.signer.role}`);
+  if (i.signer.role !== 'USER_WALLET') v.push(`ROLE_MISMATCH ${i.kind} requires USER_WALLET`);
+  if (i.signer.serverHeld) v.push('SERVER_NEVER_SIGNS_FOR_USER');
   if (!isAddress(i.signer.address)) v.push('SIGNER_ADDRESS_INVALID');
   if (!isAddress(i.feePayer)) v.push('FEE_PAYER_INVALID');
 

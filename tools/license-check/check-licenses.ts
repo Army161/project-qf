@@ -1,6 +1,5 @@
 // License gate over the RESOLVED graph (pnpm list), per importer. No broad suppression: exceptions
-// are exact name@version records in LICENSE-MANIFEST.json, and QF-LIC-EX-001 additionally requires
-// the lockfile integrity and that every path to it passes through the Meteora adapter.
+// are exact name@version records in LICENSE-MANIFEST.json, and a package recorded as REMOVED is denied if it reappears.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { lockIntegrity, pnpmList, readPackageLicense, walkGraph } from '../lib/pnpmGraph.ts';
@@ -14,8 +13,6 @@ const exceptions: Record<string, any>[] = manifest.exceptions;
 const integrity = lockIntegrity(root);
 const patchedNames = new Set([...readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8').matchAll(/^  ((?:@[^/\s]+\/)?[^@\s]+)@[^:\s]+: patches\//gm)].map((m) => m[1]));
 const readOpt = (p: string) => (existsSync(p) ? readFileSync(p, 'utf8') : undefined);
-const ADAPTER = '@project-qf/adapter-meteora-dbc';
-const BROWSER_IMPORTERS = new Set(['@project-qf/web', '@project-qf/core', '@project-qf/validator', '@project-qf/policy', '@project-qf/rewards', '@project-qf/tx']);
 
 const nodes = walkGraph(pnpmList(root), { includeDev: true }).filter((n) => !n.version.startsWith('link:'));
 const byPkg = new Map<string, typeof nodes>();
@@ -46,16 +43,6 @@ for (const [key, occ] of [...byPkg.entries()].sort()) {
       notices: new Map(e.notices.map((n) => [n.upstreamPath, [readOpt(join(path, n.upstreamPath)), readOpt(join(root, n.preservedAt))]])) });
     cls = problems.length ? 'DENY' : 'ALLOW_EXCEPTION';
     note = problems.length ? problems.join('; ') : `${e.exceptionId} conditions hold (exact version, integrity, licence expression, unmodified, notices preserved verbatim)`;
-  }
-  else if (ex?.status === 'APPROVED_NARROW') {
-    const problems: string[] = [];
-    if (integrity.get(key) !== ex.resolvedIntegrity) problems.push(`integrity ${integrity.get(key)} != ${ex.resolvedIntegrity}`);
-    for (const o of occ) {
-      if (!o.chain.some((c) => c.startsWith(`${ADAPTER}@`)) && o.importer !== ADAPTER) problems.push(`path not via adapter: ${o.chain.join(' > ')}`);
-      if (BROWSER_IMPORTERS.has(o.importer)) problems.push(`reachable from browser package ${o.importer}`);
-    }
-    cls = problems.length ? 'DENY' : 'ALLOW_EXCEPTION';
-    note = problems.length ? problems.join('; ') : `${ex.exceptionId} conditions hold (integrity, adapter-only paths, no browser importer)`;
   }
   const entry = { package: key, license, class: cls, devOnly, importers, note, sampleChain: occ[0]!.chain.join(' > ') };
   results.push(entry);

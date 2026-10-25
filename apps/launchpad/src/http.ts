@@ -1,4 +1,4 @@
-// HTTP pieces both launchpad servers share (the Meteora one in server.ts and the QF engine one in engine/server.ts):
+// HTTP pieces of the launchpad server (server.ts):
 // errors, JSON bodies, the input rules the browser form follows too, client addresses for rate limits, and same-origin
 // hosting of the web app under the signing-page CSP.
 import type { IncomingMessage, ServerResponse } from 'node:http';

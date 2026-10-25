@@ -1,4 +1,4 @@
-// The launchpad on Project QF's own engine, against the engine's real programs on devnet: the app server (engine/server.ts,
+// The launchpad on Project QF's own engine, against the engine's real programs on devnet: the app server (src/server.ts,
 // its indexer and crank) runs in this process, and engine-e2e.ts plays the browser and the wallets. It uses the engine's
 // devnet setup as it is (the app never sets the engine up) and costs a few hundredths of a devnet SOL:
 //   - the app finds the coin the engine thread launched without it ($QFP, graduated) and its books must add up;
@@ -16,9 +16,9 @@ import { CAPABILITY_FLAGS } from '@project-qf/core';
 import * as E from '@project-qf/engine';
 import { economicsDigest } from '@project-qf/policy';
 import { toBase64 } from '@project-qf/tx';
-import { kitChain, loadOperator, proveCluster } from '../src/engine/chain.ts';
-import { indexPass } from '../src/engine/indexer.ts';
-import { ENGINE_FAUCET } from '../src/engine/server.ts';
+import { kitChain, loadOperator, proveCluster } from '../src/chain.ts';
+import { indexPass } from '../src/indexer.ts';
+import { ENGINE_FAUCET } from '../src/server.ts';
 import { e2e, SOL } from './engine-e2e.ts';
 
 /** The engine's devnet setup and its own proof coin (OWN-ENGINE-BUILD-2026-10-11.md §9). */

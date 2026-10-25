@@ -24,7 +24,7 @@ const nonAllowed = [...new Map(graph.filter((n) => !n.version.startsWith('link:'
   .filter((x) => classify(x.license, policy) !== 'ALLOW');
 const walletPkgs = names.filter((n) => /wallet|phantom|solflare|backpack|walletconnect/i.test(n));
 report.graph = { packages: names.length, forbidden: forbiddenInGraph, licensesNotPlainAllow: nonAllowed, walletPackages: walletPkgs,
-  note: 'Browser graph may use only plain-ALLOW licenses; license exceptions (e.g. QF-LIC-EX-001) never apply to browser code.' };
+  note: 'Browser production graph may use only plain-ALLOW licenses; the web fonts ship under their exact OFL-1.1 exceptions (QF-LIC-EX-003..005).' };
 if (forbiddenInGraph.length) failures.push(`forbidden packages in web graph: ${forbiddenInGraph.join('; ')}`);
 if (nonAllowed.length) failures.push(`non-ALLOW licenses in web graph: ${nonAllowed.map((x) => x.pkg).join(', ')}`);
 
@@ -38,29 +38,37 @@ if (a.violations.length) failures.push(`artifact violations: ${a.violations.leng
 if (!a.files.some((f) => f.endsWith('launchpad.js'))) failures.push('launchpad bundle missing from artifacts (not audited)');
 if (!a.files.some((f) => f.endsWith('.map'))) failures.push('no source maps emitted (not audited)');
 
-// 4. Canary A: a browser build that imports @solana/web3.js must be caught by the scanner.
+// 4. Canary A: a browser build that bundles web3.js v1 and its LGPL websocket client must be caught by the scanner. Neither is
+// installed any more, so the canary bundles stand-ins at their real node_modules paths, one carrying the LGPL header.
 const tmp = mkdtempSync(join(tmpdir(), 'qf-boundary-canary-'));
 try {
-  const r = await build({ stdin: { contents: "import { Connection } from '@solana/web3.js'; console.log(Connection);", resolveDir: join(root, 'packages', 'adapter-meteora-dbc'), sourcefile: 'canary.ts', loader: 'ts' },
-    outdir: tmp, bundle: true, format: 'esm', platform: 'browser', sourcemap: 'linked', sourcesContent: true, metafile: true, logLevel: 'silent' });
+  const pkg = (dir: string, name: string, body: string) => {
+    mkdirSync(join(tmp, 'src', 'node_modules', dir), { recursive: true });
+    writeFileSync(join(tmp, 'src', 'node_modules', dir, 'package.json'), JSON.stringify({ name, version: '0.0.0', main: 'index.js' }));
+    writeFileSync(join(tmp, 'src', 'node_modules', dir, 'index.js'), body);
+  };
+  pkg('rpc-websockets', 'rpc-websockets', '// GNU LESSER GENERAL PUBLIC LICENSE (canary stand-in)\nexport const Client = class {};\n');
+  pkg('@solana/web3.js', '@solana/web3.js', "import { Client } from 'rpc-websockets';\nexport class Connection { c = Client; }\n");
+  const r = await build({ stdin: { contents: "import { Connection } from '@solana/web3.js'; console.log(Connection);", resolveDir: join(tmp, 'src'), sourcefile: 'canary.ts', loader: 'ts' },
+    outdir: join(tmp, 'out'), bundle: true, format: 'esm', platform: 'browser', sourcemap: 'linked', sourcesContent: true, metafile: true, logLevel: 'silent' });
   const cm = scanMetafile(r.metafile);
-  const ca = scanArtifacts(tmp);
+  const ca = scanArtifacts(join(tmp, 'out'));
   const detected = cm.violations.length > 0 && ca.violations.length > 0;
   report.canaryA = { purpose: 'scanner detects web3.js v1 + rpc-websockets in a browser bundle', detected,
     metafileViolations: cm.violations.slice(0, 5), artifactViolations: ca.violations.slice(0, 5), rpcWebsocketsBundled: cm.packages.includes('rpc-websockets') };
   if (!detected) failures.push('canary A not detected: scanner is ineffective');
 } finally { rmSync(tmp, { recursive: true, force: true }); }
 
-// 5. Canary B: importing the server-only adapter from the web app must fail at resolution time.
+// 5. Canary B: importing the launchpad server from the web app must fail at resolution time.
 const tmpB = mkdtempSync(join(tmpdir(), 'qf-boundary-canary-'));
 try {
   let refused = false; let message = '';
   try {
-    await build({ stdin: { contents: "import '@project-qf/adapter-meteora-dbc';", resolveDir: web, sourcefile: 'canaryB.ts', loader: 'ts' },
+    await build({ stdin: { contents: "import '@project-qf/launchpad';", resolveDir: web, sourcefile: 'canaryB.ts', loader: 'ts' },
       outdir: tmpB, bundle: true, format: 'esm', platform: 'browser', conditions: ['browser'], logLevel: 'silent', write: false });
   } catch (e) { refused = true; message = String((e as Error).message).split('\n').slice(0, 3).join(' '); }
-  report.canaryB = { purpose: 'browser build cannot resolve the server-only adapter (exports has only a "node" condition and web does not depend on it)', refused, message };
-  if (!refused) failures.push('canary B: browser build resolved the server-only adapter');
+  report.canaryB = { purpose: 'browser build cannot resolve the launchpad server (the web app does not depend on it)', refused, message };
+  if (!refused) failures.push('canary B: browser build resolved the launchpad server');
 } finally { rmSync(tmpB, { recursive: true, force: true }); }
 
 report.result = failures.length ? 'FAIL' : 'PASS';

@@ -3,7 +3,7 @@
   "specVersion": "1.6",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-27T08:57:23.255Z",
+    "timestamp": "2026-10-25T06:18:52.885Z",
     "tools": {
       "components": [
         {
@@ -26,11 +26,7 @@
       },
       {
         "name": "qf:pnpm-lock.sha256",
-        "value": "644c894c5ba34dd33bf97562f5fe9e7e180cdb7d4bc36fb030ae11fe0461e4fe"
-      },
-      {
-        "name": "qf:overrides",
-        "value": "\"@meteora-ag/cp-amm-sdk@1.4.10>chain\": \"-\" (Decision 4; chain removed, not masked)"
+        "value": "73c8e1f0d039a01b77578a4939348ec19c36ec46cbd37f92dc786524b7bcd115"
       },
       {
         "name": "qf:scope",
@@ -1141,31 +1137,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/bufferutil@4.1.0",
-      "name": "bufferutil",
-      "version": "4.1.0",
-      "purl": "pkg:npm/bufferutil@4.1.0",
-      "scope": "required",
-      "licenses": [
-        {
-          "expression": "MIT"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "64c00d567022c44e805969cfce55b62a952bc619bdc28c9c62f3cea3aee3587c85a300124c477db3e40dd4420cb120edc21231378b161358e8b69b8350883223"
-        }
-      ],
-      "properties": [
-        {
-          "name": "qf:importers",
-          "value": "@project-qf/web"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/chalk@5.6.2",
       "name": "chalk",
       "version": "5.6.2",
@@ -1241,31 +1212,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/node-gyp-build@4.8.4",
-      "name": "node-gyp-build",
-      "version": "4.8.4",
-      "purl": "pkg:npm/node-gyp-build@4.8.4",
-      "scope": "required",
-      "licenses": [
-        {
-          "expression": "MIT"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "2c0e198f096751b947560ab4a01177265ffa87f36fb397f304bc1d105e27bb19c576c7da8dd7b859fc6d26bdc26a21fe17a7b070807fab88d0e14ccfca277e09"
-        }
-      ],
-      "properties": [
-        {
-          "name": "qf:importers",
-          "value": "@project-qf/web"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/typescript@5.9.3",
       "name": "typescript",
       "version": "5.9.3",
@@ -1316,31 +1262,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/utf-8-validate@6.0.6",
-      "name": "utf-8-validate",
-      "version": "6.0.6",
-      "purl": "pkg:npm/utf-8-validate@6.0.6",
-      "scope": "required",
-      "licenses": [
-        {
-          "expression": "MIT"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "ab79773fd52d1048801dcb20b2a4e07fd3cf8dcb6b0d6a085d6dcda4e1c57510db2efbb80cb21cc476a7809e112eb5a405c2a399cb3fe8d91eac8f13feb1382c"
-        }
-      ],
-      "properties": [
-        {
-          "name": "qf:importers",
-          "value": "@project-qf/web"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/ws@8.22.0",
       "name": "ws",
       "version": "8.22.0",
@@ -1367,16 +1288,15 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40project-qf/policy@link:../../packages/policy",
+      "ref": "pkg:npm/%40project-qf/engine@link:../../packages/engine",
       "dependsOn": [
-        "pkg:npm/%40noble/hashes@1.8.0"
+        "pkg:npm/%40solana/kit@8.3.0"
       ]
     },
     {
-      "ref": "pkg:npm/%40project-qf/rewards@link:../../packages/rewards",
+      "ref": "pkg:npm/%40project-qf/policy@link:../../packages/policy",
       "dependsOn": [
-        "pkg:npm/%40noble/hashes@1.8.0",
-        "pkg:npm/%40solana/kit@8.3.0"
+        "pkg:npm/%40noble/hashes@1.8.0"
       ]
     },
     {
@@ -1870,25 +1790,6 @@
         "pkg:npm/%40solana/rpc-types@8.3.0",
         "pkg:npm/%40solana/transaction-messages@8.3.0",
         "pkg:npm/typescript@5.9.3"
-      ]
-    },
-    {
-      "ref": "pkg:npm/bufferutil@4.1.0",
-      "dependsOn": [
-        "pkg:npm/node-gyp-build@4.8.4"
-      ]
-    },
-    {
-      "ref": "pkg:npm/utf-8-validate@6.0.6",
-      "dependsOn": [
-        "pkg:npm/node-gyp-build@4.8.4"
-      ]
-    },
-    {
-      "ref": "pkg:npm/ws@8.22.0",
-      "dependsOn": [
-        "pkg:npm/bufferutil@4.1.0",
-        "pkg:npm/utf-8-validate@6.0.6"
       ]
     }
   ]

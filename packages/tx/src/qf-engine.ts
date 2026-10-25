@@ -5,10 +5,10 @@
 // The server builds with the same function, so there is one definition of each transaction. Browser-safe (Kit only).
 import { isSignerRole, isWritableRole, type Instruction } from '@solana/kit';
 import * as E from '@project-qf/engine';
-import type { DecodedTransaction } from './decoder.ts';
-import { checkComputeBudget } from './semantic.ts';
-import { validateTerms, type QfTerms } from './terms.ts';
+import type { DecodedInstruction, DecodedTransaction } from './decoder.ts';
+import { validateTerms, type ApprovedTerms, type QfTerms } from './terms.ts';
 
+const fromHex = (h: string) => Uint8Array.from(h.match(/../g) ?? [], (x) => parseInt(x, 16));
 const hex = (b: ArrayLike<number> | undefined) => (b ? Array.from(b, (x: number) => x.toString(16).padStart(2, '0')).join('') : '');
 
 /**
@@ -42,6 +42,25 @@ export async function qfInstructions(t: QfTerms): Promise<Instruction[]> {
       // the pool program creates the creator's token accounts itself when missing (the creator pays, as payer)
       return [await E.collectPoolCreatorFeeIx({ payer: t.creator, creator: t.creator, mint: t.baseMint, quoteMint: t.quoteMint, ammConfig: t.ammConfig }), ...(await unwrap(t.creator))];
   }
+}
+
+/** One ComputeBudget instruction: SetComputeUnitLimit / SetComputeUnitPrice within the approved caps, nothing else. */
+export function checkComputeBudget(ix: DecodedInstruction, terms: ApprovedTerms, at: string): { v: string[]; limit: number; price: number } {
+  const v: string[] = [];
+  const data = fromHex(ix.dataHex);
+  if (ix.accounts.length) v.push(`COMPUTE_BUDGET_WITH_ACCOUNTS ${at}`);
+  if (data[0] === 2 && data.length === 5) {
+    const units = data[1]! | (data[2]! << 8) | (data[3]! << 16) | (data[4]! * 2 ** 24);
+    if (units > terms.compute.maxUnitLimit) v.push(`COMPUTE_LIMIT_EXCEEDS_CAP ${units} > ${terms.compute.maxUnitLimit} ${at}`);
+    return { v, limit: 1, price: 0 };
+  }
+  if (data[0] === 3 && data.length === 9) {
+    let price = 0n; for (let j = 8; j >= 1; j--) price = (price << 8n) | BigInt(data[j]!);
+    if (price > BigInt(terms.compute.maxUnitPriceMicroLamports)) v.push(`COMPUTE_PRICE_EXCEEDS_CAP ${price} > ${terms.compute.maxUnitPriceMicroLamports} ${at}`);
+    return { v, limit: 0, price: 1 };
+  }
+  v.push(`COMPUTE_BUDGET_UNSUPPORTED ${ix.dataHex.slice(0, 2)} ${at}`);
+  return { v, limit: 0, price: 0 };
 }
 
 /** A short name for an instruction in a violation message. */
@@ -96,3 +115,6 @@ export async function bindQfTransaction(d: DecodedTransaction, t: QfTerms): Prom
   for (const a of writable) if (!d.writableAccounts.includes(a)) v.push(`MISSING_WRITABLE ${a}`);
   return [...new Set(v)];
 }
+
+/** Binds a decoded transaction to approved terms (QF-SEC-01). Returns violations; empty means every instruction is accounted for. */
+export const bindTransactionToTerms = (d: DecodedTransaction, terms: ApprovedTerms): Promise<string[]> => bindQfTransaction(d, terms);

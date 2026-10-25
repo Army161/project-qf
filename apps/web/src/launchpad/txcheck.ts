@@ -3,7 +3,7 @@
 //   2. every instruction, account, signer and writable account in the bytes is bound to those terms (packages/tx).
 // The consent record binds the terms digest to the evidence that was on screen. Any violation stops the flow.
 import { canonicalJson } from '@project-qf/core';
-import { decodeTransactionBytes, isQfTerms, sha256Hex, termsDigest, verifyTransactionPreview, TOP_LEVEL_ALLOWLIST, type ApprovedTerms, type ConsentRecord } from '@project-qf/tx';
+import { decodeTransactionBytes, sha256Hex, termsDigest, verifyTransactionPreview, TOP_LEVEL_ALLOWLIST, type ApprovedTerms, type ConsentRecord } from '@project-qf/tx';
 
 /** The most compute a transaction built for this page may ask for: 400k units, priority fee at most 0.00004 SOL. */
 export const PAGE_COMPUTE = Object.freeze({ maxUnitLimit: 400_000, maxUnitPriceMicroLamports: 100_000n });
@@ -17,8 +17,7 @@ export function slippageFloor(expectedOut: bigint, slippageBps: number): bigint 
 
 export interface Check { label: string; ok: boolean; detail?: string }
 export interface Expectation {
-  kind: 'CREATE_POOL' | 'SWAP' | 'DAMM_SWAP' | 'CLAIM_CREATOR_TRADING_FEE' | 'DAMM_CLAIM_POSITION_FEE'
-    | 'QF_CREATE' | 'QF_SWAP' | 'QF_POOL_SWAP' | 'QF_CLAIM_CREATOR_FEES' | 'QF_COLLECT_POOL_CREATOR_FEE';
+  kind: ApprovedTerms['kind'];
   /** the network the page is on (from the launchpad's platform answer); devnet when omitted */
   cluster?: 'devnet' | 'localnet';
   wallet: string;
@@ -30,11 +29,10 @@ export interface Expectation {
 
 /** Plain-language check lines for the fields a person can recognise. */
 const FIELD_LABELS: Record<string, string> = {
-  user: 'Trades from your own wallet', creator: 'Claims as this coin\'s creator (your wallet)', receiver: 'Fees are paid to your wallet',
-  owner: 'The LP position belongs to your wallet', positionNftMint: 'It is your LP position', pool: 'The pool is this coin\'s pool',
+  user: 'Trades from your own wallet', creator: 'Claims as this coin\'s creator (your wallet)',
   baseMint: 'The coin is this coin', quoteMint: 'Priced in the platform quote token', direction: 'Buy or sell is what you picked',
   amountIn: 'The amount is what you entered', name: 'Name is what you entered', symbol: 'Ticker is what you entered', uri: 'Metadata link is this launch\'s',
-  config: 'Uses the platform launch config', ammConfig: 'Graduates into the platform pool config',
+  ammConfig: 'Graduates into the platform pool config',
 };
 
 export async function checkBuiltTransaction(bytes: Uint8Array, terms: ApprovedTerms, e: Expectation): Promise<{ ok: boolean; checks: Check[]; consent: ConsentRecord }> {
@@ -64,9 +62,7 @@ export async function checkBuiltTransaction(bytes: Uint8Array, terms: ApprovedTe
     decodedOk = true;
     const programs = [...new Set(d.instructions.map((i) => i.programAddress))];
     const known = new Set<string>(TOP_LEVEL_ALLOWLIST[e.kind]);
-    const damm = e.kind === 'DAMM_SWAP' || e.kind === 'DAMM_CLAIM_POSITION_FEE';
-    const engine = isQfTerms({ kind: e.kind }) ? 'the QF engine' : `Meteora ${damm ? 'DAMM v2' : 'DBC'}`;
-    checks.push({ label: `Only ${engine} and token programs are called`, ok: programs.every((p) => known.has(p)), detail: `${d.instructions.length} instructions` });
+    checks.push({ label: 'Only the QF engine and token programs are called', ok: programs.every((p) => known.has(p)), detail: `${d.instructions.length} instructions` });
   } catch (err) {
     violations = [`DECODE_FAILED ${(err as Error).message}`];
   }

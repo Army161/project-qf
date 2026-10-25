@@ -1,0 +1,20 @@
+Books checked 2026-10-25T06:19:34.025Z (devnet, QF engine)
+
+PASS  $QFP         curve quote vault matches the curve: vault holds 0.000000000 SOL
+PASS  $QFP         curve coin vault matches the curve: vault holds 0.000000 $QFP
+PASS  $QFP         platform curve fees add up: 3 trade(s) + graduation fee - claims = 0.000000000 SOL unclaimed
+PASS  $QFP         creator curve fees add up: 3 trade(s) - claims = 0.000000000 SOL unclaimed
+PASS  $QFP         pool liquidity is locked for good: LP mint supply 0 (every LP token burned at graduation)
+PASS  $QFP         pool creator fees add up: 3 pool swap(s) - collected = 0.000001995 SOL unclaimed
+PASS  $ADOG 2PfA…  curve quote vault matches the curve: vault holds 0.010000000 SOL
+PASS  $ADOG 2PfA…  curve coin vault matches the curve: vault holds 965722168.441433 $ADOG
+PASS  $ADOG 2PfA…  curve state follows its last trade: last trade left real quote 0.009900000 SOL and 34277831.558567 $ADOG sold; the account holds 0.009900000 SOL and 34277831.558567 $ADOG
+PASS  $ADOG 2PfA…  platform curve fees add up: 1 trade(s) - claims = 0.000070000 SOL unclaimed
+PASS  $ADOG 2PfA…  creator curve fees add up: 1 trade(s) - claims = 0.000030000 SOL unclaimed
+PASS  $ADOG zFsr…  curve quote vault matches the curve: vault holds 0.004869651 SOL
+PASS  $ADOG zFsr…  curve coin vault matches the curve: vault holds 982861084.220716 $ADOG
+PASS  $ADOG zFsr…  curve state follows its last trade: last trade left real quote 0.004869651 SOL and 17138915.779284 $ADOG sold; the account holds 0.004869651 SOL and 17138915.779284 $ADOG
+PASS  $ADOG zFsr…  platform curve fees add up: 2 trade(s) - claims = 0.000000000 SOL unclaimed
+PASS  $ADOG zFsr…  creator curve fees add up: 2 trade(s) - claims = 0.000000000 SOL unclaimed
+
+16 PASS, 0 FAIL, 0 WAIT

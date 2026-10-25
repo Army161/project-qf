@@ -4,19 +4,15 @@
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
-  "description": "SERVER-ONLY devnet launchpad API (lp-api/1): builds unsigned Meteora DBC transactions for wallets, relays signed ones after exact-message and signature checks, indexes trades and cranks migrations. Never signs for a user; operator-role steps use a disposable devnet key kept outside the repo.",
+  "description": "SERVER-ONLY devnet launchpad API on Project QF's own engine (qf-curve + qf-pool): builds unsigned transactions for wallets, relays signed ones after exact-message and signature checks, indexes trades and cranks graduations. Never signs for a user; operator-role steps use a disposable devnet key kept outside the repo.",
   "scripts": {
-    "setup": "node --use-env-proxy src/main.ts setup",
     "start": "node --use-env-proxy src/main.ts serve"
   },
   "dependencies": {
-    "@project-qf/adapter-meteora-dbc": "workspace:*",
     "@project-qf/core": "workspace:*",
     "@project-qf/engine": "workspace:*",
     "@project-qf/policy": "workspace:*",
-    "@project-qf/rewards": "workspace:*",
     "@project-qf/tx": "workspace:*",
-    "@project-qf/validator": "workspace:*",
     "@solana/kit": "8.3.0"
   }
 }

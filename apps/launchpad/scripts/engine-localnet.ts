@@ -1,5 +1,5 @@
 // The whole launchpad on Project QF's own engine, against the real engine programs on a local validator: the app server
-// (engine/server.ts, its indexer and crank) runs in this process, and engine-e2e.ts plays the browser and the wallets.
+// (src/server.ts, its indexer and crank) runs in this process, and engine-e2e.ts plays the browser and the wallets.
 // A coin goes through its whole life: launch, a buy and a sell on the curve, a buy that completes it, graduation by the
 // crank, a buy and a sell in its pool, both creator claims and the platform's claim. The books (`verify`) must be all
 // PASS while every fee is still unclaimed, and again after the claims.
@@ -15,9 +15,9 @@ import { CAPABILITY_FLAGS } from '@project-qf/core';
 import * as E from '@project-qf/engine';
 import { economicsDigest } from '@project-qf/policy';
 import { toBase64 } from '@project-qf/tx';
-import { kitChain, proveCluster } from '../src/engine/chain.ts';
-import { indexPass } from '../src/engine/indexer.ts';
-import { ENGINE_FAUCET } from '../src/engine/server.ts';
+import { kitChain, proveCluster } from '../src/chain.ts';
+import { indexPass } from '../src/indexer.ts';
+import { ENGINE_FAUCET } from '../src/server.ts';
 import { e2e, sleep } from './engine-e2e.ts';
 
 const RPC = 'http://127.0.0.1:8899';

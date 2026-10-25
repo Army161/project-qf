@@ -5,24 +5,4 @@ packages:
 
 # No dependency lifecycle scripts may run (also enforced by .npmrc ignore-scripts).
 onlyBuiltDependencies: []
-
-# Decision 4 (2026-09-27): remove the stray runtime dependency `chain` declared by
-# @meteora-ag/cp-amm-sdk@1.4.10. Exact-parent removal, not a pin and not a stub.
-# The published 1.4.10 tarball never imports it (evidence/chain-removal/).
-overrides:
-  # SEC-A (2026-09-27 repair): toml 3.0.0 has GHSA-82x6-q7mm-w9cf (<4.2.0) and GHSA-v5mp-jgw5-2x6j (<4.1.2).
-  # Scoped to anchor's own edge; 4.2.0 is the first release fixing both. API parity is tested (test/sec-a.test.ts).
-  "@coral-xyz/anchor@0.31.1>toml": "4.2.0"
-  "@meteora-ag/cp-amm-sdk@1.4.10>chain": "-"
-# SEC-A (2026-09-27 repair): bigint-buffer 1.1.5 (GHSA-3gc7-fjrx-p6mg, no fixed release) is patched so its native
-# addon is never loaded; only the pure-JS conversion runs. Verified against installed artifacts by test/sec-a.test.ts.
-patchedDependencies:
-  bigint-buffer@1.1.5: patches/bigint-buffer@1.1.5.patch
 strictDepBuilds: false
-# 2026-09-27 decision review: the optional ws accelerators bufferutil and utf-8-validate ship prebuilt native
-# binaries. rpc-websockets@9.3.9 declares them as optionalDependencies (ws only lists them as optional peers), so they
-# are excluded by name here. WS_NO_* environment flags alone would not cover ws@7.5.13, which ignores them.
-# Targeted exclusion only; other optional dependencies are unaffected. Proof: test/sec-a.test.ts, evidence/sec-a/.
-ignoredOptionalDependencies:
-  - bufferutil
-  - utf-8-validate

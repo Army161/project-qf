@@ -9,7 +9,7 @@ const arg = (k: string) => { const i = process.argv.indexOf(k); return i > 0 ? p
 const root = process.cwd();
 const filter = arg('--filter');
 const out = arg('--out') ?? join(root, 'sbom', 'project-qf.cdx.json');
-const importers = pnpmList(root, ['--prod']).filter((i) => !filter || i.name === filter);
+const importers = pnpmList(root, ['--prod', ...(filter ? ['--filter', filter] : [])]).filter((i) => !filter || i.name === filter);
 if (filter && importers.length === 0) throw new Error(`no workspace package ${filter}`);
 const nodes = walkGraph(importers, { includeDev: false }).filter((n) => !n.version.startsWith('link:'));
 const integrity = lockIntegrity(root);
@@ -48,7 +48,6 @@ const bom = {
     properties: [
       { name: 'qf:source', value: 'pnpm list -r --prod --depth Infinity --json + pnpm-lock.yaml integrity' },
       { name: 'qf:pnpm-lock.sha256', value: lockHash },
-      { name: 'qf:overrides', value: '"@meteora-ag/cp-amm-sdk@1.4.10>chain": "-" (Decision 4; chain removed, not masked)' },
       { name: 'qf:scope', value: 'production dependencies only; dev tooling excluded' },
     ],
   },

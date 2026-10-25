@@ -51,30 +51,6 @@
   },
   "pinned": [
     {
-      "name": "@meteora-ag/dynamic-bonding-curve-sdk",
-      "version": "1.5.13",
-      "license": "MIT",
-      "scope": "packages/adapter-meteora-dbc"
-    },
-    {
-      "name": "@meteora-ag/cp-amm-sdk",
-      "version": "1.4.10",
-      "license": "MIT",
-      "scope": "packages/adapter-meteora-dbc"
-    },
-    {
-      "name": "@solana/web3.js",
-      "version": "1.99.0",
-      "license": "MIT",
-      "scope": "packages/adapter-meteora-dbc only (server-side). tools/program-verify no longer uses it (2026-09-27)"
-    },
-    {
-      "name": "@sqds/multisig",
-      "version": "2.1.4",
-      "license": "MIT",
-      "scope": "packages/adapter-meteora-dbc only (server-side; devnet platform treasury, milestone 7). Its pinned instruction subset is extracted into packages/tx from the IDL bundled in this MIT package"
-    },
-    {
       "name": "@solana/kit",
       "version": "8.3.0",
       "license": "MIT",
@@ -127,12 +103,6 @@
       "version": "22.20.4",
       "license": "MIT",
       "scope": "dev only"
-    },
-    {
-      "name": "@types/bn.js",
-      "version": "5.2.0",
-      "license": "MIT",
-      "scope": "dev only"
     }
   ],
   "gated": [
@@ -183,7 +153,7 @@
       "license": "LGPL-3.0-only",
       "resolvedIntegrity": "sha512-2iQDaTB4g5fDB2ihrTFSJSibCEuxaRi1q7qTW7ZO9/M5/TC+ToHA4D9/ffNLEbAoHNNrcdeP05oATNk44SKZXA==",
       "dependencyPath": "@project-qf/adapter-meteora-dbc > (@meteora-ag/dynamic-bonding-curve-sdk@1.5.13 | @meteora-ag/cp-amm-sdk@1.4.10 | @coral-xyz/anchor@0.31.1 | @solana/spl-token@0.4.15) > @solana/web3.js@1.99.0 > rpc-websockets@9.3.9",
-      "status": "APPROVED_NARROW",
+      "status": "REMOVED",
       "decision": "Decision 1, adopted by the product owner 2026-09-27 (relayed ChatGPT review of summary documents; not a legal opinion)",
       "permittedTargets": [
         "internal, server-side Project QF processes that reach it only through @project-qf/adapter-meteora-dbc: the adapter, tools/econ-sim, and future apps/api, apps/workers, apps/indexer running on QF-operated infrastructure"
@@ -215,7 +185,8 @@
         "2027-09-27 (12 months)"
       ],
       "otherLgpl": "Any other LGPL package remains DENIED pending its own review",
-      "evidence": "project-qf/evidence/license-check.json, project-qf/evidence/browser-boundary.json"
+      "evidence": "project-qf/evidence/license-check.json, project-qf/evidence/browser-boundary.json",
+      "removed": "2026-10-25: the Meteora adapter that was its only path is deleted (owner chose Project QF's own engine). No package needs it; tools/license-check DENIES it if it reappears."
     },
     {
       "exceptionId": "QF-LIC-EX-002",
@@ -224,7 +195,7 @@
       "license": "(MIT AND Zlib)",
       "resolvedIntegrity": "sha512-zJq6RP/5q+TO2OpFV3FHzlPnFjmkb7Nc99a5SNjJE+uu/PkpChs+NIZSSzbBoD+6kjiISXjfYdwj1ZRQ81dz/w==",
       "dependencyPath": "@project-qf/adapter-meteora-dbc > @meteora-ag/cp-amm-sdk@1.4.10 > @coral-xyz/anchor@0.31.1 > pako@2.2.0",
-      "status": "APPROVED_EXACT",
+      "status": "REMOVED",
       "decision": "LIC-R1, adopted by the product owner 2026-09-27 (repair-pass directive; not a legal opinion)",
       "obligations": [
         "MIT (JavaScript port, Copyright (C) 2014-2017 Vitaly Puzrin and Andrei Tuputcyn): include the copyright and permission notice in all copies or substantial portions",
@@ -249,7 +220,8 @@
         "any distribution of software copies (notices must ship with it)",
         "2027-09-27 (12 months)"
       ],
-      "evidence": "project-qf/evidence/license-check.json"
+      "evidence": "project-qf/evidence/license-check.json",
+      "removed": "2026-10-25: the Meteora adapter that was its only path is deleted (owner chose Project QF's own engine). No package needs it; tools/license-check DENIES it if it reappears."
     },
     {
       "exceptionId": "QF-DEP-RM-001",
@@ -364,5 +336,5 @@
       "evidence": "project-qf/evidence/license-check.json"
     }
   ],
-  "amended": "2026-09-27 (V0 decisions 1 and 4; see docs/DECISIONS/ADR-011 and ADR-012); 2026-09-27 repair pass: QF-LIC-EX-002 pako@2.2.0 exact (LIC-R1, ADR-012); 2026-10-03: QF-LIC-EX-003..005 OFL-1.1 web fonts exact (owner card decision 21:04Z); 2026-10-05: @sqds/multisig@2.1.4 (MIT) pinned for the devnet platform treasury (owner decision card 18:27Z, 'Build on devnet'); 46 new transitive packages, all MIT/ISC/Apache-2.0 (license:check passes)"
+  "amended": "2026-09-27 (V0 decisions 1 and 4; see docs/DECISIONS/ADR-011 and ADR-012); 2026-09-27 repair pass: QF-LIC-EX-002 pako@2.2.0 exact (LIC-R1, ADR-012); 2026-10-03: QF-LIC-EX-003..005 OFL-1.1 web fonts exact (owner card decision 21:04Z); 2026-10-05: @sqds/multisig@2.1.4 (MIT) pinned for the devnet platform treasury (owner decision card 18:27Z, 'Build on devnet'); 46 new transitive packages, all MIT/ISC/Apache-2.0 (license:check passes); 2026-10-25: Meteora adapter removed with @meteora-ag/*, @solana/web3.js, @sqds/multisig and 128 transitive packages; QF-LIC-EX-001 (rpc-websockets) and QF-LIC-EX-002 (pako) REMOVED"
 }

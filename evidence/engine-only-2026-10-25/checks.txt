@@ -1,0 +1,46 @@
+# project QF engine-only pass, 2026-10-25
+
+## pnpm typecheck
+exit 0
+
+## pnpm build:web
+{"outputs":["dist/launchpad.js.LEGAL.txt","dist/launchpad.js.map","dist/launchpad.js"],"inputs":78}
+
+## pnpm boundary
+{
+  "result": "PASS",
+  "failures": [],
+  "graphPackages": 55,
+  "bundledPackages": [
+    "@noble/hashes",
+    "@solana/accounts",
+    "@solana/addresses",
+
+## pnpm license:check
+{
+  "packages": 83,
+  "tally": {
+    "NOT_INSTALLED": 25,
+    "ALLOW": 55,
+    "ALLOW_EXCEPTION": 3
+  },
+  "failures": [],
+  "reviewRequired": []
+}
+
+## pnpm audit --prod
+No known vulnerabilities found
+exit 0
+
+## pnpm audit (incl. dev)
+No known vulnerabilities found
+
+## pnpm sbom
+{"out":"/root/ws/app/sbom/project-qf.cdx.json","components":50,"filter":null,"lockSha256":"73c8e1f0d039a01b77578a4939348ec19c36ec46cbd37f92dc786524b7bcd115"}
+{"out":"sbom/apps-web.cdx.json","components":50,"filter":"@project-qf/web","lockSha256":"73c8e1f0d039a01b77578a4939348ec19c36ec46cbd37f92dc786524b7bcd115"}
+
+## pnpm test
+ℹ tests 197
+ℹ pass 197
+ℹ fail 0
+ℹ skipped 0

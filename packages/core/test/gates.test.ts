@@ -5,12 +5,11 @@ import { READINESS, assertStageActive, STAGES } from '../src/readiness.ts';
 import { labelMock, isMock, assertNotMock, MOCK_BANNER } from '../src/mock.ts';
 
 test('capability flags default to the decided V1 values', () => {
-  assert.equal(CAPABILITY_FLAGS.DBC_BASE_TRANSFER_FEE, 'EXPERIMENTAL_DISABLED');
   assert.equal(CAPABILITY_FLAGS.REWARDS_SETTLEMENT_MAINNET, false);
   assert.equal(CAPABILITY_FLAGS.JUPITER_PROVIDER, 'OPTIONAL_LEGAL_GATED');
   assert.equal(CAPABILITY_FLAGS.MAINNET_WRITES, false);
   assert.ok(Object.isFrozen(CAPABILITY_FLAGS));
-  for (const f of ['DBC_BASE_TRANSFER_FEE', 'REWARDS_SETTLEMENT_MAINNET', 'JUPITER_PROVIDER', 'MAINNET_WRITES'] as const) {
+  for (const f of ['REWARDS_SETTLEMENT_MAINNET', 'JUPITER_PROVIDER', 'MAINNET_WRITES'] as const) {
     assert.throws(() => assertCapabilityEnabled(f), /disabled|gated/i, f);
   }
 });

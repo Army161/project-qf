@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { address, appendTransactionMessageInstruction, compileTransaction, createTransactionMessage, getTransactionEncoder, pipe,
   setTransactionMessageFeePayer, setTransactionMessageLifetimeUsingBlockhash, blockhash, AccountRole } from '@solana/kit';
+import { QF_CURVE } from '@project-qf/engine';
 import { decodeTransactionBytes, verifyDecodedAgainstIntent, PROGRAM_IDS } from '../src/decoder.ts';
 import { TX_BINDING_POLICY_VERSION, termsDigest, type ApprovedTerms } from '../src/terms.ts';
 
@@ -20,56 +21,48 @@ function tx(programs: string[], version: 0 | 'legacy' = 0) {
 
 test('decodes v0 and legacy transactions offline into programs, signers and fee payer', () => {
   for (const version of [0, 'legacy'] as const) {
-    const d = decodeTransactionBytes(tx([PROGRAM_IDS.COMPUTE_BUDGET, PROGRAM_IDS.DBC], version));
+    const d = decodeTransactionBytes(tx([PROGRAM_IDS.COMPUTE_BUDGET, QF_CURVE], version));
     assert.equal(d.version, version);
     assert.equal(d.feePayer, PAYER);
     assert.deepEqual(d.signers, [PAYER]);
-    assert.deepEqual(d.instructions.map((i) => i.programAddress), [PROGRAM_IDS.COMPUTE_BUDGET, PROGRAM_IDS.DBC]);
+    assert.deepEqual(d.instructions.map((i) => i.programAddress), [PROGRAM_IDS.COMPUTE_BUDGET, QF_CURVE]);
     assert.equal(d.instructions[1]!.dataHex, '010203');
     assert.equal(d.addressTableLookups, 0);
   }
 });
 
-// QF-SEC-01: the original version of this test asserted that ComputeBudget + a DBC instruction with junk data
-// [1,2,3] verified as []. That defined the deficient behaviour as success and was replaced by the tests below.
+// QF-SEC-01: a transaction that merely calls the right programs is never enough; every instruction must be exactly the
+// one the terms build (packages/tx/test/qf-engine.test.ts covers the byte-for-byte binding of real engine transactions).
 const COMMON = { cluster: 'mock-offline', policyVersion: TX_BINDING_POLICY_VERSION, compute: { maxUnitLimit: 400_000, maxUnitPriceMicroLamports: '100000' } } as const;
-const poolTerms = (feePayer: string): ApprovedTerms => ({ ...COMMON, kind: 'CREATE_POOL', feePayer, config: POOL, creator: feePayer, payer: feePayer,
-  baseMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', quoteMint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', quoteTokenProgram: PROGRAM_IDS.TOKEN,
-  name: 'MOCK', symbol: 'MOCK', uri: 'https://example.invalid/m.json' });
-async function req(kind: 'CREATE_POOL' | 'SWAP', feePayer: string, signerAddress: string) {
-  const terms = kind === 'CREATE_POOL' ? poolTerms(PAYER) : ({ ...COMMON, kind: 'SWAP', feePayer: PAYER, config: POOL, pool: POOL, user: PAYER,
-    baseMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', quoteMint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', baseTokenProgram: PROGRAM_IDS.TOKEN,
-    quoteTokenProgram: PROGRAM_IDS.TOKEN, direction: 'QUOTE_TO_BASE', amountIn: '1', minimumAmountOut: '0', referralTokenAccount: null, allowSysvarInstructions: false } as ApprovedTerms);
-  return { kind, feePayer, signerAddress, terms, consent: { termsDigest: await termsDigest(terms), cluster: 'mock-offline', policyVersion: TX_BINDING_POLICY_VERSION,
+const swapTerms = (): ApprovedTerms => ({ ...COMMON, kind: 'QF_SWAP', feePayer: PAYER, user: PAYER, baseMint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+  quoteMint: 'So11111111111111111111111111111111111111112', direction: 'QUOTE_TO_BASE', amountIn: '1', minimumAmountOut: '0' });
+async function req(feePayer: string, signerAddress: string) {
+  const terms = swapTerms();
+  return { kind: 'QF_SWAP', feePayer, signerAddress, terms, consent: { termsDigest: await termsDigest(terms), cluster: 'mock-offline', policyVersion: TX_BINDING_POLICY_VERSION,
     evidenceDigest: 'ab'.repeat(32), acknowledgementDigest: null, approvedAt: '2026-09-27T12:00:00.000Z' } } as const;
 }
 
-test('preview verification: a DBC instruction that does not decode under the pinned format is rejected', async () => {
-  const d = decodeTransactionBytes(tx([PROGRAM_IDS.COMPUTE_BUDGET, PROGRAM_IDS.DBC]));
-  const v = await verifyDecodedAgainstIntent(d, await req('CREATE_POOL', PAYER, PAYER));
-  assert.ok(v.some((x) => /DBC_DECODE_FAILED|DBC_UNKNOWN_INSTRUCTION/.test(x)), v.join());
+test('preview verification: an engine instruction that is not exactly the one the terms build is rejected', async () => {
+  const d = decodeTransactionBytes(tx([PROGRAM_IDS.COMPUTE_BUDGET, QF_CURVE]));
+  const v = await verifyDecodedAgainstIntent(d, await req(PAYER, PAYER));
+  assert.ok(v.some((x) => /INSTRUCTION_COUNT|WRONG_PROGRAM|DATA_MISMATCH/.test(x)), v.join());
   assert.ok(v.some((x) => /COMPUTE_BUDGET_UNSUPPORTED/.test(x)), 'ComputeBudget data 010203 is not a bound opcode');
 });
 
 test('preview verification: fee payer and signer must match the intent and terms', async () => {
-  const d = decodeTransactionBytes(tx([PROGRAM_IDS.DBC]));
-  assert.match((await verifyDecodedAgainstIntent(d, await req('CREATE_POOL', POOL, PAYER))).join(), /INTENT_FEE_PAYER_NOT_IN_TERMS/);
-  assert.match((await verifyDecodedAgainstIntent(d, await req('CREATE_POOL', PAYER, POOL))).join(), /REQUIRED_SIGNER_MISSING/);
+  const d = decodeTransactionBytes(tx([QF_CURVE]));
+  assert.match((await verifyDecodedAgainstIntent(d, await req(POOL, PAYER))).join(), /INTENT_FEE_PAYER_NOT_IN_TERMS/);
+  assert.match((await verifyDecodedAgainstIntent(d, await req(PAYER, POOL))).join(), /REQUIRED_SIGNER_MISSING/);
 });
 
 test('an injected instruction to an unexpected program is flagged', async () => {
-  const d = decodeTransactionBytes(tx([PROGRAM_IDS.DBC, 'BPFLoaderUpgradeab1e11111111111111111111111']));
-  assert.match((await verifyDecodedAgainstIntent(d, await req('CREATE_POOL', PAYER, PAYER))).join(), /UNEXPECTED_PROGRAM BPFLoaderUpgradeab1e/);
-});
-
-test('a DBC intent without a DBC instruction is flagged', async () => {
-  const d = decodeTransactionBytes(tx([PROGRAM_IDS.COMPUTE_BUDGET]));
-  assert.match((await verifyDecodedAgainstIntent(d, await req('SWAP', PAYER, PAYER))).join(), /NO_ENGINE_INSTRUCTION/);
+  const d = decodeTransactionBytes(tx([QF_CURVE, 'BPFLoaderUpgradeab1e11111111111111111111111']));
+  assert.match((await verifyDecodedAgainstIntent(d, await req(PAYER, PAYER))).join(), /WRONG_PROGRAM BPFLoaderUpgradeab1e|INSTRUCTION_COUNT/);
 });
 
 test('address lookup tables are not supported in preview and are rejected', async () => {
-  const d = { ...decodeTransactionBytes(tx([PROGRAM_IDS.DBC])), addressTableLookups: 1 };
-  assert.match((await verifyDecodedAgainstIntent(d, await req('SWAP', PAYER, PAYER))).join(), /ADDRESS_LOOKUP_TABLES_NOT_SUPPORTED/);
+  const d = { ...decodeTransactionBytes(tx([QF_CURVE])), addressTableLookups: 1 };
+  assert.match((await verifyDecodedAgainstIntent(d, await req(PAYER, PAYER))).join(), /ADDRESS_LOOKUP_TABLES_NOT_SUPPORTED/);
 });
 
 test('garbage bytes are rejected, not partially decoded', () => {

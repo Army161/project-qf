@@ -11,7 +11,7 @@ test('SPDX classification against LICENSE-MANIFEST policy', () => {
   assert.equal(classify('MIT', p), 'ALLOW');
   assert.equal(classify('(MIT OR Apache-2.0)', p), 'ALLOW');
   assert.equal(classify('MIT OR GPL-3.0', p), 'ALLOW');          // OR: best alternative
-  assert.equal(classify('(MIT AND Zlib)', p), 'REVIEW');          // AND: worst component; Zlib stays review (pako is an exact exception, not a policy change)
+  assert.equal(classify('(MIT AND Zlib)', p), 'REVIEW');          // AND: worst component; Zlib is not allowed by policy
   assert.equal(classify('LGPL-3.0-only', p), 'DENY');             // blanket deny stays in force
   assert.equal(classify('GPL-3.0-or-later', p), 'DENY');
   assert.equal(classify('BUSL-1.1', p), 'DENY');
@@ -26,36 +26,35 @@ test('the code-repo manifest copy is identical to the spec manifest when both ar
   assert.equal(readFileSync(new URL('../../../LICENSE-MANIFEST.json', import.meta.url), 'utf8'), spec);
 });
 
-test('LGPL exception is exact and narrow; chain is recorded as removed', () => {
-  const ex = m.exceptions.find((e: { name: string }) => e.name === 'rpc-websockets');
-  assert.equal(ex.exceptionId, 'QF-LIC-EX-001');
-  assert.equal(ex.version, '9.3.9');
-  assert.match(ex.resolvedIntegrity, /^sha512-/);
-  assert.equal(ex.status, 'APPROVED_NARROW');
-  assert.ok(ex.prohibitedTargets.some((t: string) => /browser/.test(t)));
-  const ch = m.exceptions.find((e: { name: string }) => e.name === 'chain');
-  assert.equal(ch.status, 'REMOVED');
-  assert.match(ch.mechanism, /"@meteora-ag\/cp-amm-sdk@1\.4\.10>chain": "-"/);
+test('the exceptions the Meteora removal retired stay recorded as REMOVED, so the gate denies them if they come back', () => {
+  for (const name of ['rpc-websockets', 'pako', 'chain']) {
+    const ex = m.exceptions.find((e: { name: string }) => e.name === name);
+    assert.equal(ex.status, 'REMOVED', name);
+  }
+  assert.equal(classify('LGPL-3.0-only', p), 'DENY', 'no LGPL package has an exception any more');
+  assert.ok(!m.pinned.some((x: { name: string }) => /^@meteora-ag\/|^@solana\/web3\.js$|^@sqds\//.test(x.name)), 'the Meteora pins are gone');
 });
 
-test('LIC-R1: pako@2.2.0 (MIT AND Zlib) is allowed only as the exact, unmodified, notice-preserving exception', () => {
-  const ex = m.exceptions.find((e: { exceptionId?: string }) => e.exceptionId === 'QF-LIC-EX-002');
-  assert.equal(ex.name, 'pako'); assert.equal(ex.version, '2.2.0'); assert.equal(ex.status, 'APPROVED_EXACT'); assert.equal(ex.license, '(MIT AND Zlib)');
-  assert.ok(!p.allow.includes('Zlib'), 'no policy-wide Zlib allowance');
+test('the web fonts are allowed only as exact, unmodified, notice-preserving exceptions (QF-LIC-EX-003..005)', () => {
+  const fonts = m.exceptions.filter((e: { exceptionId?: string }) => /^QF-LIC-EX-00[345]$/.test(e.exceptionId ?? ''));
+  assert.equal(fonts.length, 3);
+  assert.ok(!p.allow.includes('OFL-1.1'), 'no policy-wide OFL allowance');
   const root = new URL('../../../', import.meta.url);
-  const text = (f: string) => readFileSync(new URL(f, root), 'utf8');
-  const mit = text('licenses/pako@2.2.0/LICENSE'); const zlib = text('licenses/pako@2.2.0/lib-zlib-README');
-  assert.match(mit, /Copyright \(C\) 2014-2017 by Vitaly Puzrin and Andrei Tuputcyn/);
-  assert.match(zlib, /Jean-loup Gailly and Mark Adler/); assert.match(zlib, /This notice may not be removed or altered from any source distribution/);
-  const good = () => ({ license: '(MIT AND Zlib)', integrity: ex.resolvedIntegrity, patched: false,
-    notices: new Map<string, [string | undefined, string | undefined]>([['LICENSE', [mit, mit]], ['lib/zlib/README', [zlib, zlib]]]) });
-  assert.deepEqual(checkExactException(ex, good()), []);
-  assert.match(checkExactException(ex, { ...good(), integrity: 'sha512-other' }).join(), /integrity/);
-  assert.match(checkExactException(ex, { ...good(), license: 'MIT AND Zlib AND BSD-3-Clause' }).join(), /license/);
-  assert.match(checkExactException(ex, { ...good(), patched: true }).join(), /patched/);
-  const lost = good(); lost.notices.set('lib/zlib/README', [zlib, undefined]);
-  assert.match(checkExactException(ex, lost).join(), /not preserved/);
-  const altered = good(); altered.notices.set('LICENSE', [mit, mit.replace('Vitaly Puzrin', 'Someone Else')]);
-  assert.match(checkExactException(ex, altered).join(), /differs from upstream/);
-  assert.match(checkExactException({ ...ex, notices: [] }, good()).join(), /no notices/);
+  for (const ex of fonts) {
+    assert.equal(ex.status, 'APPROVED_EXACT'); assert.equal(ex.license, 'OFL-1.1'); assert.equal(ex.version, '5.3.0');
+    assert.match(ex.resolvedIntegrity, /^sha512-/);
+    const notice = readFileSync(new URL(ex.notices[0].preservedAt, root), 'utf8');
+    assert.match(notice, /SIL OPEN FONT LICENSE/i, ex.name);
+    const good = () => ({ license: 'OFL-1.1', integrity: ex.resolvedIntegrity, patched: false,
+      notices: new Map<string, [string | undefined, string | undefined]>([['LICENSE', [notice, notice]]]) });
+    assert.deepEqual(checkExactException(ex, good()), [], ex.name);
+    assert.match(checkExactException(ex, { ...good(), integrity: 'sha512-other' }).join(), /integrity/);
+    assert.match(checkExactException(ex, { ...good(), license: 'OFL-1.1 AND BSD-3-Clause' }).join(), /license/);
+    assert.match(checkExactException(ex, { ...good(), patched: true }).join(), /patched/);
+    const lost = good(); lost.notices.set('LICENSE', [notice, undefined]);
+    assert.match(checkExactException(ex, lost).join(), /not preserved/);
+    const altered = good(); altered.notices.set('LICENSE', [notice, notice.replace('SIL', 'SOMEONE')]);
+    assert.match(checkExactException(ex, altered).join(), /differs from upstream/);
+    assert.match(checkExactException({ ...ex, notices: [] }, good()).join(), /no notices/);
+  }
 });

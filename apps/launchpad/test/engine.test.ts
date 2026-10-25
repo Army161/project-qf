@@ -1,4 +1,4 @@
-// The launchpad on Project QF's own engine (QF_ENGINE=qf), over HTTP with an in-process chain double
+// The launchpad on Project QF's own engine, over HTTP with an in-process chain double
 // (test/support/engine-fake.ts): synthetic accounts encoded with the engine's IDL, a send recorder, keys generated per
 // test. No network. The real programs are exercised by scripts/engine-localnet.ts on a local validator.
 import { test } from 'node:test';
@@ -10,11 +10,11 @@ import { address, getAddressDecoder, getAddressEncoder } from '@solana/kit';
 import * as E from '@project-qf/engine';
 import { economicsDigest } from '@project-qf/policy';
 import { addSignature, bindTransactionToTerms, decodeTransactionBytes, fromBase64, generateMintKey, parseWire, toBase64 } from '@project-qf/tx';
-import { engineBooks, engineBooksText } from '../src/engine/books.ts';
-import { calmRpc, createOperatorKey, GENESIS, loadOperator, proveCluster } from '../src/engine/chain.ts';
-import { catchUp, classifyTx, crankGraduations, discoverCoins, indexPass, readDue, settlePending, TX_RETRY } from '../src/engine/indexer.ts';
-import { ENGINE_FAUCET } from '../src/engine/server.ts';
-import { EngineStore } from '../src/engine/store.ts';
+import { engineBooks, engineBooksText } from '../src/books.ts';
+import { calmRpc, createOperatorKey, GENESIS, loadOperator, proveCluster } from '../src/chain.ts';
+import { catchUp, classifyTx, crankGraduations, discoverCoins, indexPass, readDue, settlePending, TX_RETRY } from '../src/indexer.ts';
+import { ENGINE_FAUCET } from '../src/server.ts';
+import { EngineStore } from '../src/store.ts';
 import { ADDR, CFG, DEVNET, engineDir, engineHarness, fakeChain, putCurve, putPlatform, putPool, SOL, tokenAccountData, txRecord, type FakeChain } from './support/engine-fake.ts';
 
 const ev = <T extends E.EngineEvent['name']>(name: T, program: string, f: Record<string, unknown>) => ({ name, program, depth: 1, ...f }) as unknown as E.EngineEvent;
@@ -195,7 +195,7 @@ test('only the creator claims, only what is there, to their own wallet: curve fe
   assert.equal(pc.status, 201, JSON.stringify(pc.body));
   assert.deepEqual([pc.body.terms.kind, pc.body.terms.ammConfig, pc.body.amounts.quoteRaw], ['QF_COLLECT_POOL_CREATOR_FEE', ADDR.ammConfig, '5000']);
   const me = (await h.call(`/api/lp/me?wallet=${creator.address}&fresh=1`)).body;
-  assert.deepEqual([me.coins.length, me.coins[0].poolCreatorFee.quoteRaw, me.rewardsPaid.length], [1, '5000', 0]);
+  assert.deepEqual([me.coins.length, me.coins[0].poolCreatorFee.quoteRaw], [1, '5000']);
 });
 
 test('the faucet gives test SOL only to a low wallet, a limited number of times, and never drains the operator', async () => {

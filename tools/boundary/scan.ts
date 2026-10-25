@@ -2,14 +2,15 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
+// Never in a browser bundle: web3.js v1 and its LGPL websocket client, Meteora's SDKs, Anchor, and the launchpad server.
 export const FORBIDDEN_PACKAGES = Object.freeze([
   '@solana/web3.js', 'rpc-websockets', '@meteora-ag/dynamic-bonding-curve-sdk', '@meteora-ag/cp-amm-sdk',
-  '@coral-xyz/anchor', '@coral-xyz/borsh', 'jayson', 'chain', '@project-qf/adapter-meteora-dbc',
+  '@coral-xyz/anchor', '@coral-xyz/borsh', 'jayson', 'chain', '@project-qf/launchpad',
 ]);
-const FORBIDDEN_PATH_FRAGMENTS = ['packages/adapter-meteora-dbc/'];
+const FORBIDDEN_PATH_FRAGMENTS = ['apps/launchpad/'];
 const TEXT_MARKERS = [/GNU LESSER GENERAL PUBLIC LICENSE/, /\bLGPL-3\.0/, /node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?rpc-websockets\//,
   /node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?@solana\/web3\.js\//, /node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?@meteora-ag\//,
-  /['"]@project-qf\/adapter-meteora-dbc['"]/, /packages\/adapter-meteora-dbc\/src\//];
+  /['"]@project-qf\/launchpad['"]/, /apps\/launchpad\/src\//];
 
 /** Package name for a bundled input path like node_modules/.pnpm/x/node_modules/@scope/name/lib/a.js */
 export function packageOf(p: string): string | undefined {

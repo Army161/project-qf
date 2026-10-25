@@ -17,7 +17,7 @@ Rules for every coding agent working in Project QF repositories. These are bindi
 ## Hard rules — licensing
 - **Never fork, copy, modify, vendor, or paraphrase-port** code from `MeteoraAg/dynamic-bonding-curve` or `MeteoraAg/damm-v2` (Meteora Non-commercial Licence). Interact with deployed programs only through `@meteora-ag/dynamic-bonding-curve-sdk` / `@meteora-ag/cp-amm-sdk` (MIT) inside `packages/adapter-meteora-dbc`.
 - **Never add `@raydium-io/raydium-sdk-v2`** (GPL-3.0) to any Project QF package. Raydium is out of V1.
-- No GPL / AGPL / LGPL / BUSL / SSPL / non-commercial / "source-available" code or packages in proprietary packages. CI license scanner enforces `LICENSE-MANIFEST.json` allowlist. The **only** exception is `QF-LIC-EX-001`: unmodified `rpc-websockets@9.3.9` (LGPL-3.0-only) reached through `@solana/web3.js@1.99.0` inside the server-side Meteora adapter (ADR-012). It never covers a browser bundle, downloadable SDK/CLI, mobile/desktop app, customer container or on-prem install. Never suppress license scans.
+- No GPL / AGPL / LGPL / BUSL / SSPL / non-commercial / "source-available" code or packages in proprietary packages. CI license scanner enforces `LICENSE-MANIFEST.json` allowlist. The only exceptions are the exact OFL-1.1 web fonts (QF-LIC-EX-003..005). `QF-LIC-EX-001` (rpc-websockets, LGPL) and `QF-LIC-EX-002` (pako) were REMOVED with the Meteora adapter on 2026-10-25, and the scanner denies them if they come back. Never suppress license scans.
 - Do not copy, clone into a local validator, rebuild, cache or redistribute Meteora program binaries or source until written permission covers it (ADR-013). SDK MIT terms do not cover the programs.
 - Preserve MIT/Apache notices of dependencies in `THIRD_PARTY_NOTICES.md`. Never relicense third-party code.
 - Do not add any open-source LICENSE file to Project QF original code. See `PROPRIETARY-NOTICE.md`.
@@ -35,25 +35,24 @@ Rules for every coding agent working in Project QF repositories. These are bindi
   - `packages/engine` is the only package that knows the engine's formats. It is browser-safe and Kit-only.
   - The two Apache-2.0-derived files keep their notice (`packages/engine/third_party/raydium-cp-swap/`).
   - Engine coins are Token-2022 mints with metadata on the mint, no transfer fee, no freeze authority and no mint authority. This overrides "classic SPL Token" below, for engine coins only.
-  - The Meteora engine stays the devnet default until the app switches behind one setting, after the engine's own devnet proof run passes. It is then removed. (The proof run passed on 2026-10-11 and the app works on the engine on devnet; the switch itself waits on Jeremy's OK.)
+  - The app runs on the engine only. Jeremy approved the switch on 2026-10-25 ("Both": merge the 3-tab app and switch to our own engine), and the Meteora adapter, its checks and its licence exceptions were removed the same day. Do not re-add Meteora code.
   - The engine programs are devnet/localnet only, upgradeable and not audited. Mainnet needs an outside security review, the multisig holding every admin and upgrade key, and Jeremy's explicit words.
-  - The two lines below about "Meteora DBC → DAMM v2 only" and "No custom on-chain programs" are superseded by this amendment. The licensing rules above are unchanged.
-- Engine: **Meteora DBC → DAMM v2** only. `RaydiumEngineAdapter` is an interface stub; no implementation.
-- `DBC_BASE_TRANSFER_FEE` capability is `EXPERIMENTAL_DISABLED`. Do not write code paths that require DBC program ≥ 0.2.2 or an SDK release with 0.2.2 support (proposed as 1.6.0 in PR #116; the 2.x refactor is PR #117) outside the disabled capability module. ADR-003 tracks capability, not a version number.
+  - The line below about "No custom on-chain programs" is superseded by this amendment. The licensing rules above are unchanged.
+- Engine: Project QF's own engine only (ADR-014, above). The original "Meteora DBC → DAMM v2 only" rule and the `DBC_BASE_TRANSFER_FEE` capability are retired with the Meteora code.
 - Reward strategies: `NONE`, `TRADING_FEE`, `DIRECT`, `MERKLE`, `EPOCH_PROPORTIONAL`. No continuous-rewards contract. Mainnet settlement is feature-gated (`REWARDS_SETTLEMENT_MAINNET=false`).
 - Jupiter: `JupiterProvider` is `OPTIONAL_LEGAL_GATED`. Core must run with it disabled. Never persist Jupiter responses into the Asset Graph / feature store.
 - Tokenized securities are FAIL in the validator. No EVM code. No custom on-chain programs in V1.
-- Default launched token: classic SPL Token.
+- Launched coins are Token-2022 mints (ADR-014, above).
 
 ## Engineering conventions
-- Node ≥ 22.12, pnpm 10, TypeScript strict. Exact version pins (no `^`) for Solana/Meteora packages.
-- `@solana/web3.js` v1 is allowed **only** in `packages/adapter-meteora-dbc`, runs server-side only, and must never reach `apps/web` (its transitive `rpc-websockets` is LGPL-3.0; exception QF-LIC-EX-001 is server-side only). `pnpm boundary` checks the browser dependency graph, bundles and source maps. The verifier (`tools/program-verify`) uses `@solana/addresses` and plain JSON-RPC, not web3.js. Keep the targeted override `"@meteora-ag/cp-amm-sdk@1.4.10>chain": "-"` in `pnpm-workspace.yaml` (ADR-012); never replace it with a stub or pin. Other packages use QF domain types and `@solana/kit`.
+- Node ≥ 22.12, pnpm 10, TypeScript strict. Exact version pins (no `^`) for Solana packages.
+- `@solana/web3.js` v1 is not used anywhere (it left with the Meteora adapter); everything uses `@solana/kit`. `pnpm boundary` keeps web3.js, `rpc-websockets`, the Meteora SDKs, Anchor and the launchpad server out of the browser dependency graph, bundles and source maps.
 - Mocks and fixtures carry `MOCK_BANNER` / `TEST_ONLY` labels and are never presented as live results. Synthetic assets live in the `test-only:` namespace and cannot be promoted to the production registry.
 - All policies (validator thresholds, economics, exclusions, allocation) are versioned objects; every result records the policy version it used.
 - Money math in integer base units (`bigint`); never JS `number` for token amounts.
-- The launchpad (`apps/launchpad`) runs on devnet only and proves the cluster by genesis hash before it starts. In engine mode (`QF_ENGINE=qf`) it may also run on a local validator at 127.0.0.1 (`QF_CLUSTER=localnet`), proven by a loopback URL and a genesis that is not devnet's. Live reads never fall back to fixtures. Missing data is INCOMPLETE, UNAVAILABLE or WAIT with a reason, never a default and never a zero.
+- The launchpad (`apps/launchpad`) runs on devnet only and proves the cluster by genesis hash before it starts. It may also run on a local validator at 127.0.0.1 (`QF_CLUSTER=localnet`), proven by a loopback URL and a genesis that is not devnet's. Live reads never fall back to fixtures. Missing data is INCOMPLETE, UNAVAILABLE or WAIT with a reason, never a default and never a zero.
 - The browser (`apps/web`) talks only to the same-origin launchpad server (CSP `connect-src 'self'`) and the user's wallet, and never calls an RPC.
-- Before any PR: `pnpm typecheck && pnpm test && pnpm license:check && pnpm deps:chain && pnpm boundary && pnpm audit --prod` (install with `--ignore-scripts` in a secret-free environment).
+- Before any PR: `pnpm typecheck && pnpm build:web && pnpm test && pnpm license:check && pnpm boundary && pnpm audit --prod` (install with `--ignore-scripts` in a secret-free environment).
 
 ## Stop conditions
 Stop and ask the human if a task requires: a mainnet write, a new dependency with a non-allowlisted license, a new on-chain program, changing a policy threshold, touching multisig/authority configuration, or relying on an UNVERIFIED item from `docs/PROGRAM-VERIFICATION.md`.

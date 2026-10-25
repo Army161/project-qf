@@ -1,226 +1,197 @@
-// Trade indexer and migration crank. Trades are derived from the pool's own vault balance deltas in each confirmed
-// transaction (program-agnostic: a trade made outside this app is indexed the same way), and their fees from the
-// swap event in that same transaction (fees.ts). The crank migrates a
-// completed curve to DAMM v2 with the operator key; on-chain, migration is permissionless and the DBC program itself
-// refuses an incomplete curve, so the crank's read is not a safety decision.
-import type { LaunchpadChain, LiveDammPool, LivePool, TxSummary } from './chain.ts';
-import { feesFromSummary, unknownFees, type TradeFees } from './fees.ts';
-import type { LaunchRow, LaunchpadStore, TradeRow } from './store.ts';
-import { syncAllHolders } from './holders.ts';
-import { syncRewardsVault } from './rewards-vault.ts';
-import type { PlatformRecord } from './platform.ts';
+// The engine launchpad's indexer and graduation crank. Every transaction that touched a coin's launch account (curve
+// phase) or its pool (after graduation) is listed, queued and read; what it did comes from the engine's own events in
+// its logs (trades with their exact fees, fee claims, graduation), never from guessing at balance changes. The one
+// exception is the pool creator fee, which the pool program pays without an event: it is read from the pool's quote
+// vault in a transaction that collects it and does nothing else. A transaction the RPC does not serve yet stays queued
+// and counts as missing history until it is read. Nothing is dropped silently.
+import * as E from '@project-qf/engine';
+import type { EngineChain, TxRecord } from './chain.ts';
+import type { CoinRow, EngineStore, PayoutRow, TradeRow, Venue } from './store.ts';
 
-/** The pool a trade is read against: its vaults; and, to read its fees, its address and (curve) the creator's fee share. */
-type TradePool = Pick<LivePool, 'baseVault' | 'quoteVault'> & { pool?: string; creatorTradingFeePct?: number };
+export interface EngineIndexerDeps { store: EngineStore; chain: EngineChain; log?: (m: string) => void; now?: () => Date }
+const nowOf = (d: EngineIndexerDeps) => (d.now ?? (() => new Date()))();
 
-export function tradeFromSummary(launch: Pick<LaunchRow, 'mint'>, pool: TradePool, s: TxSummary, source: string): TradeRow | null {
-  if (s.err) return null;
-  const dq = s.tokenDeltas[pool.quoteVault] ?? 0n, db = s.tokenDeltas[pool.baseVault] ?? 0n;
-  let side: TradeRow['side'];
-  if (dq > 0n && db < 0n) side = 'BUY';
-  else if (dq < 0n && db > 0n) side = 'SELL';
-  else return null; // pool creation, migration, fee claims: not trades
-  const abs = (x: bigint) => (x < 0n ? -x : x);
-  return { sig: s.signature, mint: launch.mint, trader: s.feePayer, side, quoteRaw: abs(dq).toString(), baseRaw: abs(db).toString(), slot: s.slot,
-    blockTime: s.blockTime, source, ...(pool.pool ? { fees: feesFromSummary(s, pool.pool, pool.creatorTradingFeePct ?? null) } : {}) };
-}
+/** Retry schedule for listed transactions the RPC did not serve: the first `fastAttempts` on consecutive passes, then a
+ *  doubling delay; after `maxAttempts` the transaction is UNAVAILABLE (still missing history, still retried). */
+export const TX_RETRY = Object.freeze({ fastAttempts: 5, baseDelayMs: 15_000, maxDelayMs: 3_600_000, maxAttempts: 20, unavailableRetryMs: 6 * 3_600_000, perPass: 25 });
+/** Compute units the crank allows a graduation (measured on the real programs: about 196k). */
+export const GRADUATE_COMPUTE_UNITS = 300_000;
 
-export interface IndexerDeps { store: LaunchpadStore; chain: LaunchpadChain; poolCache: PoolCache; dammCache?: DammCache; log?: (m: string) => void; now?: () => Date }
+const COLLECT_CREATOR_FEE = E.POOL_IDL.instructions.find((i) => i.name === 'collect_creator_fee_permissionless')!.discriminator;
+const isCollect = (ix: { programAddress: string; dataHex: string }) =>
+  ix.programAddress === E.QF_POOL && ix.dataHex.slice(0, 16) === Array.from(COLLECT_CREATOR_FEE, (b: number) => b.toString(16).padStart(2, '0')).join('');
 
-/** Retry schedule for transactions the RPC listed but did not serve. The first `fastAttempts` lookups happen on
- *  consecutive passes (an RPC usually serves a new transaction within seconds); after that the delay doubles up to
- *  `maxDelayMs`. After `maxAttempts` the transaction is marked UNAVAILABLE: still counted as missing history and still
- *  retried, every `unavailableRetryMs`. Nothing is ever dropped silently. */
-export const BACKFILL = Object.freeze({ fastAttempts: 5, baseDelayMs: 15_000, maxDelayMs: 3_600_000, maxAttempts: 20, unavailableRetryMs: 6 * 3_600_000, perPass: 10 });
-type Venue = 'CURVE' | 'DAMM_V2';
-const nowOf = (d: IndexerDeps) => (d.now ?? (() => new Date()))();
-
-function recordTrade(d: IndexerDeps, launch: LaunchRow, pool: TradePool, sum: TxSummary): { outcome: 'TRADE' | 'NOT_A_TRADE' | 'FAILED_TX'; inserted: boolean } {
-  if (sum.err) return { outcome: 'FAILED_TX', inserted: false };
-  const t = tradeFromSummary(launch, pool, sum, 'indexer');
-  if (!t) return { outcome: 'NOT_A_TRADE', inserted: false };
-  const inserted = d.store.insertTrade(t);
-  if (!inserted && t.fees) d.store.setTradeFees(t.sig, t.fees); // recorded earlier (by the app) without its fees
-  return { outcome: 'TRADE', inserted };
-}
-
-/** Trades whose fees are not proven yet (recorded before the fee ledger, or whose transaction was served without its
- *  inner instructions) are read again, a few per pass. A trade stays UNKNOWN, and is reported as such, never as 0. */
-export const FEES = Object.freeze({ perPass: 10, maxAttempts: 20 });
-export async function fillTradeFees(d: IndexerDeps): Promise<{ resolved: number }> {
-  let resolved = 0;
-  for (const t of d.store.tradesNeedingFees(FEES.perPass, FEES.maxAttempts)) {
-    const launch = d.store.getLaunch(t.mint);
-    if (!launch) continue;
-    const sum = await d.chain.txSummary(t.sig).catch(() => null);
-    let f: TradeFees;
-    if (!sum) f = unknownFees('NO_TX_DETAILS');
-    else {
-      const curve = await d.poolCache.get(launch.pool).catch(() => null);
-      f = feesFromSummary(sum, launch.pool, curve?.creatorTradingFeePct ?? null);
-      if (f.evidence === 'NO_SWAP_EVENT' && launch.dammPool) f = feesFromSummary(sum, launch.dammPool, null);
+export interface Classified { outcome: string; trades: TradeRow[]; payouts: PayoutRow[]; graduated: { pool: string } | null; created: boolean }
+/** What one transaction did to one coin, from its events. `pool` is the coin's pool address (known from its mint). */
+export function classifyTx(r: TxRecord, coin: Pick<CoinRow, 'mint' | 'quoteMint'>, pool: string, poolQuoteVault: string): Classified {
+  const out: Classified = { outcome: 'OTHER', trades: [], payouts: [], graduated: null, created: false };
+  if (r.err) return { ...out, outcome: 'FAILED_TX' };
+  if (r.logsTruncated) return { ...out, outcome: 'LOGS_TRUNCATED' };
+  const base = { sig: r.signature, mint: coin.mint, slot: r.slot, blockTime: r.blockTime };
+  let swaps = 0;
+  for (const [ix, e] of r.events.entries()) {
+    if (e.program === E.QF_CURVE && 'mint' in e && e.mint !== coin.mint) continue;
+    if (e.name === 'LaunchCreated' && e.program === E.QF_CURVE) out.created = true;
+    else if (e.name === 'TradeEvent' && e.program === E.QF_CURVE) {
+      out.trades.push({ ...base, ix, venue: 'CURVE', trader: e.trader, side: e.isBuy ? 'BUY' : 'SELL', quoteRaw: e.quoteAmount.toString(), baseRaw: e.baseAmount.toString(),
+        feeMint: coin.quoteMint, tradeFeeRaw: (e.platformFee + e.creatorFee).toString(), platformFeeRaw: e.platformFee.toString(), creatorFeeRaw: e.creatorFee.toString() });
+    } else if (e.name === 'FeesClaimed' && e.program === E.QF_CURVE) {
+      out.payouts.push({ ...base, ix, kind: e.creator ? 'CREATOR_CLAIM' : 'PLATFORM_CLAIM', toAccount: e.to, amountRaw: e.amount.toString() });
+    } else if (e.name === 'Graduated' && e.program === E.QF_CURVE) {
+      out.graduated = { pool: e.pool };
+      out.payouts.push({ ...base, ix, kind: 'GRADUATION_FEE', toAccount: null, amountRaw: e.graduationFee.toString() });
+    } else if (e.name === 'SwapEvent' && e.program === E.QF_POOL && e.poolId === pool) {
+      swaps++;
+      const buy = e.inputMint === coin.quoteMint;
+      out.trades.push({ ...base, ix, venue: 'POOL', trader: r.feePayer, side: buy ? 'BUY' : 'SELL', quoteRaw: (buy ? e.inputAmount : e.outputAmount).toString(),
+        baseRaw: (buy ? e.outputAmount : e.inputAmount).toString(), feeMint: e.inputMint, tradeFeeRaw: e.tradeFee.toString(), platformFeeRaw: null, creatorFeeRaw: e.creatorFee.toString() });
     }
-    d.store.setTradeFees(t.sig, f);
-    if (f.status === 'RESOLVED') resolved++;
-    else if (t.feeAttempts + 1 >= FEES.maxAttempts) d.log?.(`fees of trade ${t.sig} (${launch.symbol}) not readable after ${FEES.maxAttempts} attempts (${f.evidence}); reported as unknown`);
   }
-  return { resolved };
+  if (r.instructions.some(isCollect)) {
+    const vault = r.tokenChanges.find((c) => c.account === poolQuoteVault);
+    if (swaps) return { ...out, outcome: 'MIXED_POOL_TX' }; // a collect next to a swap: the vault change cannot be split
+    if (vault && vault.postRaw < vault.preRaw) out.payouts.push({ ...base, ix: r.events.length, kind: 'POOL_CREATOR_COLLECT', toAccount: null, amountRaw: (vault.preRaw - vault.postRaw).toString() });
+  }
+  out.outcome = out.graduated ? 'GRADUATION' : out.created ? 'CREATE' : out.trades.length ? 'TRADE' : out.payouts.length ? 'PAYOUT' : 'OTHER';
+  return out;
 }
 
-/** Records trades for new signatures in order and moves the cursor past each one. A signature whose details the RPC
- *  does not serve yet goes into the durable backfill queue, so newer trades keep indexing and nothing is lost. */
-async function walk(d: IndexerDeps, launch: LaunchRow, venue: Venue, pool: TradePool,
-  sigs: { signature: string; err: boolean }[], setCursor: (sig: string) => void): Promise<number> {
-  let trades = 0;
-  for (const s of sigs) {
-    if (!s.err) {
-      const sum = await d.chain.txSummary(s.signature);
-      if (!sum) d.store.queueBackfill({ sig: s.signature, venue, mint: launch.mint, at: nowOf(d).toISOString() });
-      else if (recordTrade(d, launch, pool, sum).inserted) trades++;
+/** Finds launches on the engine for this store's quote that the store does not know yet (made by another client, or before
+ *  this store existed), from each one's creation event, and queues its whole history. The engine's programs are QF's, so
+ *  every coin on them belongs on the launchpad. A coin whose creation cannot be read yet is tried again next pass. */
+export async function discoverCoins(d: EngineIndexerDeps): Promise<string[]> {
+  const quoteMint = d.store.bound('quote');
+  if (!quoteMint) return [];
+  const added: string[] = [];
+  for (const mint of await d.chain.launches(quoteMint)) {
+    if (d.store.getCoin(mint)) continue;
+    const sigs = await d.chain.signatures(await E.launchAddress(mint), null);
+    let created: { r: TxRecord; e: E.LaunchCreatedEvent } | null = null;
+    for (const s of sigs.filter((x) => !x.err).slice(0, 5)) {
+      const r = await d.chain.tx(s.signature).catch(() => null);
+      const e = r?.events.find((x): x is E.LaunchCreatedEvent & { program: string; depth: number } => x.name === 'LaunchCreated' && x.program === E.QF_CURVE && x.mint === mint);
+      if (r && e) { created = { r, e }; break; }
     }
-    setCursor(s.signature);
+    if (!created) { d.log?.(`discover ${mint}: its creation is not readable yet; tried again next pass`); continue; }
+    const { r, e } = created, at = nowOf(d).toISOString();
+    d.store.insertDiscoveredCoin({ mint, quoteMint, creator: e.creator, name: e.coinName, symbol: e.symbol, metadataUri: e.uri,
+      createdAt: r.blockTime === null ? at : new Date(r.blockTime * 1000).toISOString(), createSig: r.signature });
+    d.store.queueTxs(mint, 'CURVE', sigs.map((s) => ({ signature: s.signature, slot: s.slot })), at);
+    d.log?.(`found $${e.symbol} (${mint}) on the engine; reading its history`);
+    added.push(mint);
   }
-  return trades;
+  return added;
 }
 
-/** Retries this coin's queued transactions that are due. Returns the trades recovered. */
-async function retryBackfill(d: IndexerDeps, launch: LaunchRow, venue: Venue): Promise<number> {
+/** Lists new transactions on the coin's launch account, and after graduation on its pool, into the read queue. */
+export async function listNew(d: EngineIndexerDeps, c: CoinRow): Promise<number> {
+  const at = nowOf(d).toISOString();
+  const venues: [Venue, string, string | null][] = [['CURVE', await E.launchAddress(c.mint), c.curveCursor]];
+  if (c.status === 'GRADUATED' && c.pool) venues.push(['POOL', c.pool, c.poolCursor]);
+  let n = 0;
+  for (const [venue, addr, cursor] of venues) {
+    const sigs = await d.chain.signatures(addr, cursor);
+    d.store.queueTxs(c.mint, venue, sigs.map((s) => ({ signature: s.signature, slot: s.slot })), at);
+    n += sigs.length;
+  }
+  return n;
+}
+
+/** Reads queued transactions that are due, oldest first. Returns how many were read. */
+export async function readDue(d: EngineIndexerDeps): Promise<number> {
   const now = nowOf(d);
-  const due = d.store.dueBackfill(launch.mint, venue, now.toISOString(), BACKFILL.perPass);
-  if (!due.length) return 0;
-  const pool = venue === 'CURVE' ? await d.poolCache.get(launch.pool) : d.dammCache ? await d.dammCache.get(launch) : null;
-  if (!pool) return 0; // without the pool's vaults a transaction cannot be classified; try again next pass
-  let trades = 0;
-  for (const b of due) {
-    const sum = await d.chain.txSummary(b.sig);
-    if (sum) {
-      const r = recordTrade(d, launch, pool, sum);
-      d.store.resolveBackfill(b.sig, venue, r.outcome, now.toISOString());
-      if (r.inserted) trades++;
-      if (b.attempts >= BACKFILL.fastAttempts) d.log?.(`index ${launch.symbol}: recovered ${b.sig} after ${b.attempts} attempts (${r.outcome})`);
+  let read = 0;
+  for (const t of d.store.dueTxs(now.toISOString(), TX_RETRY.perPass)) {
+    const coin = d.store.getCoin(t.mint);
+    if (!coin) continue;
+    const r = await d.chain.tx(t.sig).catch(() => null);
+    if (!r) {
+      const attempts = t.attempts + 1, unavailable = attempts >= TX_RETRY.maxAttempts;
+      const delay = unavailable ? TX_RETRY.unavailableRetryMs : attempts < TX_RETRY.fastAttempts ? 0 : Math.min(TX_RETRY.baseDelayMs * 2 ** (attempts - TX_RETRY.fastAttempts), TX_RETRY.maxDelayMs);
+      d.store.missedTx(t.sig, t.mint, { status: unavailable ? 'UNAVAILABLE' : 'PENDING', attempts, nextTry: new Date(now.getTime() + delay).toISOString() });
+      if (unavailable && t.status !== 'UNAVAILABLE') d.log?.(`index ${coin.symbol}: ${t.sig} not served after ${attempts} attempts; counted as missing history, retried every ${TX_RETRY.unavailableRetryMs / 3_600_000} h`);
       continue;
     }
-    const attempts = b.attempts + 1;
-    const unavailable = attempts >= BACKFILL.maxAttempts;
-    const delay = unavailable ? BACKFILL.unavailableRetryMs
-      : attempts < BACKFILL.fastAttempts ? 0 : Math.min(BACKFILL.baseDelayMs * 2 ** (attempts - BACKFILL.fastAttempts), BACKFILL.maxDelayMs);
-    d.store.backfillMissed(b.sig, venue, { status: unavailable ? 'UNAVAILABLE' : 'PENDING', attempts, at: now.toISOString(), nextTry: new Date(now.getTime() + delay).toISOString() });
-    if (unavailable && b.status !== 'UNAVAILABLE') {
-      d.log?.(`index ${launch.symbol}: transaction ${b.sig} still not served after ${attempts} attempts; marked unavailable (trade history shows it as missing; retried every ${BACKFILL.unavailableRetryMs / 3_600_000} h)`);
+    const pool = await E.launchPoolAddress(coin.mint);
+    const vaults = await E.poolAccounts(pool, coin.mint, coin.quoteMint);
+    const c = classifyTx(r, coin, pool, vaults.token0 === coin.quoteMint ? vaults.vault0 : vaults.vault1);
+    d.store.recordTx(t.sig, t.mint, c.outcome, c.trades, c.payouts);
+    if (c.outcome === 'LOGS_TRUNCATED' || c.outcome === 'MIXED_POOL_TX') d.log?.(`index ${coin.symbol}: ${t.sig} is ${c.outcome}; its fees are reported as unknown`);
+    if (c.created) d.store.markLive(coin.mint, t.sig, now.toISOString());
+    if (c.graduated) {
+      if (c.graduated.pool !== pool) d.log?.(`index ${coin.symbol}: graduated into ${c.graduated.pool}, expected ${pool}`);
+      d.store.markGraduated(coin.mint, c.graduated.pool, t.sig, now.toISOString());
     }
+    read++;
   }
-  return trades;
+  return read;
 }
 
-/** Pulls new pool signatures since the last indexed one and records trades; detects completion and migration. */
-export async function syncLaunch(d: IndexerDeps, launch: LaunchRow): Promise<{ trades: number }> {
-  const pool = await d.poolCache.get(launch.pool, true);
-  if (!pool) return { trades: 0 };
-  // queued transactions first, so one queued in this pass waits for the next
-  const recovered = await retryBackfill(d, launch, 'CURVE');
-  const sigs = await d.chain.newSignatures(launch.pool, launch.lastIndexedSig);
-  const trades = await walk(d, launch, 'CURVE', pool, sigs, (sig) => d.store.setLastIndexed(launch.mint, sig));
-  if (pool.isMigrated && launch.status !== 'MIGRATED') {
-    d.store.markLaunchMigrated(launch.mint, null, await d.chain.dammPoolFor(launch.mint, launch.quoteMint), nowOf(d).toISOString());
-  }
-  return { trades: recovered + trades };
-}
-
-/** After graduation: pulls new DAMM v2 pool signatures and records trades from that pool's vault deltas. */
-export async function syncDamm(d: IndexerDeps, launch: LaunchRow): Promise<{ trades: number }> {
-  if (!launch.dammPool || !d.dammCache) return { trades: 0 };
-  const pool = await d.dammCache.get(launch, true);
-  if (!pool) return { trades: 0 };
-  const recovered = await retryBackfill(d, launch, 'DAMM_V2');
-  const sigs = await d.chain.newSignatures(launch.dammPool, launch.lastDammIndexedSig);
-  const trades = await walk(d, launch, 'DAMM_V2', pool, sigs, (sig) => d.store.setLastDammIndexed(launch.mint, sig));
-  return { trades: recovered + trades };
-}
-
-/** A graduated coin's finished curve gets no new trades, but transactions queued before graduation are still retried. */
-export async function backfillCurve(d: IndexerDeps, launch: LaunchRow): Promise<{ trades: number }> {
-  return { trades: await retryBackfill(d, launch, 'CURVE') };
-}
-
-/** Migrates every LIVE launch whose curve is complete. Returns the migrations it sent. */
-export async function crankMigrations(d: IndexerDeps): Promise<{ mint: string; signature: string }[]> {
-  if (!d.chain.operatorAddress) return [];
+/** Graduates every live coin whose curve is sold out (anyone may; the operator pays and gets the rent back in the same
+ *  transaction), and records coins that someone else graduated. Returns the graduations it sent. */
+export async function crankGraduations(d: EngineIndexerDeps): Promise<{ mint: string; signature: string }[]> {
   const out: { mint: string; signature: string }[] = [];
-  for (const launch of d.store.listLaunches(['LIVE'])) {
-    // A failed read of one pool (public RPCs occasionally return a bad account) must not stop the loop or the server.
-    const pool = await d.poolCache.get(launch.pool, true).catch((e) => { d.log?.(`crank read ${launch.mint}: ${(e as Error).message.slice(0, 200)}`); return null; });
-    if (!pool || pool.isMigrated || !pool.curveComplete) continue;
+  for (const c of d.store.listCoins(['LIVE'])) {
+    const s = await E.readCoin(d.chain.read, c.mint, c.quoteMint).catch((e) => { d.log?.(`crank read ${c.symbol}: ${(e as Error).message.slice(0, 200)}`); return null; });
+    if (!s) continue;
+    const l = s.launch;
+    if (l.status === 'Graduated') { d.store.markGraduated(c.mint, l.pool, null, nowOf(d).toISOString()); continue; }
+    if (l.status !== 'Complete' || !d.chain.operatorAddress) continue;
     try {
-      d.log?.(`migrating ${launch.symbol} (${launch.mint}) to DAMM v2`);
-      const signature = await d.chain.migrate(launch.pool);
-      d.store.markLaunchMigrated(launch.mint, signature, await d.chain.dammPoolFor(launch.mint, launch.quoteMint), nowOf(d).toISOString());
-      d.poolCache.invalidate(launch.pool);
-      out.push({ mint: launch.mint, signature });
+      d.log?.(`graduating ${c.symbol} (${c.mint})`);
+      const ix = await E.graduateIx({ payer: d.chain.operatorAddress, mint: c.mint, quoteMint: c.quoteMint, ammConfig: l.ammConfig, creator: l.creator, createPoolFee: E.POOL_FEE_RECEIVER });
+      const signature = await d.chain.sendAsOperator([ix], GRADUATE_COMPUTE_UNITS);
+      d.store.markGraduated(c.mint, await E.launchPoolAddress(c.mint), signature, nowOf(d).toISOString());
+      out.push({ mint: c.mint, signature });
     } catch (e) {
-      d.log?.(`migration of ${launch.mint} failed: ${(e as Error).message.slice(0, 300)}`);
+      d.log?.(`graduation of ${c.symbol} failed: ${(e as Error).message.slice(0, 300)}`);
     }
   }
   return out;
 }
 
-/** Short-lived cache of live pool reads so list views do not hammer the RPC. */
-export class PoolCache {
-  private m = new Map<string, { at: number; v: LivePool | null }>();
-  private chain: LaunchpadChain; private ttlMs: number; private now: () => number;
-  constructor(chain: LaunchpadChain, ttlMs = 4_000, now: () => number = Date.now) { this.chain = chain; this.ttlMs = ttlMs; this.now = now; }
-  async get(pool: string, fresh = false): Promise<LivePool | null> {
-    const hit = this.m.get(pool);
-    if (!fresh && hit && this.now() - hit.at < this.ttlMs) return hit.v;
-    const v = await this.chain.readPool(pool);
-    this.m.set(pool, { at: this.now(), v });
-    return v;
+/** A launch the app built but never saw confirmed: live if its launch account exists, failed once its intent expired
+ *  without one. (A send can fail on our side after the network accepted it.) */
+export async function settlePending(d: EngineIndexerDeps, olderThanMs: number): Promise<void> {
+  const cutoff = nowOf(d).getTime() - olderThanMs;
+  for (const c of d.store.listCoins(['PENDING'])) {
+    if (Date.parse(c.createdAt) > cutoff) continue;
+    const [acc] = await d.chain.read([await E.launchAddress(c.mint)]);
+    if (acc) d.store.markLive(c.mint, null, nowOf(d).toISOString());
+    else d.store.markFailed(c.mint);
   }
-  invalidate(pool: string) { this.m.delete(pool); }
 }
 
-/** The same short-lived cache for graduated launches' DAMM v2 pools. */
-export class DammCache {
-  private m = new Map<string, { at: number; v: LiveDammPool | null }>();
-  private chain: LaunchpadChain; private ttlMs: number; private now: () => number;
-  constructor(chain: LaunchpadChain, ttlMs = 4_000, now: () => number = Date.now) { this.chain = chain; this.ttlMs = ttlMs; this.now = now; }
-  async get(l: Pick<LaunchRow, 'dammPool' | 'mint' | 'quoteMint'>, fresh = false): Promise<LiveDammPool | null> {
-    if (!l.dammPool) return null;
-    const hit = this.m.get(l.dammPool);
-    if (!fresh && hit && this.now() - hit.at < this.ttlMs) return hit.v;
-    const v = await this.chain.readDammPool(l.dammPool, { baseMint: l.mint, quoteMint: l.quoteMint });
-    this.m.set(l.dammPool, { at: this.now(), v });
-    return v;
+/** Read-only catch-up, for `verify` on any machine and any store, even a new one: finds every coin on the engine and
+ *  reads its whole history, curve then pool. Nothing is sent: no crank, no faucet. */
+export async function catchUp(d: EngineIndexerDeps, maxReads = 40): Promise<void> {
+  await discoverCoins(d);
+  for (let round = 0; round < 2; round++) {   // a coin found live may turn out graduated: then its pool's history too
+    for (const c of d.store.listCoins(['LIVE', 'GRADUATED'], 10_000)) await listNew(d, c).catch((e) => d.log?.(`list ${c.symbol}: ${(e as Error).message.slice(0, 200)}`));
+    for (let k = 0; k < maxReads && (await readDue(d)) > 0; k++);
   }
-  invalidate(pool: string) { this.m.delete(pool); }
 }
 
-/** Background loop: index and crank every `intervalMs`, one pass at a time. The holder balance history (rewards) is read
- *  every `holdersEvery` passes, so the public RPC's rate limit is shared with the trade indexer. */
 /** Built transactions nobody sent are deleted this long after they expire (they can never land). */
 export const PURGE_AFTER_MS = 3_600_000;
 
-export function startBackground(d: IndexerDeps, intervalMs = 15_000, holdersEvery = 4): () => void {
-  let stopped = false, running = false, passes = 0;
+/** One pass: settle, purge, discover, list, read, crank. Each coin's failure is logged and never stops the others. */
+export async function indexPass(d: EngineIndexerDeps, pendingAfterMs = 180_000): Promise<void> {
+  await settlePending(d, pendingAfterMs).catch((e) => d.log?.(`pending launches: ${(e as Error).message.slice(0, 200)}`));
+  try { d.store.purgeUnsent(new Date(nowOf(d).getTime() - PURGE_AFTER_MS).toISOString()); } catch (e) { d.log?.(`purge: ${(e as Error).message.slice(0, 200)}`); }
+  await discoverCoins(d).catch((e) => d.log?.(`discover: ${(e as Error).message.slice(0, 200)}`));
+  for (const c of d.store.listCoins(['LIVE', 'GRADUATED'])) await listNew(d, c).catch((e) => d.log?.(`list ${c.symbol}: ${(e as Error).message.slice(0, 200)}`));
+  await readDue(d).catch((e) => d.log?.(`read: ${(e as Error).message.slice(0, 200)}`));
+  await crankGraduations(d);
+}
+
+/** Background loop: one pass every `intervalMs`, never two at once. */
+export function startEngineBackground(d: EngineIndexerDeps, intervalMs = 15_000): () => void {
+  let stopped = false, running = false;
   const pass = async () => {
     if (running || stopped) return;
     running = true;
-    try {
-      try { d.store.purgeUnsent(new Date(nowOf(d).getTime() - PURGE_AFTER_MS).toISOString()); } catch (e) { d.log?.(`purge: ${(e as Error).message.slice(0, 200)}`); }
-      for (const l of d.store.listLaunches(['LIVE', 'MIGRATED'])) {
-        if (l.status === 'MIGRATED' && l.dammPool) await syncDamm(d, l).catch((e) => d.log?.(`index damm ${l.mint}: ${(e as Error).message.slice(0, 200)}`));
-        if (l.status === 'MIGRATED' && l.lastIndexedSig) { await backfillCurve(d, l).catch((e) => d.log?.(`backfill ${l.mint}: ${(e as Error).message.slice(0, 200)}`)); continue; }
-        await syncLaunch(d, l).catch((e) => d.log?.(`index ${l.mint}: ${(e as Error).message.slice(0, 200)}`));
-      }
-      await crankMigrations(d);
-      await fillTradeFees(d).catch((e) => d.log?.(`trade fees: ${(e as Error).message.slice(0, 200)}`));
-      if (passes++ % holdersEvery === 0) {
-        await syncAllHolders(d);
-        const p = d.store.getPlatform<PlatformRecord>('platform');
-        if (p) await syncRewardsVault(d, p).catch((e) => d.log?.(`rewards vault: ${(e as Error).message.slice(0, 200)}`));
-      }
-    } catch (e) {
-      d.log?.(`background pass failed: ${(e as Error).message.slice(0, 200)}`);
-    } finally { running = false; }
+    try { await indexPass(d); } catch (e) { d.log?.(`background pass failed: ${(e as Error).message.slice(0, 200)}`); } finally { running = false; }
   };
   const t = setInterval(pass, intervalMs);
   void pass();

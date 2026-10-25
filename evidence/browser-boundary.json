@@ -1,12 +1,12 @@
 {
   "tool": "tools/boundary/check-browser-boundary.ts",
-  "generatedAt": "2026-10-18T05:10:31.625Z",
+  "generatedAt": "2026-10-25T06:18:46.501Z",
   "graph": {
     "packages": 55,
     "forbidden": [],
     "licensesNotPlainAllow": [],
     "walletPackages": [],
-    "note": "Browser graph may use only plain-ALLOW licenses; license exceptions (e.g. QF-LIC-EX-001) never apply to browser code."
+    "note": "Browser production graph may use only plain-ALLOW licenses; the web fonts ship under their exact OFL-1.1 exceptions (QF-LIC-EX-003..005)."
   },
   "bundle": {
     "bundledPackages": [
@@ -74,23 +74,11 @@
     "metafileViolations": [
       {
         "where": "metafile.inputs",
-        "what": "jayson (node_modules/.pnpm/jayson@4.3.0/node_modules/jayson/lib/generateRequest.js)"
+        "what": "rpc-websockets (../../../tmp/qf-boundary-canary-KnK0Pk/src/node_modules/rpc-websockets/index.js)"
       },
       {
         "where": "metafile.inputs",
-        "what": "jayson (node_modules/.pnpm/jayson@4.3.0/node_modules/jayson/lib/client/browser/index.js)"
-      },
-      {
-        "where": "metafile.inputs",
-        "what": "rpc-websockets (node_modules/.pnpm/rpc-websockets@9.3.9/node_modules/rpc-websockets/dist/index.browser.mjs)"
-      },
-      {
-        "where": "metafile.inputs",
-        "what": "@solana/web3.js (node_modules/.pnpm/@solana+web3.js@1.99.0_typescript@5.9.3/node_modules/@solana/web3.js/lib/index.browser.esm.js)"
-      },
-      {
-        "where": "metafile.inputs",
-        "what": "packages/adapter-meteora-dbc/canary.ts"
+        "what": "@solana/web3.js (../../../tmp/qf-boundary-canary-KnK0Pk/src/node_modules/@solana/web3.js/index.js)"
       }
     ],
     "artifactViolations": [
@@ -104,23 +92,23 @@
       },
       {
         "where": "stdin.js.map",
+        "what": "marker /GNU LESSER GENERAL PUBLIC LICENSE/"
+      },
+      {
+        "where": "stdin.js.map",
         "what": "marker /node_modules\\/(?:\\.pnpm\\/[^/]+\\/node_modules\\/)?rpc-websockets\\//"
       },
       {
         "where": "stdin.js.map",
         "what": "marker /node_modules\\/(?:\\.pnpm\\/[^/]+\\/node_modules\\/)?@solana\\/web3\\.js\\//"
-      },
-      {
-        "where": "stdin.js.map sources",
-        "what": "../../root/ws/app/node_modules/.pnpm/jayson@4.3.0/node_modules/jayson/lib/generateRequest.js"
       }
     ],
     "rpcWebsocketsBundled": true
   },
   "canaryB": {
-    "purpose": "browser build cannot resolve the server-only adapter (exports has only a \"node\" condition and web does not depend on it)",
+    "purpose": "browser build cannot resolve the launchpad server (the web app does not depend on it)",
     "refused": true,
-    "message": "Build failed with 1 error: apps/web/canaryB.ts:1:7: ERROR: Could not resolve \"@project-qf/adapter-meteora-dbc\""
+    "message": "Build failed with 1 error: apps/web/canaryB.ts:1:7: ERROR: Could not resolve \"@project-qf/launchpad\""
   },
   "result": "PASS",
   "failures": []

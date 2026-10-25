@@ -13,9 +13,7 @@
     "build:web": "pnpm --filter @project-qf/web build",
     "boundary": "node tools/boundary/check-browser-boundary.ts",
     "license:check": "node tools/license-check/check-licenses.ts",
-    "deps:chain": "node tools/deps/prove-chain-absent.ts",
-    "sbom": "node tools/deps/sbom.ts",
-    "sim": "node tools/econ-sim/src/run.ts"
+    "sbom": "node tools/deps/sbom.ts"
   },
   "devDependencies": {
     "typescript": "5.9.3",
