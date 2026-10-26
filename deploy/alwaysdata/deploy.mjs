@@ -144,7 +144,9 @@ say(`account ${account}, build ${build.commit}, ${build.files.length} files, RPC
 
 const environment = Object.entries({
   QF_LP_DB: `${dataDir}/${dbName}`, QF_DEVNET_KEY: `${dataDir}/operator.json`,
-  QF_LP_HOST: '::', QF_LP_PORT: '8100', QF_STATIC_DIR: `${home}/${remoteRoot}/app/web`, QF_PUBLIC_BASE_URL: publicUrl,
+  QF_LP_HOST: '::', QF_LP_PORT: '8100', QF_STATIC_DIR: `${home}/${remoteRoot}/app/web`,
+  QF_PUBLIC_BASE_URL: env.QF_PUBLIC_BASE_URL ?? publicUrl,
+  ...(env.QF_CLIENT_IP_HEADER ? { QF_CLIENT_IP_HEADER: env.QF_CLIENT_IP_HEADER } : {}),
   QF_LP_INTERVAL_MS: '30000', ...(rpc[0] ? { QF_RPC_URL: rpc[0] } : {}),
 }).map(([k, v]) => `${k}=${/[\s"'?&=]/.test(v) ? `"${v.replace(/"/g, '\\"')}"` : v}`).join(' ');
 const site = { type: 'nodejs', name: 'qf-launchpad-devnet', addresses: [host], working_directory: remoteRoot,
