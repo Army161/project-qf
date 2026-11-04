@@ -50,14 +50,14 @@ async function run() {
 
   // ---------------------------------------------------------------- 2. a coin this app did not launch
   await indexPass(d);
-  const proof = store.getCoin(PROOF_COIN);
+  const proof = (await store.getCoin(PROOF_COIN));
   check('the app finds the engine\'s proof coin on chain, though it did not launch it', ['QFP', 'GRADUATED'], [proof?.symbol, proof?.status]);
 
   // ---------------------------------------------------------------- 3. a launch through the app
   const launchBody = { creator: creator.address, baseMint: mint, name: 'App Devnet Dog', symbol: 'ADOG', description: 'TEST_ONLY devnet coin launched by the app\'s end-to-end run', economicsDigest: pl.platform.launchEconomicsDigest };
   const launch = await flow('launch $ADOG', creator, '/api/lp/launch', launchBody, (b) => ({ kind: 'QF_CREATE',
     fields: { name: launchBody.name, symbol: launchBody.symbol, uri: (b.terms as { uri: string }).uri, creator: creator.address, baseMint: mint, quoteMint: E.NATIVE_MINT, ammConfig: pl.platform.ammConfig } }), [mintKey]);
-  check('launch: the coin is live in the app', 'LIVE', store.getCoin(mint)?.status);
+  check('launch: the coin is live in the app', 'LIVE', (await store.getCoin(mint))?.status);
   const again = await call('/api/lp/submit', { intentId: launch.built.intentId, signedTransaction: toBase64(launch.signed) });
   check('launch: the same signed transaction is not relayed twice', 'ALREADY_SUBMITTED', again.body?.error?.code);
   const [mintAcc] = await chain.read([mint]);

@@ -56,7 +56,7 @@ const mint = mintKey.address;
 const launchBody = { creator: creator.address, baseMint: mint, name: 'App Localnet Dog', symbol: 'ALDOG', description: 'TEST_ONLY localnet coin', economicsDigest: pl.platform.launchEconomicsDigest };
 const launch = await flow('launch $ALDOG', creator, '/api/lp/launch', launchBody, (b) => ({ kind: 'QF_CREATE',
   fields: { name: launchBody.name, symbol: launchBody.symbol, uri: (b.terms as { uri: string }).uri, creator: creator.address, baseMint: mint, quoteMint: E.NATIVE_MINT, ammConfig: pl.platform.ammConfig } }), [mintKey]);
-check('launch: the coin is live in the app', 'LIVE', store.getCoin(mint)?.status);
+check('launch: the coin is live in the app', 'LIVE', (await store.getCoin(mint))?.status);
 const again = await call('/api/lp/submit', { intentId: launch.built.intentId, signedTransaction: toBase64(launch.signed) });
 check('launch: the same signed transaction is not relayed twice', 'ALREADY_SUBMITTED', again.body?.error?.code);
 const [mintAcc] = await chain.read([mint]);
@@ -72,7 +72,7 @@ check('a quote on a full curve is refused as input, not a fault', 'CURVE_COMPLET
 
 // ---------------------------------------------------------------- 4. graduation by the crank, then the pool
 await indexPass(t.d);
-const coin = store.getCoin(mint)!;
+const coin = (await store.getCoin(mint))!;
 check('the crank graduated the coin and the app follows it', 'GRADUATED', coin.status);
 if (coin.graduateSig) t.evidence.steps.push({ step: 'graduate (operator crank)', signature: coin.graduateSig });
 check('the coin trades in its own pool', await E.launchPoolAddress(mint), coin.pool);

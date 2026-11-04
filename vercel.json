@@ -1,10 +1,5 @@
 {
   "framework": null,
   "installCommand": "pnpm install --frozen-lockfile --ignore-scripts",
-  "buildCommand": "pnpm build:web && node deploy/vercel/prune.mjs",
-  "outputDirectory": "apps/web/dist-public",
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "https://CHANGE-ME.alwaysdata.net/api/:path*" },
-    { "source": "/m/:path*",   "destination": "https://CHANGE-ME.alwaysdata.net/m/:path*"   }
-  ]
+  "buildCommand": "pnpm build:web && node deploy/vercel/build-output.mjs"
 }

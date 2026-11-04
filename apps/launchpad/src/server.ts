@@ -20,7 +20,7 @@ import { addr, B58, BODY_LIMIT_BYTES, clientIp, HttpError, image, LAUNCH_BODY_LI
 import type { EngineChain } from './chain.ts';
 import { classifyTx, listNew, readDue } from './indexer.ts';
 import { liveView, quoteCurve, quotePool, readCoinSnapshots, readPlatform, poolSides, type CoinSnapshot, type EnginePlatform, type LiveView, type QuoteAsset } from './market.ts';
-import type { CoinRow, EngineStore, TradeRow } from './store.ts';
+import type { CoinRow, Store, TradeRow } from './store.ts';
 
 export const LP_API_VERSION = 'lp-api/1';
 export const INTENT_TTL_MS = 120_000;
@@ -43,7 +43,7 @@ export interface EngineProfile {
   writesLockedBecause: string[];
 }
 export interface EngineAppOptions {
-  store: EngineStore;
+  store: Store;
   chain: EngineChain;
   quote: QuoteAsset;
   profile: EngineProfile;
@@ -88,7 +88,8 @@ export const FRESH_READS_PER_MINUTE = 30;
 /** All faucet claims together, per minute, whoever asks: the operator's SOL also pays for graduations. */
 export const FAUCET_GLOBAL_PER_MINUTE = 10;
 
-export function createEngineApp(o: EngineAppOptions): Server {
+/** The launchpad's request handler, for any host that hands over Node's request and response (a plain server, a serverless function). */
+export function createEngineHandler(o: EngineAppOptions): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   const now = o.now ?? (() => new Date());
   const { profile, quote } = o;
   const limit = rateLimiter(now);
@@ -115,26 +116,26 @@ export function createEngineApp(o: EngineAppOptions): Server {
   }
   const snapshot = async (c: CoinRow, fresh = false) => (await snapshots([c], fresh))[0]!;
   /** A coin's status follows the chain: once its launch account says Graduated, the record does too. */
-  const follow = (c: CoinRow, s: CoinSnapshot | null): CoinRow => {
+  const follow = async (c: CoinRow, s: CoinSnapshot | null): Promise<CoinRow> => {
     if (s?.coin.launch.status !== 'Graduated' || c.status === 'GRADUATED') return c;
-    o.store.markGraduated(c.mint, s.coin.launch.pool, null, now().toISOString());
-    return o.store.getCoin(c.mint) ?? c;
+    await o.store.markGraduated(c.mint, s.coin.launch.pool, null, now().toISOString());
+    return (await o.store.getCoin(c.mint)) ?? c;
   };
 
   const imageUrl = (c: CoinRow) => (c.imageType ? `/m/${c.mint}.img` : null);
   async function tokenViews(coins: CoinRow[], fresh = false): Promise<EngineTokenView[]> {
     const [p, ss] = await Promise.all([platformOf(), snapshots(coins, fresh)]);
     return Promise.all(coins.map(async (c0, k) => {
-      const s = ss[k]!, c = follow(c0, s);
-      const unread = o.store.unread(c.mint);
+      const s = ss[k]!, c = await follow(c0, s);
+      const [unread, stats] = await Promise.all([o.store.unread(c.mint), o.store.tradeStats(c.mint)]);
       return { mint: c.mint, pool: await E.launchAddress(c.mint), graduatedPool: c.pool, name: c.name, symbol: c.symbol, description: c.description, imageUrl: imageUrl(c),
         creator: c.creator, status: c.status as 'LIVE' | 'GRADUATED', createdAt: c.createdAt, liveAt: c.liveAt, website: c.website, twitter: c.twitter, telegram: c.telegram,
-        metadataUri: c.metadataUri, createSig: c.createSig, migrationSig: c.graduateSig, live: p ? liveView(p, s, c.status === 'GRADUATED') : null, stats: o.store.tradeStats(c.mint),
+        metadataUri: c.metadataUri, createSig: c.createSig, migrationSig: c.graduateSig, live: p ? liveView(p, s, c.status === 'GRADUATED') : null, stats,
         history: { complete: unread.pending === 0 && unread.unavailable === 0, ...unread } };
     }));
   }
-  const coinOr404 = (mint: string) => {
-    const c = o.store.getCoin(mint);
+  const coinOr404 = async (mint: string) => {
+    const c = await o.store.getCoin(mint);
     if (!c || (c.status !== 'LIVE' && c.status !== 'GRADUATED')) throw new HttpError(404, 'NOT_FOUND', 'token not found');
     return c;
   };
@@ -162,7 +163,7 @@ export function createEngineApp(o: EngineAppOptions): Server {
     const v = await bindTransactionToTerms(decodeTransactionBytes(tx.bytes), terms);
     if (v.length) { o.log?.(`binding failed for ${terms.kind}: ${v.join('; ')}`); throw new HttpError(500, 'BINDING_FAILED', 'the built transaction does not bind to its terms', v); }
     const t = now();
-    const intent = o.store.insertIntent({ kind: terms.kind, mint, user, createdAt: t.toISOString(), expiresAt: new Date(t.getTime() + INTENT_TTL_MS).toISOString(),
+    const intent = await o.store.insertIntent({ kind: terms.kind, mint, user, createdAt: t.toISOString(), expiresAt: new Date(t.getTime() + INTENT_TTL_MS).toISOString(),
       messageHex: toHex(parseWire(tx.bytes).message), termsJson: JSON.stringify(terms), lastValidBlockHeight: bh.lastValidBlockHeight.toString() });
     return { intentId: intent.id, expiresAt: intent.expiresAt, transaction: toBase64(tx.bytes), terms };
   }
@@ -174,7 +175,7 @@ export function createEngineApp(o: EngineAppOptions): Server {
     if (!r) return null;
     const pool = await E.launchPoolAddress(c.mint), v = await E.poolAccounts(pool, c.mint, c.quoteMint);
     const k = classifyTx(r, c, pool, v.token0 === c.quoteMint ? v.vault0 : v.vault1);
-    o.store.recordTx(signature, c.mint, k.outcome, k.trades, k.payouts);
+    await o.store.recordTx(signature, c.mint, k.outcome, k.trades, k.payouts);
     return k;
   }
 
@@ -198,21 +199,21 @@ export function createEngineApp(o: EngineAppOptions): Server {
           threshold: { rawQuoteThreshold: p.graduationQuoteRaw.toString() }, launchEconomics: p.economics, launchEconomicsDigest: p.economicsDigest },
         faucet: profile.faucet ? { quoteUi: '0', lamports: ENGINE_FAUCET.lamports.toString(), claimsPerDay: ENGINE_FAUCET.claimsPerDay } : null });
     }
-    if (path === '/api/lp/tokens' && method === 'GET') return send(res, 200, { tokens: await tokenViews(o.store.listCoins(['LIVE', 'GRADUATED'])) });
+    if (path === '/api/lp/tokens' && method === 'GET') return send(res, 200, { tokens: await tokenViews(await o.store.listCoins(['LIVE', 'GRADUATED'])) });
     if (path === '/api/lp/trades/recent' && method === 'GET') {
-      return send(res, 200, { trades: o.store.recentTrades(30).map((t) => ({ sig: t.sig, mint: t.mint, symbol: t.symbol, trader: t.trader, side: t.side, quoteRaw: t.quoteRaw, blockTime: t.blockTime })) });
+      return send(res, 200, { trades: (await o.store.recentTrades(30)).map((t) => ({ sig: t.sig, mint: t.mint, symbol: t.symbol, trader: t.trader, side: t.side, quoteRaw: t.quoteRaw, blockTime: t.blockTime })) });
     }
     if (/^\/api\/lp\/(rewards|treasury)(\/|$)/.test(path)) throw new HttpError(404, 'NOT_ON_THIS_ENGINE', 'holder rewards and the platform treasury are not on the QF engine yet');
     const tm = /^\/api\/lp\/tokens\/([1-9A-HJ-NP-Za-km-z]{32,44})$/.exec(path);
     if (tm && method === 'GET') {
-      const c = coinOr404(tm[1]!);
-      return send(res, 200, { token: (await tokenViews([c], fresh))[0], trades: o.store.listTrades(c.mint).map(engineTradeView) });
+      const c = await coinOr404(tm[1]!);
+      return send(res, 200, { token: (await tokenViews([c], fresh))[0], trades: (await o.store.listTrades(c.mint)).map(engineTradeView) });
     }
     if (path === '/api/lp/me' && method === 'GET') {
       const wallet = query.get('wallet');
       if (!wallet || !B58.test(wallet)) throw new HttpError(400, 'INVALID_REQUEST', 'wallet must be an address');
       limit(`me:${ip}`, 30);
-      const mine = o.store.listCoins(['LIVE', 'GRADUATED']).filter((c) => c.creator === wallet);
+      const mine = (await o.store.listCoins(['LIVE', 'GRADUATED'])).filter((c) => c.creator === wallet);
       const views = await tokenViews(mine, fresh);
       const coins = [];
       for (const [k, c] of mine.entries()) { const f = await claimable(c, wallet, false); coins.push({ token: views[k], curve: f.curve, poolCreatorFee: f.poolCreatorFee }); }
@@ -246,12 +247,12 @@ export function createEngineApp(o: EngineAppOptions): Server {
       if (b.economicsDigest !== p.economicsDigest || economicsDigest(p.economics) !== p.economicsDigest) {
         throw new HttpError(409, 'ECONOMICS_NOT_CONSENTED', 'the economics digest you consented to does not match the engine\'s current settings; reload and review');
       }
-      if (o.store.getCoin(baseMint)) throw new HttpError(409, 'MINT_IN_USE', 'that mint key was already used; generate a new one');
+      if (await o.store.getCoin(baseMint)) throw new HttpError(409, 'MINT_IN_USE', 'that mint key was already used; generate a new one');
       intentCheck('QF_CREATE', creator, { templateUsage: 'V0_TEST_BASELINE', economicsDigest: p.economicsDigest, consentDigest: b.economicsDigest as string }, p.economicsDigest);
       const metadataUri = `${o.publicBaseUrl}/m/${baseMint}.json`;
       if (new TextEncoder().encode(metadataUri).length > 200) throw new HttpError(500, 'METADATA_URI_TOO_LONG', 'QF_PUBLIC_BASE_URL is too long for on-chain metadata');
       const built = await build(termsOf('QF_CREATE', creator, { baseMint, quoteMint: quote.mint, creator, ammConfig: p.settings.ammConfig, name, symbol, uri: metadataUri }), baseMint, creator);
-      o.store.insertPendingCoin({ mint: baseMint, quoteMint: quote.mint, creator, name, symbol, description, website, twitter, telegram, imageType: img?.type ?? null, metadataUri,
+      await o.store.insertPendingCoin({ mint: baseMint, quoteMint: quote.mint, creator, name, symbol, description, website, twitter, telegram, imageType: img?.type ?? null, metadataUri,
         createdAt: now().toISOString() }, img?.bytes ?? null);
       return send(res, 201, { ...built, pool: await E.launchAddress(baseMint), metadataUri });
     }
@@ -261,14 +262,14 @@ export function createEngineApp(o: EngineAppOptions): Server {
       const b = await readJson(req, BODY_LIMIT_BYTES);
       const isBuild = path === '/api/lp/swap';
       onlyKeys(b, isBuild ? ['mint', 'user', 'side', 'amountIn', 'slippageBps'] : ['mint', 'side', 'amountIn', 'slippageBps']);
-      const c0 = coinOr404(addr(b, 'mint'));
+      const c0 = await coinOr404(addr(b, 'mint'));
       if (b.side !== 'buy' && b.side !== 'sell') throw new HttpError(400, 'INVALID_REQUEST', "side must be 'buy' or 'sell'");
       const side = b.side as 'buy' | 'sell', amountIn = rawAmount(b, 'amountIn');
       const slippageBps = b.slippageBps === undefined ? 100 : Number(b.slippageBps);
       if (!Number.isInteger(slippageBps) || slippageBps < 0 || slippageBps > 5000) throw new HttpError(400, 'INVALID_REQUEST', 'slippageBps must be an integer in 0..5000');
       const s = await snapshot(c0, isBuild);
       if (!s) throw new HttpError(502, 'COIN_UNAVAILABLE', 'could not read this coin from the chain');
-      const c = follow(c0, s);
+      const c = await follow(c0, s);
       const direction = side === 'buy' ? 'QUOTE_TO_BASE' as const : 'BASE_TO_QUOTE' as const;
       let q;
       if (c.status === 'GRADUATED') {
@@ -290,7 +291,7 @@ export function createEngineApp(o: EngineAppOptions): Server {
       const b = await readJson(req, BODY_LIMIT_BYTES);
       onlyKeys(b, ['intentId', 'signedTransaction']);
       const id = typeof b.intentId === 'string' && /^intent_[0-9a-f]{32}$/.test(b.intentId) ? b.intentId : null;
-      const intent = id ? o.store.getIntent(id) : null;
+      const intent = id ? await o.store.getIntent(id) : null;
       if (!intent) throw new HttpError(404, 'NOT_FOUND', 'intent not found');
       if (now().getTime() > Date.parse(intent.expiresAt)) throw new HttpError(410, 'INTENT_EXPIRED', 'this transaction expired; build a new one');
       if (typeof b.signedTransaction !== 'string' || b.signedTransaction.length > 4096) throw new HttpError(400, 'INVALID_REQUEST', 'signedTransaction must be base64');
@@ -304,19 +305,19 @@ export function createEngineApp(o: EngineAppOptions): Server {
       const terms = JSON.parse(intent.termsJson) as QfTerms;
       const bound = await bindTransactionToTerms(decodeTransactionBytes(bytes), terms);
       if (bound.length) throw new HttpError(409, 'BINDING_FAILED', 'the transaction does not bind to its terms', bound);
-      if (!o.store.claimIntent(intent.id)) throw new HttpError(409, 'ALREADY_SUBMITTED', 'this transaction was already submitted');
+      if (!(await o.store.claimIntent(intent.id))) throw new HttpError(409, 'ALREADY_SUBMITTED', 'this transaction was already submitted');
       let signature: string;
       try { signature = await o.chain.send(bytes, BigInt(intent.lastValidBlockHeight)); }
       catch (e) {
         const msg = (e as Error).message.slice(0, 500);
-        o.store.finishIntent(intent.id, 'FAILED', sigs.firstSignature, msg);
+        await o.store.finishIntent(intent.id, 'FAILED', sigs.firstSignature, msg);
         throw new HttpError(502, 'SEND_FAILED', msg);
       }
-      o.store.finishIntent(intent.id, 'CONFIRMED', signature, null);
-      const c = intent.mint ? o.store.getCoin(intent.mint) : null;
+      await o.store.finishIntent(intent.id, 'CONFIRMED', signature, null);
+      const c = intent.mint ? await o.store.getCoin(intent.mint) : null;
       if (c) snaps.delete(c.mint);
       let trade = null;
-      if (c && terms.kind === 'QF_CREATE') o.store.markLive(c.mint, signature, now().toISOString());
+      if (c && terms.kind === 'QF_CREATE') await o.store.markLive(c.mint, signature, now().toISOString());
       else if (c) {
         const k = await readBack(c, signature);
         trade = k?.trades[0] ? engineTradeView(k.trades[0]) : null;
@@ -330,7 +331,7 @@ export function createEngineApp(o: EngineAppOptions): Server {
     // own wallet; the wallet signs; the server only builds.
     const fm = /^\/api\/lp\/fees\/([1-9A-HJ-NP-Za-km-z]{32,44})$/.exec(path);
     if (fm && method === 'GET') {
-      const c = coinOr404(fm[1]!);
+      const c = await coinOr404(fm[1]!);
       const wallet = query.get('wallet');
       if (!wallet || !B58.test(wallet)) throw new HttpError(400, 'INVALID_REQUEST', 'wallet must be an address');
       limit(`fees:${ip}`, 60);
@@ -340,12 +341,12 @@ export function createEngineApp(o: EngineAppOptions): Server {
       limit(`build:${ip}`, BUILDS_PER_MINUTE);
       const b = await readJson(req, BODY_LIMIT_BYTES);
       onlyKeys(b, ['mint', 'user', 'venue']);
-      const c0 = coinOr404(addr(b, 'mint')), user = addr(b, 'user');
+      const c0 = await coinOr404(addr(b, 'mint')), user = addr(b, 'user');
       if (c0.creator !== user) throw new HttpError(403, 'NOT_CREATOR', 'only the wallet that launched this coin can claim its creator fees');
       if (b.venue !== 'curve' && b.venue !== 'pool') throw new HttpError(400, 'INVALID_REQUEST', "venue must be 'curve' or 'pool'");
       const s = await snapshot(c0, true);
       if (!s) throw new HttpError(502, 'COIN_UNAVAILABLE', 'could not read this coin from the chain');
-      const c = follow(c0, s);
+      const c = await follow(c0, s);
       const coin = { baseMint: c.mint, quoteMint: c.quoteMint, creator: user };
       if (b.venue === 'curve') {
         const amount = s.coin.launch.creatorFees;
@@ -372,13 +373,13 @@ export function createEngineApp(o: EngineAppOptions): Server {
       // one claim at a time: the checks below and the send cannot interleave with another claim's
       const signature = await faucetQueue(async () => {
         const since = new Date(now().getTime() - 86_400_000).toISOString();
-        if (o.store.faucetClaimsSince(wallet, since) >= ENGINE_FAUCET.claimsPerDay) throw new HttpError(429, 'FAUCET_LIMIT', `at most ${ENGINE_FAUCET.claimsPerDay} faucet claims per wallet per day`);
+        if ((await o.store.faucetClaimsSince(wallet, since)) >= ENGINE_FAUCET.claimsPerDay) throw new HttpError(429, 'FAUCET_LIMIT', `at most ${ENGINE_FAUCET.claimsPerDay} faucet claims per wallet per day`);
         if ((await o.chain.lamports(wallet)) >= ENGINE_FAUCET.belowLamports) throw new HttpError(409, 'FAUCET_NOT_NEEDED', 'this wallet already has enough test SOL');
         if ((await o.chain.lamports(o.chain.operatorAddress!)) < ENGINE_FAUCET.lamports + ENGINE_FAUCET.operatorFloorLamports) {
           throw new HttpError(503, 'FAUCET_EMPTY', 'the faucet is out of test SOL for now; try again later');
         }
         const sig = await o.chain.sendAsOperator([E.transferSolIx(o.chain.operatorAddress!, wallet, ENGINE_FAUCET.lamports)], 10_000);
-        o.store.insertFaucetClaim(wallet, now().toISOString(), sig);
+        await o.store.insertFaucetClaim(wallet, now().toISOString(), sig);
         return sig;
       });
       return send(res, 200, { signature, quoteRaw: '0', lamports: ENGINE_FAUCET.lamports.toString(), label: 'TEST_ONLY devnet SOL' });
@@ -387,24 +388,24 @@ export function createEngineApp(o: EngineAppOptions): Server {
     if (path === '/api/lp/refresh' && method === 'POST') {
       const b = await readJson(req, BODY_LIMIT_BYTES);
       onlyKeys(b, ['mint']);
-      const c = o.store.getCoin(addr(b, 'mint'));
+      const c = await o.store.getCoin(addr(b, 'mint'));
       if (!c) throw new HttpError(404, 'NOT_FOUND', 'token not found');
       limit(`refresh:${ip}`, 20);
       const d = { store: o.store, chain: o.chain, now, ...(o.log ? { log: o.log } : {}) };
       const listed = c.status === 'LIVE' || c.status === 'GRADUATED' ? await listNew(d, c) : 0;
       const read = await readDue(d);
       snaps.delete(c.mint);
-      return send(res, 200, { listed, read, unread: o.store.unread(c.mint) });
+      return send(res, 200, { listed, read, unread: await o.store.unread(c.mint) });
     }
     throw new HttpError(404, 'NOT_FOUND', 'no such route');
   }
 
-  function metadata(res: ServerResponse, mint: string, kind: 'json' | 'img') {
-    const c = o.store.getCoin(mint);
+  async function metadata(res: ServerResponse, mint: string, kind: 'json' | 'img') {
+    const c = await o.store.getCoin(mint);
     if (!c || c.status === 'FAILED') { res.writeHead(404).end(); return; }
     const headers = { 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'", 'access-control-allow-origin': '*', 'cache-control': 'public, max-age=60' };
     if (kind === 'img') {
-      const img = o.store.getImage(mint);
+      const img = await o.store.getImage(mint);
       if (!img) { res.writeHead(404).end(); return; }
       res.writeHead(200, { ...headers, 'content-type': img.type }).end(Buffer.from(img.bytes));
       return;
@@ -415,13 +416,13 @@ export function createEngineApp(o: EngineAppOptions): Server {
     res.writeHead(200, { ...headers, 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify(body));
   }
 
-  return createServer(async (req, res) => {
+  return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     let u: URL;
     try { u = new URL(req.url ?? '/', 'http://localhost'); } catch { u = new URL('http://localhost/'); }
     const path = u.pathname;
     try {
       const mm = /^\/m\/([1-9A-HJ-NP-Za-km-z]{32,44})\.(json|img)$/.exec(path);
-      if (mm && (req.method === 'GET' || req.method === 'HEAD')) return metadata(res, mm[1]!, mm[2] as 'json' | 'img');
+      if (mm && (req.method === 'GET' || req.method === 'HEAD')) return await metadata(res, mm[1]!, mm[2] as 'json' | 'img');
       if (path.startsWith('/api/lp/')) await api(req, res, path, u.searchParams);
       else serveStatic(o.staticDir, req, res, path);
     } catch (e) {
@@ -431,5 +432,9 @@ export function createEngineApp(o: EngineAppOptions): Server {
       if (!(e instanceof HttpError)) o.log?.(rpcBusy ? `rpc busy on ${path}` : `internal error: ${(e as Error)?.stack?.slice(0, 800)}`);
       send(res, err.status, { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } });
     }
-  });
+  };
+}
+
+export function createEngineApp(o: EngineAppOptions): Server {
+  return createServer(createEngineHandler(o));
 }

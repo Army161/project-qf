@@ -6,9 +6,9 @@
 // and counts as missing history until it is read. Nothing is dropped silently.
 import * as E from '@project-qf/engine';
 import type { EngineChain, TxRecord } from './chain.ts';
-import type { CoinRow, EngineStore, PayoutRow, TradeRow, Venue } from './store.ts';
+import type { CoinRow, PayoutRow, Store, TradeRow, Venue } from './store.ts';
 
-export interface EngineIndexerDeps { store: EngineStore; chain: EngineChain; log?: (m: string) => void; now?: () => Date }
+export interface EngineIndexerDeps { store: Store; chain: EngineChain; log?: (m: string) => void; now?: () => Date }
 const nowOf = (d: EngineIndexerDeps) => (d.now ?? (() => new Date()))();
 
 /** Retry schedule for listed transactions the RPC did not serve: the first `fastAttempts` on consecutive passes, then a
@@ -60,11 +60,11 @@ export function classifyTx(r: TxRecord, coin: Pick<CoinRow, 'mint' | 'quoteMint'
  *  this store existed), from each one's creation event, and queues its whole history. The engine's programs are QF's, so
  *  every coin on them belongs on the launchpad. A coin whose creation cannot be read yet is tried again next pass. */
 export async function discoverCoins(d: EngineIndexerDeps): Promise<string[]> {
-  const quoteMint = d.store.bound('quote');
+  const quoteMint = await d.store.bound('quote');
   if (!quoteMint) return [];
   const added: string[] = [];
   for (const mint of await d.chain.launches(quoteMint)) {
-    if (d.store.getCoin(mint)) continue;
+    if (await d.store.getCoin(mint)) continue;
     const sigs = await d.chain.signatures(await E.launchAddress(mint), null);
     let created: { r: TxRecord; e: E.LaunchCreatedEvent } | null = null;
     for (const s of sigs.filter((x) => !x.err).slice(0, 5)) {
@@ -74,9 +74,9 @@ export async function discoverCoins(d: EngineIndexerDeps): Promise<string[]> {
     }
     if (!created) { d.log?.(`discover ${mint}: its creation is not readable yet; tried again next pass`); continue; }
     const { r, e } = created, at = nowOf(d).toISOString();
-    d.store.insertDiscoveredCoin({ mint, quoteMint, creator: e.creator, name: e.coinName, symbol: e.symbol, metadataUri: e.uri,
+    await d.store.insertDiscoveredCoin({ mint, quoteMint, creator: e.creator, name: e.coinName, symbol: e.symbol, metadataUri: e.uri,
       createdAt: r.blockTime === null ? at : new Date(r.blockTime * 1000).toISOString(), createSig: r.signature });
-    d.store.queueTxs(mint, 'CURVE', sigs.map((s) => ({ signature: s.signature, slot: s.slot })), at);
+    await d.store.queueTxs(mint, 'CURVE', sigs.map((s) => ({ signature: s.signature, slot: s.slot })), at);
     d.log?.(`found $${e.symbol} (${mint}) on the engine; reading its history`);
     added.push(mint);
   }
@@ -91,7 +91,7 @@ export async function listNew(d: EngineIndexerDeps, c: CoinRow): Promise<number>
   let n = 0;
   for (const [venue, addr, cursor] of venues) {
     const sigs = await d.chain.signatures(addr, cursor);
-    d.store.queueTxs(c.mint, venue, sigs.map((s) => ({ signature: s.signature, slot: s.slot })), at);
+    await d.store.queueTxs(c.mint, venue, sigs.map((s) => ({ signature: s.signature, slot: s.slot })), at);
     n += sigs.length;
   }
   return n;
@@ -101,26 +101,26 @@ export async function listNew(d: EngineIndexerDeps, c: CoinRow): Promise<number>
 export async function readDue(d: EngineIndexerDeps): Promise<number> {
   const now = nowOf(d);
   let read = 0;
-  for (const t of d.store.dueTxs(now.toISOString(), TX_RETRY.perPass)) {
-    const coin = d.store.getCoin(t.mint);
+  for (const t of await d.store.dueTxs(now.toISOString(), TX_RETRY.perPass)) {
+    const coin = await d.store.getCoin(t.mint);
     if (!coin) continue;
     const r = await d.chain.tx(t.sig).catch(() => null);
     if (!r) {
       const attempts = t.attempts + 1, unavailable = attempts >= TX_RETRY.maxAttempts;
       const delay = unavailable ? TX_RETRY.unavailableRetryMs : attempts < TX_RETRY.fastAttempts ? 0 : Math.min(TX_RETRY.baseDelayMs * 2 ** (attempts - TX_RETRY.fastAttempts), TX_RETRY.maxDelayMs);
-      d.store.missedTx(t.sig, t.mint, { status: unavailable ? 'UNAVAILABLE' : 'PENDING', attempts, nextTry: new Date(now.getTime() + delay).toISOString() });
+      await d.store.missedTx(t.sig, t.mint, { status: unavailable ? 'UNAVAILABLE' : 'PENDING', attempts, nextTry: new Date(now.getTime() + delay).toISOString() });
       if (unavailable && t.status !== 'UNAVAILABLE') d.log?.(`index ${coin.symbol}: ${t.sig} not served after ${attempts} attempts; counted as missing history, retried every ${TX_RETRY.unavailableRetryMs / 3_600_000} h`);
       continue;
     }
     const pool = await E.launchPoolAddress(coin.mint);
     const vaults = await E.poolAccounts(pool, coin.mint, coin.quoteMint);
     const c = classifyTx(r, coin, pool, vaults.token0 === coin.quoteMint ? vaults.vault0 : vaults.vault1);
-    d.store.recordTx(t.sig, t.mint, c.outcome, c.trades, c.payouts);
+    await d.store.recordTx(t.sig, t.mint, c.outcome, c.trades, c.payouts);
     if (c.outcome === 'LOGS_TRUNCATED' || c.outcome === 'MIXED_POOL_TX') d.log?.(`index ${coin.symbol}: ${t.sig} is ${c.outcome}; its fees are reported as unknown`);
-    if (c.created) d.store.markLive(coin.mint, t.sig, now.toISOString());
+    if (c.created) await d.store.markLive(coin.mint, t.sig, now.toISOString());
     if (c.graduated) {
       if (c.graduated.pool !== pool) d.log?.(`index ${coin.symbol}: graduated into ${c.graduated.pool}, expected ${pool}`);
-      d.store.markGraduated(coin.mint, c.graduated.pool, t.sig, now.toISOString());
+      await d.store.markGraduated(coin.mint, c.graduated.pool, t.sig, now.toISOString());
     }
     read++;
   }
@@ -131,17 +131,17 @@ export async function readDue(d: EngineIndexerDeps): Promise<number> {
  *  transaction), and records coins that someone else graduated. Returns the graduations it sent. */
 export async function crankGraduations(d: EngineIndexerDeps): Promise<{ mint: string; signature: string }[]> {
   const out: { mint: string; signature: string }[] = [];
-  for (const c of d.store.listCoins(['LIVE'])) {
+  for (const c of await d.store.listCoins(['LIVE'])) {
     const s = await E.readCoin(d.chain.read, c.mint, c.quoteMint).catch((e) => { d.log?.(`crank read ${c.symbol}: ${(e as Error).message.slice(0, 200)}`); return null; });
     if (!s) continue;
     const l = s.launch;
-    if (l.status === 'Graduated') { d.store.markGraduated(c.mint, l.pool, null, nowOf(d).toISOString()); continue; }
+    if (l.status === 'Graduated') { await d.store.markGraduated(c.mint, l.pool, null, nowOf(d).toISOString()); continue; }
     if (l.status !== 'Complete' || !d.chain.operatorAddress) continue;
     try {
       d.log?.(`graduating ${c.symbol} (${c.mint})`);
       const ix = await E.graduateIx({ payer: d.chain.operatorAddress, mint: c.mint, quoteMint: c.quoteMint, ammConfig: l.ammConfig, creator: l.creator, createPoolFee: E.POOL_FEE_RECEIVER });
       const signature = await d.chain.sendAsOperator([ix], GRADUATE_COMPUTE_UNITS);
-      d.store.markGraduated(c.mint, await E.launchPoolAddress(c.mint), signature, nowOf(d).toISOString());
+      await d.store.markGraduated(c.mint, await E.launchPoolAddress(c.mint), signature, nowOf(d).toISOString());
       out.push({ mint: c.mint, signature });
     } catch (e) {
       d.log?.(`graduation of ${c.symbol} failed: ${(e as Error).message.slice(0, 300)}`);
@@ -154,11 +154,11 @@ export async function crankGraduations(d: EngineIndexerDeps): Promise<{ mint: st
  *  without one. (A send can fail on our side after the network accepted it.) */
 export async function settlePending(d: EngineIndexerDeps, olderThanMs: number): Promise<void> {
   const cutoff = nowOf(d).getTime() - olderThanMs;
-  for (const c of d.store.listCoins(['PENDING'])) {
+  for (const c of await d.store.listCoins(['PENDING'])) {
     if (Date.parse(c.createdAt) > cutoff) continue;
     const [acc] = await d.chain.read([await E.launchAddress(c.mint)]);
-    if (acc) d.store.markLive(c.mint, null, nowOf(d).toISOString());
-    else d.store.markFailed(c.mint);
+    if (acc) await d.store.markLive(c.mint, null, nowOf(d).toISOString());
+    else await d.store.markFailed(c.mint);
   }
 }
 
@@ -167,7 +167,7 @@ export async function settlePending(d: EngineIndexerDeps, olderThanMs: number): 
 export async function catchUp(d: EngineIndexerDeps, maxReads = 40): Promise<void> {
   await discoverCoins(d);
   for (let round = 0; round < 2; round++) {   // a coin found live may turn out graduated: then its pool's history too
-    for (const c of d.store.listCoins(['LIVE', 'GRADUATED'], 10_000)) await listNew(d, c).catch((e) => d.log?.(`list ${c.symbol}: ${(e as Error).message.slice(0, 200)}`));
+    for (const c of await d.store.listCoins(['LIVE', 'GRADUATED'], 10_000)) await listNew(d, c).catch((e) => d.log?.(`list ${c.symbol}: ${(e as Error).message.slice(0, 200)}`));
     for (let k = 0; k < maxReads && (await readDue(d)) > 0; k++);
   }
 }
@@ -178,9 +178,9 @@ export const PURGE_AFTER_MS = 3_600_000;
 /** One pass: settle, purge, discover, list, read, crank. Each coin's failure is logged and never stops the others. */
 export async function indexPass(d: EngineIndexerDeps, pendingAfterMs = 180_000): Promise<void> {
   await settlePending(d, pendingAfterMs).catch((e) => d.log?.(`pending launches: ${(e as Error).message.slice(0, 200)}`));
-  try { d.store.purgeUnsent(new Date(nowOf(d).getTime() - PURGE_AFTER_MS).toISOString()); } catch (e) { d.log?.(`purge: ${(e as Error).message.slice(0, 200)}`); }
+  try { await d.store.purgeUnsent(new Date(nowOf(d).getTime() - PURGE_AFTER_MS).toISOString()); } catch (e) { d.log?.(`purge: ${(e as Error).message.slice(0, 200)}`); }
   await discoverCoins(d).catch((e) => d.log?.(`discover: ${(e as Error).message.slice(0, 200)}`));
-  for (const c of d.store.listCoins(['LIVE', 'GRADUATED'])) await listNew(d, c).catch((e) => d.log?.(`list ${c.symbol}: ${(e as Error).message.slice(0, 200)}`));
+  for (const c of await d.store.listCoins(['LIVE', 'GRADUATED'])) await listNew(d, c).catch((e) => d.log?.(`list ${c.symbol}: ${(e as Error).message.slice(0, 200)}`));
   await readDue(d).catch((e) => d.log?.(`read: ${(e as Error).message.slice(0, 200)}`));
   await crankGraduations(d);
 }

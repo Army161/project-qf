@@ -12,7 +12,7 @@
 import * as E from '@project-qf/engine';
 import type { EngineChain } from './chain.ts';
 import { poolSides, readCoinSnapshot, type QuoteAsset } from './market.ts';
-import type { CoinRow, EngineStore } from './store.ts';
+import type { CoinRow, Store } from './store.ts';
 
 export type Verdict = 'PASS' | 'FAIL' | 'WAIT';
 export interface BookCheck { verdict: Verdict; coin: string; mint: string; check: string; detail: string }
@@ -24,7 +24,7 @@ const units = (raw: bigint, decimals: number) => {
 };
 const sum = (xs: bigint[]) => xs.reduce((a, b) => a + b, 0n);
 
-export async function coinChecks(store: EngineStore, chain: EngineChain, c: CoinRow, quote: QuoteAsset): Promise<BookCheck[]> {
+export async function coinChecks(store: Store, chain: EngineChain, c: CoinRow, quote: QuoteAsset): Promise<BookCheck[]> {
   const coin = `$${c.symbol}`, q = (raw: bigint) => `${units(raw, quote.decimals)} ${quote.symbol}`, b = (raw: bigint) => `${units(raw, E.BASE_DECIMALS)} ${coin}`;
   const out: BookCheck[] = [];
   const add = (verdict: Verdict, check: string, detail: string) => out.push({ verdict, coin, mint: c.mint, check, detail });
@@ -38,10 +38,10 @@ export async function coinChecks(store: EngineStore, chain: EngineChain, c: Coin
   exact('curve coin vault matches the curve', l.config.totalSupply - l.baseSold - (graduated ? E.poolSupply(l.config) : 0n), s.coin.baseVault, b, 'vault holds');
 
   // the event ledger: complete only when every listed transaction was read and none had its log cut or mixed
-  const unread = store.unread(c.mint), outcomes = store.txOutcomes(c.mint);
+  const [unread, outcomes] = await Promise.all([store.unread(c.mint), store.txOutcomes(c.mint)]);
   const unknown = (outcomes.LOGS_TRUNCATED ?? 0) + (outcomes.MIXED_POOL_TX ?? 0);
   const gap = unread.pending + unread.unavailable ? `${unread.pending} transaction(s) not read yet, ${unread.unavailable} not served after many tries` : unknown ? `${unknown} transaction(s) whose events cannot be fully read` : null;
-  const trades = store.allTrades(c.mint), payouts = store.payouts(c.mint);
+  const [trades, payouts] = await Promise.all([store.allTrades(c.mint), store.payouts(c.mint)]);
   const curve = trades.filter((t) => t.venue === 'CURVE'), pool = trades.filter((t) => t.venue === 'POOL');
   const paid = (kind: string) => sum(payouts.filter((p) => p.kind === kind).map((p) => BigInt(p.amountRaw)));
   const ledger = (check: string, want: bigint, got: bigint, how: string) => {
@@ -81,9 +81,9 @@ async function lastTradeState(chain: EngineChain, sig: string, mint: string) {
   return e ? { realQuote: e.realQuote, baseSold: e.baseSold } : null;
 }
 
-export async function engineBooks(store: EngineStore, chain: EngineChain, quote: QuoteAsset, cluster: string, now = new Date()): Promise<EngineBooks> {
+export async function engineBooks(store: Store, chain: EngineChain, quote: QuoteAsset, cluster: string, now = new Date()): Promise<EngineBooks> {
   const checks: BookCheck[] = [];
-  for (const c of store.listCoins(['LIVE', 'GRADUATED'], 10_000).reverse()) checks.push(...await coinChecks(store, chain, c, quote));
+  for (const c of (await store.listCoins(['LIVE', 'GRADUATED'], 10_000)).reverse()) checks.push(...await coinChecks(store, chain, c, quote));
   const summary = { pass: checks.filter((x) => x.verdict === 'PASS').length, fail: checks.filter((x) => x.verdict === 'FAIL').length, wait: checks.filter((x) => x.verdict === 'WAIT').length };
   return { asOf: now.toISOString(), cluster, quote, checks, summary };
 }

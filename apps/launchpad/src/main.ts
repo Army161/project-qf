@@ -45,7 +45,7 @@ const profile: EngineProfile = { cluster, writes: true, faucet: !!operator, writ
   label: cluster === 'devnet' ? 'Test network: coins here have no value' : 'Local test validator: coins here have no value' };
 const openStore = async () => {
   const st = new EngineStore(resolve(env.QF_LP_DB ?? (cluster === 'devnet' ? 'qf-launchpad-engine.sqlite' : 'qf-launchpad-engine-localnet.sqlite')));
-  st.bind('cluster', cluster); st.bind('genesis', await genesis()); st.bind('quote', SOL_QUOTE.mint);
+  await st.bind('cluster', cluster); await st.bind('genesis', await genesis()); await st.bind('quote', SOL_QUOTE.mint);
   return st;
 };
 
@@ -59,7 +59,7 @@ if (cmd === 'operator') {
     staticDir: resolve(env.QF_STATIC_DIR ?? join(here, '..', '..', 'web', 'dist')), publicBaseUrl: env.QF_PUBLIC_BASE_URL ?? `http://127.0.0.1:${port}` });
   app.listen(port, host, () => log(JSON.stringify({ listening: `http://${host}:${port}`, engine: 'qf', cluster, operator: chain.operatorAddress })));
   const stopIndexer = startEngineBackground({ store, chain, log }, Number(env.QF_LP_INTERVAL_MS ?? 15_000));
-  const stop = (sig: string) => { log(`${sig}: closing`); stopIndexer(); app.close(); app.closeAllConnections(); try { store.close(); } catch { /* already closed */ } process.exit(0); };
+  const stop = (sig: string) => { log(`${sig}: closing`); stopIndexer(); app.close(); app.closeAllConnections(); try { void store.close(); } catch { /* already closed */ } process.exit(0); };
   process.once('SIGTERM', () => stop('SIGTERM'));
   process.once('SIGINT', () => stop('SIGINT'));
 } else if (cmd === 'verify') {
@@ -69,7 +69,7 @@ if (cmd === 'operator') {
   console.log(engineBooksText(books));
   const k = process.argv.indexOf('--json');
   if (k > 0 && process.argv[k + 1]) writeFileSync(process.argv[k + 1]!, JSON.stringify(books, null, 1) + '\n');
-  store.close();
+  await store.close();
   if (books.summary.fail) process.exitCode = 1;
 } else {
   console.error('usage: main.ts operator | serve | verify [--json file]');

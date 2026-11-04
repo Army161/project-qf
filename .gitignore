@@ -8,3 +8,5 @@ coverage/
 .devnet-keys/
 apps/launchpad/.preview/
 deploy/alwaysdata/out/
+
+.vercel/

@@ -34,7 +34,7 @@ export async function e2e(o: { chain: EngineChain; cluster: 'devnet' | 'localnet
   // ---------------------------------------------------------------- the app, on a fresh store for this run
   const { chain, cluster } = o;
   const store = new EngineStore(join(mkdtempSync(join(tmpdir(), `qf-engine-${cluster}-`)), 'engine.sqlite'));
-  store.bind('cluster', cluster); store.bind('genesis', await chain.genesisHash()); store.bind('quote', SOL_QUOTE.mint);
+  (await store.bind('cluster', cluster)); (await store.bind('genesis', await chain.genesisHash())); (await store.bind('quote', SOL_QUOTE.mint));
   const app = createEngineApp({ store, chain, quote: SOL_QUOTE, profile: { cluster, writes: true, faucet: o.faucet, label: `TEST_ONLY ${cluster}`, writesLockedBecause: [] },
     staticDir: null, publicBaseUrl: 'http://127.0.0.1:8788', log: (m) => console.log(`      [app] ${m}`) });
   await new Promise<void>((r) => app.listen(0, '127.0.0.1', r));
@@ -85,7 +85,8 @@ export async function e2e(o: { chain: EngineChain; cluster: 'devnet' | 'localnet
   async function booksNow(label: string, want?: number): Promise<EngineBooks> {
     for (let k = 0; k < 20; k++) {
       await indexPass(d);
-      if (store.listCoins(['LIVE', 'GRADUATED']).every((c) => store.unread(c.mint).pending + store.unread(c.mint).unavailable === 0)) break;
+      const unread = await Promise.all((await store.listCoins(['LIVE', 'GRADUATED'])).map((c) => store.unread(c.mint)));
+      if (unread.every((u) => u.pending + u.unavailable === 0)) break;
       await sleep(cluster === 'devnet' ? 2_000 : 500);
     }
     const b = await engineBooks(store, chain, SOL_QUOTE, cluster);

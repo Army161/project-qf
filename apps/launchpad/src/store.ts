@@ -69,6 +69,10 @@ const camel = (r: Record<string, unknown>) => Object.fromEntries(Object.entries(
 const COIN_COLUMNS = `mint, quote_mint, creator, name, symbol, description, website, twitter, telegram, image_type, metadata_uri, status, created_at, create_sig,
   live_at, pool, graduate_sig, graduated_at, curve_cursor, pool_cursor`;
 
+/** What the launchpad keeps between requests. Two stores implement it: SQLite (one machine, tests) and Postgres
+ *  (serverless hosting, store-pg.ts); both keep the same rows and the same one-submit-per-intent rule. */
+export type Store = { [K in keyof EngineStore as K extends 'db' ? never : K]: EngineStore[K] };
+
 export class EngineStore {
   readonly db: DatabaseSync;
   constructor(path: string) {
@@ -86,22 +90,22 @@ export class EngineStore {
       } catch (e) { this.db.exec('ROLLBACK'); throw e; }
     }
   }
-  close() { this.db.close(); }
+  async close() { this.db.close(); }
 
   /** Ties this database to one network (by name and genesis hash) and one quote for life: opening it for another throws. */
-  bind(k: 'cluster' | 'genesis' | 'quote', value: string): void {
+  async bind(k: 'cluster' | 'genesis' | 'quote', value: string): Promise<void> {
     const r = this.db.prepare('SELECT v FROM settings WHERE k = ?').get(k) as { v: string } | undefined;
     if (!r) { this.db.prepare('INSERT INTO settings (k, v) VALUES (?, ?)').run(k, value); return; }
     if (r.v !== value) throw new Error(`STORE_${k.toUpperCase()}_MISMATCH this database belongs to ${r.v}, not ${value}`);
   }
 
   /** What `bind` tied this database to, or null before the first bind. */
-  bound(k: 'cluster' | 'genesis' | 'quote'): string | null {
+  async bound(k: 'cluster' | 'genesis' | 'quote'): Promise<string | null> {
     return (this.db.prepare('SELECT v FROM settings WHERE k = ?').get(k) as { v: string } | undefined)?.v ?? null;
   }
 
   // ---------- coins
-  insertPendingCoin(c: Pick<CoinRow, 'mint' | 'quoteMint' | 'creator' | 'name' | 'symbol' | 'description' | 'website' | 'twitter' | 'telegram' | 'imageType' | 'metadataUri' | 'createdAt'>,
+  async insertPendingCoin(c: Pick<CoinRow, 'mint' | 'quoteMint' | 'creator' | 'name' | 'symbol' | 'description' | 'website' | 'twitter' | 'telegram' | 'imageType' | 'metadataUri' | 'createdAt'>,
     image: Uint8Array | null) {
     this.db.prepare(`INSERT INTO coins (mint, quote_mint, creator, name, symbol, description, website, twitter, telegram, image_type, image, metadata_uri, status, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)`)
@@ -110,40 +114,40 @@ export class EngineStore {
   /** A coin found on the engine that this app did not launch (another client, or a store started after it): LIVE, with what
    *  its creation event said. Its description, links and picture were never given to this app, so they stay empty.
    *  Returns false when the store already has the coin. */
-  insertDiscoveredCoin(c: Pick<CoinRow, 'mint' | 'quoteMint' | 'creator' | 'name' | 'symbol' | 'metadataUri' | 'createdAt' | 'createSig'>): boolean {
+  async insertDiscoveredCoin(c: Pick<CoinRow, 'mint' | 'quoteMint' | 'creator' | 'name' | 'symbol' | 'metadataUri' | 'createdAt' | 'createSig'>): Promise<boolean> {
     return this.db.prepare(`INSERT OR IGNORE INTO coins (mint, quote_mint, creator, name, symbol, description, metadata_uri, status, created_at, create_sig, live_at)
       VALUES (?, ?, ?, ?, ?, '', ?, 'LIVE', ?, ?, ?)`).run(c.mint, c.quoteMint, c.creator, c.name, c.symbol, c.metadataUri, c.createdAt, c.createSig, c.createdAt).changes > 0;
   }
   /** The launch landed: LIVE from PENDING, and its creating transaction once known. */
-  markLive(mint: string, sig: string | null, at: string) {
+  async markLive(mint: string, sig: string | null, at: string) {
     this.db.prepare("UPDATE coins SET status = 'LIVE', live_at = COALESCE(live_at, ?) WHERE mint = ? AND status = 'PENDING'").run(at, mint);
     if (sig) this.db.prepare('UPDATE coins SET create_sig = ? WHERE mint = ? AND create_sig IS NULL').run(sig, mint);
   }
   /** A launch whose intent expired and whose launch account never appeared. */
-  markFailed(mint: string) { this.db.prepare("UPDATE coins SET status = 'FAILED' WHERE mint = ? AND status = 'PENDING'").run(mint); }
-  markGraduated(mint: string, pool: string, sig: string | null, at: string) {
+  async markFailed(mint: string) { this.db.prepare("UPDATE coins SET status = 'FAILED' WHERE mint = ? AND status = 'PENDING'").run(mint); }
+  async markGraduated(mint: string, pool: string, sig: string | null, at: string) {
     this.db.prepare("UPDATE coins SET status = 'GRADUATED', pool = ?, graduate_sig = COALESCE(?, graduate_sig), graduated_at = COALESCE(graduated_at, ?) WHERE mint = ? AND status IN ('LIVE', 'GRADUATED')")
       .run(pool, sig, at, mint);
   }
-  setCursor(mint: string, venue: Venue, sig: string) {
+  async setCursor(mint: string, venue: Venue, sig: string) {
     this.db.prepare(`UPDATE coins SET ${venue === 'CURVE' ? 'curve_cursor' : 'pool_cursor'} = ? WHERE mint = ?`).run(sig, mint);
   }
-  getCoin(mint: string): CoinRow | null {
+  async getCoin(mint: string): Promise<CoinRow | null> {
     const r = this.db.prepare(`SELECT ${COIN_COLUMNS} FROM coins WHERE mint = ?`).get(mint) as Record<string, unknown> | undefined;
     return r ? (camel(r) as unknown as CoinRow) : null;
   }
-  getImage(mint: string): { type: string; bytes: Uint8Array } | null {
+  async getImage(mint: string): Promise<{ type: string; bytes: Uint8Array } | null> {
     const r = this.db.prepare('SELECT image_type, image FROM coins WHERE mint = ?').get(mint) as { image_type: string | null; image: Uint8Array | null } | undefined;
     return r?.image && r.image_type ? { type: r.image_type, bytes: r.image } : null;
   }
-  listCoins(statuses: CoinStatus[] = ['LIVE', 'GRADUATED'], limit = 200): CoinRow[] {
+  async listCoins(statuses: CoinStatus[] = ['LIVE', 'GRADUATED'], limit = 200): Promise<CoinRow[]> {
     return (this.db.prepare(`SELECT ${COIN_COLUMNS} FROM coins WHERE status IN (${statuses.map(() => '?').join(',')}) ORDER BY created_at DESC LIMIT ?`)
       .all(...statuses, limit) as Record<string, unknown>[]).map((r) => camel(r) as unknown as CoinRow);
   }
 
   // ---------- transactions listed for a coin
   /** Records newly listed signatures (oldest first) and moves the venue's cursor past them in one step. */
-  queueTxs(mint: string, venue: Venue, sigs: { signature: string; slot: number }[], at: string) {
+  async queueTxs(mint: string, venue: Venue, sigs: { signature: string; slot: number }[], at: string) {
     if (!sigs.length) return;
     this.db.exec('BEGIN');
     try {
@@ -153,15 +157,15 @@ export class EngineStore {
       this.db.exec('COMMIT');
     } catch (e) { this.db.exec('ROLLBACK'); throw e; }
   }
-  dueTxs(nowIso: string, limit: number): TxRow[] {
+  async dueTxs(nowIso: string, limit: number): Promise<TxRow[]> {
     return (this.db.prepare("SELECT * FROM txs WHERE status != 'READ' AND next_try <= ? ORDER BY slot, sig LIMIT ?").all(nowIso, limit) as Record<string, unknown>[])
       .map((r) => camel(r) as unknown as TxRow);
   }
-  missedTx(sig: string, mint: string, p: { status: 'PENDING' | 'UNAVAILABLE'; attempts: number; nextTry: string }) {
+  async missedTx(sig: string, mint: string, p: { status: 'PENDING' | 'UNAVAILABLE'; attempts: number; nextTry: string }) {
     this.db.prepare('UPDATE txs SET status = ?, attempts = ?, next_try = ? WHERE sig = ? AND mint = ?').run(p.status, p.attempts, p.nextTry, sig, mint);
   }
   /** Stores what one transaction held for one coin (its trades and payouts) and marks it read, atomically. */
-  recordTx(sig: string, mint: string, outcome: string, trades: TradeRow[], payouts: PayoutRow[]) {
+  async recordTx(sig: string, mint: string, outcome: string, trades: TradeRow[], payouts: PayoutRow[]) {
     this.db.exec('BEGIN');
     try {
       const t = this.db.prepare(`INSERT OR REPLACE INTO trades (sig, ix, mint, venue, trader, side, quote_raw, base_raw, fee_mint, trade_fee_raw, platform_fee_raw,
@@ -174,49 +178,49 @@ export class EngineStore {
     } catch (e) { this.db.exec('ROLLBACK'); throw e; }
   }
   /** Transactions listed for the coin but not read yet: its history is complete only when both are 0. */
-  unread(mint: string): { pending: number; unavailable: number } {
+  async unread(mint: string): Promise<{ pending: number; unavailable: number }> {
     const r = this.db.prepare("SELECT SUM(status = 'PENDING') AS pending, SUM(status = 'UNAVAILABLE') AS unavailable FROM txs WHERE mint = ?").get(mint) as { pending: number | null; unavailable: number | null };
     return { pending: r.pending ?? 0, unavailable: r.unavailable ?? 0 };
   }
-  txOutcomes(mint: string): Record<string, number> {
+  async txOutcomes(mint: string): Promise<Record<string, number>> {
     return Object.fromEntries((this.db.prepare("SELECT outcome, COUNT(*) AS n FROM txs WHERE mint = ? AND status = 'READ' GROUP BY outcome").all(mint) as { outcome: string; n: number }[])
       .map((r) => [r.outcome, r.n]));
   }
 
   // ---------- trades and payouts
-  listTrades(mint: string, limit = 200): TradeRow[] {
+  async listTrades(mint: string, limit = 200): Promise<TradeRow[]> {
     return (this.db.prepare('SELECT * FROM trades WHERE mint = ? ORDER BY slot DESC, sig DESC, ix DESC LIMIT ?').all(mint, limit) as Record<string, unknown>[]).map((r) => camel(r) as unknown as TradeRow);
   }
-  allTrades(mint: string): TradeRow[] {
+  async allTrades(mint: string): Promise<TradeRow[]> {
     return (this.db.prepare('SELECT * FROM trades WHERE mint = ? ORDER BY slot, sig, ix').all(mint) as Record<string, unknown>[]).map((r) => camel(r) as unknown as TradeRow);
   }
-  recentTrades(limit: number): (TradeRow & { symbol: string })[] {
+  async recentTrades(limit: number): Promise<(TradeRow & { symbol: string })[]> {
     return (this.db.prepare('SELECT t.*, c.symbol FROM trades t JOIN coins c ON c.mint = t.mint ORDER BY t.slot DESC, t.sig DESC, t.ix DESC LIMIT ?').all(limit) as Record<string, unknown>[])
       .map((r) => camel(r) as unknown as TradeRow & { symbol: string });
   }
-  tradeStats(mint: string): { count: number; volumeQuoteRaw: string; traders: number } {
+  async tradeStats(mint: string): Promise<{ count: number; volumeQuoteRaw: string; traders: number }> {
     const rows = this.db.prepare('SELECT quote_raw, trader FROM trades WHERE mint = ?').all(mint) as { quote_raw: string; trader: string }[];
     return { count: rows.length, volumeQuoteRaw: rows.reduce((s, r) => s + BigInt(r.quote_raw), 0n).toString(), traders: new Set(rows.map((r) => r.trader)).size };
   }
-  payouts(mint: string): PayoutRow[] {
+  async payouts(mint: string): Promise<PayoutRow[]> {
     return (this.db.prepare('SELECT * FROM payouts WHERE mint = ? ORDER BY slot, sig, ix').all(mint) as Record<string, unknown>[]).map((r) => camel(r) as unknown as PayoutRow);
   }
 
   // ---------- intents
-  insertIntent(i: Omit<IntentRow, 'id' | 'status' | 'signature' | 'error'>): IntentRow {
+  async insertIntent(i: Omit<IntentRow, 'id' | 'status' | 'signature' | 'error'>): Promise<IntentRow> {
     const id = `intent_${randomBytes(16).toString('hex')}`;
     this.db.prepare(`INSERT INTO intents (id, kind, mint, user, created_at, expires_at, message_hex, terms_json, last_valid_block_height, status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'BUILT')`).run(id, i.kind, i.mint, i.user, i.createdAt, i.expiresAt, i.messageHex, i.termsJson, i.lastValidBlockHeight);
     return { ...i, id, status: 'BUILT', signature: null, error: null };
   }
-  getIntent(id: string): IntentRow | null {
+  async getIntent(id: string): Promise<IntentRow | null> {
     const r = this.db.prepare('SELECT * FROM intents WHERE id = ?').get(id) as Record<string, unknown> | undefined;
     return r ? (camel(r) as unknown as IntentRow) : null;
   }
   /** Housekeeping, so built-but-never-sent transactions cannot fill the disk: deletes coins that never landed (FAILED, or
    *  PENDING with a launch transaction never submitted) created before `beforeIso`, with their stored image, then every
    *  BUILT intent that expired before `beforeIso`. A coin with any recorded history is kept. */
-  purgeUnsent(beforeIso: string): { coins: number; intents: number } {
+  async purgeUnsent(beforeIso: string): Promise<{ coins: number; intents: number }> {
     const mints = (this.db.prepare(`SELECT c.mint FROM coins c WHERE c.created_at < ? AND (c.status = 'FAILED' OR (c.status = 'PENDING'
         AND EXISTS (SELECT 1 FROM intents i WHERE i.mint = c.mint AND i.status = 'BUILT' AND i.expires_at < ?)
         AND NOT EXISTS (SELECT 1 FROM intents j WHERE j.mint = c.mint AND j.status <> 'BUILT')))`).all(beforeIso, beforeIso) as { mint: string }[]).map((r) => r.mint);
@@ -226,18 +230,18 @@ export class EngineStore {
     return { coins, intents };
   }
   /** One submit per intent: only the first caller moves it from BUILT to SUBMITTED. */
-  claimIntent(id: string): boolean {
+  async claimIntent(id: string): Promise<boolean> {
     return Number(this.db.prepare("UPDATE intents SET status = 'SUBMITTED' WHERE id = ? AND status = 'BUILT'").run(id).changes) === 1;
   }
-  finishIntent(id: string, status: 'CONFIRMED' | 'FAILED', signature: string | null, error: string | null) {
+  async finishIntent(id: string, status: 'CONFIRMED' | 'FAILED', signature: string | null, error: string | null) {
     this.db.prepare('UPDATE intents SET status = ?, signature = ?, error = ? WHERE id = ?').run(status, signature, error, id);
   }
 
   // ---------- faucet
-  faucetClaimsSince(wallet: string, sinceIso: string): number {
+  async faucetClaimsSince(wallet: string, sinceIso: string): Promise<number> {
     return (this.db.prepare('SELECT COUNT(*) AS n FROM faucet_claims WHERE wallet = ? AND at >= ?').get(wallet, sinceIso) as { n: number }).n;
   }
-  insertFaucetClaim(wallet: string, at: string, signature: string) {
+  async insertFaucetClaim(wallet: string, at: string, signature: string) {
     this.db.prepare('INSERT INTO faucet_claims (wallet, at, signature) VALUES (?, ?, ?)').run(wallet, at, signature);
   }
 }

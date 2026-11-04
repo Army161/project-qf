@@ -24,9 +24,9 @@ const tradeEvent = (mint: string, trader: string, f: { isBuy: boolean; quote: bi
 /** A coin the store knows as live, with its curve on the fake chain. */
 async function liveCoin(h: { chain: FakeChain; store: EngineStore }, s: Parameters<typeof putCurve>[3] = {}) {
   const creator = await generateMintKey(), mint = (await generateMintKey()).address;
-  h.store.insertPendingCoin({ mint, quoteMint: E.NATIVE_MINT, creator: creator.address, name: 'Moon Cat', symbol: 'MCAT', description: '', website: null, twitter: null, telegram: null,
-    imageType: null, metadataUri: `http://127.0.0.1:8788/m/${mint}.json`, createdAt: '2026-10-11T00:00:00.000Z' }, null);
-  h.store.markLive(mint, null, '2026-10-11T00:00:01.000Z');
+  (await h.store.insertPendingCoin({ mint, quoteMint: E.NATIVE_MINT, creator: creator.address, name: 'Moon Cat', symbol: 'MCAT', description: '', website: null, twitter: null, telegram: null,
+    imageType: null, metadataUri: `http://127.0.0.1:8788/m/${mint}.json`, createdAt: '2026-10-11T00:00:00.000Z' }, null));
+  (await h.store.markLive(mint, null, '2026-10-11T00:00:01.000Z'));
   await putCurve(h.chain, mint, creator.address, s);
   return { mint, creator };
 }
@@ -76,7 +76,7 @@ test('a launch is validated, built from its terms, bound, signed by the creator 
   assert.deepEqual(await bindTransactionToTerms(decodeTransactionBytes(bytes), t), [], 'the bytes are exactly what the terms build');
   assert.deepEqual(parseWire(bytes).signerKeys, [creator.address, mint.address], 'the creator pays and signs; the fresh mint key co-signs');
   assert.equal((await h.call('/api/lp/launch', body)).body.error.code, 'MINT_IN_USE');
-  assert.equal(h.store.getCoin(mint.address)?.status, 'PENDING');
+  assert.equal((await h.store.getCoin(mint.address))?.status, 'PENDING');
 
   // submit: only the exact message, fully signed, once
   assert.equal((await h.call('/api/lp/submit', { intentId: r.body.intentId, signedTransaction: await signed(r.body.transaction, mint) })).body.error.code, 'SIGNATURE_INVALID');
@@ -87,8 +87,8 @@ test('a launch is validated, built from its terms, bound, signed by the creator 
   assert.equal(s.status, 200, JSON.stringify(s.body));
   assert.equal(s.body.kind, 'QF_CREATE');
   assert.equal(h.chain.sent.length, 1);
-  assert.equal(h.store.getCoin(mint.address)?.status, 'LIVE');
-  assert.equal(h.store.getCoin(mint.address)?.createSig, s.body.signature);
+  assert.equal((await h.store.getCoin(mint.address))?.status, 'LIVE');
+  assert.equal((await h.store.getCoin(mint.address))?.createSig, s.body.signature);
   assert.equal((await h.call('/api/lp/submit', { intentId: r.body.intentId, signedTransaction: good })).body.error.code, 'ALREADY_SUBMITTED');
 
   await putCurve(h.chain, mint.address, creator.address);
@@ -143,10 +143,10 @@ test('curve quotes and trades use the engine math, build exactly their terms, an
   // the indexer reads the same transaction later: keyed by signature and event, it is not counted twice
   h.chain.history.set(await E.launchAddress(mint), [{ signature: sig, slot: 100, err: false }]);
   await indexPass({ store: h.store, chain: h.chain });
-  assert.equal(h.store.allTrades(mint).length, 1);
-  assert.deepEqual(h.store.unread(mint), { pending: 0, unavailable: 0 });
+  assert.equal((await h.store.allTrades(mint)).length, 1);
+  assert.deepEqual((await h.store.unread(mint)), { pending: 0, unavailable: 0 });
 
-  await putCurve(h.chain, mint, (h.store.getCoin(mint))!.creator, { ...state, status: 'Complete' });
+  await putCurve(h.chain, mint, ((await h.store.getCoin(mint)))!.creator, { ...state, status: 'Complete' });
   assert.equal((await h.call('/api/lp/swap', { mint, user: user.address, side: 'buy', amountIn: '1000' })).body.error.code, 'CURVE_COMPLETE');
 });
 
@@ -159,7 +159,7 @@ test('a graduated coin follows the chain, trades in its pool and shows its locke
   await putPool(h.chain, mint, creator.address, { quoteReserve: 800_000_000n, baseReserve: 206_900_000_000_000n, creatorFeesQuote: 1_234n, lpMintSupply: 0n });
   const t = (await h.call(`/api/lp/tokens/${mint}`)).body.token;
   assert.deepEqual([t.status, t.graduatedPool, t.live.venue, t.live.lockedBps, t.live.creatorPoolFee], ['GRADUATED', pool, 'POOL', 10_000, '1234']);
-  assert.equal(h.store.getCoin(mint)?.status, 'GRADUATED', 'the record followed the chain');
+  assert.equal((await h.store.getCoin(mint))?.status, 'GRADUATED', 'the record followed the chain');
   const q = await h.call('/api/lp/quote', { mint, side: 'buy', amountIn: '20000000' });
   assert.equal(q.body.venue, 'POOL');
   const user = await generateMintKey();
@@ -234,13 +234,13 @@ test('coins built but never sent, and coins that never landed, are purged with t
   const coin = (mint: string) => st.insertPendingCoin({ mint, quoteMint: E.NATIVE_MINT, creator: ADDR.operator, name: 'MOCK', symbol: 'MOCK', description: '', website: null,
     twitter: null, telegram: null, imageType: 'image/png', metadataUri: 'http://127.0.0.1:8788/m/x.json', createdAt: old }, new Uint8Array(1000));
   const intent = (mint: string) => st.insertIntent({ kind: 'QF_CREATE', mint, user: ADDR.operator, createdAt: old, expiresAt: later, messageHex: '00', termsJson: '{}', lastValidBlockHeight: '1' });
-  coin('UNSENT'); intent('UNSENT');
-  coin('SENT'); st.claimIntent(intent('SENT').id);
-  coin('NEVERLANDED'); st.markFailed('NEVERLANDED');
-  assert.deepEqual(st.purgeUnsent('2026-01-01T03:00:00.000Z'), { coins: 2, intents: 1 });
-  assert.equal(st.getCoin('UNSENT'), null);
-  assert.equal(st.getCoin('NEVERLANDED'), null);
-  assert.ok(st.getCoin('SENT'));
+  await coin('UNSENT'); await intent('UNSENT');
+  await coin('SENT'); await st.claimIntent((await intent('SENT')).id);
+  await coin('NEVERLANDED'); (await st.markFailed('NEVERLANDED'));
+  assert.deepEqual((await st.purgeUnsent('2026-01-01T03:00:00.000Z')), { coins: 2, intents: 1 });
+  assert.equal((await st.getCoin('UNSENT')), null);
+  assert.equal((await st.getCoin('NEVERLANDED')), null);
+  assert.ok((await st.getCoin('SENT')));
 });
 
 test('the SOL balance a trader can spend is their SOL plus any wrapped SOL the next trade unwraps', async () => {
@@ -258,7 +258,7 @@ test('the indexer reads fees from the engine events, retries what the RPC does n
   const { mint, creator } = await liveCoin(h);
   const pool = await E.launchPoolAddress(mint), v = await E.poolAccounts(pool, mint, E.NATIVE_MINT);
   const quoteVault = v.token0 === E.NATIVE_MINT ? v.vault0 : v.vault1;
-  const coin = store.getCoin(mint)!;
+  const coin = (await store.getCoin(mint))!;
   // classification
   const claim = classifyTx(txRecord('a', [ev('FeesClaimed', E.QF_CURVE, { mint, to: creator.address, amount: 5n, creator: true }), ev('FeesClaimed', E.QF_CURVE, { mint: ADDR.admin, to: 'x', amount: 9n, creator: false })]), coin, pool, quoteVault);
   assert.deepEqual([claim.outcome, claim.payouts.length, claim.payouts[0]!.kind], ['PAYOUT', 1, 'CREATOR_CLAIM'], 'another coin\'s event is not this coin\'s');
@@ -278,9 +278,9 @@ test('the indexer reads fees from the engine events, retries what the RPC does n
   // a listed transaction the RPC does not serve stays missing history, retried, then UNAVAILABLE
   let t = new Date('2026-10-11T00:00:00Z');
   const d = { store, chain, now: () => t };
-  store.queueTxs(mint, 'CURVE', [{ signature: 'missing', slot: 1 }], t.toISOString());
+  (await store.queueTxs(mint, 'CURVE', [{ signature: 'missing', slot: 1 }], t.toISOString()));
   for (let k = 0; k < TX_RETRY.maxAttempts; k++) { await readDue(d); t = new Date(t.getTime() + TX_RETRY.maxDelayMs); }
-  assert.deepEqual(store.unread(mint), { pending: 0, unavailable: 1 });
+  assert.deepEqual((await store.unread(mint)), { pending: 0, unavailable: 1 });
 
   // the crank graduates a Complete curve with the operator key, and records one someone else graduated
   await putCurve(chain, mint, creator.address, { status: 'Complete', realQuote: E.finalRealQuote(CFG), baseSold: CFG.curveSupply });
@@ -289,15 +289,15 @@ test('the indexer reads fees from the engine events, retries what the RPC does n
   const g = chain.operatorSent[0]![0]!;
   assert.equal(g.programAddress, E.QF_CURVE);
   assert.ok(g.accounts?.some((a) => a.address === E.POOL_FEE_RECEIVER), 'the pool creation fee goes to the engine\'s fee receiver');
-  assert.equal(store.getCoin(mint)?.status, 'GRADUATED');
+  assert.equal((await store.getCoin(mint))?.status, 'GRADUATED');
 
   // a launch that never landed fails once its intent is long expired; one whose launch account exists goes live
   const lost = (await generateMintKey()).address;
-  store.insertPendingCoin({ mint: lost, quoteMint: E.NATIVE_MINT, creator: creator.address, name: 'L', symbol: 'L', description: '', website: null, twitter: null, telegram: null,
-    imageType: null, metadataUri: 'x', createdAt: '2026-10-10T00:00:00.000Z' }, null);
+  (await store.insertPendingCoin({ mint: lost, quoteMint: E.NATIVE_MINT, creator: creator.address, name: 'L', symbol: 'L', description: '', website: null, twitter: null, telegram: null,
+    imageType: null, metadataUri: 'x', createdAt: '2026-10-10T00:00:00.000Z' }, null));
   await settlePending(d, 180_000);
-  assert.equal(store.getCoin(lost)?.status, 'FAILED');
-  store.close();
+  assert.equal((await store.getCoin(lost))?.status, 'FAILED');
+  await store.close();
 });
 
 test('the indexer finds coins it did not launch from their creation event, for its own quote only, and reads their history', async () => {
@@ -311,7 +311,7 @@ test('the indexer finds coins it did not launch from their creation event, for i
   const o = chain.accounts.get(await E.launchAddress(other))!;
   o.data.set(getAddressEncoder().encode(address(trader)), E.LAUNCH_LAYOUT.quoteMintOffset);
   assert.deepEqual(await discoverCoins(d), [], 'nothing before the store is bound to its quote');
-  store.bind('quote', E.NATIVE_MINT);
+  (await store.bind('quote', E.NATIVE_MINT));
   const created = (mint: string) => ev('LaunchCreated', E.QF_CURVE, { mint, creator, coinName: 'Found Dog', symbol: 'FDOG', uri: 'https://example.invalid/fdog.json', config: CFG });
   chain.history.set(await E.launchAddress(found), [{ signature: 'tip', slot: 1, err: false }, { signature: 'mk', slot: 2, err: false }, { signature: 'buy', slot: 3, err: false }]);
   chain.txs.set('tip', txRecord('tip', []));
@@ -319,22 +319,22 @@ test('the indexer finds coins it did not launch from their creation event, for i
   chain.txs.set('buy', txRecord('buy', [tradeEvent(found, trader, { isBuy: true, quote: 101n, base: 7n, platform: 0n, creator: 1n, realQuote: 100n, baseSold: 7n })]));
   chain.history.set(await E.launchAddress(late), [{ signature: 'unserved', slot: 4, err: false }]);
   await indexPass(d);
-  const c = store.getCoin(found)!;
+  const c = (await store.getCoin(found))!;
   assert.deepEqual([c.status, c.name, c.symbol, c.creator, c.description, c.metadataUri, c.createSig, c.createdAt],
     ['LIVE', 'Found Dog', 'FDOG', creator, '', 'https://example.invalid/fdog.json', 'mk', '2025-10-09T08:54:10.000Z']);
-  assert.deepEqual(store.allTrades(found).map((t) => [t.sig, t.trader, t.quoteRaw]), [['buy', trader, '101']], 'its whole history is read like any other coin\'s');
-  assert.equal(store.getCoin(late), null, 'a coin whose creation is not served yet waits for the next pass');
-  assert.equal(store.getCoin(other), null);
+  assert.deepEqual((await store.allTrades(found)).map((t) => [t.sig, t.trader, t.quoteRaw]), [['buy', trader, '101']], 'its whole history is read like any other coin\'s');
+  assert.equal((await store.getCoin(late)), null, 'a coin whose creation is not served yet waits for the next pass');
+  assert.equal((await store.getCoin(other)), null);
   chain.txs.set('unserved', txRecord('unserved', [created(late)]));
   assert.deepEqual(await discoverCoins(d), [late]);
   assert.deepEqual(await discoverCoins(d), [], 'a coin is found once');
-  store.close();
+  await store.close();
 });
 
 test('verify\'s catch-up rebuilds a new store from the chain alone, pool history included, and sends nothing', async () => {
   const chain = fakeChain();
   const store = new EngineStore(`${engineDir}/catchup.sqlite`);
-  store.bind('quote', E.NATIVE_MINT);
+  (await store.bind('quote', E.NATIVE_MINT));
   const creator = (await generateMintKey()).address, mint = (await generateMintKey()).address, pool = await E.launchPoolAddress(mint);
   await putCurve(chain, mint, creator, { status: 'Graduated', pool });
   await putPool(chain, mint, creator, { quoteReserve: 1_000n, baseReserve: 1_000n });
@@ -344,9 +344,9 @@ test('verify\'s catch-up rebuilds a new store from the chain alone, pool history
   chain.txs.set('grad', txRecord('grad', [ev('Graduated', E.QF_CURVE, { mint, pool, quoteToPool: 1n, baseToPool: 1n, graduationFee: 10n, lpBurned: 1n })]));
   chain.txs.set('swap', txRecord('swap', [ev('SwapEvent', E.QF_POOL, { poolId: pool, inputAmount: 100n, outputAmount: 7n, inputMint: E.NATIVE_MINT, outputMint: mint, tradeFee: 1n, creatorFee: 2n })]));
   await catchUp({ store, chain });
-  assert.deepEqual([store.getCoin(mint)?.status, store.getCoin(mint)?.graduateSig, store.allTrades(mint).map((t) => [t.sig, t.venue])], ['GRADUATED', 'grad', [['swap', 'POOL']]]);
+  assert.deepEqual([(await store.getCoin(mint))?.status, (await store.getCoin(mint))?.graduateSig, (await store.allTrades(mint)).map((t) => [t.sig, t.venue])], ['GRADUATED', 'grad', [['swap', 'POOL']]]);
   assert.deepEqual([chain.operatorSent.length, chain.sent.length], [0, 0]);
-  store.close();
+  await store.close();
 });
 
 test('the books reconcile every vault and fee with the events, fail on one raw unit, and wait for unread history', async () => {
@@ -376,7 +376,7 @@ test('the books reconcile every vault and fee with the events, fail on one raw u
   const twin = { ...b.checks[0]!, mint: 'Twin1111111111111111111111111111111111111111' };
   assert.match(engineBooksText({ ...b, checks: [b.checks[0]!, twin] }), new RegExp(`\\$MCAT ${mint.slice(0, 4)}…[\\s\\S]*\\$MCAT Twin…`), 'two coins with one symbol are told apart');
   assert.doesNotMatch(engineBooksText(b), /\$MCAT \S+…/);
-  store.close();
+  await store.close();
 });
 
 test('a busy RPC (429, dropped connection) is retried with a doubling wait; any other error reaches the caller at once', async () => {
@@ -413,7 +413,7 @@ test('the engine server proves its network first: devnet by genesis hash, localn
   await assert.rejects(proveCluster('https://rpc.example', 'localnet', g('x'), false), /this machine/);
   await assert.rejects(proveCluster('http://127.0.0.1:8899', 'localnet', g(GENESIS.devnet), false), /serves devnet/);
   const s = new EngineStore(`${engineDir}/bind.sqlite`);
-  s.bind('genesis', 'one');
-  assert.throws(() => s.bind('genesis', 'two'), /STORE_GENESIS_MISMATCH/);
-  s.close();
+  (await s.bind('genesis', 'one'));
+  await assert.rejects(s.bind('genesis', 'two'), /STORE_GENESIS_MISMATCH/);
+  await s.close();
 });

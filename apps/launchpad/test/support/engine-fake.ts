@@ -151,7 +151,7 @@ export async function engineHarness(o: { chain?: FakeChain; profile?: EngineProf
   const app = createEngineApp({ store, chain, quote: SOL, profile: o.profile ?? DEVNET, staticDir: o.staticDir ?? null, publicBaseUrl: 'http://127.0.0.1:8788',
     ...(o.now ? { now: o.now } : {}), ...(o.log ? { log: o.log } : {}) });
   await new Promise<void>((r) => app.listen(0, '127.0.0.1', r));
-  after(() => { app.close(); store.close(); });
+  after(async () => { app.close(); await store.close(); });
   const base = `http://127.0.0.1:${(app.address() as AddressInfo).port}`;
   const call = async (path: string, body?: unknown) => {
     const r = await fetch(base + path, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -162,8 +162,8 @@ export async function engineHarness(o: { chain?: FakeChain; profile?: EngineProf
 
 /** A live coin in the store with its curve on the fake chain (TEST_ONLY). */
 export async function seedEngineCoin(h: { chain: FakeChain; store: EngineStore }, creator: string, mint: string, symbol: string, s: CurveState = {}) {
-  h.store.insertPendingCoin({ mint, quoteMint: E.NATIVE_MINT, creator, name: `${symbol} coin`, symbol, description: 'TEST_ONLY', website: null, twitter: null, telegram: null,
-    imageType: null, metadataUri: `http://127.0.0.1:8788/m/${mint}.json`, createdAt: '2026-10-11T00:00:00.000Z' }, null);
-  h.store.markLive(mint, null, '2026-10-11T00:00:01.000Z');
+  (await h.store.insertPendingCoin({ mint, quoteMint: E.NATIVE_MINT, creator, name: `${symbol} coin`, symbol, description: 'TEST_ONLY', website: null, twitter: null, telegram: null,
+    imageType: null, metadataUri: `http://127.0.0.1:8788/m/${mint}.json`, createdAt: '2026-10-11T00:00:00.000Z' }, null));
+  (await h.store.markLive(mint, null, '2026-10-11T00:00:01.000Z'));
   await putCurve(h.chain, mint, creator, s);
 }

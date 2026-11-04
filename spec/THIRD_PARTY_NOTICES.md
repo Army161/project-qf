@@ -65,3 +65,8 @@ Also shipped or derived:
 No Meteora code, SDK or program is included or distributed.
 
 Rewards Merkle format note (2026-09-27): `packages/rewards` computes leaves and sorted-pair keccak parents in the format of the Solana Foundation Rewards program at `df7517d` (MIT). This is an independent implementation of that format, with no copied source.
+
+## Database gateway (deploy/supabase/qf-db, Supabase Edge Function only; not part of any app or package build)
+
+- `postgres` 3.4.5 (porsager/postgres) — The Unlicense. Loaded by the Supabase runtime as `npm:postgres@3.4.5`.
+- `jose` 5.9.6 (panva/jose) — MIT License, Copyright (c) 2018 Filip Skokan. Loaded by the Supabase runtime as `npm:jose@5.9.6`.
