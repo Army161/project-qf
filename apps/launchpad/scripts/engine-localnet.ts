@@ -11,11 +11,10 @@
 // localnet.sh made live outside the repo). Nothing here can reach devnet or mainnet.
 import { readFileSync } from 'node:fs';
 import { address, createKeyPairSignerFromBytes, createSolanaRpc, generateKeyPairSigner, lamports } from '@solana/kit';
-import { CAPABILITY_FLAGS } from '@project-qf/core';
 import * as E from '@project-qf/engine';
 import { economicsDigest } from '@project-qf/policy';
 import { toBase64 } from '@project-qf/tx';
-import { kitChain, proveCluster } from '../src/chain.ts';
+import { kitChain, mainnetGate, proveCluster } from '../src/chain.ts';
 import { indexPass } from '../src/indexer.ts';
 import { ENGINE_FAUCET } from '../src/server.ts';
 import { e2e, sleep } from './engine-e2e.ts';
@@ -34,7 +33,7 @@ const authority = await createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(
 const [operator, creator, alice, bob, mintKey, newcomer] = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner(), generateKeyPairSigner(), generateKeyPairSigner(),
   generateKeyPairSigner(), generateKeyPairSigner()]);
 const chain = kitChain(RPC, operator, (m) => console.log(`      [app] ${m}`));
-const cluster = await proveCluster(RPC, 'localnet', chain.genesisHash, CAPABILITY_FLAGS.MAINNET_WRITES as boolean);
+const cluster = await proveCluster(RPC, 'localnet', chain.genesisHash, mainnetGate(undefined)) as 'devnet' | 'localnet';
 for (const [k, sol] of [[authority.address, 20], [operator.address, 5], [creator.address, 2], [alice.address, 5], [bob.address, 5]] as const) await airdrop(k, sol);
 const ammConfig = await E.ammConfigAddress(0);
 // the engine's settings are set by its admin (the curve's upgrade authority), not by the app

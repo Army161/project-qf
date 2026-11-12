@@ -17,7 +17,7 @@ import {
   type ApprovedTerms, type TxIntent,
 } from '@project-qf/tx';
 import { addr, B58, BODY_LIMIT_BYTES, clientIp, HttpError, image, LAUNCH_BODY_LIMIT_BYTES, onlyKeys, rateLimiter, rawAmount, readJson, send, serial, serveStatic, text, url } from './http.ts';
-import type { EngineChain } from './chain.ts';
+import type { EngineChain, LaunchCluster } from './chain.ts';
 import { classifyTx, listNew, readDue } from './indexer.ts';
 import { liveView, quoteCurve, quotePool, readCoinSnapshots, readPlatform, poolSides, type CoinSnapshot, type EnginePlatform, type LiveView, type QuoteAsset } from './market.ts';
 import type { CoinRow, Store, TradeRow } from './store.ts';
@@ -31,13 +31,17 @@ export const ENGINE_FAUCET = Object.freeze({ lamports: 500_000_000n, belowLampor
 /** The compute caps every engine transaction's terms carry, and the limit each kind asks for (measured on the real
  *  programs: create 91k, a curve trade with wrapping 66k, a pool trade 29k, a claim 46k, a pool fee collect 64k). */
 export const ENGINE_COMPUTE = Object.freeze({ maxUnitLimit: 400_000, maxUnitPriceMicroLamports: '0' });
+/** The highest priority fee a server may put on a user's transaction: the page refuses more (web txcheck PAGE_COMPUTE). */
+export const MAX_PRIORITY_MICROLAMPORTS = 100_000n;
 const UNITS: Record<QfTerms['kind'], number> = { QF_CREATE: 200_000, QF_SWAP: 200_000, QF_POOL_SWAP: 150_000, QF_CLAIM_CREATOR_FEES: 150_000, QF_COLLECT_POOL_CREATOR_FEE: 150_000 };
 const SNAPSHOT_TTL_MS = 5_000, PLATFORM_TTL_MS = 30_000;
 type QfTerms = Extract<ApprovedTerms, { kind: `QF_${string}` }>;
 
 export interface EngineProfile {
-  cluster: 'devnet' | 'localnet';
+  cluster: LaunchCluster;
   writes: boolean; faucet: boolean;
+  /** Priority fee on every transaction this server builds, in micro-lamports per compute unit (0 or absent: none). */
+  priorityMicroLamports?: bigint;
   /** shown next to every amount */
   label: string;
   writesLockedBecause: string[];
@@ -92,6 +96,10 @@ export const FAUCET_GLOBAL_PER_MINUTE = 10;
 export function createEngineHandler(o: EngineAppOptions): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   const now = o.now ?? (() => new Date());
   const { profile, quote } = o;
+  if (profile.cluster === 'mainnet-beta' && profile.faucet) throw new Error('there is no faucet on mainnet');
+  const priority = profile.priorityMicroLamports ?? 0n;
+  if (priority < 0n || priority > MAX_PRIORITY_MICROLAMPORTS) throw new Error(`priority fee must be 0..${MAX_PRIORITY_MICROLAMPORTS} micro-lamports per unit`);
+  const compute = { maxUnitLimit: ENGINE_COMPUTE.maxUnitLimit, maxUnitPriceMicroLamports: priority.toString() };
   const limit = rateLimiter(now);
   const faucetQueue = serial();
 
@@ -155,11 +163,12 @@ export function createEngineHandler(o: EngineAppOptions): (req: IncomingMessage,
     if (!r.ok) throw new HttpError(409, 'INTENT_REFUSED', 'the transaction intent is refused by policy', r.violations);
   };
   const termsOf = <K extends QfTerms['kind']>(kind: K, feePayer: string, fields: Omit<Extract<QfTerms, { kind: K }>, 'kind' | 'cluster' | 'policyVersion' | 'feePayer' | 'compute'>) =>
-    ({ kind, cluster: profile.cluster, policyVersion: TX_BINDING_POLICY_VERSION, feePayer, compute: { ...ENGINE_COMPUTE }, ...fields }) as unknown as Extract<QfTerms, { kind: K }>;
+    ({ kind, cluster: profile.cluster, policyVersion: TX_BINDING_POLICY_VERSION, feePayer, compute: { ...compute }, ...fields }) as unknown as Extract<QfTerms, { kind: K }>;
   /** Compiles the terms' own instructions, proves the bytes bind to the terms, and records the exact message. */
   async function build(terms: QfTerms, mint: string, user: string) {
     const bh = await o.chain.blockhash();
-    const tx = E.compileUnsigned({ feePayer: terms.feePayer, blockhash: bh.blockhash, lastValidBlockHeight: bh.lastValidBlockHeight, instructions: await qfInstructions(terms), computeUnits: UNITS[terms.kind] });
+    const tx = E.compileUnsigned({ feePayer: terms.feePayer, blockhash: bh.blockhash, lastValidBlockHeight: bh.lastValidBlockHeight, instructions: await qfInstructions(terms), computeUnits: UNITS[terms.kind],
+      ...(priority > 0n ? { computeUnitPrice: priority } : {}) });
     const v = await bindTransactionToTerms(decodeTransactionBytes(tx.bytes), terms);
     if (v.length) { o.log?.(`binding failed for ${terms.kind}: ${v.join('; ')}`); throw new HttpError(500, 'BINDING_FAILED', 'the built transaction does not bind to its terms', v); }
     const t = now();
@@ -193,10 +202,10 @@ export function createEngineHandler(o: EngineAppOptions): (req: IncomingMessage,
 
     if (path === '/api/lp/platform' && method === 'GET') {
       const p = await platformOf(fresh).catch(() => null);
-      return send(res, 200, { apiVersion: LP_API_VERSION, engine: 'qf', cluster: profile.cluster, mode: profile.cluster === 'devnet' ? 'DEVNET' : 'LOCALNET', writesEnabled: profile.writes,
+      return send(res, 200, { apiVersion: LP_API_VERSION, engine: 'qf', cluster: profile.cluster, mode: profile.cluster === 'mainnet-beta' ? 'MAINNET' : profile.cluster === 'devnet' ? 'DEVNET' : 'LOCALNET', writesEnabled: profile.writes,
         writesLockedBecause: profile.writesLockedBecause, label: profile.label, ready: !!p && !p.settings.createPaused, operator: o.chain.operatorAddress,
         platform: p && { quote, programs: p.economics.programs, global: p.global, ammConfig: p.settings.ammConfig, feeRecipient: p.settings.feeRecipient, createPaused: p.settings.createPaused,
-          threshold: { rawQuoteThreshold: p.graduationQuoteRaw.toString() }, launchEconomics: p.economics, launchEconomicsDigest: p.economicsDigest },
+          buyPaused: p.settings.buyPaused, poolFeeReceiver: E.POOL_FEE_RECEIVER, threshold: { rawQuoteThreshold: p.graduationQuoteRaw.toString() }, launchEconomics: p.economics, launchEconomicsDigest: p.economicsDigest },
         faucet: profile.faucet ? { quoteUi: '0', lamports: ENGINE_FAUCET.lamports.toString(), claimsPerDay: ENGINE_FAUCET.claimsPerDay } : null });
     }
     if (path === '/api/lp/tokens' && method === 'GET') return send(res, 200, { tokens: await tokenViews(await o.store.listCoins(['LIVE', 'GRADUATED'])) });
@@ -277,6 +286,8 @@ export function createEngineHandler(o: EngineAppOptions): (req: IncomingMessage,
         try { q = quotePool(s.pool, c.mint, c.quoteMint, side, amountIn, slippageBps, await o.chain.now()); } catch (e) { throw poolRefusal(e); }
       } else {
         if (s.coin.launch.status !== 'Trading') throw new HttpError(409, 'CURVE_COMPLETE', 'the bonding curve is complete; the coin is graduating to its pool');
+        // the engine's emergency stop: buying on the curve is off; selling still works
+        if (side === 'buy' && (await platform()).settings.buyPaused) throw new HttpError(423, 'BUYING_PAUSED', 'buying is paused on this engine; selling still works');
         try { q = quoteCurve(s.coin.launch, side, amountIn, slippageBps); } catch (e) { throw curveRefusal(e); }
       }
       if (!isBuild) return send(res, 200, { quote: q, venue: q.venue });
@@ -412,7 +423,7 @@ export function createEngineHandler(o: EngineAppOptions): (req: IncomingMessage,
     }
     const body = { name: c.name, symbol: c.symbol, description: c.description, ...(c.imageType ? { image: `${o.publicBaseUrl}/m/${mint}.img` } : {}),
       ...(c.website ? { external_url: c.website } : {}), extensions: { website: c.website, twitter: c.twitter, telegram: c.telegram },
-      attributes: [{ trait_type: 'network', value: `${profile.cluster} (TEST_ONLY)` }] };
+      attributes: [{ trait_type: 'network', value: profile.cluster === 'mainnet-beta' ? 'mainnet-beta' : `${profile.cluster} (TEST_ONLY)` }] };
     res.writeHead(200, { ...headers, 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify(body));
   }
 

@@ -163,6 +163,11 @@ export function computeUnitLimitIx(units: number): Instruction {
   if (!Number.isInteger(units) || units <= 0 || units > 1_400_000) throw new RangeError('compute unit limit');
   return { programAddress: address(COMPUTE_BUDGET), data: Uint8Array.from([2, ...le(BigInt(units), 4)]) };
 }
+/** The priority fee: `microLamports` per compute unit (the network charges it on the unit limit). */
+export function computeUnitPriceIx(microLamports: bigint): Instruction {
+  if (typeof microLamports !== 'bigint' || microLamports <= 0n || microLamports >= 1n << 64n) throw new RangeError('compute unit price');
+  return { programAddress: address(COMPUTE_BUDGET), data: Uint8Array.from([3, ...le(microLamports, 8)]) };
+}
 
 /** The trader's coin and quote token accounts, created if missing. */
 export const traderAccountIxs = async (payer: string, trader: string, mint: string, quoteMint = NATIVE_MINT) =>

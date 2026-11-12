@@ -5,7 +5,7 @@ import {
   address, appendTransactionMessageInstructions, compileTransaction, createTransactionMessage, getTransactionEncoder, pipe,
   setTransactionMessageFeePayer, setTransactionMessageLifetimeUsingBlockhash, type Blockhash, type Instruction,
 } from '@solana/kit';
-import { computeUnitLimitIx } from './instructions.ts';
+import { computeUnitLimitIx, computeUnitPriceIx } from './instructions.ts';
 
 export interface UnsignedTx {
   /** Wire bytes (signatures zeroed). */
@@ -17,8 +17,10 @@ export interface UnsignedTx {
 }
 const MAX_TX_BYTES = 1232;
 
-export function compileUnsigned(p: { feePayer: string; blockhash: string; lastValidBlockHeight: bigint; instructions: Instruction[]; computeUnits?: number }): UnsignedTx {
-  const ixs = p.computeUnits === undefined ? p.instructions : [computeUnitLimitIx(p.computeUnits), ...p.instructions];
+/** `computeUnits` adds a compute-unit limit first; `computeUnitPrice` (micro-lamports per unit, above 0) a priority fee after it. */
+export function compileUnsigned(p: { feePayer: string; blockhash: string; lastValidBlockHeight: bigint; instructions: Instruction[]; computeUnits?: number; computeUnitPrice?: bigint }): UnsignedTx {
+  const budget = [...(p.computeUnits === undefined ? [] : [computeUnitLimitIx(p.computeUnits)]), ...(p.computeUnitPrice ? [computeUnitPriceIx(p.computeUnitPrice)] : [])];
+  const ixs = [...budget, ...p.instructions];
   const message = pipe(
     createTransactionMessage({ version: 'legacy' }),
     (m) => setTransactionMessageFeePayer(address(p.feePayer), m),

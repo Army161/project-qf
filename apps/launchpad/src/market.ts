@@ -26,11 +26,13 @@ export interface EnginePlatform {
  *  up on this network. */
 export async function readPlatform(chain: EngineChain, quote: QuoteAsset): Promise<EnginePlatform | null> {
   const global = await E.globalAddress(quote.mint);
-  const [g] = await chain.read([global]);
+  // the settings decide what a creator consents to and which pool config coins graduate into: finalized, cross-checked
+  const read = chain.decisionRead ?? chain.read;
+  const [g] = await read([global]);
   if (!g) return null;
   const settings = E.decodeGlobal(g);
   if (settings.quoteMint !== quote.mint) throw new Error('GLOBAL_QUOTE_MISMATCH');
-  const [c] = await chain.read([settings.ammConfig]);
+  const [c] = await read([settings.ammConfig]);
   if (!c) throw new Error('POOL_CONFIG_MISSING');
   const poolConfig = E.decodeAmmConfig(c);
   const cfg = settings.config;

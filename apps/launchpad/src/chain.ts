@@ -9,6 +9,7 @@ import {
   getTransactionEncoder, signTransaction, type Instruction, type KeyPairSigner,
 } from '@solana/kit';
 import * as E from '@project-qf/engine';
+import { CAPABILITY_FLAGS, READINESS } from '@project-qf/core';
 
 export interface TxRecord {
   signature: string; slot: number; blockTime: number | null; err: boolean; feePayer: string;
@@ -27,6 +28,9 @@ export interface EngineChain {
   operatorAddress: string | null;
   /** Account reads at `confirmed`, for the engine package's decoders. */
   read: E.AccountReader;
+  /** Reads a decision rests on (the engine's settings, whether a coin is ready to graduate): at `finalized`, and with a
+   *  second provider configured, both providers must return the same bytes. Falls back to `read` where absent (tests). */
+  decisionRead?: E.AccountReader;
   blockhash(): Promise<{ blockhash: string; lastValidBlockHeight: bigint }>;
   /** The chain's clock (the Clock sysvar's unix time): a pool opens by this clock, not the server's. */
   now(): Promise<bigint>;
@@ -49,18 +53,47 @@ export interface EngineChain {
  *  loopback RPC with QF_CLUSTER=localnet said explicitly. */
 export const GENESIS = Object.freeze({ devnet: 'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG', 'mainnet-beta': '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d' });
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
-/** Proves which network an RPC serves, before anything else talks to it. Mainnet is refused (MAINNET_WRITES=false). */
-export async function proveCluster(rpcUrl: string, wanted: 'devnet' | 'localnet', genesisHash: () => Promise<string>, mainnetWrites: boolean): Promise<'devnet' | 'localnet'> {
-  if (mainnetWrites !== false) throw new Error('MAINNET_WRITES must stay false in this build');
+export type LaunchCluster = 'devnet' | 'localnet' | 'mainnet-beta';
+
+/** Everything that must hold before a server talks to mainnet. The first two live in code (packages/core readiness.ts
+ *  and flags.ts) and change only in a reviewed commit with the owner's written go-ahead; the third is the operator
+ *  typing QF_CONFIRM_MAINNET=mainnet-beta for this one process. */
+export interface MainnetGate { stage: 'ACTIVE' | 'BLOCKED'; mainnetWrites: boolean; confirm: string | undefined; blockers: readonly string[] }
+export const mainnetGate = (confirm: string | undefined): MainnetGate =>
+  ({ stage: READINESS.MAINNET.status, mainnetWrites: CAPABILITY_FLAGS.MAINNET_WRITES as boolean, confirm, blockers: READINESS.MAINNET.blockers });
+
+function checkRpcUrl(rpcUrl: string) {
   const u = new URL(rpcUrl), loopback = LOOPBACK.has(u.hostname);
   if (u.username || u.password) throw new Error('the RPC URL must not carry credentials');
   if (u.protocol !== 'https:' && !(u.protocol === 'http:' && loopback)) throw new Error('the RPC URL must be https (plain http only on this machine)');
+  return { host: u.hostname, loopback };
+}
+/** Proves which network an RPC serves, before anything else talks to it. Mainnet only through an open gate. */
+export async function proveCluster(rpcUrl: string, wanted: LaunchCluster, genesisHash: () => Promise<string>, gate: MainnetGate): Promise<LaunchCluster> {
+  const { loopback } = checkRpcUrl(rpcUrl);
+  if (wanted === 'mainnet-beta') {
+    if (gate.stage !== 'ACTIVE') throw new Error(`mainnet is BLOCKED: ${gate.blockers.join('; ')}`);
+    if (gate.mainnetWrites !== true) throw new Error('mainnet is BLOCKED: MAINNET_WRITES is false in this build');
+    if (gate.confirm !== 'mainnet-beta') throw new Error('mainnet needs QF_CONFIRM_MAINNET=mainnet-beta for this process');
+    if (loopback) throw new Error('mainnet needs a real RPC provider, not this machine');
+  }
   if (wanted === 'localnet' && !loopback) throw new Error('localnet runs only against a validator on this machine (127.0.0.1)');
   const g = await genesisHash();
-  if (g === GENESIS['mainnet-beta']) throw new Error('refusing mainnet-beta: the engine launchpad runs on devnet or a local validator only');
+  if (wanted === 'mainnet-beta') {
+    if (g !== GENESIS['mainnet-beta']) throw new Error(`genesis ${g} is not mainnet-beta`);
+    return wanted;
+  }
+  if (g === GENESIS['mainnet-beta']) throw new Error(`refusing mainnet-beta: QF_CLUSTER=${wanted}`);
   if (wanted === 'devnet' && g !== GENESIS.devnet) throw new Error(`genesis ${g} is not devnet`);
   if (wanted === 'localnet' && g === GENESIS.devnet) throw new Error('QF_CLUSTER=localnet, but this RPC serves devnet');
   return wanted;
+}
+/** A second, independent provider for decision reads: another host, the same network. */
+export async function proveSecondProvider(rpcUrl: string, secondUrl: string, genesis: string, secondGenesis: () => Promise<string>): Promise<void> {
+  const a = checkRpcUrl(rpcUrl), b = checkRpcUrl(secondUrl);
+  if (a.host === b.host) throw new Error('the second RPC provider must be a different host');
+  const g = await secondGenesis();
+  if (g !== genesis) throw new Error(`the second RPC provider serves genesis ${g}, not ${genesis}`);
 }
 
 const hex = (b: ArrayLike<number>) => Array.from(b, (x: number) => x.toString(16).padStart(2, '0')).join('');
@@ -106,10 +139,20 @@ export function calmRpc<T extends object>(rpc: T): T {
   } });
 }
 
-export function kitChain(rpcUrl: string, operator: KeyPairSigner | null, log: (m: string) => void = () => {}): EngineChain {
-  const rpc = calmRpc(createSolanaRpc(rpcUrl));
-  const commitment = 'confirmed' as const;
-  const read: E.AccountReader = async (addrs) => {
+/** The deployment's two programs exist on this network as upgradeable programs. A missing program is a wrong network or
+ *  an engine not deployed yet; the server stops instead of building transactions nobody can run. */
+export async function checkDeployment(read: E.AccountReader, d: E.EngineDeployment): Promise<void> {
+  const accounts = await read([d.curve, d.pool]);
+  for (const [k, a] of accounts.entries()) {
+    const id = k === 0 ? d.curve : d.pool;
+    if (!a) throw new Error(`ENGINE_NOT_DEPLOYED the ${k === 0 ? 'curve' : 'pool'} program ${id} does not exist on ${d.cluster}`);
+    if (a.owner !== E.BPF_UPGRADEABLE_LOADER || a.data.length !== 36 || a.data[0] !== 2) throw new Error(`ENGINE_NOT_DEPLOYED ${id} is not an upgradeable program`);
+  }
+}
+
+/** Reads `addrs` at `commitment` from one provider. */
+function reader(rpc: ReturnType<typeof createSolanaRpc>, commitment: 'confirmed' | 'finalized'): E.AccountReader {
+  return async (addrs) => {
     const out: (E.RawAccount | null)[] = [];
     for (let k = 0; k < addrs.length; k += 100) {
       const r = await rpc.getMultipleAccounts(addrs.slice(k, k + 100).map((a) => address(a)), { encoding: 'base64', commitment }).send();
@@ -117,6 +160,28 @@ export function kitChain(rpcUrl: string, operator: KeyPairSigner | null, log: (m
     }
     return out;
   };
+}
+const sameAccount = (a: E.RawAccount | null, b: E.RawAccount | null) =>
+  a === null || b === null ? a === b : a.owner === b.owner && a.data.length === b.data.length && a.data.every((x, k) => x === b.data[k]);
+/** Finalized reads from two providers that must agree byte for byte (owner and data). Two providers can sit a slot or
+ *  two apart, so a disagreement is read again a few times before it counts. */
+export function crossCheckedReader(first: E.AccountReader, second: E.AccountReader, wait = (ms: number) => sleep(ms)): E.AccountReader {
+  return async (addrs) => {
+    for (let k = 0; ; k++) {
+      const [a, b] = await Promise.all([first(addrs), second(addrs)]);
+      const differ = addrs.filter((_, i) => !sameAccount(a[i]!, b[i]!));
+      if (!differ.length) return a;
+      if (k >= 3) throw new Error(`RPC_PROVIDERS_DISAGREE on ${differ.join(', ')}`);
+      await wait(1_500);
+    }
+  };
+}
+
+export function kitChain(rpcUrl: string, operator: KeyPairSigner | null, log: (m: string) => void = () => {}, opts: { secondRpcUrl?: string; computeUnitPrice?: bigint } = {}): EngineChain {
+  const rpc = calmRpc(createSolanaRpc(rpcUrl));
+  const commitment = 'confirmed' as const;
+  const read = reader(rpc, commitment);
+  const decisionRead = opts.secondRpcUrl ? crossCheckedReader(reader(rpc, 'finalized'), reader(calmRpc(createSolanaRpc(opts.secondRpcUrl)), 'finalized')) : reader(rpc, 'finalized');
   const blockhash = async () => { const { value } = await rpc.getLatestBlockhash({ commitment }).send(); return { blockhash: value.blockhash as string, lastValidBlockHeight: BigInt(value.lastValidBlockHeight) }; };
   async function send(signed: Uint8Array, lastValidBlockHeight: bigint): Promise<string> {
     const wire = getBase64EncodedWireTransaction(getTransactionDecoder().decode(signed));
@@ -141,6 +206,7 @@ export function kitChain(rpcUrl: string, operator: KeyPairSigner | null, log: (m
   return {
     operatorAddress: operator?.address ?? null,
     read,
+    decisionRead,
     blockhash,
     async now() {
       const [c] = await read([CLOCK]);
@@ -209,7 +275,7 @@ export function kitChain(rpcUrl: string, operator: KeyPairSigner | null, log: (m
     async sendAsOperator(instructions, computeUnits) {
       if (!operator) throw new Error('OPERATOR_KEY_UNAVAILABLE');
       const bh = await blockhash();
-      const unsigned = E.compileUnsigned({ feePayer: operator.address, blockhash: bh.blockhash, lastValidBlockHeight: bh.lastValidBlockHeight, instructions, computeUnits });
+      const unsigned = E.compileUnsigned({ feePayer: operator.address, blockhash: bh.blockhash, lastValidBlockHeight: bh.lastValidBlockHeight, instructions, computeUnits, computeUnitPrice: opts.computeUnitPrice });
       if (unsigned.signers.length !== 1 || unsigned.signers[0] !== operator.address) throw new Error('OPERATOR_TX_NEEDS_OTHER_SIGNERS');
       const signed = await signTransaction([operator.keyPair], getTransactionDecoder().decode(unsigned.bytes));
       return send(new Uint8Array(getTransactionEncoder().encode(signed)), bh.lastValidBlockHeight);

@@ -72,6 +72,15 @@ const COIN_COLUMNS = `mint, quote_mint, creator, name, symbol, description, webs
 /** What the launchpad keeps between requests. Two stores implement it: SQLite (one machine, tests) and Postgres
  *  (serverless hosting, store-pg.ts); both keep the same rows and the same one-submit-per-intent rule. */
 export type Store = { [K in keyof EngineStore as K extends 'db' ? never : K]: EngineStore[K] };
+/** What a database is tied to for life: the network (name and genesis hash), the quote, and the engine's curve program. */
+export type BindKey = 'cluster' | 'genesis' | 'quote' | 'curve';
+/** Ties a store to one engine deployment. A store from before deployments were bound that already holds coins belongs
+ *  to the retired 2026-10-11 programs, so it is refused rather than mixed with the new ones. */
+export async function bindDeployment(store: Pick<Store, 'bind' | 'bound' | 'listCoins'>, curve: string): Promise<void> {
+  if (!(await store.bound('curve')) && (await store.listCoins(['PENDING', 'LIVE', 'GRADUATED', 'FAILED'], 1)).length)
+    throw new Error('STORE_CURVE_MISMATCH this database holds coins from an engine deployment it did not record; start a new database for this one');
+  await store.bind('curve', curve);
+}
 
 export class EngineStore {
   readonly db: DatabaseSync;
@@ -93,14 +102,14 @@ export class EngineStore {
   async close() { this.db.close(); }
 
   /** Ties this database to one network (by name and genesis hash) and one quote for life: opening it for another throws. */
-  async bind(k: 'cluster' | 'genesis' | 'quote', value: string): Promise<void> {
+  async bind(k: BindKey, value: string): Promise<void> {
     const r = this.db.prepare('SELECT v FROM settings WHERE k = ?').get(k) as { v: string } | undefined;
     if (!r) { this.db.prepare('INSERT INTO settings (k, v) VALUES (?, ?)').run(k, value); return; }
     if (r.v !== value) throw new Error(`STORE_${k.toUpperCase()}_MISMATCH this database belongs to ${r.v}, not ${value}`);
   }
 
   /** What `bind` tied this database to, or null before the first bind. */
-  async bound(k: 'cluster' | 'genesis' | 'quote'): Promise<string | null> {
+  async bound(k: BindKey): Promise<string | null> {
     return (this.db.prepare('SELECT v FROM settings WHERE k = ?').get(k) as { v: string } | undefined)?.v ?? null;
   }
 

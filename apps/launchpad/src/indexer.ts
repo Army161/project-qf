@@ -132,14 +132,15 @@ export async function readDue(d: EngineIndexerDeps): Promise<number> {
 export async function crankGraduations(d: EngineIndexerDeps): Promise<{ mint: string; signature: string }[]> {
   const out: { mint: string; signature: string }[] = [];
   for (const c of await d.store.listCoins(['LIVE'])) {
-    const s = await E.readCoin(d.chain.read, c.mint, c.quoteMint).catch((e) => { d.log?.(`crank read ${c.symbol}: ${(e as Error).message.slice(0, 200)}`); return null; });
+    // graduating is a decision: finalized state, agreed by both providers where two are configured
+    const s = await E.readCoin(d.chain.decisionRead ?? d.chain.read, c.mint, c.quoteMint).catch((e) => { d.log?.(`crank read ${c.symbol}: ${(e as Error).message.slice(0, 200)}`); return null; });
     if (!s) continue;
     const l = s.launch;
     if (l.status === 'Graduated') { await d.store.markGraduated(c.mint, l.pool, null, nowOf(d).toISOString()); continue; }
     if (l.status !== 'Complete' || !d.chain.operatorAddress) continue;
     try {
       d.log?.(`graduating ${c.symbol} (${c.mint})`);
-      const ix = await E.graduateIx({ payer: d.chain.operatorAddress, mint: c.mint, quoteMint: c.quoteMint, ammConfig: l.ammConfig, creator: l.creator, createPoolFee: E.POOL_FEE_RECEIVER });
+      const ix = await E.graduateIx({ payer: d.chain.operatorAddress, mint: c.mint, quoteMint: c.quoteMint, ammConfig: l.ammConfig, creator: l.creator });
       const signature = await d.chain.sendAsOperator([ix], GRADUATE_COMPUTE_UNITS);
       await d.store.markGraduated(c.mint, await E.launchPoolAddress(c.mint), signature, nowOf(d).toISOString());
       out.push({ mint: c.mint, signature });
