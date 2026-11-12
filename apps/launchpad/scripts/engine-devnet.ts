@@ -3,19 +3,22 @@
 // process, and engine-e2e.ts plays the browser and the wallets. A coin goes through its whole life on devnet: launch, a
 // buy and a sell on the curve, a buy that completes it, graduation by the crank, a buy and a sell in its pool, both creator
 // claims and the platform's claim, the faucet; the books (`verify`) all PASS before and after the claims. Every wallet
-// made for the run gives its leftover test SOL back to the operator at the end. It costs the operator about 0.05 devnet
-// SOL (rent for the coin's accounts and the pool, network fees); bob's buy-out needs about 1 SOL for the run's length.
+// made for the run gives its leftover test SOL back to the operator at the end. A run costs the operator about 0.75 devnet
+// SOL: mostly bob's buy-out, which becomes the coin's pool liquidity (its LP is burned, so it never comes back), plus rent
+// for the coin's and the run's accounts and network fees.
 //
 //   node --no-warnings --use-env-proxy apps/launchpad/scripts/engine-devnet.ts <evidence.json>
 // Settings: QF_DEVNET_KEY (the throwaway operator key, default ~/.qf-devnet/operator.json; it pays for the run), QF_RPC_URL
-// (default the public devnet endpoint). Devnet only: the RPC must prove devnet's genesis hash, mainnet is refused.
+// (default the public devnet endpoint) and QF_RPC2_URL (required: a second devnet provider on another host; every read the
+// app decides on, such as the crank's graduation, is finalized and must agree on both). Devnet only: both RPCs must prove
+// devnet's genesis hash, mainnet is refused.
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { generateKeyPairSigner } from '@solana/kit';
 import * as E from '@project-qf/engine';
 import { economicsDigest } from '@project-qf/policy';
 import { toBase64 } from '@project-qf/tx';
-import { checkDeployment, kitChain, loadOperator, mainnetGate, proveCluster } from '../src/chain.ts';
+import { createSolanaRpc, generateKeyPairSigner, type Signature } from '@solana/kit';
+import { checkDeployment, kitChain, loadOperator, mainnetGate, proveCluster, proveSecondProvider } from '../src/chain.ts';
 import { indexPass } from '../src/indexer.ts';
 import { ENGINE_FAUCET } from '../src/server.ts';
 import { e2e, SOL, sleep } from './engine-e2e.ts';
@@ -23,30 +26,42 @@ import { e2e, SOL, sleep } from './engine-e2e.ts';
 /** The devnet v2 treasury (a throwaway key standing in for the treasury multisig vault; engine repo devnet/keys.json). */
 const ENGINE_TREASURY = 'D4GdbP8hUKpMhvdHNxYXdM44te57f12DFKwpJ6N2VWNK';
 const RPC = process.env.QF_RPC_URL || 'https://api.devnet.solana.com';
+const RPC2 = process.env.QF_RPC2_URL || '';
+if (!RPC2) throw new Error('set QF_RPC2_URL: a second devnet RPC provider on another host');
 const [out] = process.argv.slice(2) as [string];
 const log = (m: string) => console.log(`      [app] ${m}`);
 
 const operator = await loadOperator(process.env.QF_DEVNET_KEY ?? join(homedir(), '.qf-devnet', 'operator.json'));
 if (!operator) throw new Error('no devnet operator key: run `main.ts operator` first and fund it');
-const chain = kitChain(RPC, operator, log);
+const chain = kitChain(RPC, operator, log, { secondRpcUrl: RPC2 });
 const cluster = await proveCluster(RPC, 'devnet', chain.genesisHash, mainnetGate(undefined)) as 'devnet';
+await proveSecondProvider(RPC, RPC2, await chain.genesisHash(), () => createSolanaRpc(RPC2).getGenesisHash().send());
+if (!chain.decisionRead) throw new Error('the app has no cross-checked reader');
 E.useDeployment(E.deploymentFor('devnet'));
 await checkDeployment(chain.decisionRead ?? chain.read, E.activeDeployment());
 const startLamports = await chain.lamports(operator.address);
-if (startLamports < 2_200_000_000n) throw new Error(`the operator holds ${SOL(startLamports)}; the run needs 2.2 (bob's buy-out, the faucet and the graduation float, all paid back)`);
+if (startLamports < 2_300_000_000n) throw new Error(`the operator holds ${SOL(startLamports)}; the run needs 2.3 (about 0.75 is spent: bob's buy-out stays in the coin's pool; the faucet keeps 0.5 back)`);
 const [creator, alice, bob, mintKey, newcomer] = await Promise.all([generateKeyPairSigner(), generateKeyPairSigner(), generateKeyPairSigner(), generateKeyPairSigner(), generateKeyPairSigner()]);
 const t = await e2e({ chain, cluster, faucet: true });
 const { check, call, store, flow, trade, coinBalance } = t;
 check('the app proves it is on devnet (by genesis hash), never mainnet', 'devnet', cluster);
-t.evidence.steps.push({ step: 'the operator funds the run\'s creator (0.05 SOL), alice (0.12 SOL) and bob (1.2 SOL)',
+t.evidence.steps.push({ step: 'the operator funds the run\'s creator (0.05 SOL), alice (0.12 SOL) and bob (0.92 SOL)',
   signature: await chain.sendAsOperator([E.transferSolIx(operator.address, creator.address, 50_000_000n), E.transferSolIx(operator.address, alice.address, 120_000_000n),
-    E.transferSolIx(operator.address, bob.address, 1_200_000_000n)], 10_000) });
+    E.transferSolIx(operator.address, bob.address, 920_000_000n)], 10_000) });
+
+/** The books over every coin on the devnet programs (earlier runs' coins too) must all pass, and this run's coin must have
+ *  all six of its checks among them. */
+async function coinBooks(label: string) {
+  const b = await t.booksNow(label);
+  check(`verify ${label}: this run's coin has all six books checks and each passes`, 6, b.checks.filter((c) => c.mint === mint && c.verdict === 'PASS').length);
+  return b;
+}
 
 async function run() {
   // ---------------------------------------------------------------- 1. the platform, as the engine's admin set it up
   const pl = (await call('/api/lp/platform?fresh=1')).body;
   check('platform: engine qf on devnet, ready, quoted in SOL', ['qf', 'devnet', true, 'SOL'], [pl.engine, pl.cluster, pl.ready, pl.platform?.quote.symbol]);
-  check('platform: the devnet v2 programs and pool fee account', [E.DEPLOYMENTS.devnet.curve, E.DEPLOYMENTS.devnet.pool, E.DEPLOYMENTS.devnet.poolFeeReceiver],
+  check('platform: the server names the devnet v2 deployment the page is built for (the page refuses any other)', [E.DEPLOYMENTS.devnet.curve, E.DEPLOYMENTS.devnet.pool, E.DEPLOYMENTS.devnet.poolFeeReceiver],
     [pl.platform.programs.curve, pl.platform.programs.pool, pl.platform.poolFeeReceiver]);
   check('platform: the economics digest recomputes in the browser', pl.platform.launchEconomicsDigest, economicsDigest(pl.platform.launchEconomics));
   check('platform: fees go to the devnet treasury (a throwaway key standing in for the treasury vault)', ENGINE_TREASURY, pl.platform.feeRecipient);
@@ -67,29 +82,38 @@ async function run() {
   // ---------------------------------------------------------------- 3. curve trades, then a buy that completes the curve
   await trade(mint, alice, 'alice buys 0.05 SOL on the curve', 'buy', 50_000_000n, 'CURVE');
   await trade(mint, alice, 'alice sells a third on the curve', 'sell', (await coinBalance(alice.address, mint)) / 3n, 'CURVE');
-  const last = await trade(mint, bob, 'bob buys out the curve (offers 1.1 SOL)', 'buy', 1_100_000_000n, 'CURVE');
-  check('the last buy completes the curve and pays only for what was left', true, last.completesCurve && BigInt(last.amountIn) < 1_100_000_000n);
+  const last = await trade(mint, bob, 'bob buys out the curve (offers 0.9 SOL)', 'buy', 900_000_000n, 'CURVE');
+  check('the last buy completes the curve and pays only for what was left', true, last.completesCurve && BigInt(last.amountIn) < 900_000_000n);
+  const onChain = (await E.readCoin(chain.decisionRead!, mint, E.NATIVE_MINT))!.launch;
+  check('on chain (finalized, both RPCs agree): the curve is complete and every curve coin is sold', ['Complete', true],
+    [onChain.status, onChain.baseSold === onChain.config.curveSupply]);
   check('a quote on a full curve is refused as input, not a fault', 'CURVE_COMPLETE', (await call('/api/lp/quote', { mint, side: 'buy', amountIn: '1000' })).body?.error?.code);
 
   // ---------------------------------------------------------------- 4. graduation by the crank, then the pool
   let coin = (await store.getCoin(mint))!;
   for (let k = 0; coin.status !== 'GRADUATED' && k < 20; k++) { await indexPass(t.d); coin = (await store.getCoin(mint))!; if (coin.status !== 'GRADUATED') await sleep(3_000); }
   check('the crank graduated the coin and the app follows it', 'GRADUATED', coin.status);
-  if (coin.graduateSig) t.evidence.steps.push({ step: 'graduate (operator crank)', signature: coin.graduateSig });
+  check('the crank recorded its graduation transaction', true, !!coin.graduateSig);
+  if (coin.graduateSig) {
+    t.evidence.steps.push({ step: 'graduate (operator crank)', signature: coin.graduateSig });
+    const { value: [st] } = await createSolanaRpc(RPC2).getSignatureStatuses([coin.graduateSig as Signature], { searchTransactionHistory: true }).send();
+    check('the graduation transaction succeeded (read from the second provider)', [true, null], [!!st, st?.err ?? null]);
+  }
   check('the coin trades in its own pool', await E.launchPoolAddress(mint), coin.pool);
   const tv = (await call(`/api/lp/tokens/${mint}?fresh=1`)).body.token;
   check('token view: pool venue, 100% of liquidity locked (LP mint supply 0)', ['GRADUATED', 'POOL', 10_000], [tv.status, tv.live.venue, tv.live.lockedBps]);
   for (let k = 0; (await call('/api/lp/quote', { mint, side: 'buy', amountIn: '1000' })).body?.error?.code === 'POOL_NOT_OPEN'; k++) { if (k > 60) throw new Error('pool did not open'); await sleep(1_000); }
   await trade(mint, alice, 'alice buys 0.02 SOL in the pool', 'buy', 20_000_000n, 'POOL');
   await trade(mint, alice, 'alice sells half her coins in the pool', 'sell', (await coinBalance(alice.address, mint)) / 2n, 'POOL');
-  const midBooks = await t.booksNow('before any claim', 6);
+  const midBooks = await coinBooks('before any claim');
 
   // ---------------------------------------------------------------- 5. claims, the faucet, the books again
   await t.creatorClaims(mint, creator, alice, ['curve', 'pool']);
   await t.platformClaim(mint, ENGINE_TREASURY);
   const fr = await call('/api/lp/faucet', { wallet: newcomer.address });
+  if (fr.body?.signature) t.evidence.steps.push({ step: 'faucet: the operator sends test SOL to a new wallet', signature: fr.body.signature });
   check('faucet: a new wallet gets test SOL from the operator', [200, ENGINE_FAUCET.lamports.toString()], [fr.status, (await chain.lamports(newcomer.address)).toString()]);
-  const books = await t.booksNow('after every claim', 6);
+  const books = await coinBooks('after every claim');
   const st = (await call(`/api/lp/tokens/${mint}`)).body.token.stats;
   check('stats: five trades from two traders', [5, 2], [st.count, st.traders]);
   return { midBooks, books };
@@ -112,6 +136,6 @@ let result: Awaited<ReturnType<typeof run>> | { error: string };
 try { result = await run(); } catch (e) { result = { error: (e as Error).stack ?? String(e) }; console.error(result.error); check('the run finished', 'finished', 'stopped'); }
 await giveBack();
 const cost = startLamports - await chain.lamports(operator.address);
-console.log(`      the run cost the operator ${SOL(cost)} (rent for the coin's accounts, its pool and the run's token accounts, network fees)`);
-t.finish(out, { cluster, rpc: RPC.replace(/api-key=[^&]+/, 'api-key=<redacted>'), operator: operator.address, operatorCostLamports: cost.toString(),
+console.log(`      the run cost the operator ${SOL(cost)} (mostly bob's buy-out, now the coin's locked pool liquidity; rent and network fees)`);
+t.finish(out, { cluster, rpc: RPC.replace(/api-key=[^&]+/, 'api-key=<redacted>'), rpc2: RPC2.replace(/api-key=[^&]+/, 'api-key=<redacted>'), operator: operator.address, operatorCostLamports: cost.toString(),
   coin: mint, ...result });

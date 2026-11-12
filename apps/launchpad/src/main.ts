@@ -15,7 +15,7 @@
 // ~/.qf-devnet/operator.json, or ~/.qf-mainnet/operator.json, outside any git checkout, mode 0600; without it the
 // crank is off and so is the devnet faucet; on mainnet it is a hot key holding only the graduation float, never made
 // here), QF_PRIORITY_MICROLAMPORTS (priority fee per compute unit: default 0, or 20000 on mainnet; at most 100000),
-// QF_PUBLIC_BASE_URL, QF_STATIC_DIR (../web/dist), QF_CLIENT_IP_HEADER, QF_LP_INTERVAL_MS (15000).
+// QF_PUBLIC_BASE_URL (required on mainnet: the public https address; it goes into every coin's on-chain metadata), QF_STATIC_DIR (../web/dist), QF_CLIENT_IP_HEADER, QF_LP_INTERVAL_MS (15000).
 import { writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -75,6 +75,10 @@ if (cmd === 'operator') {
   process.on('unhandledRejection', (e) => log(`unhandled rejection (kept running): ${((e as Error)?.stack ?? String(e)).slice(0, 600)}`));
   const store = await openStore();
   const port = Number(env.QF_LP_PORT ?? 8788), host = env.QF_LP_HOST ?? '127.0.0.1';
+  // The base URL goes into every coin's on-chain metadata, which nobody can change afterwards: on mainnet it must be the
+  // public https address, never a default or a loopback one.
+  if (mainnet && !/^https:\/\/(?!localhost[:/]|localhost$|127\.|\[::1\])[^\s/]+(\/[^\s]*)?$/.test(env.QF_PUBLIC_BASE_URL ?? ''))
+    fail(64, 'mainnet needs QF_PUBLIC_BASE_URL: the public https address of the app (it is written into every coin\'s on-chain metadata)');
   const app = createEngineApp({ store, chain, quote: SOL_QUOTE, profile, log, ...(env.QF_CLIENT_IP_HEADER ? { clientIpHeader: env.QF_CLIENT_IP_HEADER } : {}),
     staticDir: resolve(env.QF_STATIC_DIR ?? join(here, '..', '..', 'web', 'dist')), publicBaseUrl: env.QF_PUBLIC_BASE_URL ?? `http://127.0.0.1:${port}` });
   app.listen(port, host, () => log(JSON.stringify({ listening: `http://${host}:${port}`, engine: 'qf', cluster, programs: deployment, operator: chain.operatorAddress })));

@@ -1,6 +1,6 @@
 {
   "tool": "tools/boundary/check-browser-boundary.ts",
-  "generatedAt": "2026-11-12T11:45:44.871Z",
+  "generatedAt": "2026-11-12T15:24:53.679Z",
   "graph": {
     "packages": 55,
     "forbidden": [],
@@ -74,11 +74,11 @@
     "metafileViolations": [
       {
         "where": "metafile.inputs",
-        "what": "rpc-websockets (../../../tmp/qf-boundary-canary-2nXUBV/src/node_modules/rpc-websockets/index.js)"
+        "what": "rpc-websockets (../../../tmp/qf-boundary-canary-AR13f1/src/node_modules/rpc-websockets/index.js)"
       },
       {
         "where": "metafile.inputs",
-        "what": "@solana/web3.js (../../../tmp/qf-boundary-canary-2nXUBV/src/node_modules/@solana/web3.js/index.js)"
+        "what": "@solana/web3.js (../../../tmp/qf-boundary-canary-AR13f1/src/node_modules/@solana/web3.js/index.js)"
       }
     ],
     "artifactViolations": [

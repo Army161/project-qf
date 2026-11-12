@@ -36,9 +36,11 @@ export const IDL_BUILD: Readonly<EngineDeployment> = Object.freeze({ cluster: 'l
 export const DEPLOYMENTS = Object.freeze({
   /** The default-feature build on a local validator (packages/engine/scripts/localnet.sh). */
   localnet: IDL_BUILD,
-  /** Devnet v2 (engine commit 5291cd4 and later), built with throwaway devnet keys: the pool fee receiver is the devnet
-   *  treasury D4GdbP8hUKpMhvdHNxYXdM44te57f12DFKwpJ6N2VWNK's wrapped-SOL account. The 2026-10-11 devnet programs
-   *  (CaX3…/FHG8…) have the older account layout and are retired. */
+  /** Devnet v2, deployed 2026-11-12 from engine branch devnet/v2 (d47eee0: the mainnet build with throwaway devnet keys
+   *  in devnet/keys.json; qf_curve.so sha256 7395c3f4…a324, raydium_cp_swap.so 4700931e…7ace) by the mainnet runbook's
+   *  devnet rehearsal. Upgrade authority and admin: a throwaway stand-in for the multisig vault. The pool fee receiver is
+   *  the devnet treasury D4GdbP8hUKpMhvdHNxYXdM44te57f12DFKwpJ6N2VWNK's wrapped-SOL account. The 2026-10-11 devnet
+   *  programs (CaX3…/FHG8…) have the older account layout and are retired. */
   devnet: Object.freeze<EngineDeployment>({ cluster: 'devnet', curve: '6z9p6QT8SQFuqnvJUSyoa7Hdye9wmL8kwYmK9tAPX2Gb', pool: '5hMEQ3sLiYnVMBo1rAEzRhNHgwR6ufNkpNsgYkk13nMD', poolFeeReceiver: 'C9jn6vQrBaf9Xt2bSdC53HPJkThSw1kTfrEqCJHrrr7t' }),
 });
 
@@ -46,6 +48,8 @@ export const DEPLOYMENTS = Object.freeze({
 const NOT_MAINNET = new Set([
   ...Object.values(DEPLOYMENTS).flatMap((d) => [d.curve, d.pool, d.poolFeeReceiver]),
   'CaX3gfwE1y3AustJ5e2JQFmaDtXB5oeX6ayvNzLGsFoX', 'FHG8GyPytpydCRFL6yvwu92vyWSk7bSYZknyLn3v6ewU', 'BYSX6JVNMtMEyqbxkgJgnXMrWYVpftU4oxR25CKwmXeA',
+  // devnet v2's admin and treasury stand-ins (throwaway keys, secrets in a shared folder)
+  '4YFyfduPYZ5yCvfHXcpXZT34VnEPZ4vkRvSpzShTvG8Q', 'D4GdbP8hUKpMhvdHNxYXdM44te57f12DFKwpJ6N2VWNK',
   'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C', 'DNXgeM9EiiaAbaWvwjHj9fQQLAX5ZsfHyvmYUNRAdNC8', SYSTEM, TOKEN, TOKEN_2022, ASSOCIATED_TOKEN, NATIVE_MINT,
 ]);
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
