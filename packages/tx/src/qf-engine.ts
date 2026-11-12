@@ -67,7 +67,7 @@ export function checkComputeBudget(ix: DecodedInstruction, terms: ApprovedTerms,
 function label(ix: { programAddress: string; data?: ArrayLike<number> | undefined }): string {
   const d = ix.data ?? [];
   for (const idl of [E.CURVE_IDL, E.POOL_IDL]) {
-    if (ix.programAddress !== idl.provenance.programId) continue;
+    if (ix.programAddress !== E.fromIdlAddress(idl.provenance.programId)) continue;
     const op = idl.instructions.find((i) => d.length >= 8 && i.discriminator.every((b: number, k: number) => d[k] === b));
     return op ? op.name : `${idl.provenance.idlName} instruction`;
   }

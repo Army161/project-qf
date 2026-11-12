@@ -1,5 +1,6 @@
-// Devnet launchpad UI. Talks only to the same-origin launchpad API (CSP connect-src 'self') and to the person's wallet
+// Launchpad UI (one network per build, see build.ts). Talks only to the same-origin launchpad API (CSP connect-src 'self') and to the person's wallet
 // through Wallet Standard. Every string that came from a creator or from chain data is rendered with textContent.
+import { useDeployment, type EngineDeployment } from '@project-qf/engine';
 import { economicsDigest } from '@project-qf/policy';
 import { addSignature, fromBase64, generateMintKey, toBase64, type ApprovedTerms } from '@project-qf/tx';
 import { ago, compact, explorer, parseUnits, pct, price, setExplorerCluster, short, units } from './format.ts';
@@ -7,9 +8,15 @@ import { checkBuiltTransaction, slippageFloor, type Check, type Expectation } fr
 import { connect, disconnect, listWallets, onWalletsChanged, setWalletCluster, signTransaction, startWalletDiscovery, type Connected } from './wallet.ts';
 
 // ------------------------------------------------------------------ types from lp-api/1
+/** The engine deployment this page was built for (build.ts). The page checks transactions against these ids only. */
+declare const __QF_DEPLOYMENT__: EngineDeployment;
+const BUILT: EngineDeployment = __QF_DEPLOYMENT__;
+useDeployment(BUILT);
+
 interface Platform {
-  ready: boolean; cluster: 'devnet' | 'localnet'; writesEnabled: boolean; writesLockedBecause: string[]; label: string; operator: string | null;
-  platform: null | { quote: { mint: string; decimals: number; symbol: string; label: string }; ammConfig?: string; threshold: { rawQuoteThreshold: string };
+  ready: boolean; cluster: 'devnet' | 'localnet' | 'mainnet-beta'; writesEnabled: boolean; writesLockedBecause: string[]; label: string; operator: string | null;
+  platform: null | { quote: { mint: string; decimals: number; symbol: string; label: string }; ammConfig?: string;
+    programs?: { curve: string; pool: string }; poolFeeReceiver?: string; buyPaused?: boolean; threshold: { rawQuoteThreshold: string };
     launchEconomics: any; launchEconomicsDigest: string };
   faucet: { quoteUi: string; lamports: string; claimsPerDay: number } | null;
 }
@@ -75,7 +82,7 @@ const state: { platform: Platform | null; wallet: Connected | null; balances: { 
   { platform: null, wallet: null, balances: null, tokens: [], sort: 'traded', query: '' };
 const Q = () => state.platform?.platform?.quote ?? { mint: '', decimals: 9, symbol: 'SOL', label: 'test' };
 const hasFaucet = () => !!state.platform?.faucet;
-const cluster = () => state.platform?.cluster ?? 'devnet';
+const cluster = () => state.platform?.cluster ?? BUILT.cluster;
 /** Where a coin goes when it graduates, in words. */
 const POOL = 'its own pool';
 /** Fraction digits worth showing for quote amounts: SOL moves in smaller steps than a 6-decimal token. */
@@ -373,9 +380,11 @@ function renderCreate() {
     h('details', {}, h('summary', {}, 'Links (optional)'), h('label', {}, 'Website', web), h('label', {}, 'X / Twitter', tw), h('label', {}, 'Telegram', tg)),
     h('div', { class: 'card econ-card' }, h('h3', {}, 'What you’re launching'), econ,
       digestOk ? null : h('p', { class: 'err small', style: { margin: '0' } }, 'These terms do not match what the server will use. Reload the page before launching.')),
-    h('label', { class: 'consent' }, consent, h('span', {}, `I’ve read what I’m launching. This is ${cluster()}, so the coin and ${q.symbol} have no value.`)),
+    h('label', { class: 'consent' }, consent, h('span', {}, cluster() === 'mainnet-beta'
+      ? `I’ve read what I’m launching. This is Solana mainnet: I pay in real ${q.symbol}, and a new coin can lose all its value.`
+      : `I’ve read what I’m launching. This is ${cluster()}, so the coin and ${q.symbol} have no value.`)),
     submit,
-    h('p', { class: 'dim small', style: { textAlign: 'center', margin: '0' } }, 'No fee to launch. You pay rent and network fees in test SOL.'));
+    h('p', { class: 'dim small', style: { textAlign: 'center', margin: '0' } }, cluster() === 'mainnet-beta' ? 'No fee to launch. You pay rent and network fees in SOL.' : 'No fee to launch. You pay rent and network fees in test SOL.'));
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const sym = symbol.value.trim().toUpperCase();
@@ -762,15 +771,29 @@ async function route() {
   document.body.dataset.ready = 'true';
 }
 
+/** The server must run the network and programs this page was built for, or the page stops before showing anything. */
+function deploymentMismatch(p: Platform): string | null {
+  if (p.cluster !== BUILT.cluster) return `the server runs ${p.cluster}, this page is for ${BUILT.cluster}`;
+  const s = p.platform;
+  if (!s) return null;
+  if (s.programs && (s.programs.curve !== BUILT.curve || s.programs.pool !== BUILT.pool)) return 'the server names other engine programs';
+  if (s.poolFeeReceiver && s.poolFeeReceiver !== BUILT.poolFeeReceiver) return 'the server names another pool fee account';
+  return null;
+}
+
 async function boot() {
   startWalletDiscovery();
   onWalletsChanged(() => { if (!$('#modal').hidden && $('.wlist, .sheet p.dim')) openWalletPicker(); });
   try { state.platform = await api<Platform>('/api/lp/platform'); }
   catch (e) { $('#view').replaceChildren(h('div', { class: 'empty err' }, `Launchpad API unavailable: ${(e as Error).message}`)); return; }
   const q = Q();
+  const mismatch = deploymentMismatch(state.platform);
+  if (mismatch) { $('#view').replaceChildren(h('div', { class: 'empty err' }, `This page was built for another network or engine: ${mismatch}. Nothing was sent.`)); return; }
   setExplorerCluster(state.platform.cluster);
   setWalletCluster(state.platform.cluster);
-  $('#netnote').textContent = state.platform.ready ? 'Test network. Test SOL and every coin here have no value.' : 'Test network. Launching opens once the platform is set up.';
+  $('#netnote').textContent = state.platform.cluster === 'mainnet-beta'
+    ? (state.platform.ready ? 'Real network. SOL and coins here are real money; a new coin can lose all its value.' : 'Real network. Launching opens once the platform is set up.')
+    : (state.platform.ready ? 'Test network. Test SOL and every coin here have no value.' : 'Test network. Launching opens once the platform is set up.');
   renderWallet();
   window.addEventListener('hashchange', route);
   const search = $('#q') as HTMLInputElement;

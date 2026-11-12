@@ -25,6 +25,12 @@ export const LAUNCH_PRESETS = Object.freeze({
     totalSupply: 1_000_000_000_000_000n, curveSupply: 793_100_000_000_000n, virtualQuote: 30_000_000_000n, virtualBase: 1_073_000_000_000_000n,
     tradeFeeBps: 100n, creatorFeeShareBps: 3_000n, graduationFee: 1_000_000_000n,
   }),
+  /** The same curve at 1/10 of the quote (about 8.5 SOL raised per coin), 0.1 SOL graduation fee: the default for an
+   *  early mainnet launch, so no single coin's curve holds more than about 8.5 SOL. */
+  beta: Object.freeze<LaunchConfig>({
+    totalSupply: 1_000_000_000_000_000n, curveSupply: 793_100_000_000_000n, virtualQuote: 3_000_000_000n, virtualBase: 1_073_000_000_000_000n,
+    tradeFeeBps: 100n, creatorFeeShareBps: 3_000n, graduationFee: 100_000_000n,
+  }),
   /** The same curve at 1/100 of the quote (about 0.85 SOL raised), for cheap devnet runs. Prices and percentages are identical. */
   devnetSmall: Object.freeze<LaunchConfig>({
     totalSupply: 1_000_000_000_000_000n, curveSupply: 793_100_000_000_000n, virtualQuote: 300_000_000n, virtualBase: 1_073_000_000_000_000n,

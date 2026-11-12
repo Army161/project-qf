@@ -42,7 +42,10 @@ export function validateIntent(i: TxIntent, ctx: IntentContext): { ok: boolean; 
   if (!KINDS.has(i.kind)) v.push(`UNKNOWN_KIND ${String(i.kind)}`);
 
   switch (i.cluster) {
-    case 'mainnet-beta': if ((flags.MAINNET_WRITES as boolean) !== true) v.push('MAINNET_WRITES disabled'); break;
+    case 'mainnet-beta':
+      if ((flags.MAINNET_WRITES as boolean) !== true) v.push('MAINNET_WRITES disabled');
+      if (readiness.MAINNET.status !== 'ACTIVE') v.push('stage MAINNET is BLOCKED');
+      break;
     case 'devnet': if (readiness.DEVNET_INTEGRATION.status !== 'ACTIVE') v.push('stage DEVNET_INTEGRATION is BLOCKED'); break;
     case 'localnet': if (readiness.LOCALNET_INTEGRATION.status !== 'ACTIVE') v.push('stage LOCALNET_INTEGRATION is BLOCKED'); break;
     case 'mock-offline': if (!i.mock) v.push('cluster mock-offline requires mock=true'); break;

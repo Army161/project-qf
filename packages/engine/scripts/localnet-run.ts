@@ -111,7 +111,7 @@ async function run(out: string, authorityFile: string, treasury: string) {
   Object.assign(evidence, { rpc: RPC, programs: { curve: E.QF_CURVE, pool: E.QF_POOL }, mint: mint.address, creator: creator.address, treasury, config: 'devnetSmall' });
 
   // settings (curve upgrade authority), then the coin
-  await send('initialize (wSOL settings)', authority, [], [await E.initializeIx({ authority: authority.address, ammConfig, settings: { admin: authority.address, feeRecipient: treasury, createPaused: false, config: cfg } })]);
+  await send('initialize (wSOL settings)', authority, [], [await E.initializeIx({ authority: authority.address, ammConfig, settings: { admin: authority.address, feeRecipient: treasury, createPaused: false, buyPaused: false, config: cfg } })]);
   const [g] = await reader([await E.globalAddress()]);
   check('Global decodes and holds the chosen settings', { feeRecipient: treasury, ammConfig, config: cfg }, (({ feeRecipient, ammConfig, config }) => ({ feeRecipient, ammConfig, config }))(E.decodeGlobal(g!)));
 

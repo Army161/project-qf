@@ -1,6 +1,7 @@
 // The launchpad's records on Postgres, for serverless hosting: the same rows and rules as the SQLite store (store.ts),
 // reached through a gateway that runs each request's statements in one transaction (deploy/supabase/qf-db). The gateway
 // trusts only this project's production functions, by their Vercel OIDC token, so no database password is stored anywhere.
+import type { BindKey } from './store.ts';
 import type { CoinRow, CoinStatus, IntentRow, PayoutRow, Store, TradeRow, TxRow, Venue } from './store.ts';
 
 export interface SqlStatement { sql: string; params: unknown[] }
@@ -28,13 +29,13 @@ export class PgStore implements Store {
   private async q(sql: string, ...params: unknown[]): Promise<Row[]> { return (await this.gw([{ sql, params }]))[0]!; }
   async close() { /* nothing held open */ }
 
-  async bind(k: 'cluster' | 'genesis' | 'quote', value: string): Promise<void> {
+  async bind(k: BindKey, value: string): Promise<void> {
     const [, rows] = await this.gw([{ sql: `INSERT INTO ${S}.settings (k, v) VALUES ($1, $2) ON CONFLICT (k) DO NOTHING`, params: [k, value] },
       { sql: `SELECT v FROM ${S}.settings WHERE k = $1`, params: [k] }]);
     const v = rows![0]?.v as string;
     if (v !== value) throw new Error(`STORE_${k.toUpperCase()}_MISMATCH this database belongs to ${v}, not ${value}`);
   }
-  async bound(k: 'cluster' | 'genesis' | 'quote'): Promise<string | null> {
+  async bound(k: BindKey): Promise<string | null> {
     return ((await this.q(`SELECT v FROM ${S}.settings WHERE k = $1`, k))[0]?.v as string | undefined) ?? null;
   }
 

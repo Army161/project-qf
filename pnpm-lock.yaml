@@ -44,6 +44,9 @@ importers:
       '@project-qf/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@project-qf/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@project-qf/policy':
         specifier: workspace:*
         version: link:../../packages/policy

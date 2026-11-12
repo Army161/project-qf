@@ -17,8 +17,8 @@ CURVE_SO="$ENGINE/target/deploy/qf_curve.so"
 POOL_SO="$ENGINE/target/deploy/raydium_cp_swap.so"
 
 check() { test "$(sha256sum "$1" | cut -d' ' -f1)" = "$2" || { echo "sha256 mismatch: $1"; exit 1; }; }
-check "$CURVE_SO" 5d7a424e877a1d484f1580dea384c9b0e4ce97683cfa5c29c560928f9b52dcbd
-check "$POOL_SO" 0640371eb9565372e941deef6ea9cf34db3690793cb09460bc9a5fe4db4ee587
+check "$CURVE_SO" c808e96abff5bb7ae32c2c690e6c21df818c612fbd010b6c4edabae1427f2326
+check "$POOL_SO" d7d13b5dc47d559d5fea5fe025771c1f31fecae9f486403e780166f20b4c414a
 
 mkdir -p "$KEYS"
 [ -f "$KEYS/authority.json" ] || solana-keygen new --no-bip39-passphrase --silent --force -o "$KEYS/authority.json" > /dev/null

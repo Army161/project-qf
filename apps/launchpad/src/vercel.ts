@@ -1,4 +1,5 @@
-// The launchpad as one Vercel Function (devnet only). The same handler as `main.ts serve`, with three changes for
+// The launchpad as one Vercel Function (devnet only: mainnet runs `main.ts serve` on a long-running host, where the
+// crank's key is a file and decision reads have two providers). The same handler as `main.ts serve`, with three changes for
 // serverless hosting: records live in Postgres behind the qf-db gateway (store-pg.ts), the operator's throwaway devnet
 // key lives only in that database, and the indexer runs as a short pass after requests (at most one pass every
 // TICK_EVERY_MS across all instances) instead of a background loop.
@@ -8,12 +9,14 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { generateKeyPairSync } from 'node:crypto';
 import { address, createKeyPairSignerFromBytes, createSolanaRpc, lamports } from '@solana/kit';
-import { CAPABILITY_FLAGS, READINESS } from '@project-qf/core';
-import { calmRpc, kitChain, proveCluster } from './chain.ts';
+import * as E from '@project-qf/engine';
+import { READINESS } from '@project-qf/core';
+import { calmRpc, checkDeployment, kitChain, mainnetGate, proveCluster } from './chain.ts';
 import { indexPass } from './indexer.ts';
 import { SOL_QUOTE } from './market.ts';
 import { createEngineHandler, type EngineProfile } from './server.ts';
 import { PgStore, type SqlGateway } from './store-pg.ts';
+import { bindDeployment } from './store.ts';
 
 export const TICK_EVERY_MS = 20_000;
 export const DEFAULT_DB_GATEWAY_URL = 'https://lrqokjyfmkjvqpregyzy.supabase.co/functions/v1/qf-db';
@@ -46,11 +49,15 @@ async function start(): Promise<App> {
   const rpcUrl = env.QF_RPC_URL || 'https://api.devnet.solana.com';
   const rpc = calmRpc(createSolanaRpc(rpcUrl));
   const genesis = String(await rpc.getGenesisHash().send());
-  const cluster = await proveCluster(rpcUrl, 'devnet', async () => genesis, CAPABILITY_FLAGS.MAINNET_WRITES as boolean);
+  const cluster = await proveCluster(rpcUrl, 'devnet', async () => genesis, mainnetGate(undefined));
+  const deployment = E.deploymentFor('devnet');
+  E.useDeployment(deployment);
   const store = new PgStore(gateway(gwUrl, () => oidcToken));
   await store.bind('cluster', cluster); await store.bind('genesis', genesis); await store.bind('quote', SOL_QUOTE.mint);
+  await bindDeployment(store, deployment.curve);
   const operator = await createKeyPairSignerFromBytes(await store.operatorKey(operatorBytes));
   const chain = kitChain(rpcUrl, operator, log);
+  await checkDeployment(chain.decisionRead ?? chain.read, deployment);
   const profile: EngineProfile = { cluster, writes: true, faucet: true, writesLockedBecause: [], label: 'Test network: coins here have no value' };
   const handle = createEngineHandler({ store, chain, quote: SOL_QUOTE, profile, log, clientIpHeader: 'x-real-ip', staticDir: null, publicBaseUrl: base.replace(/\/$/, '') });
   log(JSON.stringify({ started: true, cluster, operator: operator.address }));

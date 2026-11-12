@@ -10,7 +10,7 @@ const cfg = { total_supply: 1_000_000_000_000_000n, curve_supply: 793_100_000_00
 const T = E.CURVE_IDL.types;
 const account = (name: string, idl: E.EngineIdl, values: Record<string, unknown>) => Uint8Array.from([...idl.accounts[name]!, ...encodeFields(values, idl.types[name]!.fields!, idl.types)]);
 const launchValues = { mint: A(0), creator: A(1), quote_mint: A(1), amm_config: A(2), config: cfg, status: 'Complete', real_quote: 849_000_000n, base_sold: 793_100_000_000_000n,
-  platform_fees: 7n, creator_fees: 3n, pool: A(3), created_at: -5n, bump: 254, signer_bump: 253 };
+  platform_fees: 7n, creator_fees: 3n, pool: A(3), created_at: -5n, bump: 254, signer_bump: 253, completed_at: 1_760_000_000n };
 
 test('Launch round-trips through the account decoder, enum included', () => {
   const l = E.decodeLaunch({ owner: E.QF_CURVE, lamports: 1n, data: account('Launch', E.CURVE_IDL, launchValues) });
@@ -19,6 +19,7 @@ test('Launch round-trips through the account decoder, enum included', () => {
   assert.deepEqual(l.config, E.LAUNCH_PRESETS.devnetSmall);
   assert.equal(l.realQuote, 849_000_000n);
   assert.equal(l.signerBump, 253);
+  assert.equal(l.completedAt, 1_760_000_000n);
 });
 
 test('LAUNCH_LAYOUT points at the discriminator, mint and quote mint a getProgramAccounts search filters on', () => {
@@ -41,8 +42,8 @@ test('account decoding refuses a wrong owner, discriminator, size or enum tag', 
 });
 
 test('Global, AmmConfig, PoolState and CreatorFeeShare round-trip', () => {
-  const g = E.decodeGlobal({ owner: E.QF_CURVE, lamports: 1n, data: account('Global', E.CURVE_IDL, { admin: A(0), fee_recipient: A(1), quote_mint: A(1), amm_config: A(2), create_paused: true, config: cfg, bump: 9 }) });
-  assert.deepEqual(g, { admin: A(0), feeRecipient: A(1), quoteMint: A(1), ammConfig: A(2), createPaused: true, config: E.LAUNCH_PRESETS.devnetSmall, bump: 9 });
+  const g = E.decodeGlobal({ owner: E.QF_CURVE, lamports: 1n, data: account('Global', E.CURVE_IDL, { admin: A(0), fee_recipient: A(1), quote_mint: A(1), amm_config: A(2), create_paused: true, config: cfg, bump: 9, buy_paused: true, pending_admin: A(4) }) });
+  assert.deepEqual(g, { admin: A(0), feeRecipient: A(1), quoteMint: A(1), ammConfig: A(2), createPaused: true, config: E.LAUNCH_PRESETS.devnetSmall, bump: 9, buyPaused: true, pendingAdmin: A(4) });
   const c = E.decodeAmmConfig({ owner: E.QF_POOL, lamports: 1n, data: account('AmmConfig', E.POOL_IDL, { bump: 1, disable_create_pool: false, index: 0, trade_fee_rate: 2500n, protocol_fee_rate: 200_000n,
     fund_fee_rate: 0n, create_pool_fee: 0n, protocol_owner: A(0), fund_owner: A(0), creator_fee_rate: 500n, creator_fee_share_rate: 0n, padding: Array(14).fill(0n) }) });
   assert.equal(c.tradeFeeRate, 2500n); assert.equal(c.creatorFeeRate, 500n);

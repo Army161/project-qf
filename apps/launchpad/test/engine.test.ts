@@ -11,10 +11,10 @@ import * as E from '@project-qf/engine';
 import { economicsDigest } from '@project-qf/policy';
 import { addSignature, bindTransactionToTerms, decodeTransactionBytes, fromBase64, generateMintKey, parseWire, toBase64 } from '@project-qf/tx';
 import { engineBooks, engineBooksText } from '../src/books.ts';
-import { calmRpc, createOperatorKey, GENESIS, loadOperator, proveCluster } from '../src/chain.ts';
+import { calmRpc, createOperatorKey, crossCheckedReader, GENESIS, loadOperator, mainnetGate, proveCluster, proveSecondProvider } from '../src/chain.ts';
 import { catchUp, classifyTx, crankGraduations, discoverCoins, indexPass, readDue, settlePending, TX_RETRY } from '../src/indexer.ts';
-import { ENGINE_FAUCET } from '../src/server.ts';
-import { EngineStore } from '../src/store.ts';
+import { createEngineApp, ENGINE_FAUCET } from '../src/server.ts';
+import { bindDeployment, EngineStore } from '../src/store.ts';
 import { ADDR, CFG, DEVNET, engineDir, engineHarness, fakeChain, putCurve, putPlatform, putPool, SOL, tokenAccountData, txRecord, type FakeChain } from './support/engine-fake.ts';
 
 const ev = <T extends E.EngineEvent['name']>(name: T, program: string, f: Record<string, unknown>) => ({ name, program, depth: 1, ...f }) as unknown as E.EngineEvent;
@@ -401,19 +401,104 @@ test('a fresh machine gets a throwaway operator key once: mode 0600, outside any
   assert.throws(() => createOperatorKey(fileURLToPath(new URL('never/operator.json', import.meta.url))), /inside a git checkout/);
 });
 
-test('the engine server proves its network first: devnet by genesis hash, localnet only on this machine, never mainnet', async () => {
+test('the engine server proves its network first: devnet by genesis hash, localnet only on this machine, mainnet only through its gate', async () => {
   const g = (h: string) => async () => h;
-  assert.equal(await proveCluster('https://api.devnet.solana.com', 'devnet', g(GENESIS.devnet), false), 'devnet');
-  await assert.rejects(proveCluster('https://x.example', 'devnet', g(GENESIS['mainnet-beta']), false), /refusing mainnet/);
-  await assert.rejects(proveCluster('https://x.example', 'devnet', g('other'), false), /not devnet/);
-  await assert.rejects(proveCluster('https://api.devnet.solana.com', 'devnet', g(GENESIS.devnet), true), /MAINNET_WRITES/);
-  await assert.rejects(proveCluster('http://rpc.example', 'devnet', g(GENESIS.devnet), false), /https/);
-  await assert.rejects(proveCluster('https://u:p@rpc.example', 'devnet', g(GENESIS.devnet), false), /credentials/);
-  assert.equal(await proveCluster('http://127.0.0.1:8899', 'localnet', g('LocalGenesis1111111111111111111111111111111'), false), 'localnet');
-  await assert.rejects(proveCluster('https://rpc.example', 'localnet', g('x'), false), /this machine/);
-  await assert.rejects(proveCluster('http://127.0.0.1:8899', 'localnet', g(GENESIS.devnet), false), /serves devnet/);
+  const shut = mainnetGate('mainnet-beta');
+  assert.equal(shut.stage, 'BLOCKED', 'this build keeps mainnet blocked (packages/core readiness.ts)');
+  assert.equal(shut.mainnetWrites, false, 'and MAINNET_WRITES false (packages/core flags.ts)');
+  assert.equal(await proveCluster('https://api.devnet.solana.com', 'devnet', g(GENESIS.devnet), shut), 'devnet');
+  await assert.rejects(proveCluster('https://x.example', 'devnet', g(GENESIS['mainnet-beta']), shut), /refusing mainnet/);
+  await assert.rejects(proveCluster('https://x.example', 'devnet', g('other'), shut), /not devnet/);
+  await assert.rejects(proveCluster('http://rpc.example', 'devnet', g(GENESIS.devnet), shut), /https/);
+  await assert.rejects(proveCluster('https://u:p@rpc.example', 'devnet', g(GENESIS.devnet), shut), /credentials/);
+  assert.equal(await proveCluster('http://127.0.0.1:8899', 'localnet', g('LocalGenesis1111111111111111111111111111111'), shut), 'localnet');
+  await assert.rejects(proveCluster('https://rpc.example', 'localnet', g('x'), shut), /this machine/);
+  await assert.rejects(proveCluster('http://127.0.0.1:8899', 'localnet', g(GENESIS.devnet), shut), /serves devnet/);
+  // mainnet: each part of the gate is required, and it never asks the network before the gate is open
+  let asked = 0;
+  const mg = async () => { asked++; return GENESIS['mainnet-beta']; };
+  await assert.rejects(proveCluster('https://rpc.example', 'mainnet-beta', mg, shut), /mainnet is BLOCKED/);
+  const open = { stage: 'ACTIVE' as const, mainnetWrites: true, confirm: 'mainnet-beta', blockers: [] };
+  await assert.rejects(proveCluster('https://rpc.example', 'mainnet-beta', mg, { ...open, mainnetWrites: false }), /MAINNET_WRITES/);
+  await assert.rejects(proveCluster('https://rpc.example', 'mainnet-beta', mg, { ...open, confirm: undefined }), /QF_CONFIRM_MAINNET/);
+  await assert.rejects(proveCluster('http://127.0.0.1:8899', 'mainnet-beta', mg, open), /real RPC provider/);
+  assert.equal(asked, 0);
+  await assert.rejects(proveCluster('https://rpc.example', 'mainnet-beta', g(GENESIS.devnet), open), /not mainnet-beta/);
+  assert.equal(await proveCluster('https://rpc.example', 'mainnet-beta', mg, open), 'mainnet-beta');
+  // the second provider: another host, the same network
+  await assert.rejects(proveSecondProvider('https://a.example', 'https://a.example/x', GENESIS['mainnet-beta'], mg), /different host/);
+  await assert.rejects(proveSecondProvider('https://a.example', 'https://b.example', GENESIS['mainnet-beta'], g(GENESIS.devnet)), /serves genesis/);
+  await proveSecondProvider('https://a.example', 'https://b.example', GENESIS['mainnet-beta'], mg);
   const s = new EngineStore(`${engineDir}/bind.sqlite`);
   (await s.bind('genesis', 'one'));
   await assert.rejects(s.bind('genesis', 'two'), /STORE_GENESIS_MISMATCH/);
   await s.close();
+});
+
+test('the emergency stop: with buying paused on the engine, curve buys are refused and sells still build', async () => {
+  const h = await engineHarness();
+  await putPlatform(h.chain, { buyPaused: true });
+  const { mint } = await liveCoin(h, { realQuote: 100_000_000n, baseSold: 200_000_000_000_000n });
+  assert.equal((await h.call('/api/lp/platform?fresh=1')).body.platform.buyPaused, true);
+  const user = await generateMintKey();
+  for (const path of ['/api/lp/quote', '/api/lp/swap']) {
+    const r = await h.call(path, { mint, ...(path.endsWith('swap') ? { user: user.address } : {}), side: 'buy', amountIn: '1000000' });
+    assert.deepEqual([r.status, r.body.error?.code], [423, 'BUYING_PAUSED'], path);
+  }
+  const sell = await h.call('/api/lp/swap', { mint, user: user.address, side: 'sell', amountIn: '1000000000' });
+  assert.equal(sell.status, 201, JSON.stringify(sell.body));
+});
+
+test('a priority fee rides on every built transaction within the page\'s cap, and the terms bind it', async () => {
+  const h = await engineHarness({ profile: { ...DEVNET, priorityMicroLamports: 20_000n } });
+  await putPlatform(h.chain);
+  const { mint } = await liveCoin(h, { realQuote: 100_000_000n, baseSold: 200_000_000_000_000n });
+  const user = await generateMintKey();
+  const b = await h.call('/api/lp/swap', { mint, user: user.address, side: 'buy', amountIn: '50000000', slippageBps: 100 });
+  assert.equal(b.status, 201, JSON.stringify(b.body));
+  assert.equal(b.body.terms.compute.maxUnitPriceMicroLamports, '20000');
+  const d = decodeTransactionBytes(fromBase64(b.body.transaction));
+  assert.deepEqual(d.instructions.slice(0, 2).map((i) => [i.programAddress, i.dataHex.slice(0, 2)]), [[E.COMPUTE_BUDGET, '02'], [E.COMPUTE_BUDGET, '03']]);
+  assert.deepEqual(await bindTransactionToTerms(d, b.body.terms), []);
+  assert.match((await bindTransactionToTerms(d, { ...b.body.terms, compute: { ...b.body.terms.compute, maxUnitPriceMicroLamports: '19999' } })).join(), /COMPUTE_PRICE_EXCEEDS_CAP/);
+  const store = new EngineStore(join(engineDir, 'prio.sqlite'));
+  const mk = (profile: Parameters<typeof createEngineApp>[0]['profile']) => () => createEngineApp({ store, chain: fakeChain(), quote: SOL, profile, staticDir: null, publicBaseUrl: 'http://127.0.0.1:1' });
+  assert.throws(mk({ ...DEVNET, priorityMicroLamports: 100_001n }), /priority fee/);
+  assert.throws(mk({ ...DEVNET, cluster: 'mainnet-beta', faucet: true }), /no faucet on mainnet/);
+  await store.close();
+});
+
+test('decision reads: two providers must agree byte for byte; a slot of lag is read again, a real difference stops', async () => {
+  const acc = (b: number): E.RawAccount => ({ owner: E.QF_CURVE, lamports: 1n, data: Uint8Array.of(1, 2, b) });
+  const noWait = async () => {};
+  const same = crossCheckedReader(async () => [acc(3), null], async () => [acc(3), null], noWait);
+  assert.deepEqual(await same(['a', 'b']), [acc(3), null]);
+  let n = 0;
+  const lagging = crossCheckedReader(async () => [acc(3)], async () => [acc(n++ < 2 ? 4 : 3)], noWait);
+  assert.deepEqual(await lagging(['a']), [acc(3)]);
+  await assert.rejects(crossCheckedReader(async () => [acc(3)], async () => [acc(4)], noWait)(['a']), /RPC_PROVIDERS_DISAGREE on a/);
+  await assert.rejects(crossCheckedReader(async () => [acc(3)], async () => [null], noWait)(['a']), /RPC_PROVIDERS_DISAGREE/);
+  await assert.rejects(crossCheckedReader(async () => [acc(3)], async () => [{ ...acc(3), owner: E.QF_POOL }], noWait)(['a']), /RPC_PROVIDERS_DISAGREE/);
+  // the crank decides on these reads: a sold-out coin the providers disagree on is not graduated
+  const chain = fakeChain();
+  await putPlatform(chain);
+  const h = await engineHarness({ chain });
+  const { mint } = await liveCoin(h, { status: 'Complete', realQuote: E.finalRealQuote(CFG), baseSold: CFG.curveSupply });
+  chain.decisionRead = async () => { throw new Error('RPC_PROVIDERS_DISAGREE on x'); };
+  assert.deepEqual(await crankGraduations({ store: h.store, chain }), []);
+  chain.decisionRead = chain.read;
+  assert.deepEqual((await crankGraduations({ store: h.store, chain })).map((g) => g.mint), [mint]);
+});
+
+test('a database is tied to one engine deployment; an older one holding coins from unrecorded programs is refused', async () => {
+  const s = new EngineStore(join(engineDir, 'deploy.sqlite'));
+  await bindDeployment(s, E.QF_CURVE);
+  await bindDeployment(s, E.QF_CURVE);
+  await assert.rejects(bindDeployment(s, E.IDL_BUILD.curve), /STORE_CURVE_MISMATCH/);
+  await s.close();
+  const old = new EngineStore(join(engineDir, 'legacy.sqlite'));
+  await old.insertPendingCoin({ mint: ADDR.admin, quoteMint: E.NATIVE_MINT, creator: ADDR.treasury, name: 'Old', symbol: 'OLD', description: '', website: null, twitter: null, telegram: null,
+    imageType: null, metadataUri: 'https://example.invalid/m.json', createdAt: '2026-10-12T00:00:00.000Z' }, null);
+  await assert.rejects(bindDeployment(old, E.QF_CURVE), /STORE_CURVE_MISMATCH this database holds coins/);
+  await old.close();
 });

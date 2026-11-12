@@ -45,7 +45,10 @@ async function build(name: string, p: any): Promise<Instruction[]> {
     case 'traderAccounts': return E.traderAccountIxs(p.payer, p.trader, p.mint, p.quoteMint);
     case 'wrapSol': return E.wrapSolIxs(p.payer, p.owner, BigInt(p.lamports));
     case 'initialize': return [await E.initializeIx({ authority: p.authority, quoteMint: p.quoteMint, ammConfig: p.ammConfig,
-      settings: { admin: p.admin, feeRecipient: p.feeRecipient, createPaused: p.createPaused, config: CONFIG_BY_NAME[p.config]! } })];
+      settings: { admin: p.admin, feeRecipient: p.feeRecipient, createPaused: p.createPaused, buyPaused: p.buyPaused, config: CONFIG_BY_NAME[p.config]! } })];
+    case 'updateGlobal': return [await E.updateGlobalIx({ admin: p.admin0, quoteMint: p.quoteMint, ammConfig: p.ammConfig,
+      settings: { admin: p.admin, feeRecipient: p.feeRecipient, createPaused: p.createPaused, buyPaused: p.buyPaused, config: CONFIG_BY_NAME[p.config]! } })];
+    case 'acceptAdmin': return [await E.acceptAdminIx(p)];
     default: throw new Error(`no builder for ${name}`);
   }
 }
@@ -57,7 +60,7 @@ test('every instruction is byte-identical to the engine client\'s, accounts and 
     assert.deepEqual(got, v.ixs, `${v.name} ${JSON.stringify(v.params)}`);
     seen.add(v.name);
   }
-  assert.deepEqual([...seen].sort(), ['buy', 'claimCreatorFees', 'claimPlatformFees', 'collectPoolCreatorFee', 'createLaunch', 'graduate', 'initialize', 'poolSwap', 'refreshPoolConfig', 'sell', 'traderAccounts', 'wrapSol']);
+  assert.deepEqual([...seen].sort(), ['acceptAdmin', 'buy', 'claimCreatorFees', 'claimPlatformFees', 'collectPoolCreatorFee', 'createLaunch', 'graduate', 'initialize', 'poolSwap', 'refreshPoolConfig', 'sell', 'traderAccounts', 'updateGlobal', 'wrapSol']);
 });
 
 test('coinPoolSwapIx is poolSwapIx with the coin on Token-2022 and the quote on Token', async () => {

@@ -20,12 +20,18 @@ export interface TradeEvent {
 export interface GraduatedEvent { name: 'Graduated'; mint: string; pool: string; quoteToPool: bigint; baseToPool: bigint; graduationFee: bigint; lpBurned: bigint }
 export interface FeesClaimedEvent { name: 'FeesClaimed'; mint: string; to: string; amount: bigint; creator: boolean }
 export interface PoolConfigChangedEvent { name: 'PoolConfigChanged'; mint: string; ammConfig: string }
+/** A sold-out coin that did not graduate within the grace period is trading again (selling reopened it). */
+export interface CurveReopenedEvent { name: 'CurveReopened'; mint: string; completedAt: bigint }
+/** The settings for one quote changed (initialize, update_global, accept_admin). */
+export interface GlobalUpdatedEvent {
+  name: 'GlobalUpdated'; quoteMint: string; admin: string; pendingAdmin: string; feeRecipient: string; ammConfig: string; createPaused: boolean; buyPaused: boolean; config: LaunchConfig;
+}
 export interface PoolSwapEvent {
   name: 'SwapEvent'; poolId: string; inputVaultBefore: bigint; outputVaultBefore: bigint; inputAmount: bigint; outputAmount: bigint;
   inputTransferFee: bigint; outputTransferFee: bigint; baseInput: boolean; inputMint: string; outputMint: string; tradeFee: bigint; creatorFee: bigint; creatorFeeOnInput: boolean;
 }
 export interface LpChangeEvent { name: 'LpChangeEvent'; [field: string]: Value }
-export type EngineEvent = (LaunchCreatedEvent | TradeEvent | GraduatedEvent | FeesClaimedEvent | PoolConfigChangedEvent | PoolSwapEvent | LpChangeEvent) & {
+export type EngineEvent = (LaunchCreatedEvent | TradeEvent | GraduatedEvent | FeesClaimedEvent | PoolConfigChangedEvent | CurveReopenedEvent | GlobalUpdatedEvent | PoolSwapEvent | LpChangeEvent) & {
   /** The program that wrote the event, and its call depth (1 = called by the transaction itself). */
   program: string; depth: number;
 };
@@ -49,6 +55,7 @@ function decodeEvent(idl: EngineIdl, bytes: Uint8Array): Record<string, Value> &
     if (bytes.length >= 8 && sameBytes(bytes.subarray(0, 8), e.discriminator)) {
       const v = camelize(decodeFields(bytes.subarray(8), e.fields, idl.types));
       if (name === 'LaunchCreated') { const { name: coinName, ...rest } = v; return { ...rest, coinName, config: launchConfig(rest.config as Record<string, Value>), name } as never; }
+      if (name === 'GlobalUpdated') return { ...v, config: launchConfig(v.config as Record<string, Value>), name } as never;
       return { ...v, name };
     }
   }

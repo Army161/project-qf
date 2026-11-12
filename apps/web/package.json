@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@project-qf/core": "workspace:*",
+    "@project-qf/engine": "workspace:*",
     "@project-qf/policy": "workspace:*",
     "@project-qf/tx": "workspace:*"
   },

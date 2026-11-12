@@ -8,6 +8,50 @@
   },
   "instructions": [
     {
+      "name": "accept_admin",
+      "discriminator": [
+        112,
+        42,
+        45,
+        90,
+        116,
+        181,
+        13,
+        170
+      ],
+      "accounts": [
+        {
+          "name": "new_admin",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "global.quote_mint",
+                "account": "Global"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "buy",
       "discriminator": [
         102,
@@ -23,6 +67,31 @@
         {
           "name": "trader",
           "signer": true
+        },
+        {
+          "name": "global",
+          "docs": [
+            "Settings for this quote; read only for the buy pause."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ]
+          }
         },
         {
           "name": "launch",
@@ -571,6 +640,99 @@
           "docs": [
             "The pool config this coin will graduate into; must still accept new pools."
           ]
+        },
+        {
+          "name": "graduator",
+          "docs": [
+            "Graduation also needs the graduator's launchpad permission and the pool",
+            "program's creation-fee account. Checking them here means a coin can't",
+            "launch, sell out and then find it can't graduate."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  114,
+                  97,
+                  100,
+                  117,
+                  97,
+                  116,
+                  111,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "permission",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  114,
+                  109,
+                  105,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "graduator"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                212,
+                46,
+                3,
+                38,
+                41,
+                51,
+                48,
+                236,
+                247,
+                232,
+                159,
+                235,
+                94,
+                4,
+                0,
+                77,
+                12,
+                182,
+                62,
+                61,
+                244,
+                11,
+                127,
+                3,
+                152,
+                126,
+                56,
+                221,
+                64,
+                234,
+                187,
+                163
+              ]
+            }
+          }
+        },
+        {
+          "name": "create_pool_fee",
+          "address": "BYSX6JVNMtMEyqbxkgJgnXMrWYVpftU4oxR25CKwmXeA"
         },
         {
           "name": "mint",
@@ -1361,6 +1523,31 @@
           "signer": true
         },
         {
+          "name": "global",
+          "docs": [
+            "Settings for this quote; read only for the buy pause."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ]
+          }
+        },
+        {
           "name": "launch",
           "writable": true,
           "pda": {
@@ -1649,6 +1836,19 @@
   ],
   "events": [
     {
+      "name": "CurveReopened",
+      "discriminator": [
+        134,
+        18,
+        70,
+        177,
+        37,
+        255,
+        73,
+        7
+      ]
+    },
+    {
       "name": "FeesClaimed",
       "discriminator": [
         22,
@@ -1659,6 +1859,19 @@
         157,
         14,
         62
+      ]
+    },
+    {
+      "name": "GlobalUpdated",
+      "discriminator": [
+        131,
+        66,
+        237,
+        209,
+        176,
+        87,
+        119,
+        203
       ]
     },
     {
@@ -1779,6 +1992,21 @@
       "code": 6012,
       "name": "PoolAmountMismatch",
       "msg": "The pool program moved a different amount than requested"
+    },
+    {
+      "code": 6013,
+      "name": "BuyPaused",
+      "msg": "Buying is paused"
+    },
+    {
+      "code": 6014,
+      "name": "GraduationNotReady",
+      "msg": "The pool program is not set up to graduate this coin"
+    },
+    {
+      "code": 6015,
+      "name": "DefaultKey",
+      "msg": "Admin and fee recipient must be real keys"
     }
   ],
   "types": [
@@ -1885,6 +2113,25 @@
       }
     },
     {
+      "name": "CurveReopened",
+      "docs": [
+        "A sold-out coin that did not graduate in time went back to Trading."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "completed_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
       "name": "FeesClaimed",
       "type": {
         "kind": "struct",
@@ -1926,7 +2173,7 @@
           {
             "name": "admin",
             "docs": [
-              "Can change the config, fee recipient, pause flag and admin."
+              "Can change the config, fee recipient and pause flags, and propose a new admin."
             ],
             "type": "pubkey"
           },
@@ -1954,7 +2201,7 @@
           {
             "name": "create_paused",
             "docs": [
-              "Blocks new launches only. Trading, graduation and fee claims never pause."
+              "Blocks new launches only."
             ],
             "type": "bool"
           },
@@ -1969,6 +2216,22 @@
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "buy_paused",
+            "docs": [
+              "Emergency stop for buys on every coin. Selling, graduation and fee",
+              "claims never pause, so a pause can stop new money but never trap anyone."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "pending_admin",
+            "docs": [
+              "Admin hand-over is two steps: the admin proposes, the new key accepts",
+              "(`accept_admin`), so a mistyped key can never take over. Default = none."
+            ],
+            "type": "pubkey"
           }
         ]
       }
@@ -1980,6 +2243,10 @@
         "fields": [
           {
             "name": "admin",
+            "docs": [
+              "In `initialize`, the admin. In `update_global`, a different key here",
+              "proposes it as the next admin; the current admin's key cancels a proposal."
+            ],
             "type": "pubkey"
           },
           {
@@ -1988,6 +2255,54 @@
           },
           {
             "name": "create_paused",
+            "type": "bool"
+          },
+          {
+            "name": "buy_paused",
+            "type": "bool"
+          },
+          {
+            "name": "config",
+            "type": {
+              "defined": {
+                "name": "LaunchConfig"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "GlobalUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "pending_admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_recipient",
+            "type": "pubkey"
+          },
+          {
+            "name": "amm_config",
+            "type": "pubkey"
+          },
+          {
+            "name": "create_paused",
+            "type": "bool"
+          },
+          {
+            "name": "buy_paused",
             "type": "bool"
           },
           {
@@ -2120,6 +2435,13 @@
           {
             "name": "signer_bump",
             "type": "u8"
+          },
+          {
+            "name": "completed_at",
+            "docs": [
+              "When the curve sold out (0 while trading). See GRADUATION_GRACE_SECS."
+            ],
+            "type": "i64"
           }
         ]
       }
@@ -2234,6 +2556,36 @@
           },
           {
             "name": "Graduated"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Permission",
+      "docs": [
+        "Holds the current owner of the factory"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "authority"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "padding",
+            "docs": [
+              "padding"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                30
+              ]
+            }
           }
         ]
       }
