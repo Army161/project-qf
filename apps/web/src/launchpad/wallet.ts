@@ -14,7 +14,7 @@ export interface StandardWallet {
 export const DEVNET_CHAIN = 'solana:devnet';
 let CHAIN = DEVNET_CHAIN;
 /** The Wallet Standard chain the page signs for: the network the launchpad server runs on (set once at boot). */
-export const setWalletCluster = (cluster: 'devnet' | 'localnet') => { CHAIN = `solana:${cluster}`; };
+export const setWalletCluster = (cluster: 'devnet' | 'localnet' | 'mainnet-beta') => { CHAIN = cluster === 'mainnet-beta' ? 'solana:mainnet' : `solana:${cluster}`; };
 const wallets = new Set<StandardWallet>();
 const listeners = new Set<() => void>();
 const usable = (w: StandardWallet) => !!w.features['standard:connect'] && !!w.features['solana:signTransaction'];

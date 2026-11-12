@@ -88,3 +88,33 @@ test('launchpad UI: explore, a coin, create, My coins before and after connectin
     await browser.close();
   }
 });
+
+test('launchpad UI: a page built for one network or engine refuses a server that runs another', { skip: !existsSync(CHROMIUM) && `Chromium not found at ${CHROMIUM}` }, async () => {
+  assert.ok(existsSync(join(dist, 'launchpad.html')), 'run `pnpm build:web` first');
+  const h = await engineHarness({ staticDir: dist, log: () => {} });
+  await putPlatform(h.chain);
+  const base = `http://127.0.0.1:${(h.app.address() as { port: number }).port}`;
+  const browser = await chromium.launch({ executablePath: CHROMIUM, args: ['--no-proxy-server'] });
+  try {
+    const page = await browser.newPage();
+    const real = await (await fetch(`${base}/api/lp/platform`)).json() as { cluster: string; platform: { programs: { curve: string; pool: string }; poolFeeReceiver: string } };
+    assert.equal(await page.goto(`${base}/`).then(() => page.getAttribute('body', 'data-cluster')), 'devnet', 'the default build is the devnet build');
+    const lies: Array<[string, (p: typeof real) => void, RegExp]> = [
+      ['another network', (p) => { p.cluster = 'mainnet-beta'; }, /server runs mainnet-beta, this page is for devnet/],
+      ['another curve program', (p) => { p.platform.programs.curve = 'Stake11111111111111111111111111111111111111'; }, /other engine programs/],
+      ['another pool fee account', (p) => { p.platform.poolFeeReceiver = 'Stake11111111111111111111111111111111111111'; }, /another pool fee account/],
+    ];
+    for (const [what, edit, says] of lies) {
+      await page.unroute('**/api/lp/platform');
+      await page.route('**/api/lp/platform', (r) => { const p = structuredClone(real); edit(p); return r.fulfill({ json: p }); });
+      await page.goto(`${base}/`);
+      await page.waitForFunction(() => document.querySelector('#view .err'), null, { timeout: 15_000 });
+      const text = await page.textContent('#view') ?? '';
+      assert.match(text, says, what);
+      assert.match(text, /Nothing was sent/, what);
+      assert.equal(await page.$('#wallet button'), null, `${what}: no wallet button`);
+    }
+  } finally {
+    await browser.close();
+  }
+});

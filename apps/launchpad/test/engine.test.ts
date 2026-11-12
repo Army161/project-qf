@@ -494,7 +494,7 @@ test('a database is tied to one engine deployment; an older one holding coins fr
   const s = new EngineStore(join(engineDir, 'deploy.sqlite'));
   await bindDeployment(s, E.QF_CURVE);
   await bindDeployment(s, E.QF_CURVE);
-  await assert.rejects(bindDeployment(s, E.DEPLOYMENTS.devnet.curve), /STORE_CURVE_MISMATCH/);
+  await assert.rejects(bindDeployment(s, E.IDL_BUILD.curve), /STORE_CURVE_MISMATCH/);
   await s.close();
   const old = new EngineStore(join(engineDir, 'legacy.sqlite'));
   await old.insertPendingCoin({ mint: ADDR.admin, quoteMint: E.NATIVE_MINT, creator: ADDR.treasury, name: 'Old', symbol: 'OLD', description: '', website: null, twitter: null, telegram: null,

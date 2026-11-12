@@ -13,6 +13,8 @@ import type { QuoteAsset } from '../../src/market.ts';
 import { createEngineApp, type EngineProfile } from '../../src/server.ts';
 import { EngineStore } from '../../src/store.ts';
 
+// The harness runs the devnet deployment, as the default web build does, so the page's own checks agree with the server.
+E.useDeployment(E.deploymentFor('devnet'));
 export const engineDir = mkdtempSync(join(tmpdir(), 'qf-engine-test-'));
 after(() => rmSync(engineDir, { recursive: true, force: true }));
 export const SOL: QuoteAsset = { mint: E.NATIVE_MINT, decimals: 9, symbol: 'SOL', label: 'TEST_ONLY SOL' };

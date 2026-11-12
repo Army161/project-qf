@@ -19,7 +19,7 @@ export interface Check { label: string; ok: boolean; detail?: string }
 export interface Expectation {
   kind: ApprovedTerms['kind'];
   /** the network the page is on (from the launchpad's platform answer); devnet when omitted */
-  cluster?: 'devnet' | 'localnet';
+  cluster?: 'devnet' | 'localnet' | 'mainnet-beta';
   wallet: string;
   fields: Record<string, string | null>;
   /** for swaps: the minimum out may be higher than shown, never lower */
@@ -44,7 +44,8 @@ export async function checkBuiltTransaction(bytes: Uint8Array, terms: ApprovedTe
   checks.push({ label: 'Your wallet pays the fee and signs', ok: terms.feePayer === e.wallet });
   for (const [k, want] of Object.entries(e.fields)) checks.push({ label: FIELD_LABELS[k] ?? `${k} is what you entered`, ok: t[k] === want, detail: String(t[k]) });
   // The terms' own compute caps come from the server, so the page holds its own ceiling: what the server asks for today
-  // (400k units, no priority fee) with room to spare, far below what packages/tx allows in general.
+  // (400k units; a priority fee only on mainnet, at most the server's own cap) with room to spare, far below what
+  // packages/tx allows in general.
   const c = terms.compute;
   checks.push({ label: 'Network fee stays small', ok: !!c && c.maxUnitLimit <= PAGE_COMPUTE.maxUnitLimit && BigInt(c.maxUnitPriceMicroLamports) <= PAGE_COMPUTE.maxUnitPriceMicroLamports,
     detail: c ? `${c.maxUnitLimit} units at most ${c.maxUnitPriceMicroLamports} µlamports each` : 'no compute caps' });
