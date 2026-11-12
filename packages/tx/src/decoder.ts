@@ -56,11 +56,12 @@ export function decodeTransactionBytes(bytes: Uint8Array): DecodedTransaction {
 const P = PROGRAM_IDS;
 const BASE = [P.COMPUTE_BUDGET, P.SYSTEM, P.ASSOCIATED_TOKEN, P.TOKEN, P.TOKEN_2022];
 /** Coarse first filter only. QF-SEC-01: an allowlist is never sufficient; bindTransactionToTerms decides. */
-export const TOP_LEVEL_ALLOWLIST: Record<IntentKind, readonly string[]> = {
+// Getters, so the lists name the engine deployment this process chose (programs.ts useDeployment), not the one active at import.
+export const TOP_LEVEL_ALLOWLIST: Readonly<Record<IntentKind, readonly string[]>> = Object.freeze({
   // the curve before graduation, its pool after (wrapped SOL uses the system and token programs)
-  QF_CREATE: [...BASE, QF_CURVE], QF_SWAP: [...BASE, QF_CURVE], QF_CLAIM_CREATOR_FEES: [...BASE, QF_CURVE],
-  QF_POOL_SWAP: [...BASE, QF_POOL], QF_COLLECT_POOL_CREATOR_FEE: [...BASE, QF_POOL],
-};
+  get QF_CREATE() { return [...BASE, QF_CURVE]; }, get QF_SWAP() { return [...BASE, QF_CURVE]; }, get QF_CLAIM_CREATOR_FEES() { return [...BASE, QF_CURVE]; },
+  get QF_POOL_SWAP() { return [...BASE, QF_POOL]; }, get QF_COLLECT_POOL_CREATOR_FEE() { return [...BASE, QF_POOL]; },
+});
 
 export interface PreviewRequest { kind: IntentKind; feePayer: string; signerAddress: string; terms: ApprovedTerms; consent: ConsentRecord }
 export interface PreviewResult {

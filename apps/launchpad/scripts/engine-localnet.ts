@@ -39,7 +39,7 @@ for (const [k, sol] of [[authority.address, 20], [operator.address, 5], [creator
 const ammConfig = await E.ammConfigAddress(0);
 // the engine's settings are set by its admin (the curve's upgrade authority), not by the app
 const initSig = await kitChain(RPC, authority).sendAsOperator([await E.initializeIx({ authority: authority.address, ammConfig,
-  settings: { admin: authority.address, feeRecipient: treasury, createPaused: false, config: E.LAUNCH_PRESETS.devnetSmall } })], 100_000);
+  settings: { admin: authority.address, feeRecipient: treasury, createPaused: false, buyPaused: false, config: E.LAUNCH_PRESETS.devnetSmall } })], 100_000);
 const t = await e2e({ chain, cluster, faucet: true });
 const { check, call, store, flow, trade, coinBalance } = t;
 check('the app proves it is on a local validator (not devnet, not mainnet)', 'localnet', cluster);

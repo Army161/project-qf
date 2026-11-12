@@ -37,7 +37,12 @@ export interface Launch {
   /** The pool, once graduated (the all-zero address before). */
   pool: string;
   createdAt: bigint; bump: number; signerBump: number;
+  /** When the curve sold out (unix seconds), 0 while trading. Selling reopens a sold-out coin that has not graduated
+   *  GRADUATION_GRACE_SECS after this. */
+  completedAt: bigint;
 }
+/** How long a sold-out coin waits for graduation before selling reopens (qf-curve state.rs GRADUATION_GRACE_SECS). */
+export const GRADUATION_GRACE_SECS = 3n * 24n * 60n * 60n;
 /** Where a Launch account keeps what a getProgramAccounts search filters on: the discriminator at 0, the mint at 8 and the
  *  quote mint at 72. Listing every launch for one quote this way is how the app finds coins it did not launch itself. */
 export const LAUNCH_LAYOUT = Object.freeze({ discriminator: Object.freeze([...CURVE_IDL.accounts.Launch!]) as readonly number[], mintOffset: 8, quoteMintOffset: 72 });
@@ -46,14 +51,20 @@ export function decodeLaunch(acc: RawAccount): Launch {
   const d = decodeAccount(CURVE_IDL, QF_CURVE, 'Launch', acc);
   return { mint: str(d.mint!), creator: str(d.creator!), quoteMint: str(d.quote_mint!), ammConfig: str(d.amm_config!), config: launchConfig(d.config as Record<string, Value>),
     status: d.status as LaunchStatus, realQuote: big(d.real_quote!), baseSold: big(d.base_sold!), platformFees: big(d.platform_fees!), creatorFees: big(d.creator_fees!),
-    pool: str(d.pool!), createdAt: big(d.created_at!), bump: d.bump as number, signerBump: d.signer_bump as number };
+    pool: str(d.pool!), createdAt: big(d.created_at!), bump: d.bump as number, signerBump: d.signer_bump as number, completedAt: big(d.completed_at!) };
 }
 
-export interface Global { admin: string; feeRecipient: string; quoteMint: string; ammConfig: string; createPaused: boolean; config: LaunchConfig; bump: number }
+export interface Global {
+  admin: string; feeRecipient: string; quoteMint: string; ammConfig: string; createPaused: boolean; config: LaunchConfig; bump: number;
+  /** Buying is stopped on every coin (the emergency stop); selling, graduation and claims keep working. */
+  buyPaused: boolean;
+  /** A proposed next admin (the all-zero address when none); it takes over only by signing accept_admin. */
+  pendingAdmin: string;
+}
 export function decodeGlobal(acc: RawAccount): Global {
   const d = decodeAccount(CURVE_IDL, QF_CURVE, 'Global', acc);
   return { admin: str(d.admin!), feeRecipient: str(d.fee_recipient!), quoteMint: str(d.quote_mint!), ammConfig: str(d.amm_config!), createPaused: d.create_paused as boolean,
-    config: launchConfig(d.config as Record<string, Value>), bump: d.bump as number };
+    config: launchConfig(d.config as Record<string, Value>), bump: d.bump as number, buyPaused: d.buy_paused as boolean, pendingAdmin: str(d.pending_admin!) };
 }
 
 export interface AmmConfig {

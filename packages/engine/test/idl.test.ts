@@ -9,8 +9,9 @@ import { generate } from '../scripts/extract-idl.ts';
 import * as E from '../src/index.ts';
 
 const file = (n: string) => readFileSync(new URL(`../idl/${n}`, import.meta.url));
-// sha256 of the IDLs the engine thread built on 2026-10-11 (OWN-ENGINE-BUILD report; engine commit 10ae8ea)
-const PINS = { 'qf_curve.json': 'e1ed66c8c9bc55c144951df63b436566e28f1de08e8c8e26b1ed117206b969cc', 'qf_pool.json': 'c48a79db97c1eddaacaab9b90e84bd6a7af8905faf209f3b78152213bc72290c' };
+// sha256 of the engine build's IDLs: qf_curve at engine commit 5291cd4 (buy pause, two-step admin, launch guards; the
+// default-feature build, rebuilt and confirmed identical at 82ebec8), qf_pool unchanged since 10ae8ea (2026-10-11)
+const PINS = { 'qf_curve.json': '8cd4656bea43503df154039fa2237f1a0ed10aeaa7cb164f50208bed4eced140', 'qf_pool.json': 'c48a79db97c1eddaacaab9b90e84bd6a7af8905faf209f3b78152213bc72290c' };
 
 test('the IDL files are the engine build\'s, byte for byte', () => {
   for (const [n, sha] of Object.entries(PINS)) assert.equal(createHash('sha256').update(file(n)).digest('hex'), sha, n);
@@ -27,6 +28,12 @@ test('program ids: the IDLs, programs.ts and the engine report agree', () => {
   assert.equal(E.POOL_IDL.provenance.programId, E.QF_POOL);
   assert.equal(E.QF_CURVE, 'CaX3gfwE1y3AustJ5e2JQFmaDtXB5oeX6ayvNzLGsFoX');
   assert.equal(E.QF_POOL, 'FHG8GyPytpydCRFL6yvwu92vyWSk7bSYZknyLn3v6ewU');
+  assert.equal(E.POOL_FEE_RECEIVER, 'BYSX6JVNMtMEyqbxkgJgnXMrWYVpftU4oxR25CKwmXeA');
+  assert.deepEqual(E.activeDeployment(), E.DEPLOYMENTS.localnet, 'until a process picks one, the IDL build\'s ids are active');
+});
+
+test('the devnet v2 pool fee receiver is the devnet treasury\'s wrapped-SOL account', async () => {
+  assert.equal(await E.ata('D4GdbP8hUKpMhvdHNxYXdM44te57f12DFKwpJ6N2VWNK', E.NATIVE_MINT, E.TOKEN), E.DEPLOYMENTS.devnet.poolFeeReceiver);
 });
 
 // ---------- PDA seeds from the full IDL ----------
@@ -70,7 +77,9 @@ test('every PDA in every built instruction matches the seeds the IDL records', a
       await E.graduateIx({ payer: creator, mint: m, quoteMint, ammConfig, creator, createPoolFee: creator }),
       await E.claimPlatformFeesIx({ mint: m, quoteMint, to: creator }),
       await E.claimCreatorFeesIx({ mint: m, quoteMint, to: creator }),
-      await E.initializeIx({ authority: creator, quoteMint, ammConfig, settings: { admin: creator, feeRecipient: creator, createPaused: false, config: E.LAUNCH_PRESETS.standard } }),
+      await E.initializeIx({ authority: creator, quoteMint, ammConfig, settings: { admin: creator, feeRecipient: creator, createPaused: false, buyPaused: false, config: E.LAUNCH_PRESETS.standard } }),
+      await E.updateGlobalIx({ admin: creator, quoteMint, ammConfig, settings: { admin: creator, feeRecipient: creator, createPaused: true, buyPaused: true, config: E.LAUNCH_PRESETS.beta } }),
+      await E.acceptAdminIx({ newAdmin: creator, quoteMint }),
     ]) checked += await checkPdas(full.curve, ix);
     for (const ix of [
       await E.coinPoolSwapIx({ payer: creator, mint: m, quoteMint, ammConfig, side: 'buy', amountIn: 1n, minOut: 0n }),

@@ -5,13 +5,41 @@ import type { EngineIdl } from './codec.ts';
 export const CURVE_IDL: EngineIdl = {
  "provenance": {
   "file": "idl/qf_curve.json",
-  "sha256": "e1ed66c8c9bc55c144951df63b436566e28f1de08e8c8e26b1ed117206b969cc",
+  "sha256": "8cd4656bea43503df154039fa2237f1a0ed10aeaa7cb164f50208bed4eced140",
   "idlName": "qf_curve",
   "idlVersion": "0.1.0",
   "programId": "CaX3gfwE1y3AustJ5e2JQFmaDtXB5oeX6ayvNzLGsFoX",
   "license": "Project QF original (proprietary)"
  },
  "instructions": [
+  {
+   "name": "accept_admin",
+   "discriminator": [
+    112,
+    42,
+    45,
+    90,
+    116,
+    181,
+    13,
+    170
+   ],
+   "accounts": [
+    {
+     "name": "new_admin",
+     "writable": false,
+     "signer": true,
+     "address": null
+    },
+    {
+     "name": "global",
+     "writable": true,
+     "signer": false,
+     "address": null
+    }
+   ],
+   "args": []
+  },
   {
    "name": "buy",
    "discriminator": [
@@ -29,6 +57,12 @@ export const CURVE_IDL: EngineIdl = {
      "name": "trader",
      "writable": false,
      "signer": true,
+     "address": null
+    },
+    {
+     "name": "global",
+     "writable": false,
+     "signer": false,
      "address": null
     },
     {
@@ -249,6 +283,24 @@ export const CURVE_IDL: EngineIdl = {
      "writable": false,
      "signer": false,
      "address": null
+    },
+    {
+     "name": "graduator",
+     "writable": false,
+     "signer": false,
+     "address": null
+    },
+    {
+     "name": "permission",
+     "writable": false,
+     "signer": false,
+     "address": null
+    },
+    {
+     "name": "create_pool_fee",
+     "writable": false,
+     "signer": false,
+     "address": "BYSX6JVNMtMEyqbxkgJgnXMrWYVpftU4oxR25CKwmXeA"
     },
     {
      "name": "mint",
@@ -625,6 +677,12 @@ export const CURVE_IDL: EngineIdl = {
      "address": null
     },
     {
+     "name": "global",
+     "writable": false,
+     "signer": false,
+     "address": null
+    },
+    {
      "name": "launch",
      "writable": true,
      "signer": false,
@@ -763,6 +821,28 @@ export const CURVE_IDL: EngineIdl = {
   ]
  },
  "events": {
+  "CurveReopened": {
+   "discriminator": [
+    134,
+    18,
+    70,
+    177,
+    37,
+    255,
+    73,
+    7
+   ],
+   "fields": [
+    {
+     "name": "mint",
+     "type": "pubkey"
+    },
+    {
+     "name": "completed_at",
+     "type": "i64"
+    }
+   ]
+  },
   "FeesClaimed": {
    "discriminator": [
     22,
@@ -790,6 +870,56 @@ export const CURVE_IDL: EngineIdl = {
     {
      "name": "creator",
      "type": "bool"
+    }
+   ]
+  },
+  "GlobalUpdated": {
+   "discriminator": [
+    131,
+    66,
+    237,
+    209,
+    176,
+    87,
+    119,
+    203
+   ],
+   "fields": [
+    {
+     "name": "quote_mint",
+     "type": "pubkey"
+    },
+    {
+     "name": "admin",
+     "type": "pubkey"
+    },
+    {
+     "name": "pending_admin",
+     "type": "pubkey"
+    },
+    {
+     "name": "fee_recipient",
+     "type": "pubkey"
+    },
+    {
+     "name": "amm_config",
+     "type": "pubkey"
+    },
+    {
+     "name": "create_paused",
+     "type": "bool"
+    },
+    {
+     "name": "buy_paused",
+     "type": "bool"
+    },
+    {
+     "name": "config",
+     "type": {
+      "defined": {
+       "name": "LaunchConfig"
+      }
+     }
     }
    ]
   },
@@ -985,6 +1115,14 @@ export const CURVE_IDL: EngineIdl = {
     {
      "name": "bump",
      "type": "u8"
+    },
+    {
+     "name": "buy_paused",
+     "type": "bool"
+    },
+    {
+     "name": "pending_admin",
+     "type": "pubkey"
     }
    ]
   },
@@ -1001,6 +1139,10 @@ export const CURVE_IDL: EngineIdl = {
     },
     {
      "name": "create_paused",
+     "type": "bool"
+    },
+    {
+     "name": "buy_paused",
      "type": "bool"
     },
     {
@@ -1079,6 +1221,10 @@ export const CURVE_IDL: EngineIdl = {
     {
      "name": "signer_bump",
      "type": "u8"
+    },
+    {
+     "name": "completed_at",
+     "type": "i64"
     }
    ]
   },

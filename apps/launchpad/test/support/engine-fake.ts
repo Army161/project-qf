@@ -94,16 +94,17 @@ export function fakeChain(operator: string | null = ADDR.operator): FakeChain {
 }
 
 /** The engine's settings on this fake network: Global for SOL, and the pool config coins graduate into. */
-export async function putPlatform(f: FakeChain, p: { createPaused?: boolean; config?: E.LaunchConfig } = {}) {
+export async function putPlatform(f: FakeChain, p: { createPaused?: boolean; buyPaused?: boolean; config?: E.LaunchConfig } = {}) {
   f.accounts.set(await E.globalAddress(E.NATIVE_MINT), { owner: E.QF_CURVE, lamports: 1n, data: idlAccount(E.CURVE_IDL, 'Global', {
-    admin: ADDR.admin, fee_recipient: ADDR.treasury, quote_mint: E.NATIVE_MINT, amm_config: ADDR.ammConfig, create_paused: p.createPaused ?? false, config: cfgFields(p.config ?? CFG), bump: 255 }) });
+    admin: ADDR.admin, fee_recipient: ADDR.treasury, quote_mint: E.NATIVE_MINT, amm_config: ADDR.ammConfig, create_paused: p.createPaused ?? false, config: cfgFields(p.config ?? CFG), bump: 255,
+    buy_paused: p.buyPaused ?? false, pending_admin: E.SYSTEM }) });
   const pp = E.POOL_PRESET;
   f.accounts.set(ADDR.ammConfig, { owner: E.QF_POOL, lamports: 1n, data: idlAccount(E.POOL_IDL, 'AmmConfig', {
     bump: 254, disable_create_pool: false, index: pp.index, trade_fee_rate: pp.tradeFeeRate, protocol_fee_rate: pp.protocolFeeRate, fund_fee_rate: pp.fundFeeRate,
     create_pool_fee: pp.createPoolFee, protocol_owner: ADDR.admin, fund_owner: ADDR.admin, creator_fee_rate: pp.creatorFeeRate, creator_fee_share_rate: 0n, padding: Array(14).fill(0n) }) });
 }
 
-export interface CurveState { status?: E.LaunchStatus; realQuote?: bigint; baseSold?: bigint; platformFees?: bigint; creatorFees?: bigint; pool?: string;
+export interface CurveState { status?: E.LaunchStatus; realQuote?: bigint; baseSold?: bigint; platformFees?: bigint; creatorFees?: bigint; pool?: string; completedAt?: bigint;
   /** vault balances; by default exactly what the curve's numbers say */
   quoteVault?: bigint; baseVault?: bigint }
 /** A coin's launch account and its two vaults. */
@@ -112,7 +113,8 @@ export async function putCurve(f: FakeChain, mint: string, creator: string, s: C
   const st = { status: 'Trading' as E.LaunchStatus, realQuote: 0n, baseSold: 0n, platformFees: 0n, creatorFees: 0n, pool: E.SYSTEM, ...s };
   f.accounts.set(a.launch, { owner: E.QF_CURVE, lamports: 1n, data: idlAccount(E.CURVE_IDL, 'Launch', {
     mint, creator, quote_mint: E.NATIVE_MINT, amm_config: ADDR.ammConfig, config: cfgFields(CFG), status: st.status, real_quote: st.realQuote, base_sold: st.baseSold,
-    platform_fees: st.platformFees, creator_fees: st.creatorFees, pool: st.pool, created_at: 1_760_000_000n, bump: 254, signer_bump: 253 }) });
+    platform_fees: st.platformFees, creator_fees: st.creatorFees, pool: st.pool, created_at: 1_760_000_000n, bump: 254, signer_bump: 253,
+    completed_at: st.completedAt ?? (st.status === 'Trading' ? 0n : 1_760_000_100n) }) });
   const graduated = st.status === 'Graduated';
   f.accounts.set(a.quoteVault, { owner: E.TOKEN, lamports: 1n, data: tokenAccountData(E.NATIVE_MINT, a.launchSigner, s.quoteVault ?? st.realQuote + st.platformFees + st.creatorFees) });
   f.accounts.set(a.baseVault, { owner: E.TOKEN_2022, lamports: 1n, data: tokenAccountData(mint, a.launchSigner,
